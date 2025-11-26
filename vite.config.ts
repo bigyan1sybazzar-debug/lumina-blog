@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    base:process.env.VITE_BASE_PATH ||"/lumina-blog"
     define: {
       // Safely stringify process.env to avoid injection issues
       'process.env': env
