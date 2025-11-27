@@ -13,13 +13,25 @@ interface PostCardProps {
 
 export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant = 'vertical' }) => {
 
-  // ➤ Trim title to 6 words
-  const trimTitle = (title: string, wordLimit: number = 6) => {
-    const words = title.split(" ");
-    return words.length > wordLimit
-      ? words.slice(0, wordLimit).join(" ") + "..."
+  // Responsive trim – 6 words on mobile, 9 words on desktop
+  const trimTitle = (title: string) => {
+    const words = title.split(' ');
+    const isDesktop = window.innerWidth >= 768; // md breakpoint
+    const limit = isDesktop ? 9 : 6;
+
+    return words.length > limit
+      ? words.slice(0, limit).join(' ') + '...'
       : title;
   };
+
+  // Re-run trim when window resizes (optional but smooth)
+  const [trimmedTitle, setTrimmedTitle] = React.useState(trimTitle(post.title));
+
+  React.useEffect(() => {
+    const handleResize = () => setTrimmedTitle(trimTitle(post.title));
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [post.title]);
 
   if (variant === 'horizontal') {
     return (
@@ -38,9 +50,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant 
             <span className="text-gray-500 dark:text-gray-500 font-normal">{post.readTime}</span>
           </div>
 
-          {/* Trimmed Title */}
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-primary-600 transition-colors">
-            {trimTitle(post.title)}
+            {trimmedTitle}
           </h3>
 
           <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-4">
@@ -79,9 +90,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant 
         </div>
 
         <Link to={`/blog/${post.id}`} className="block mb-3">
-          {/* Trimmed Title */}
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-            {trimTitle(post.title)}
+            {trimmedTitle}
           </h3>
         </Link>
         
