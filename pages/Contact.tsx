@@ -20,7 +20,7 @@ export const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 dark:text-white">Email</h3>
-                  <p className="text-gray-600 dark:text-gray-400">hello@lumina.blog</p>
+                  <p className="text-gray-600 dark:text-gray-400">bigyan.neupane6@gmail.com</p>
                 </div>
               </div>
                <div className="flex items-start space-x-4">
@@ -29,7 +29,7 @@ export const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 dark:text-white">Location</h3>
-                  <p className="text-gray-600 dark:text-gray-400">San Francisco, CA</p>
+                  <p className="text-gray-600 dark:text-gray-400">kathmandu,Nepal</p>
                 </div>
               </div>
             </div>

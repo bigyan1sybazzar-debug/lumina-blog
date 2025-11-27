@@ -14,7 +14,7 @@ export const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Close menu on route change
+  // Close menu on route change and profile dropdown
   useEffect(() => {
     setIsMenuOpen(false);
     setIsProfileOpen(false);
@@ -41,13 +41,13 @@ export const Header: React.FC = () => {
           
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">
-              Bigyann
+            <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">
+              Bigyann.com.np
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden lg:flex items-center space-x-8"> {/* Changed md to lg for more space before navigation collapses */}
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -76,13 +76,14 @@ export const Header: React.FC = () => {
             )}
           </nav>
 
-          {/* Desktop Actions */}
+          {/* Desktop/Tablet Actions */}
           <div className="hidden md:flex items-center space-x-4">
             <div className="relative group">
+              {/* Adjusted width for better tablet fit: w-28 on md, w-36 on lg */}
               <input
                 type="text"
                 placeholder="Search..."
-                className="pl-9 pr-4 py-1.5 text-sm rounded-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 border-none w-36 focus:w-60 transition-all duration-300"
+                className="pl-9 pr-4 py-1.5 text-sm rounded-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 border-none w-28 lg:w-36 focus:w-48 lg:focus:w-60 transition-all duration-300"
               />
               <Search className="absolute left-3 top-2 h-4 w-4 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
             </div>
@@ -101,12 +102,18 @@ export const Header: React.FC = () => {
                 <button 
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center space-x-2 focus:outline-none ring-offset-2 focus:ring-2 focus:ring-primary-500 rounded-full"
+                  aria-expanded={isProfileOpen}
+                  aria-controls="profile-dropdown"
                 >
                   <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 object-cover" />
                 </button>
                 
+                {/* Profile Dropdown */}
                 {isProfileOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl py-2 border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
+                  <div 
+                    id="profile-dropdown"
+                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl py-2 border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200"
+                  >
                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                       <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.name}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
@@ -114,15 +121,16 @@ export const Header: React.FC = () => {
                     </div>
                     <Link 
                       to="/admin"
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      onClick={() => setIsProfileOpen(false)}
                     >
-                      Dashboard
+                      <UserIcon size={16} className="mr-2 opacity-75" /> Dashboard
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      className="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
-                      Sign out
+                      <LogOut size={16} className="mr-2" /> Sign out
                     </button>
                   </div>
                 )}
@@ -132,7 +140,7 @@ export const Header: React.FC = () => {
                 <Link to="/login" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600">
                   Log in
                 </Link>
-                <Link to="/signup" className="px-4 py-2 text-sm font-bold text-white bg-primary-600 rounded-full hover:bg-primary-700 transition-colors shadow-sm hover:shadow-primary-600/30">
+                <Link to="/signup" className="px-3 py-1.5 text-sm font-bold text-white bg-primary-600 rounded-full hover:bg-primary-700 transition-colors shadow-sm hover:shadow-primary-600/30">
                   Sign up
                 </Link>
               </div>
@@ -144,12 +152,15 @@ export const Header: React.FC = () => {
              <button
               onClick={toggleTheme}
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
+              aria-label="Toggle Theme"
             >
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="p-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-menu"
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -159,8 +170,21 @@ export const Header: React.FC = () => {
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
-        <div className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-xl animate-in slide-in-from-top-4 duration-200">
+        <div 
+          id="mobile-menu"
+          className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-xl animate-in slide-in-from-top-4 duration-200"
+        >
           <div className="px-4 pt-2 pb-6 space-y-1">
+             {/* Mobile Search Bar */}
+             <div className="relative mb-4">
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full pl-10 pr-4 py-2 text-base rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 border-none"
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            </div>
+
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -193,29 +217,30 @@ export const Header: React.FC = () => {
                    <div className="flex items-center space-x-3">
                      <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
                      <div>
-                       <p className="text-sm font-bold text-gray-900 dark:text-white">{user.name}</p>
-                       <p className="text-xs text-gray-500">{user.email}</p>
+                       <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.name}</p>
+                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                       <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 mt-0.5 capitalize">{user.role}</p>
                      </div>
                    </div>
                    <button 
                     onClick={handleLogout}
-                    className="w-full flex items-center justify-center px-4 py-2 rounded-lg text-base font-medium text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
+                    className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-base font-medium text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                    >
                      <LogOut size={18} className="mr-2" />
                      Sign out
                    </button>
                  </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4 px-3">
+                <div className="grid grid-cols-2 gap-3 px-3"> {/* Slightly reduced gap for better fit */}
                   <Link 
                     to="/login"
-                    className="flex justify-center items-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    className="flex justify-center items-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
                     Log in
                   </Link>
                   <Link 
                     to="/signup"
-                    className="flex justify-center items-center px-4 py-3 bg-primary-600 rounded-xl text-sm font-bold text-white hover:bg-primary-700 shadow-lg shadow-primary-600/20"
+                    className="flex justify-center items-center px-4 py-3 bg-primary-600 rounded-xl text-sm font-bold text-white hover:bg-primary-700 shadow-lg shadow-primary-600/20 transition-colors"
                   >
                     Sign up
                   </Link>

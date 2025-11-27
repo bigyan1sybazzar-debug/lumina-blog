@@ -16,9 +16,6 @@ export const Home: React.FC = () => {
     const fetchPosts = async () => {
       try {
         const fetchedPosts = await getPosts();
-
-        // NO ENRICHMENT NEEDED!
-        // Your posts already have: category: "Technology" (string)
         setPosts(fetchedPosts);
       } catch (err) {
         console.error('Failed to load posts:', err);
@@ -26,7 +23,6 @@ export const Home: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchPosts();
   }, []);
 
@@ -38,34 +34,44 @@ export const Home: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <Loader2 className="w-8 h-8 animate-spin mr-3 text-primary-600" />
-        <span>Loading posts...</span>
+        <Loader2 className="w-10 h-10 animate-spin text-primary-600" />
+        <span className="ml-3 text-lg font-medium">Loading posts...</span>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      {/* Hero */}
-      <section className="relative bg-white dark:bg-gray-900 pt-20 pb-24 lg:pt-32 lg:pb-40 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      {/* Hero Section - Mobile Optimized */}
+      <section className="relative bg-white dark:bg-gray-900 pt-20 pb-20 md:pt-28 md:pb-32 lg:pt-32 lg:pb-40 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 text-center">
           <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <span className="inline-flex items-center px-4 py-1.5 mb-6 text-sm font-medium text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded-full border border-primary-100 dark:border-primary-800">
-              Welcome to the future of blogging
+            <span className="inline-flex items-center px-4 py-2 mb-6 text-xs sm:text-sm font-semibold tracking-wider uppercase text-primary-700 dark:text-primary-300 bg-primary-100/70 dark:bg-primary-900/40 rounded-full border border-primary-200 dark:border-primary-800">
+            Welcome to Bigyann
             </span>
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-6">
-              Insights for the <br className="hidden md:block" />
-              <span className="bg-gradient-to-r from-primary-500 to-indigo-600 bg-clip-text text-transparent">Modern Creator</span>
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
+            Your daily tech and  <br className="block sm:hidden" />
+              <span className="bg-gradient-to-r from-primary-500 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              science feed.
+              </span>
             </h1>
-            <p className="mt-6 max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-400">
-              Explore cutting-edge articles on tech, design, and the future.
-            </p>
-            <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-              <a href="#posts" className="px-8 py-4 rounded-full bg-primary-600 text-white font-bold hover:bg-primary-700 transition-all shadow-lg">
+
+            <p className="mt-6 max-w-2xl mx-auto text-base sm:text-lg text-gray-600 dark:text-gray-400 leading-relaxed px-4">
+            Explore discoveries, gadgets, AI updates, space science, and more.            </p>
+
+            <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4 px-4">
+              <a
+                href="#posts"
+                className="px-8 py-4 rounded-full bg-primary-600 text-white font-bold text-lg hover:bg-primary-700 active:scale-95 transition-all shadow-xl"
+              >
                 Start Reading
               </a>
-              <Link to="/categories" className="px-8 py-4 rounded-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              <Link
+                to="/categories"
+                className="px-8 py-4 rounded-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-700 font-bold text-lg hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition-all"
+              >
                 Explore Topics
               </Link>
             </div>
@@ -73,94 +79,103 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Latest Posts */}
-      <section id="posts" className="py-16 md:py-24 bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Latest Posts</h2>
-              <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">Fresh content weekly.</p>
-            </div>
-            <Link to="/categories" className="text-primary-600 dark:text-primary-400 font-medium hover:underline flex items-center gap-2">
-              All categories <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
+     {/* Latest Posts - 2 columns from mobile (~375px+) */}
+<section id="posts" className="py-16 md:py-24 bg-gray-50 dark:bg-gray-950">
+  <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-10 gap-4">
+      <div>
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Latest Posts</h2>
+        <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">Fresh content every week.</p>
+      </div>
+   
+    </div>
 
-          {posts.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {currentPosts.map((post) => (
-                  <PostCard key={post.id} post={post} />
-                ))}
-              </div>
-
-              {totalPages > 1 && (
-                <div className="mt-16 flex justify-center gap-3">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-5 py-2.5 rounded-lg font-medium transition-all ${
-                        currentPage === page
-                          ? 'bg-primary-600 text-white'
-                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-3xl border-2 border-dashed border-gray-300 dark:border-gray-700">
-              <p className="text-xl text-gray-500 dark:text-gray-400">No posts yet.</p>
+    {posts.length > 0 ? (
+      <>
+        {/* This is the magic line */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-5 md:gap-7 lg:gap-8">
+          {currentPosts.map((post) => (
+            <div key={post.id} className="h-full">
+              <PostCard post={post} />
             </div>
-          )}
+          ))}
         </div>
-      </section>
 
-      {/* Trending */}
-      <section className="py-16 md:py-24 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-16 flex flex-wrap justify-center gap-3">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`min-w-12 px-4 py-3 rounded-xl font-semibold transition-all ${
+                  currentPage === page
+                    ? 'bg-primary-600 text-white shadow-lg'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+        )}
+      </>
+    ) : (
+      <div className="text-center py-24 bg-white dark:bg-gray-900 rounded-3xl border-2 border-dashed border-gray-300 dark:border-gray-700">
+        <p className="text-xl text-gray-500 dark:text-gray-400">No posts yet. Check back soon!</p>
+      </div>
+    )}
+  </div>
+</section>
+
+      {/* Trending Section - Mobile Friendly */}
+      <section className="py-16 md:py-24 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
+            {/* Trending Posts */}
             <div className="lg:col-span-8">
-              <div className="flex items-center gap-3 mb-10">
+              <div className="flex items-center gap-3 mb-8">
                 <TrendingUp className="w-8 h-8 text-primary-600" />
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Trending Now</h2>
               </div>
-              <div className="space-y-8">
-                {trendingPosts.map((post) => (
-                  <PostCard key={post.id} post={post} variant="horizontal" />
+              <div className="space-y-6">
+                {trendingPosts.map((post, index) => (
+                  <div key={post.id} className={index > 0 ? 'pt-6 border-t border-gray-200 dark:border-gray-800' : ''}>
+                    <PostCard post={post} variant="horizontal" />
+                  </div>
                 ))}
               </div>
             </div>
 
+            {/* Sidebar */}
             <aside className="lg:col-span-4 space-y-10">
               {/* Newsletter */}
-              <div className="p-8 bg-gradient-to-br from-primary-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl border border-primary-100 dark:border-gray-700">
-                <h3 className="text-2xl font-bold mb-3">Stay in the loop</h3>
+              <div className="p-6 sm:p-8 bg-gradient-to-br from-primary-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl border border-primary-200 dark:border-gray-700">
+                <h3 className="text-2xl font-bold mb-3">Stay Updated</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                  Weekly insights. No spam. Just value.
+                  Weekly insights. Zero spam. Pure value.
                 </p>
                 <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
                   <input
                     type="email"
                     placeholder="you@example.com"
-                    className="w-full px-5 py-3.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-primary-500 outline-none"
+                    className="w-full px-5 py-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:ring-4 focus:ring-primary-500/30 outline-none text-base"
                   />
-                  <button className="w-full py-3.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold rounded-xl hover:opacity-90 transition">
-                    Subscribe
+                  <button className="w-full py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold rounded-xl hover:opacity-90 active:scale-95 transition text-base">
+                    Subscribe Now
                   </button>
                 </form>
               </div>
 
-              {/* Tags */}
+              {/* Popular Tags */}
               <div>
                 <h3 className="text-xl font-bold mb-5">Popular Tags</h3>
-                <div className="flex flex-wrap gap-2">
-                  {['React', 'AI', 'Design', 'Firebase', 'TypeScript', 'Next.js'].map((tag) => (
-                    <span key={tag} className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-full hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-gray-700 transition cursor-pointer">
+                <div className="flex flex-wrap gap-3">
+                  {['React', 'AI', 'Design', 'Firebase', 'TypeScript', 'Next.js', 'Tailwind'].map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-full hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-gray-700 transition cursor-pointer"
+                    >
                       #{tag}
                     </span>
                   ))}

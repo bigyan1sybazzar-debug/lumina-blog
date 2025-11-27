@@ -7,11 +7,20 @@ const { Link } = ReactRouterDOM;
 
 interface PostCardProps {
   post: BlogPost;
-  categoryName?: string; // pass category from Home
+  categoryName?: string;
   variant?: 'vertical' | 'horizontal';
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant = 'vertical' }) => {
+
+  // ➤ Trim title to 6 words
+  const trimTitle = (title: string, wordLimit: number = 6) => {
+    const words = title.split(" ");
+    return words.length > wordLimit
+      ? words.slice(0, wordLimit).join(" ") + "..."
+      : title;
+  };
+
   if (variant === 'horizontal') {
     return (
       <Link to={`/blog/${post.id}`} className="group flex flex-col md:flex-row gap-6 items-start">
@@ -28,9 +37,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant 
             <span>•</span>
             <span className="text-gray-500 dark:text-gray-500 font-normal">{post.readTime}</span>
           </div>
+
+          {/* Trimmed Title */}
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-primary-600 transition-colors">
-            {post.title}
+            {trimTitle(post.title)}
           </h3>
+
           <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-4">
             {post.excerpt}
           </p>
@@ -65,10 +77,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant 
             {post.readTime}
           </div>
         </div>
-        
+
         <Link to={`/blog/${post.id}`} className="block mb-3">
+          {/* Trimmed Title */}
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-            {post.title}
+            {trimTitle(post.title)}
           </h3>
         </Link>
         

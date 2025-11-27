@@ -56,7 +56,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="border-t border-gray-200 dark:border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-sm text-gray-500">© 2024 Lumina Blog. All rights reserved.</p>
+          <p className="text-sm text-gray-500">© 2024 Bigyann. All rights reserved.</p>
           <div className="flex space-x-4 mt-4 md:mt-0">
             <a href="#" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><Twitter size={18} /></a>
             <a href="#" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><Github size={18} /></a>

@@ -53,7 +53,7 @@ export const Login: React.FC = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link to="/" className="flex justify-center text-3xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-          Lumina
+          Bigyann
         </Link>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           Sign in to your account
@@ -175,7 +175,7 @@ export const Login: React.FC = () => {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">
-                  Admin: admin@lumina.blog
+                  Admin: BIGYAN
                 </span>
               </div>
             </div>
