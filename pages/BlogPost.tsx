@@ -12,65 +12,6 @@ import rehypeRaw from 'rehype-raw'; // <-- Enables HTML rendering
 
 const { useParams, Link, useLocation } = ReactRouterDOM;
 
-// ------------------------------------------------------------------
-// ⭐ NEW: Custom Component to handle ugly HTML Headings
-// ------------------------------------------------------------------
-
-interface HtmlRendererProps {
-  children: React.ReactNode;
-}
-
-// Function to clean up and render messy heading HTML
-const HtmlRenderer: React.FC<HtmlRendererProps> = ({ children }) => {
-  // Convert children to a string to analyze the raw HTML/Markdown content
-  const content = React.Children.toArray(children).join('');
-
-  // Regex to detect the old, messy <h2>...<div class="separator"... structure
-  // This looks for an H2 tag followed immediately by the separator div containing an image.
-  const uglyHtmlPattern = /<h2[^>]*>(.*?)<\/h2>\s*<div\s+class="separator"\s+style="clear:\s*both;\s*text-align:\s*center;"><img\s+alt="(.*?)"\s+data-original-height="(\d+)"\s+data-original-width="(\d+)"\s+src="(.*?)"[^>]*><\/div>/si;
-  
-  const match = content.match(uglyHtmlPattern);
-
-  if (match) {
-    // Group 1: H2 text content (e.g., "Honor X9b Price in Nepal")
-    const h2Text = match[1].trim(); 
-    // Group 2: Image alt text
-    const altText = match[2].trim();
-    // Group 5: Image src URL
-    const imgSrc = match[5].trim();
-    
-    // Render the attractive, cleaned-up JSX
-    return (
-      <div className="my-10 border-b border-gray-200 dark:border-gray-700 pb-4">
-        {/* Clean, attractive heading (using h3 here so it doesn't conflict with article's main H1) */}
-        <h3 
-          className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white text-center mb-6 leading-snug"
-          id={h2Text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}
-        >
-          {h2Text}
-        </h3>
-        {/* Clean, styled image container */}
-        <div className="text-center">
-          <img 
-            src={imgSrc} 
-            alt={altText} 
-            className="max-w-full h-auto rounded-xl shadow-xl mx-auto transition-transform duration-300 hover:scale-[1.01] border border-gray-100 dark:border-gray-800" 
-            loading="lazy"
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // If it's not the ugly pattern, just render the children as a normal paragraph/div
-  return <div dangerouslySetInnerHTML={{ __html: content }} />;
-};
-
-// ------------------------------------------------------------------
-// END: Custom Component
-// ------------------------------------------------------------------
-
-
 export const BlogPostPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -243,25 +184,16 @@ export const BlogPostPage: React.FC = () => {
                 {post.excerpt}
               </p>
               
-              {/* === START: UPDATED CONTENT RENDERING with CUSTOM RENDERER === */}
+              {/* === START: UPDATED CONTENT RENDERING === */}
               <div className="font-serif text-gray-800 dark:text-gray-200">
                 <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                    // Override H2 rendering to use the custom component
-                    components={{
-                        // This applies the custom rendering logic to any raw HTML block that might contain the H2 structure
-                        html: ({ node, ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
-                        // This ensures standard Markdown H2 tags are also well-styled
-                        h2: ({ node, ...props }) => (
-                          <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white mt-10 mb-4" {...props} />
-                        ),
-                    }}
+                    rehypePlugins={[rehypeRaw]} // This enables HTML rendering within Markdown
                 >
                     {post.content}
                 </ReactMarkdown>
               </div>
-              {/* === END: UPDATED CONTENT RENDERING with CUSTOM RENDERER === */}
+              {/* === END: UPDATED CONTENT RENDERING === */}
             </div>
 
             {/* Author Bio Box */}
