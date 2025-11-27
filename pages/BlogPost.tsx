@@ -5,11 +5,76 @@ import { BlogPost, Comment } from '../types';
 import { Calendar, Clock, Share2, MessageSquare, Heart, Loader2, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const { useParams, Link } = ReactRouterDOM;
+// NEW IMPORTS for Markdown Rendering
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw'; // <-- Enables HTML rendering
+
+const { useParams, Link, useLocation } = ReactRouterDOM;
+
+// ------------------------------------------------------------------
+// ⭐ NEW: Custom Component to handle ugly HTML Headings
+// ------------------------------------------------------------------
+
+interface HtmlRendererProps {
+  children: React.ReactNode;
+}
+
+// Function to clean up and render messy heading HTML
+const HtmlRenderer: React.FC<HtmlRendererProps> = ({ children }) => {
+  // Convert children to a string to analyze the raw HTML/Markdown content
+  const content = React.Children.toArray(children).join('');
+
+  // Regex to detect the old, messy <h2>...<div class="separator"... structure
+  // This looks for an H2 tag followed immediately by the separator div containing an image.
+  const uglyHtmlPattern = /<h2[^>]*>(.*?)<\/h2>\s*<div\s+class="separator"\s+style="clear:\s*both;\s*text-align:\s*center;"><img\s+alt="(.*?)"\s+data-original-height="(\d+)"\s+data-original-width="(\d+)"\s+src="(.*?)"[^>]*><\/div>/si;
+  
+  const match = content.match(uglyHtmlPattern);
+
+  if (match) {
+    // Group 1: H2 text content (e.g., "Honor X9b Price in Nepal")
+    const h2Text = match[1].trim(); 
+    // Group 2: Image alt text
+    const altText = match[2].trim();
+    // Group 5: Image src URL
+    const imgSrc = match[5].trim();
+    
+    // Render the attractive, cleaned-up JSX
+    return (
+      <div className="my-10 border-b border-gray-200 dark:border-gray-700 pb-4">
+        {/* Clean, attractive heading (using h3 here so it doesn't conflict with article's main H1) */}
+        <h3 
+          className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white text-center mb-6 leading-snug"
+          id={h2Text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}
+        >
+          {h2Text}
+        </h3>
+        {/* Clean, styled image container */}
+        <div className="text-center">
+          <img 
+            src={imgSrc} 
+            alt={altText} 
+            className="max-w-full h-auto rounded-xl shadow-xl mx-auto transition-transform duration-300 hover:scale-[1.01] border border-gray-100 dark:border-gray-800" 
+            loading="lazy"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // If it's not the ugly pattern, just render the children as a normal paragraph/div
+  return <div dangerouslySetInnerHTML={{ __html: content }} />;
+};
+
+// ------------------------------------------------------------------
+// END: Custom Component
+// ------------------------------------------------------------------
+
 
 export const BlogPostPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const location = useLocation(); // Used for redirection state
   const [post, setPost] = useState<BlogPost | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -41,7 +106,8 @@ export const BlogPostPage: React.FC = () => {
 
         // Fetch other posts for related
         const all = await getPosts();
-        setRelatedPosts(all.filter(x => x.id !== id).slice(0, 2));
+        // Filter out the current post and only show published ones
+        setRelatedPosts(all.filter(x => x.id !== id && x.status === 'published').slice(0, 2));
       }
       setLoading(false);
     };
@@ -79,8 +145,11 @@ export const BlogPostPage: React.FC = () => {
       createdAt: new Date().toISOString()
     };
 
-    await addComment(commentData);
-    setComments([ { ...commentData, id: 'temp-' + Date.now() }, ...comments]);
+    // Assuming addComment returns the full saved comment object, including the generated ID
+    const savedComment = await addComment(commentData);
+    
+    // Use the savedComment if available, otherwise fallback to temp data
+    setComments([ savedComment || { ...commentData, id: 'temp-' + Date.now() }, ...comments]);
     setNewComment('');
   };
 
@@ -88,11 +157,12 @@ export const BlogPostPage: React.FC = () => {
     return <div className="min-h-screen flex items-center justify-center dark:text-white"><Loader2 className="animate-spin mr-2"/> Loading...</div>;
   }
 
-  if (!post) {
-    return <div className="min-h-screen flex items-center justify-center dark:text-white">Post not found</div>;
+  // NOTE: You should ideally only allow access to 'published' posts for non-admins/non-authors here
+  if (!post || (post.status !== 'published' && user?.id !== post.author.id && user?.role !== 'admin')) {
+    return <div className="min-h-screen flex items-center justify-center dark:text-white">Post not found or access denied.</div>;
   }
 
-  // Simulated TOC generation for demo
+  // Simulated TOC generation for demo (This part still needs to be replaced with actual content parsing for production)
   const toc = [
     { id: 'introduction', title: 'Introduction' },
     { id: 'main-points', title: 'Main Concepts' },
@@ -173,9 +243,25 @@ export const BlogPostPage: React.FC = () => {
                 {post.excerpt}
               </p>
               
-              <div className="whitespace-pre-wrap font-serif text-gray-800 dark:text-gray-200">
-                {post.content}
+              {/* === START: UPDATED CONTENT RENDERING with CUSTOM RENDERER === */}
+              <div className="font-serif text-gray-800 dark:text-gray-200">
+                <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw]}
+                    // Override H2 rendering to use the custom component
+                    components={{
+                        // This applies the custom rendering logic to any raw HTML block that might contain the H2 structure
+                        html: ({ node, ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
+                        // This ensures standard Markdown H2 tags are also well-styled
+                        h2: ({ node, ...props }) => (
+                          <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white mt-10 mb-4" {...props} />
+                        ),
+                    }}
+                >
+                    {post.content}
+                </ReactMarkdown>
               </div>
+              {/* === END: UPDATED CONTENT RENDERING with CUSTOM RENDERER === */}
             </div>
 
             {/* Author Bio Box */}

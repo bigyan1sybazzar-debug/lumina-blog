@@ -8,6 +8,11 @@ import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { BlogPost, User, Category } from '../types';
 
+// New Imports for Markdown Rendering with HTML Support
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw'; // <-- Enables HTML rendering
+
 export const Admin: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'users' | 'categories' | 'approvals'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -303,21 +308,21 @@ export const Admin: React.FC = () => {
           {activeTab === 'dashboard' && (
             <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                 <div>
+                  <div>
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Hello, {user?.name}</h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">
                       {isAdmin ? "Here's what's happening across the platform." : "Manage your stories and create something new."}
                     </p>
-                 </div>
-                 <div className="flex gap-2">
-                   <button 
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
                       onClick={() => goToEditor('manual')}
                       className="flex items-center justify-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm active:scale-95 transform duration-100"
-                   >
+                    >
                       <Plus size={16} />
                       <span>Write New Story</span>
-                   </button>
-                   {isAdmin && (
+                    </button>
+                    {isAdmin && (
                     <button 
                         onClick={async () => { if(confirm("Seed DB?")) await seedDatabase(); refreshData(); }}
                         className="flex items-center justify-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
@@ -325,8 +330,8 @@ export const Admin: React.FC = () => {
                         <Database size={16} />
                         <span className="hidden sm:inline">Seed Data</span>
                     </button>
-                   )}
-                 </div>
+                    )}
+                  </div>
               </div>
 
               {/* Admin Stats Grid */}
@@ -457,7 +462,7 @@ export const Admin: React.FC = () => {
 
           {/* USERS TAB (Admin) */}
           {activeTab === 'users' && isAdmin && (
-             <div className="max-w-6xl mx-auto space-y-6">
+              <div className="max-w-6xl mx-auto space-y-6">
                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -502,9 +507,9 @@ export const Admin: React.FC = () => {
                         </tr>
                       ))}
                     </tbody>
-                 </table>
+                  </table>
                </div>
-             </div>
+              </div>
           )}
 
           {/* CATEGORIES TAB (Admin) */}
@@ -566,7 +571,7 @@ export const Admin: React.FC = () => {
                 
                 <div className="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-lg self-start sm:self-auto">
                   <button
-                    onClick={() => setEditorMode('manual')}
+                    onClick={() => {setEditorMode('manual'); setStep(3)}} // Go straight to manual editing stage
                     className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
                       editorMode === 'manual' 
                         ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white' 
@@ -576,7 +581,7 @@ export const Admin: React.FC = () => {
                     Manual
                   </button>
                   <button
-                    onClick={() => setEditorMode('ai')}
+                    onClick={() => {setEditorMode('ai'); setStep(1)}} // Reset AI flow to step 1
                     className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
                       editorMode === 'ai' 
                         ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white' 
@@ -595,8 +600,9 @@ export const Admin: React.FC = () => {
                   <>
                     {/* Step 1: Topic */}
                     <div className={`space-y-4 ${step !== 1 ? 'hidden' : ''}`}>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">What should we write about?</h2>
                       <label className="block text-base font-medium text-gray-700 dark:text-gray-200">
-                        What's on your mind?
+                        Enter a topic or prompt:
                       </label>
                       <div className="flex flex-col md:flex-row gap-3">
                         <input 
@@ -609,151 +615,207 @@ export const Admin: React.FC = () => {
                         <button 
                           onClick={handleGenerateOutline}
                           disabled={isGenerating || !topic}
-                          className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
+                          className="btn-primary flex items-center justify-center min-w-[150px]"
                         >
-                          {isGenerating ? <Loader2 className="animate-spin" size={18} /> : 'Generate Outline'}
+                            {isGenerating ? <Loader2 size={20} className="animate-spin mr-2" /> : <Wand2 size={20} className="mr-2" />}
+                            {isGenerating ? 'Generating...' : 'Generate Outline'}
                         </button>
                       </div>
                     </div>
-
+                    
                     {/* Step 2: Outline */}
-                    <div className={`space-y-4 ${step !== 2 ? 'hidden' : ''}`}>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Review Generated Outline</h3>
-                      <textarea 
-                        value={outline}
-                        onChange={(e) => setOutline(e.target.value)}
-                        className="w-full h-80 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-primary-500 outline-none resize-none"
-                      />
-                      <div className="flex justify-between pt-2">
-                        <button onClick={() => setStep(1)} className="btn-secondary">Back</button>
+                    <div className={`space-y-6 ${step !== 2 ? 'hidden' : ''}`}>
+                        <button onClick={() => setStep(1)} className="text-sm flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600">
+                          <ArrowLeft size={16} className="mr-1" /> Back to Topic
+                        </button>
+                        
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Outline & Title</h2>
+                        
+                        <input 
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Post Title"
+                            className="input-field text-xl font-bold"
+                        />
+                        
+                        <textarea
+                            value={outline}
+                            onChange={(e) => setOutline(e.target.value)}
+                            placeholder="Edit the generated outline here..."
+                            className="input-field min-h-[300px] font-mono text-sm"
+                        />
+                        
                         <button 
                           onClick={handleGenerateFull}
-                          disabled={isGenerating}
-                          className="btn-primary flex items-center gap-2"
+                          disabled={isGenerating || !outline}
+                          className="btn-primary w-full flex items-center justify-center"
                         >
-                          {isGenerating ? <Loader2 className="animate-spin" size={18} /> : 'Generate Full Post'}
+                            {isGenerating ? <Loader2 size={20} className="animate-spin mr-2" /> : <Sparkles size={20} className="mr-2" />}
+                            {isGenerating ? 'Generating Full Post...' : 'Generate Full Post from Outline'}
                         </button>
+                    </div>
+
+                    {/* Step 3: Final Review (AI) */}
+                    <div className={`space-y-6 ${step !== 3 ? 'hidden' : ''}`}>
+                      <button onClick={() => setStep(2)} className="text-sm flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600">
+                        <ArrowLeft size={16} className="mr-1" /> Back to Outline
+                      </button>
+                      
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Final Review</h2>
+                      <p className="text-gray-500 dark:text-gray-400">Review and refine the AI-generated content before saving.</p>
+
+                      <input 
+                          type="text"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="Post Title"
+                          className="input-field text-xl font-bold"
+                      />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <select 
+                              value={category}
+                              onChange={(e) => setCategory(e.target.value)}
+                              className="input-field"
+                          >
+                              {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                          </select>
+                          <input 
+                              type="text"
+                              value={tagsInput}
+                              onChange={(e) => setTagsInput(e.target.value)}
+                              placeholder="Tags (comma-separated, e.g. react, webdev)"
+                              className="input-field"
+                          />
                       </div>
+                      
+                      <div className="flex items-center gap-2">
+                          <input 
+                              type="text"
+                              value={coverImage}
+                              onChange={(e) => setCoverImage(e.target.value)}
+                              placeholder="Cover Image URL (e.g. https://picsum.photos/800/400)"
+                              className="input-field flex-1"
+                          />
+                          <button onClick={setRandomImage} className="btn-secondary flex-shrink-0">
+                            <RefreshCw size={16} className="mr-2" /> Random
+                          </button>
+                      </div>
+
+                      <label htmlFor="content" className="block text-base font-medium text-gray-700 dark:text-gray-200 mt-6">
+                          Post Content (Markdown)
+                      </label>
+                      <textarea
+                          id="content"
+                          value={fullContent}
+                          onChange={(e) => setFullContent(e.target.value)}
+                          className="input-field min-h-[300px] font-mono text-sm"
+                          placeholder="Your fully generated blog post content in Markdown..."
+                      />
+                      
+                      {/* Content Preview with HTML Enabled */}
+                      <div className="border border-gray-200 dark:border-gray-700 p-6 rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+                          <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Live Preview:</h3>
+                          <div className="prose dark:prose-invert max-w-none">
+                              <ReactMarkdown 
+                                  remarkPlugins={[remarkGfm]}
+                                  rehypePlugins={[rehypeRaw]} // <-- HTML enabled here!
+                              >
+                                  {fullContent}
+                              </ReactMarkdown>
+                          </div>
+                      </div>
+
+                      <button 
+                          onClick={handleSavePost}
+                          disabled={isSaving || !title || !fullContent}
+                          className="btn-primary w-full flex items-center justify-center mt-6"
+                      >
+                          {isSaving ? <Loader2 size={20} className="animate-spin mr-2" /> : <Save size={20} className="mr-2" />}
+                          {isSaving ? 'Saving...' : isAdmin ? 'Publish Post' : 'Submit for Review'}
+                      </button>
                     </div>
                   </>
                 )}
 
-                {/* === MANUAL / FINAL EDIT FLOW === */}
-                {(editorMode === 'manual' || (editorMode === 'ai' && step === 3)) && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                {/* === MANUAL FLOW === */}
+                {editorMode === 'manual' && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Post</h2>
+                    <input 
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Post Title"
+                        className="input-field text-xl font-bold"
+                    />
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
-                        <input 
-                          type="text" 
-                          value={title}
-                          onChange={(e) => setTitle(e.target.value)}
-                          className="input-field font-bold text-lg"
-                          placeholder="Enter an engaging title"
-                        />
-                      </div>
-                      <div className="space-y-2">
-  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-    Category
-  </label>
-  <select
-    value={category}
-    onChange={(e) => setCategory(e.target.value)}
-    className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none cursor-pointer"
-  >
-    {/* PRIORITY 1: Show real categories from Firestore (the ones you create) */}
-    {categories.length > 0 ? (
-      categories.map((cat) => (
-        <option key={cat.id} value={cat.name}>
-          {cat.name}
-        </option>
-      ))
-    ) : (
-      /* PRIORITY 2: Only show these if NO categories exist in DB yet */
-      <>
-        <option value="Technology">Technology</option>
-        <option value="Design">Design</option>
-        <option value="Lifestyle">Lifestyle</option>
-        <option value="Business">Business</option>
-      </>
-    )}
-  </select>
-</div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                        <ImageIcon size={16}/> Cover Image URL
-                      </label>
-                      <div className="flex gap-2">
-                        <input 
-                          type="text" 
-                          value={coverImage}
-                          onChange={(e) => setCoverImage(e.target.value)}
-                          className="input-field text-sm font-mono flex-1"
-                          placeholder="https://..."
-                        />
-                        <button 
-                          onClick={setRandomImage}
-                          className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                          title="Generate Random Image"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <select 
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            className="input-field"
                         >
-                          <RefreshCw size={18} />
-                        </button>
-                      </div>
-                      {coverImage && (
-                        <div className="mt-2 w-full h-32 md:h-48 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-                           <img src={coverImage} alt="Preview" className="w-full h-full object-cover opacity-80" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                        </div>
-                      )}
+                            {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                        </select>
+                        <input 
+                            type="text"
+                            value={tagsInput}
+                            onChange={(e) => setTagsInput(e.target.value)}
+                            placeholder="Tags (comma-separated, e.g. react, webdev)"
+                            className="input-field"
+                        />
                     </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex justify-between">
-                        <span>Content (Markdown Supported)</span>
-                        <span className="text-xs text-gray-400">Use # for headers, ** for bold</span>
-                      </label>
-                      <textarea 
+                    
+                    <div className="flex items-center gap-2">
+                        <input 
+                            type="text"
+                            value={coverImage}
+                            onChange={(e) => setCoverImage(e.target.value)}
+                            placeholder="Cover Image URL (e.g. https://picsum.photos/800/400)"
+                            className="input-field flex-1"
+                        />
+                        <button onClick={setRandomImage} className="btn-secondary flex-shrink-0">
+                            <RefreshCw size={16} className="mr-2" /> Random
+                        </button>
+                    </div>
+                    
+                    <label htmlFor="content-manual" className="block text-base font-medium text-gray-700 dark:text-gray-200 mt-6">
+                        Post Content (Markdown & HTML)
+                    </label>
+                    <textarea
+                        id="content-manual"
                         value={fullContent}
                         onChange={(e) => setFullContent(e.target.value)}
-                        className="w-full h-[500px] p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 dark:text-white font-serif text-base focus:ring-2 focus:ring-primary-500 outline-none leading-relaxed resize-y"
-                        placeholder="# Your Headline Here&#10;&#10;Start writing your story..."
-                      />
+                        className="input-field min-h-[300px] font-mono text-sm"
+                        placeholder="Start writing your post using Markdown (and optional HTML tags)..."
+                    />
+                    
+                    {/* Content Preview with HTML Enabled */}
+                    <div className="border border-gray-200 dark:border-gray-700 p-6 rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+                        <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Live Preview:</h3>
+                        <div className="prose dark:prose-invert max-w-none">
+                            <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeRaw]} // <-- HTML enabled here!
+                            >
+                                {fullContent}
+                            </ReactMarkdown>
+                        </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tags (comma separated)</label>
-                      <input 
-                        type="text" 
-                        value={tagsInput}
-                        onChange={(e) => setTagsInput(e.target.value)}
-                        className="input-field"
-                        placeholder="React, CSS, WebDev"
-                      />
-                    </div>
-
-                    <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-                      {editorMode === 'ai' ? (
-                        <button onClick={() => setStep(2)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-2">
-                          <ArrowLeft size={16} /> Back to Outline
-                        </button>
-                      ) : (
-                         <span className="hidden md:block"></span>
-                      )}
-                      
-                      <div className="flex flex-col w-full md:w-auto md:flex-row gap-3">
-                        <button 
-                          onClick={handleSavePost}
-                          disabled={isSaving}
-                          className="btn-primary bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          {isSaving ? <Loader2 className="animate-spin" size={18}/> : (isAdmin ? 'Publish Live' : 'Submit for Review')}
-                        </button>
-                      </div>
-                    </div>
+                    <button 
+                        onClick={handleSavePost}
+                        disabled={isSaving || !title || !fullContent}
+                        className="btn-primary w-full flex items-center justify-center mt-6"
+                    >
+                        {isSaving ? <Loader2 size={20} className="animate-spin mr-2" /> : <Save size={20} className="mr-2" />}
+                        {isSaving ? 'Saving...' : isAdmin ? 'Publish Post' : 'Submit for Review'}
+                    </button>
                   </div>
                 )}
+                
               </div>
             </div>
           )}
