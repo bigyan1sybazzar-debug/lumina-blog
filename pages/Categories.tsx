@@ -181,7 +181,7 @@ export const Categories: React.FC = () => {
                         {getIcon(cat.icon || 'Hash')}
                       </div>
                       <span>{cat.name}</span>
-                      {cat.count !== undefined && <span className="text-xs opacity-80">({cat.count})</span>}
+                      {cat.count !== undefined}
                     </button>
                   );
                 })}
