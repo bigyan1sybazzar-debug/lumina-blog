@@ -51,9 +51,7 @@ export const Categories: React.FC = () => {
       setDisplayedPosts(allPosts);
     } else {
       const filtered = allPosts.filter(post =>
-        post.category === selectedCategory.name ||
-        post.categoryId === selectedCategory.id ||
-        post.category === selectedCategory.slug
+        post.category === selectedCategory.name 
       );
       setDisplayedPosts(filtered);
     }

@@ -199,7 +199,7 @@ export const Admin: React.FC = () => {
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
           <Link to="/" className="flex items-center space-x-2">
             <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">
-              Lumina
+              Bigyann
             </span>
             <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-500 uppercase">{user?.role}</span>
           </Link>
