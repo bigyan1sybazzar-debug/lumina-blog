@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 // === START: API Key Inserted by User Request ===
-const API_KEY = "AIzaSyCcgOnIG_bdXnWZxar0hOWWk9aaaaF4a2M";
+const API_KEY = "AIzaSyDuWrlh7Nt6luOE2kDAFTI6rFljqTEM0Pk";
 // === END: API Key Inserted by User Request ===
 
 /**
