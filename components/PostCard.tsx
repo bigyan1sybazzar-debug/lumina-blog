@@ -95,10 +95,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant 
           </h3>
         </Link>
         
-        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-6 flex-1">
-          {post.excerpt}
-        </p>
-
+       
         <div className="flex items-center justify-between mt-auto">
           <div className="flex items-center space-x-2">
             <img src={post.author.avatar} alt={post.author.name} className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700" />

@@ -8,10 +8,10 @@ import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { BlogPost, User, Category } from '../types';
 
-// New Imports for Markdown Rendering with HTML Support
+// Markdown with HTML support
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw'; // <-- Enables HTML rendering
+import rehypeRaw from 'rehype-raw';
 
 export const Admin: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'users' | 'categories' | 'approvals'>('dashboard');
@@ -33,13 +33,13 @@ export const Admin: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [outline, setOutline] = useState('');
   
-  // Post Data State
+  // Post Data State - FIXED: category now starts empty
   const [title, setTitle] = useState('');
   const [fullContent, setFullContent] = useState('');
-  const [category, setCategory] = useState('Technology');
+  const [category, setCategory] = useState(''); // ← NOW EMPTY (was 'Technology')
   const [tagsInput, setTagsInput] = useState('');
   const [coverImage, setCoverImage] = useState('https://picsum.photos/800/400?random=1');
-  const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Topic, 2: Outline, 3: Final
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Category creation
   const [newCatName, setNewCatName] = useState('');
@@ -49,9 +49,9 @@ export const Admin: React.FC = () => {
   const isAdmin = user?.role === 'admin';
   const isModerator = user?.role === 'moderator' || isAdmin;
 
+  // FIXED: Set default category only after categories are loaded
   const refreshData = async () => {
     if (isAdmin) {
-      // Admin specific data
       const allPosts = await getPosts();
       const totalViews = allPosts.reduce((acc, curr) => acc + (curr.views || 0), 0);
       setStats({ posts: allPosts.length, views: totalViews });
@@ -63,7 +63,6 @@ export const Admin: React.FC = () => {
       setUsersList(allUsers);
     }
 
-    // User specific data
     if (user) {
       const mine = await getUserPosts(user.id);
       setMyPosts(mine);
@@ -71,6 +70,11 @@ export const Admin: React.FC = () => {
     
     const cats = await getCategories();
     setCategories(cats);
+
+    // Auto-select first category only if none selected yet
+    if (cats.length > 0 && !category) {
+      setCategory(cats[0].name);
+    }
   };
 
   useEffect(() => {
@@ -82,7 +86,6 @@ export const Admin: React.FC = () => {
     setIsGenerating(true);
     const result = await generateBlogOutline(topic);
     setOutline(result);
-    // Rough extraction of a title
     const lines = result.split('\n');
     const possibleTitle = lines.find(l => l.startsWith('#'))?.replace('#', '').trim() || `Post about ${topic}`;
     setTitle(possibleTitle);
@@ -99,8 +102,8 @@ export const Admin: React.FC = () => {
   };
 
   const handleSavePost = async () => {
-    if (!title || !fullContent || !user) {
-      alert("Please fill in the Title and Content fields.");
+    if (!title || !fullContent || !user || !category) {
+      alert("Please fill in Title, Content, and select a Category.");
       return;
     }
     setIsSaving(true);
@@ -108,31 +111,30 @@ export const Admin: React.FC = () => {
       const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0);
       if (editorMode === 'ai' && tags.length === 0) tags.push('AI Generated');
 
-      // Regular users post as pending, Admin as published
       const status = isAdmin ? 'published' : 'pending';
 
       await createPost({
-        title: title,
+        title,
         content: fullContent,
         excerpt: fullContent.substring(0, 150).replace(/[#*`]/g, '') + "...",
         author: { name: user.name, avatar: user.avatar, id: user.id },
         readTime: `${Math.ceil(fullContent.split(' ').length / 200)} min read`,
-        category: category, 
-        tags: tags,
-        coverImage: coverImage,
+        category,
+        tags,
+        coverImage,
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        status: status
+        status
       });
       
       alert(isAdmin ? 'Post published successfully!' : 'Post submitted for approval!');
       
       // Reset form
-      setStep(1); setTopic(''); setTitle(''); setOutline(''); setFullContent(''); setTagsInput('');
+      setStep(1); setTopic(''); setTitle(''); setOutline(''); setFullContent(''); setTagsInput(''); setCategory('');
       setEditorMode('manual'); 
       setActiveTab('dashboard');
       refreshData();
     } catch (e) {
-      alert('Failed to save post. Check console for details.');
+      alert('Failed to save post. Check console.');
       console.error(e);
     }
     setIsSaving(false);
@@ -149,9 +151,9 @@ export const Admin: React.FC = () => {
   };
 
   const handleCreateCategory = async () => {
-    if(!newCatName) return;
+    if (!newCatName) return;
     await createCategory({ name: newCatName, description: newCatDesc, icon: newCatIcon });
-    setNewCatName(''); setNewCatDesc('');
+    setNewCatName(''); setNewCatDesc(''); setNewCatIcon('Hash');
     refreshData();
   };
 
@@ -162,17 +164,30 @@ export const Admin: React.FC = () => {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const setRandomImage = () => setCoverImage(`https://picsum.photos/800/400?random=${Math.floor(Math.random() * 1000)}`);
-  const goToEditor = (mode: 'manual' | 'ai') => { setEditorMode(mode); setActiveTab('editor'); setIsSidebarOpen(false); };
+
+  // FIXED: Reset category properly when switching modes
+  const goToEditor = (mode: 'manual' | 'ai') => { 
+    setEditorMode(mode); 
+    setActiveTab('editor'); 
+    setIsSidebarOpen(false);
+    
+    // Reset form
+    setTitle(''); setFullContent(''); setTagsInput(''); setTopic(''); setOutline('');
+    setCoverImage(`https://picsum.photos/800/400?random=${Date.now()}`);
+    setStep(mode === 'ai' ? 1 : 3);
+    
+    // Set default category safely
+    if (categories.length > 0) {
+      setCategory(categories[0].name);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        ></div>
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)}></div>
       )}
 
       {/* Sidebar Navigation */}
@@ -197,64 +212,49 @@ export const Admin: React.FC = () => {
           <div className="mb-8">
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4 px-4">Menu</h2>
             <nav className="space-y-1">
-              <button
-                onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}
+              <button onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}
                 className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                   activeTab === 'dashboard' 
                     ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
-              >
-                <LayoutDashboard size={18} className="mr-3" />
-                Dashboard
+                }`}>
+                <LayoutDashboard size={18} className="mr-3" /> Dashboard
               </button>
               
-              <button
-                onClick={() => goToEditor('manual')}
+              <button onClick={() => goToEditor('manual')}
                 className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                   activeTab === 'editor' 
                     ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
-              >
-                <PenTool size={18} className="mr-3" />
-                Write Post
+                }`}>
+                <PenTool size={18} className="mr-3" /> Write Post
               </button>
 
               {isAdmin && (
                 <>
-                  <button
-                    onClick={() => { setActiveTab('approvals'); setIsSidebarOpen(false); }}
+                  <button onClick={() => { setActiveTab('approvals'); setIsSidebarOpen(false); }}
                     className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                       activeTab === 'approvals' 
                         ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <CheckCircle size={18} className="mr-3" />
-                    Pending ({pendingPosts.length})
+                    }`}>
+                    <CheckCircle size={18} className="mr-3" /> Pending ({pendingPosts.length})
                   </button>
-                  <button
-                    onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }}
+                  <button onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }}
                     className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                       activeTab === 'users' 
                         ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <Users size={18} className="mr-3" />
-                    Users
+                    }`}>
+                    <Users size={18} className="mr-3" /> Users
                   </button>
-                  <button
-                    onClick={() => { setActiveTab('categories'); setIsSidebarOpen(false); }}
+                  <button onClick={() => { setActiveTab('categories'); setIsSidebarOpen(false); }}
                     className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                       activeTab === 'categories' 
                         ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <Tag size={18} className="mr-3" />
-                    Categories
+                    }`}>
+                    <Tag size={18} className="mr-3" /> Categories
                   </button>
                 </>
               )}
@@ -272,8 +272,7 @@ export const Admin: React.FC = () => {
           </div>
           <div className="space-y-1">
             <Link to="/" className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-              <Home size={16} className="mr-3" />
-              Back to Site
+              <Home size={16} className="mr-3" /> Back to Site
             </Link>
             <button 
               onClick={handleLogout}
