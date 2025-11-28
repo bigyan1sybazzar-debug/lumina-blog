@@ -7,7 +7,7 @@ import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
 import { BlogPostPage } from './pages/BlogPost';
 import { Categories } from './pages/Categories';
-import { CategoryPage } from './pages/CategoryPage';
+
 import { Admin } from './pages/Admin';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
