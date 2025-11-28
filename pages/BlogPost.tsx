@@ -124,8 +124,7 @@ export const BlogPostPage: React.FC = () => {
     setLikeCount(prev => newStatus ? prev + 1 : prev - 1);
   };
 
-  // ✅ FIX: Changed to async and added try/catch to correctly await the Promise<void>
-  // This resolves the TS1345 error.
+  // ✅ FIX: This section MUST be correct to resolve TS1345.
   const handleShare = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
