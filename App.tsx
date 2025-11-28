@@ -1,5 +1,5 @@
 import React, { Children } from 'react';
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { Header } from './components/Header';
@@ -35,7 +35,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <HashRouter>
+        <BrowserRouter >
           <Layout>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -57,7 +57,7 @@ export default function App() {
               />
             </Routes>
           </Layout>
-        </HashRouter>
+        </BrowserRouter >
       </ThemeProvider>
     </AuthProvider>
   );
