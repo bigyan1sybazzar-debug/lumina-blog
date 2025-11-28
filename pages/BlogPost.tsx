@@ -138,21 +138,22 @@ export const BlogPostPage: React.FC = () => {
 
   const handleSubmitComment = async () => {
     if (!user || !id || !newComment.trim()) return;
-
+  
     const commentData = {
       postId: id,
       userId: user.id,
       userName: user.name,
       userAvatar: user.avatar,
-      content: newComment,
-      createdAt: new Date().toISOString()
+      content: newComment.trim(),
+      createdAt: new Date().toISOString(),
     };
-
-    // Assuming addComment returns the full saved comment object, including the generated ID
-    const savedComment = await addComment(commentData);
-    
-    // Use the savedComment if available, otherwise fallback to temp data
-    setComments([ savedComment || { ...commentData, id: 'temp-' + Date.now() }, ...comments]);
+  
+    await addComment(commentData);
+  
+    setComments([
+      { ...commentData, id: `temp-${Date.now()}` } as Comment,
+      ...comments
+    ]);
     setNewComment('');
   };
 
