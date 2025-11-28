@@ -124,9 +124,15 @@ export const BlogPostPage: React.FC = () => {
     setLikeCount(prev => newStatus ? prev + 1 : prev - 1);
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert("Link copied to clipboard!");
+  // 🐛 FIX: Changed to async and added try/catch to correctly handle the Promise<void>
+  const handleShare = async () => {
+    try {
+        await navigator.clipboard.writeText(window.location.href);
+        alert("Link copied to clipboard! ✅");
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+        alert("Failed to copy link. Please copy manually.");
+    }
   };
 
   const scrollToComments = () => {
@@ -250,12 +256,12 @@ export const BlogPostPage: React.FC = () => {
                     rehypePlugins={[rehypeRaw]}
                     // Override H2 rendering to use the custom component
                     components={{
-                        // This applies the custom rendering logic to any raw HTML block that might contain the H2 structure
-                        html: ({ node, ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
-                        // This ensures standard Markdown H2 tags are also well-styled
-                        h2: ({ node, ...props }) => (
-                          <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white mt-10 mb-4" {...props} />
-                        ),
+                      // This applies the custom rendering logic to any raw HTML block that might contain the H2 structure
+                      html: ({ node, ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
+                      // This ensures standard Markdown H2 tags are also well-styled
+                      h2: ({ node, ...props }) => (
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white mt-10 mb-4" {...props} />
+                      ),
                     }}
                 >
                     {post.content}
