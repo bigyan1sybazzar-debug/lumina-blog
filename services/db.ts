@@ -1,12 +1,14 @@
 import firebase from 'firebase/compat/app';
 import { db } from './firebase';
-import { BlogPost, Category, User, Comment } from '../types';
+import { BlogPost, Category, User, Comment, Review } from '../types';
 import { MOCK_POSTS, CATEGORIES } from '../constants';
 
 const POSTS_COLLECTION = 'posts';
 const USERS_COLLECTION = 'users';
 const CATEGORIES_COLLECTION = 'categories';
 const COMMENTS_COLLECTION = 'comments';
+// ⭐ NEW COLLECTION CONSTANT
+const REVIEWS_COLLECTION = 'reviews';
 
 // Helper for client-side sorting to avoid Firestore Index errors
 const sortByDateDesc = (a: any, b: any) => {
@@ -45,7 +47,7 @@ export const getPendingPosts = async (): Promise<BlogPost[]> => {
     const querySnapshot = await db.collection(POSTS_COLLECTION)
       .where('status', '==', 'pending')
       .get();
-      
+    
     const posts = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -221,6 +223,42 @@ export const getCommentsByPostId = async (postId: string): Promise<Comment[]> =>
 
 export const addComment = async (comment: Omit<Comment, 'id'>) => {
   await db.collection(COMMENTS_COLLECTION).add(comment);
+};
+
+// --- REVIEWS (NEW) ---
+
+/**
+ * Fetches all reviews for a specific blog post ID, sorted by creation date.
+ */
+export const getReviewsByPostId = async (postId: string): Promise<Review[]> => {
+  try {
+    const snapshot = await db.collection(REVIEWS_COLLECTION)
+      .where('postId', '==', postId)
+      .get();
+      
+    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
+    
+    // Sort reviews by date, newest first (client-side sorting)
+    return reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error) {
+    console.error("Error getting reviews", error);
+    return [];
+  }
+};
+
+/**
+ * Adds a new review to the database.
+ */
+export const addReview = async (review: Omit<Review, 'id'>) => {
+  try {
+    await db.collection(REVIEWS_COLLECTION).add({
+      ...review,
+      createdAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Error adding review: ", error);
+    throw error;
+  }
 };
 
 // --- UTILS ---

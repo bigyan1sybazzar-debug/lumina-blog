@@ -5,6 +5,9 @@ import { BlogPost, Comment } from '../types';
 import { Calendar, Clock, Share2, MessageSquare, Heart, Loader2, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+// ⭐ NEW IMPORT: Review Section Component
+import ReviewSection from '../components/ReviewSection'; 
+
 // NEW IMPORTS for Markdown Rendering
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -13,7 +16,7 @@ import rehypeRaw from 'rehype-raw'; // <-- Enables HTML rendering
 const { useParams, Link, useLocation } = ReactRouterDOM;
 
 // ------------------------------------------------------------------
-// ⭐ NEW: Custom Component to handle ugly HTML Headings
+// ⭐ Custom Component to handle ugly HTML Headings (Unchanged)
 // ------------------------------------------------------------------
 
 interface HtmlRendererProps {
@@ -22,34 +25,24 @@ interface HtmlRendererProps {
 
 // Function to clean up and render messy heading HTML
 const HtmlRenderer: React.FC<HtmlRendererProps> = ({ children }) => {
-  // Convert children to a string to analyze the raw HTML/Markdown content
   const content = React.Children.toArray(children).join('');
-
-  // Regex to detect the old, messy <h2>...<div class="separator"... structure
-  // This looks for an H2 tag followed immediately by the separator div containing an image.
   const uglyHtmlPattern = /<h2[^>]*>(.*?)<\/h2>\s*<div\s+class="separator"\s+style="clear:\s*both;\s*text-align:\s*center;"><img\s+alt="(.*?)"\s+data-original-height="(\d+)"\s+data-original-width="(\d+)"\s+src="(.*?)"[^>]*><\/div>/si;
   
   const match = content.match(uglyHtmlPattern);
 
   if (match) {
-    // Group 1: H2 text content (e.g., "Honor X9b Price in Nepal")
     const h2Text = match[1].trim(); 
-    // Group 2: Image alt text
     const altText = match[2].trim();
-    // Group 5: Image src URL
     const imgSrc = match[5].trim();
     
-    // Render the attractive, cleaned-up JSX
     return (
       <div className="my-10 border-b border-gray-200 dark:border-gray-700 pb-4">
-        {/* Clean, attractive heading (using h3 here so it doesn't conflict with article's main H1) */}
         <h3 
           className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white text-center mb-6 leading-snug"
           id={h2Text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}
         >
           {h2Text}
         </h3>
-        {/* Clean, styled image container */}
         <div className="text-center">
           <img 
             src={imgSrc} 
@@ -62,7 +55,6 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({ children }) => {
     );
   }
 
-  // If it's not the ugly pattern, just render the children as a normal paragraph/div
   return <div dangerouslySetInnerHTML={{ __html: content }} />;
 };
 
@@ -124,9 +116,6 @@ export const BlogPostPage: React.FC = () => {
     setLikeCount(prev => newStatus ? prev + 1 : prev - 1);
   };
 
-  // ✅ FIX: Minimal async/await implementation for handleShare
-  // This ensures the asynchronous operation is handled correctly without 
-  // relying on synchronous truthiness evaluation.
   const handleShare = async () => {
     await navigator.clipboard.writeText(window.location.href);
     alert("Link copied to clipboard! ✅");
@@ -135,6 +124,12 @@ export const BlogPostPage: React.FC = () => {
   const scrollToComments = () => {
     document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' });
   };
+  
+  // NOTE: You might want to update this function to scroll to the reviews section too.
+  const scrollToReviews = () => {
+    document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
 
   const handleSubmitComment = async () => {
     if (!user || !id || !newComment.trim()) return;
@@ -161,12 +156,11 @@ export const BlogPostPage: React.FC = () => {
     return <div className="min-h-screen flex items-center justify-center dark:text-white"><Loader2 className="animate-spin mr-2"/> Loading...</div>;
   }
 
-  // NOTE: You should ideally only allow access to 'published' posts for non-admins/non-authors here
   if (!post || (post.status !== 'published' && user?.id !== post.author.id && user?.role !== 'admin')) {
     return <div className="min-h-screen flex items-center justify-center dark:text-white">Post not found or access denied.</div>;
   }
 
-  // Simulated TOC generation for demo (This part still needs to be replaced with actual content parsing for production)
+  // Simulated TOC generation for demo
   const toc = [
     { id: 'introduction', title: 'Introduction' },
     { id: 'main-points', title: 'Main Concepts' },
@@ -267,9 +261,8 @@ export const BlogPostPage: React.FC = () => {
               </div>
               {/* === END: UPDATED CONTENT RENDERING with CUSTOM RENDERER === */}
             </div>
-
-            {/* Author Bio Box */}
-            <div className="mt-16 p-8 bg-gray-50 dark:bg-gray-800 rounded-2xl flex flex-col md:flex-row items-center md:items-start gap-6">
+{/* Author Bio Box */}
+<div className="mt-16 p-8 bg-gray-50 dark:bg-gray-800 rounded-2xl flex flex-col md:flex-row items-center md:items-start gap-6">
               <img src={post.author.avatar} alt="Author" className="w-20 h-20 rounded-full" />
               <div className="text-center md:text-left">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">About {post.author.name}</h3>
@@ -278,60 +271,14 @@ export const BlogPostPage: React.FC = () => {
                 </p>
               </div>
             </div>
+            {/* ------------------------------------------- */}
+            {/* ⭐ NEW: REVIEWS SECTION IS PLACED HERE ⭐ */}
+            {/* ------------------------------------------- */}
+            {id && <ReviewSection postId={id} />}
 
-            {/* Comments Section */}
-            <div id="comments-section" className="mt-12">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Comments ({comments.length})</h3>
-              
-              {user ? (
-                <div className="mb-8">
-                  <div className="flex gap-4">
-                    <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
-                    <div className="flex-1">
-                      <textarea 
-                        className="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 outline-none dark:text-white"
-                        rows={3}
-                        placeholder="Join the discussion..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                      ></textarea>
-                      <button 
-                        onClick={handleSubmitComment}
-                        disabled={!newComment.trim()}
-                        className="mt-2 px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 flex items-center"
-                      >
-                        <Send size={16} className="mr-2" /> Post Comment
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl mb-8 text-center">
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">Log in to leave a comment.</p>
-                  <Link to="/login" state={{ from: location.pathname }} className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700">
-                    Log In
-                  </Link>
-                </div>
-              )}
+            
 
-              <div className="space-y-6">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-4 animate-in fade-in slide-in-from-bottom-2">
-                    <img src={comment.userAvatar} alt={comment.userName} className="w-10 h-10 rounded-full" />
-                    <div>
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-bold text-gray-900 dark:text-white">{comment.userName}</span>
-                        <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      <p className="text-gray-700 dark:text-gray-300">{comment.content}</p>
-                    </div>
-                  </div>
-                ))}
-                {comments.length === 0 && (
-                  <p className="text-gray-500 text-center py-4">No comments yet. Be the first to share your thoughts!</p>
-                )}
-              </div>
-            </div>
+           
           </article>
 
           {/* Sidebar Right: TOC & Related */}

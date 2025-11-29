@@ -1,18 +1,21 @@
+// services/geminiService.ts
+
 import { GoogleGenAI } from "@google/genai";
 
-// === START: API Key Inserted by User Request ===
-const API_KEY = "AIzaSyDuWrlh7Nt6luOE2kDAFTI6rFljqTEM0Pk";
-// === END: API Key Inserted by User Request ===
+// === START: Secure API Key Retrieval ===
+// The key is read from the process environment variables (set in .env.local)
+const API_KEY = process.env.GEMINI_API_KEY;
+// === END: Secure API Key Retrieval ===
 
 /**
- * Initializes and returns the Gemini AI client using the provided API key.
+ * Initializes and returns the Gemini AI client using the environment variable API key.
  * @returns {GoogleGenAI} The initialized AI client.
- * @throws {Error} If the API key is not set.
+ * @throws {Error} If the API key is not set or is invalid.
  */
 const getClient = () => {
-  // Directly use the constant key provided by the user
+  // Check for the key existence and minimum length (for basic validation)
   if (!API_KEY || API_KEY.length < 30) { 
-    throw new Error("API Key not found or is invalid.");
+    throw new Error("API Key not found or is invalid. Please set GEMINI_API_KEY in your .env.local file.");
   }
   return new GoogleGenAI({ apiKey: API_KEY });
 };

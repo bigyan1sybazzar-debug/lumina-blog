@@ -51,3 +51,22 @@ export interface AnalyticsData {
   views: number;
   visitors: number;
 }
+export interface Review {
+    id: string;
+    postId: string;
+    userId: string;
+    userName: string;
+    userAvatar: string;
+    rating: number; // 1 to 5 star rating
+    content: string;
+    createdAt: string;
+  }
+
+  export const slugify = (text: string): string => {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '') // Remove all non-word chars except spaces and dashes
+      .replace(/[\s_-]+/g, '-')  // Replace spaces and underscores with a single dash
+      .replace(/^-+|-+$/g, '');  // Remove leading/trailing dashes
+  };
