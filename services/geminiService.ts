@@ -1,68 +1,85 @@
 // services/geminiService.ts
 
-import { GoogleGenAI } from "@google/genai";
+// 🚨 FIX 1: Change the import statement to the supported package
+import { GoogleGenerativeAI } from "@google/generative-ai"; 
 
-// === START: Secure API Key Retrieval ===
-// The key is read from the process environment variables (set in .env.local)
-const API_KEY = process.env.GEMINI_API_KEY;
-// === END: Secure API Key Retrieval ===
+// Read API key correctly in Vite (must start with VITE_)
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
 
-/**
- * Initializes and returns the Gemini AI client using the environment variable API key.
- * @returns {GoogleGenAI} The initialized AI client.
- * @throws {Error} If the API key is not set or is invalid.
- */
-const getClient = () => {
-  // Check for the key existence and minimum length (for basic validation)
-  if (!API_KEY || API_KEY.length < 30) { 
-    throw new Error("API Key not found or is invalid. Please set GEMINI_API_KEY in your .env.local file.");
+let genAI: GoogleGenerativeAI | null = null;
+if (API_KEY) {
+  genAI = new GoogleGenerativeAI(API_KEY);
+} else {
+  console.error("❌ VITE_GEMINI_API_KEY is missing. Please add it to .env.local");
+}
+
+const getModel = () => {
+  if (!genAI) {
+    throw new Error("API Key is missing or invalid. Check your .env.local file and restart the server.");
   }
-  return new GoogleGenAI({ apiKey: API_KEY });
+  
+  // 🚨 FIX 2: Use the current recommended stable model name
+  const MODEL_NAME = "gemini-2.5-flash"; 
+
+  return genAI.getGenerativeModel({ model: MODEL_NAME });
 };
 
 /**
- * Generates a structured blog post outline using the Gemini API.
- * @param {string} topic The subject of the blog post.
- * @returns {Promise<string>} A Markdown-formatted outline.
+ * Generate a blog post outline using Gemini
  */
 export const generateBlogOutline = async (topic: string): Promise<string> => {
   try {
-    const ai = getClient();
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `Create a structured blog post outline for the topic: "${topic}". 
-      Include a catchy title, 3-4 main section headers, and bullet points for key concepts in each section. 
-      Format as Markdown.`,
-    });
-    return response.text || "Failed to generate outline.";
-  } catch (error) {
+    const model = getModel();
+
+    const prompt = `Create a detailed and engaging blog post outline for the topic: "${topic}"
+
+Requirements:
+- Give a catchy, SEO-friendly title
+- Include a short introduction
+- Create 5–7 main sections with H2 headers (##)
+- Add 3–5 bullet points under each section
+- End with a conclusion section
+
+Return the result in clean Markdown format.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error: any) {
     console.error("Gemini API Error (Outline):", error);
-    // You might want to implement exponential backoff here in a production setting.
-    return "Error generating content. Please check your API key and network connection.";
+    return `Error: ${error.message || "Failed to generate outline. Check console for details."}`;
   }
 };
 
 /**
- * Generates the full blog post content based on a title and outline.
- * @param {string} title The title of the post.
- * @param {string} outline The generated outline for the post structure.
- * @returns {Promise<string>} The full, Markdown-formatted blog post content.
+ * Generate full blog post from title + outline
  */
 export const generateFullPost = async (title: string, outline: string): Promise<string> => {
   try {
-    const ai = getClient();
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `Write a full, engaging blog post based on this title: "${title}" and this outline:
-      ${outline}
-      
-      Use a friendly, professional tone. Use Markdown formatting (## for headers, **bold** for emphasis). 
-      Make it approximately 500-800 words.`,
-    });
-    return response.text || "Failed to generate post.";
-  } catch (error) {
+    const model = getModel();
+
+    const prompt = `Write a complete, high-quality blog post based on this title and outline:
+
+Title: ${title}
+
+Outline:
+${outline}
+
+Instructions:
+- Write in a friendly, professional, and engaging tone
+- Target 800–1200 words
+- Use proper Markdown formatting (##, ###, **bold**, *italic*, lists, etc.)
+- Make it natural and readable
+- Add a strong introduction and conclusion
+- Include transitions between sections
+
+Return only the final blog post in Markdown.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error: any) {
     console.error("Gemini API Error (Full Post):", error);
-    // You might want to implement exponential backoff here in a production setting.
-    return "Error generating post.";
+    return `Error: ${error.message || "Failed to generate full post. Check console for details."}`;
   }
 };
