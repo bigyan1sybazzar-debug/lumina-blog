@@ -12,6 +12,8 @@
     "build:deploy": "npm run build:all"
   },
   "dependencies": {
+    "@google/genai": "^1.30.0",
+    "@google/generative-ai": "^0.24.1",
     "dotenv": "^17.2.3",
     "firebase": "^10.13.1",
     "lucide-react": "^0.454.0",
