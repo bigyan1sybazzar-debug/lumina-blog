@@ -1,5 +1,7 @@
 {
-    "routes": [
-      { "src": "/sitemap.xml", "dest": "/dist/sitemap.xml" }
-    ]
-  }
+  "routes": [
+    { "src": "/sitemap.xml", "dest": "/dist/sitemap.xml" },
+    { "src": "/blog/(.*)", "dest": "/" },           // ← ADD THIS LINE
+    { "src": "/(.*)", "dest": "/" }                 // ← fallback for all other routes
+  ]
+}
