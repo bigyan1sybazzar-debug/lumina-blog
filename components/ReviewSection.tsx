@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { getReviewsByPostId, addReview } from '../services/db'; 
 import { useAuth } from '../context/AuthContext';
 // NOTE: You must define the 'Review' type in your types.ts file
-import { Review } from '../types/types';
+import { Review } from '../types';   
 
 interface ReviewSectionProps {
   postId: string;
@@ -159,6 +159,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ postId }) => {
                   <div className="mb-2">
                     <StarRating rating={review.rating} />
                   </div>
+                  
                   <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{review.content}</p>
                 </div>
               </div>
