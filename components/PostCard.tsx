@@ -12,19 +12,16 @@ interface PostCardProps {
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant = 'vertical' }) => {
+  // Safe URL: uses slug if exists, falls back to id (never breaks)
+  const postUrl = `/blog/${post.slug ?? post.id}`;
 
-  // Responsive trim – 6 words on mobile, 9 words on desktop
+  // Responsive title trim
   const trimTitle = (title: string) => {
     const words = title.split(' ');
-    const isDesktop = window.innerWidth >= 768; // md breakpoint
-    const limit = isDesktop ? 9 : 6;
-
-    return words.length > limit
-      ? words.slice(0, limit).join(' ') + '...'
-      : title;
+    const limit = window.innerWidth >= 768 ? 9 : 6;
+    return words.length > limit ? words.slice(0, limit).join(' ') + '...' : title;
   };
 
-  // Re-run trim when window resizes (optional but smooth)
   const [trimmedTitle, setTrimmedTitle] = React.useState(trimTitle(post.title));
 
   React.useEffect(() => {
@@ -35,11 +32,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant 
 
   if (variant === 'horizontal') {
     return (
-      <Link to={`/blog/${post.id}`} className="group flex flex-col md:flex-row gap-6 items-start">
+      <Link to={postUrl} className="group flex flex-col md:flex-row gap-6 items-start">
         <div className="w-full md:w-1/3 aspect-video rounded-xl overflow-hidden">
-          <img 
-            src={post.coverImage} 
-            alt={post.title} 
+          <img
+            src={post.coverImage}
+            alt={post.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </div>
@@ -65,20 +62,20 @@ export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant 
     );
   }
 
-  // Default Vertical
+  // Vertical variant
   return (
     <article className="group flex flex-col h-full bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 dark:border-gray-700">
-      <Link to={`/blog/${post.id}`} className="relative aspect-[16/10] overflow-hidden">
-        <img 
-          src={post.coverImage} 
-          alt={post.title} 
+      <Link to={postUrl} className="relative aspect-[16/10] overflow-hidden">
+        <img
+          src={post.coverImage}
+          alt={post.title}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
         <div className="absolute top-4 left-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
           {categoryName || post.category || 'Uncategorized'}
         </div>
       </Link>
-      
+
       <div className="flex-1 p-6 flex flex-col">
         <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3 space-x-3">
           <span>{post.date}</span>
@@ -89,17 +86,22 @@ export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant 
           </div>
         </div>
 
-        <Link to={`/blog/${post.id}`} className="block mb-3">
+        <Link to={postUrl} className="block mb-3">
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
             {trimmedTitle}
           </h3>
         </Link>
-        
-       
+
         <div className="flex items-center justify-between mt-auto">
           <div className="flex items-center space-x-2">
-            <img src={post.author.avatar} alt={post.author.name} className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700" />
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-200">{post.author.name}</span>
+            <img
+              src={post.author.avatar}
+              alt={post.author.name}
+              className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700"
+            />
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
+              {post.author.name}
+            </span>
           </div>
         </div>
       </div>

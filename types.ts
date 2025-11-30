@@ -1,3 +1,5 @@
+// src/types.ts
+
 export type UserRole = 'admin' | 'moderator' | 'user';
 
 export interface User {
@@ -9,23 +11,32 @@ export interface User {
 }
 
 export interface BlogPost {
-  id: string;
+  id: string;                    // Firestore document ID (required internally)
+  slug?: string;                 // ← NEW: Optional for backward compatibility
+                                 //     New posts will have this, old ones fall back to id
+
   title: string;
   excerpt: string;
   content: string;
   coverImage: string;
+
   author: {
+    id?: string;                 // Author user ID (optional if old post)
     name: string;
     avatar: string;
-    id?: string; // Added ID to track authorship
   };
-  date: string;
-  readTime: string;
+
+  date: string;                  // e.g. "November 28, 2025"
+  readTime: string;              // e.g. "8 min read"
   category: string;
-  tags: string[];
-  views: number;
+  tags?: string[];
+
+  views?: number;                // Made optional to match real usage
   status: 'published' | 'pending' | 'draft';
-  likes?: string[]; // Array of user IDs who liked
+  likes?: string[];              // Array of user IDs who liked
+
+  createdAt?: string;            // ISO string (optional)
+  updatedAt?: string;            // ISO string (optional)
 }
 
 export interface Category {
@@ -43,7 +54,18 @@ export interface Comment {
   userName: string;
   userAvatar: string;
   content: string;
-  createdAt: string; // ISO String
+  createdAt: string;             // ISO string
+}
+
+export interface Review {
+  id: string;
+  postId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  rating: number;                // 1–5
+  content: string;
+  createdAt: string;             // ISO string
 }
 
 export interface AnalyticsData {
@@ -51,22 +73,14 @@ export interface AnalyticsData {
   views: number;
   visitors: number;
 }
-export interface Review {
-    id: string;
-    postId: string;
-    userId: string;
-    userName: string;
-    userAvatar: string;
-    rating: number; // 1 to 5 star rating
-    content: string;
-    createdAt: string;
-  }
 
-  export const slugify = (text: string): string => {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '') // Remove all non-word chars except spaces and dashes
-      .replace(/[\s_-]+/g, '-')  // Replace spaces and underscores with a single dash
-      .replace(/^-+|-+$/g, '');  // Remove leading/trailing dashes
-  };
+// Helper function – improved version (collapses multiple dashes)
+export const slugify = (text: string): string => {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')      // Remove special characters
+    .replace(/[\s_]+/g, '-')       // Replace spaces & underscores with single dash
+    .replace(/-+/g, '-')           // Collapse multiple dashes
+    .replace(/^-+|-+$/g, '');      // Trim dashes from start/end
+};

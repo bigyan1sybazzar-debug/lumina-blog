@@ -39,7 +39,7 @@ export default function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/blog/:id" element={<BlogPostPage />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/categories" element={<Categories />} />
               
               <Route path="/about" element={<About />} />
