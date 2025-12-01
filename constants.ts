@@ -1,4 +1,4 @@
-import { BlogPost, Category } from './types';
+import { BlogPost, Category } from './types';   
 
 export const MOCK_POSTS: BlogPost[] = [
   {
