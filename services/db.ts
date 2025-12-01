@@ -162,6 +162,7 @@ export const createPost = async (
             likes: [], // Initialize likes array
             views: 0, // Initialize views count
             createdAt: new Date().toISOString(),
+            status: post.status || 'published',
         };
 
         await db.collection(POSTS_COLLECTION).add(newPostData);
