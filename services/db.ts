@@ -1,395 +1,530 @@
 // services/db.ts
 
-// The original firebase import should be require()
-const firebase = require('firebase/compat/app');
-
-// Fix 1: Add .js to local firebase import
-import { db } from './firebase.js'; 
-
-// 💥 Fix 2: Add .js to local types import
-import { BlogPost, Category, User, Comment, Review } from '../types.js';
-
-// 💥 Fix 3: Add .js to local constants import
-import { MOCK_POSTS, CATEGORIES } from '../constants.js';
-
-// ... rest of the file ...
-// REMOVED: import { slugify } from '../lib/slugify'; - This function was imported but not used, causing a warning.
+import firebase from 'firebase/compat/app';
+import { db } from './firebase';
+import { BlogPost, Category, User, Comment, Review } from '../types';
+import { MOCK_POSTS, CATEGORIES } from '../constants';
 
 const POSTS_COLLECTION = 'posts';
 const USERS_COLLECTION = 'users';
 const CATEGORIES_COLLECTION = 'categories';
 const COMMENTS_COLLECTION = 'comments';
-// ⭐ NEW COLLECTION CONSTANT
 const REVIEWS_COLLECTION = 'reviews';
 
-// Helper for client-side sorting to avoid Firestore Index errors
+// Helper: client-side sort (avoids Firestore composite index requirement)
 const sortByDateDesc = (a: any, b: any) => {
-  const dateA = new Date(a.createdAt || a.date).getTime();
-  const dateB = new Date(b.createdAt || b.date).getTime();
-  return dateB - dateA;
+  const dateA = new Date(a.updatedAt || a.createdAt || a.date).getTime();
+  const dateB = new Date(b.updatedAt || b.createdAt || b.date).getTime();
+  return dateB - dateA;
 };
 
 // --- POSTS ---
 
-// Fetch published posts for public view
 export const getPosts = async (): Promise<BlogPost[]> => {
-  try {
-    // REMOVED .orderBy('date', 'desc') to fix Index Error
-    // We fetch filtered results and sort in memory
-    const querySnapshot = await db.collection(POSTS_COLLECTION)
-      .where('status', '==', 'published')
-      .get();
-      
-    const posts = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as BlogPost));
+  try {
+    const snapshot = await db.collection(POSTS_COLLECTION)
+      .where('status', '==', 'published')
+      .get();
 
-    return posts.sort(sortByDateDesc);
-  } catch (error) {
-    console.error("Error getting posts:", error);
-    return [];
-  }
+    const posts = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as BlogPost));
+
+    return posts.sort(sortByDateDesc);
+  } catch (error) {
+    console.error('Error fetching published posts:', error);
+    return [];
+  }
 };
 
-// Fetch pending posts (Admin only)
 export const getPendingPosts = async (): Promise<BlogPost[]> => {
-  try {
-    // REMOVED .orderBy('createdAt', 'desc') to fix Index Error
-    const querySnapshot = await db.collection(POSTS_COLLECTION)
-      .where('status', '==', 'pending')
-      .get();
-    
-    const posts = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as BlogPost));
+  try {
+    const snapshot = await db.collection(POSTS_COLLECTION)
+      .where('status', '==', 'pending')
+      .get();
 
-    return posts.sort(sortByDateDesc);
-  } catch (error) {
-    console.error("Error getting pending posts:", error);
-    return [];
-  }
+    const posts = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as BlogPost));
+
+    return posts.sort(sortByDateDesc);
+  } catch (error) {
+    console.error('Error fetching pending posts:', error);
+    return [];
+  }
 };
 
-// Fetch user's own posts
 export const getUserPosts = async (userId: string): Promise<BlogPost[]> => {
-  try {
-    // REMOVED .orderBy('createdAt', 'desc') to fix Index Error
-    const querySnapshot = await db.collection(POSTS_COLLECTION)
-      .where('author.id', '==', userId)
-      .get();
-      
-    const posts = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as BlogPost));
+  try {
+    const snapshot = await db.collection(POSTS_COLLECTION)
+      .where('author.id', '==', userId)
+      .get();
 
-    return posts.sort(sortByDateDesc);
-  } catch (error) {
-    console.error("Error getting user posts:", error);
-    return [];
-  }
+    const posts = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as BlogPost));
+
+    return posts.sort(sortByDateDesc);
+  } catch (error) {
+    console.error('Error fetching user posts:', error);
+    return [];
+  }
 };
 
-// Fetch ALL posts (for admin dashboard stats)
 export const getAllPostsAdmin = async (): Promise<BlogPost[]> => {
-  try {
-    const querySnapshot = await db.collection(POSTS_COLLECTION).get();
-    const posts = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as BlogPost));
-    
-    return posts.sort(sortByDateDesc);
-  } catch (error) {
-    console.error("Error getting admin posts:", error);
-    return [];
-  }
+  try {
+    const snapshot = await db.collection(POSTS_COLLECTION).get();
+    const posts = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as BlogPost));
+
+    return posts.sort(sortByDateDesc);
+  } catch (error) {
+    console.error('Error fetching all posts (admin):', error);
+    return [];
+  }
 };
 
-/**
- * DEPRECATED: Use getPostBySlug instead for public view. 
- * Keeping for internal admin use that may rely on ID.
- */
+// Legacy: kept for internal use in admin/preview links
 export const getPostById = async (id: string): Promise<BlogPost | null> => {
-  try {
-    const docSnap = await db.collection(POSTS_COLLECTION).doc(id).get();
-    if (docSnap.exists) {
-      return { id: docSnap.id, ...docSnap.data() } as BlogPost;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    console.error("Error getting post by ID:", error);
-    return null;
-  }
-};
-
-// ✅ UPDATED: Fetch post by slug OR ID for compatibility with existing URLs.
-export const getPostBySlug = async (slugOrId: string): Promise<BlogPost | null> => {
-  try {
-    // 1. Try to query the posts collection by 'slug' field
-    const querySnapshot = await db.collection(POSTS_COLLECTION)
-      .where('slug', '==', slugOrId)
-      .limit(1)
-      .get();
-
-    if (!querySnapshot.empty) {
-      // Found by slug
-      const doc = querySnapshot.docs[0];
-      return { id: doc.id, ...doc.data() } as BlogPost;
-    }
-
-    // 2. Fallback: If not found by slug, assume the parameter is a Document ID and try to fetch directly
-    const docSnap = await db.collection(POSTS_COLLECTION).doc(slugOrId).get();
-    
-    if (docSnap.exists) {
-      // Found by ID
-      return { id: docSnap.id, ...docSnap.data() } as BlogPost;
-    }
-
-
-    return null; // Post not found by either slug or ID
-  } catch (error) {
-    console.error("Error getting post by SLUG or ID:", error);
-    // If there's an error during the direct fetch (e.g., malformed ID), we return null
-    return null;
-  }
-};
-
-// ⭐ FIX: Added missing 'createPost' export
-export const createPost = async (
-    post: Omit<BlogPost, 'id' | 'likes' | 'views' | 'createdAt' | 'slug'> & { status: 'published' | 'pending' | 'draft' }
-) => {
-    try {
-        // Generate a simple slug from the title. 
-        // Note: For a real app, you'd want to check for slug uniqueness.
-        const slug = post.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
-        const newPostData = {
-            ...post,
-            slug: slug, // Generated from title
-            likes: [], // Initialize likes array
-            views: 0, // Initialize views count
-            createdAt: new Date().toISOString(),
-            status: post.status || 'published',
-        };
-
-        await db.collection(POSTS_COLLECTION).add(newPostData);
-    } catch (error) {
-        console.error("Error creating post: ", error);
-        throw error;
+  try {
+    const doc = await db.collection(POSTS_COLLECTION).doc(id).get();
+    if (doc.exists) {
+      return { id: doc.id, ...doc.data() } as BlogPost;
     }
+    return null;
+  } catch (error) {
+    console.error('Error fetching post by ID:', error);
+    return null;
+  }
+};
+
+// Public-facing: supports both /blog/my-slug and /blog/old-id
+export const getPostBySlug = async (slugOrId: string): Promise<BlogPost | null> => {
+  try {
+    // 1. Try by slug field
+    const bySlug = await db.collection(POSTS_COLLECTION)
+      .where('slug', '==', slugOrId)
+      .limit(1)
+      .get();
+
+    if (!bySlug.empty) {
+      const doc = bySlug.docs[0];
+      return { id: doc.id, ...doc.data() } as BlogPost;
+    }
+
+    // 2. Fallback to document ID
+    const byId = await db.collection(POSTS_COLLECTION).doc(slugOrId).get();
+    if (byId.exists) {
+      return { id: byId.id, ...byId.data() } as BlogPost;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching post by slug/ID:', error);
+    return null;
+  }
+};
+
+export const createPost = async (
+  post: Omit<BlogPost, 'id' | 'slug' | 'likes' | 'views' | 'createdAt' | 'updatedAt'> & {
+    status: 'published' | 'pending' | 'draft';
+  }
+) => {
+  try {
+    const slug = post.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+      .substring(0, 100); // limit length
+
+    const newPost = {
+      ...post,
+      slug,
+      likes: [],
+      views: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const docRef = await db.collection(POSTS_COLLECTION).add(newPost);
+
+    // Auto-update sitemap if published
+    if (post.status === 'published') {
+      await generateAndUploadSitemap();
+    }
+
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating post:', error);
+    throw error;
+  }
+};
+
+// Update an existing post - fix the type definition
+export const updatePost = async (
+    postId: string, 
+    postData: Partial<Omit<BlogPost, 'id' | 'slug' | 'createdAt' | 'updatedAt'>>
+  ): Promise<void> => {
+    try {
+      const updateData: Record<string, any> = {
+        ...postData,
+        updatedAt: new Date().toISOString(),
+      };
+  
+      // If title changed, regenerate slug
+      if (postData.title) {
+        const slug = postData.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '')
+          .substring(0, 100);
+        updateData.slug = slug;
+      }
+  
+      await db.collection(POSTS_COLLECTION).doc(postId).update(updateData);
+  
+      // Regenerate sitemap if post is published
+      // Fix: Cast status to the correct type or check properly
+      const status = postData.status as 'published' | 'pending' | 'draft' | undefined;
+      if (status === 'published') {
+        await generateAndUploadSitemap();
+      }
+  
+      console.log(`Post ${postId} updated successfully`);
+    } catch (error) {
+      console.error('Error updating post:', error);
+      throw error;
+    }
+  };
+// Delete a post
+export const deletePost = async (postId: string): Promise<void> => {
+  try {
+    // First, check if the post exists
+    const post = await getPostById(postId);
+    if (!post) {
+      throw new Error('Post not found');
+    }
+
+    // Delete the post
+    await db.collection(POSTS_COLLECTION).doc(postId).delete();
+
+    // Delete associated comments
+    const commentsSnapshot = await db.collection(COMMENTS_COLLECTION)
+      .where('postId', '==', postId)
+      .get();
+    
+    const deleteCommentsPromises = commentsSnapshot.docs.map(doc => 
+      doc.ref.delete()
+    );
+
+    // Delete associated reviews
+    const reviewsSnapshot = await db.collection(REVIEWS_COLLECTION)
+      .where('postId', '==', postId)
+      .get();
+    
+    const deleteReviewsPromises = reviewsSnapshot.docs.map(doc => 
+      doc.ref.delete()
+    );
+
+    await Promise.all([...deleteCommentsPromises, ...deleteReviewsPromises]);
+
+    // Regenerate sitemap if the deleted post was published
+    if (post.status === 'published') {
+      await generateAndUploadSitemap();
+    }
+
+    console.log(`Post ${postId} and associated data deleted successfully`);
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    throw error;
+  }
 };
 
 export const updatePostStatus = async (postId: string, status: 'published' | 'pending' | 'draft') => {
-  await db.collection(POSTS_COLLECTION).doc(postId).update({ status });
+  await db.collection(POSTS_COLLECTION).doc(postId).update({
+    status,
+    updatedAt: new Date().toISOString(),
+  });
+
+  if (status === 'published') {
+    await generateAndUploadSitemap();
+  }
 };
 
 export const toggleLikePost = async (postId: string, userId: string): Promise<boolean> => {
-  const postRef = db.collection(POSTS_COLLECTION).doc(postId);
-  const doc = await postRef.get();
-  
-  if (doc.exists) {
-    const data = doc.data();
-    const likes: string[] = data?.likes || [];
-    
-    if (likes.includes(userId)) {
-      // Unlike
-      await postRef.update({
-        likes: firebase.firestore.FieldValue.arrayRemove(userId)
-      });
-      return false; // Liked status: false
-    } else {
-      // Like
-      await postRef.update({
-        likes: firebase.firestore.FieldValue.arrayUnion(userId)
-      });
-      return true; // Liked status: true
-    }
-  }
-  return false;
+  const ref = db.collection(POSTS_COLLECTION).doc(postId);
+  const doc = await ref.get();
+
+  if (!doc.exists) return false;
+
+  const likes: string[] = doc.data()?.likes || [];
+
+  if (likes.includes(userId)) {
+    await ref.update({
+      likes: firebase.firestore.FieldValue.arrayRemove(userId)
+    });
+    return false;
+  } else {
+    await ref.update({
+      likes: firebase.firestore.FieldValue.arrayUnion(userId)
+    });
+    return true;
+  }
 };
 
 export const incrementViewCount = async (id: string) => {
-  try {
-    await db.collection(POSTS_COLLECTION).doc(id).update({
-      views: firebase.firestore.FieldValue.increment(1)
-    });
-  } catch (error) {
-    console.error("Error incrementing views:", error);
-  }
+  try {
+    await db.collection(POSTS_COLLECTION).doc(id).update({
+      views: firebase.firestore.FieldValue.increment(1),
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error incrementing views:', error);
+  }
 };
 
 // --- CATEGORIES ---
 
 export const getCategories = async (): Promise<Category[]> => {
-  try {
-    const snapshot = await db.collection(CATEGORIES_COLLECTION).get();
-    if (snapshot.empty) {
-      // Fallback to constants if DB empty
-      return CATEGORIES; 
-    }
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
-  } catch (error) {
-    return CATEGORIES;
-  }
+  try {
+    const snapshot = await db.collection(CATEGORIES_COLLECTION).get();
+    if (snapshot.empty) return CATEGORIES;
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return CATEGORIES;
+  }
 };
 
 export const createCategory = async (category: Omit<Category, 'id' | 'count'>) => {
-  await db.collection(CATEGORIES_COLLECTION).add({
-    ...category,
-    count: 0
-  });
+  await db.collection(CATEGORIES_COLLECTION).add({ ...category, count: 0 });
+};
+
+// Delete a category (with validation)
+export const deleteCategory = async (categoryId: string): Promise<void> => {
+  try {
+    // Get the category name first
+    const categoryDoc = await db.collection(CATEGORIES_COLLECTION).doc(categoryId).get();
+    if (!categoryDoc.exists) {
+      throw new Error('Category not found');
+    }
+    
+    const categoryData = categoryDoc.data() as Category;
+    
+    // Check if any posts use this category (by category name)
+    const postsSnapshot = await db.collection(POSTS_COLLECTION)
+      .where('category', '==', categoryData.name)
+      .get();
+    
+    if (!postsSnapshot.empty) {
+      throw new Error('Cannot delete category: Some posts are still using it. Please reassign posts first.');
+    }
+
+    await db.collection(CATEGORIES_COLLECTION).doc(categoryId).delete();
+    console.log(`Category ${categoryId} deleted successfully`);
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    throw error;
+  }
 };
 
 // --- USERS ---
 
 export const getAllUsers = async (): Promise<User[]> => {
-  try {
-    const snapshot = await db.collection(USERS_COLLECTION).get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    return [];
-  }
+  try {
+    const snapshot = await db.collection(USERS_COLLECTION).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
 };
 
-export const updateUserRole = async (userId: string, role: string) => {
-  await db.collection(USERS_COLLECTION).doc(userId).update({ role });
+export const updateUserRole = async (userId: string, role: 'user' | 'moderator' | 'admin') => {
+  await db.collection(USERS_COLLECTION).doc(userId).update({ role });
 };
 
 // --- COMMENTS ---
 
 export const getCommentsByPostId = async (postId: string): Promise<Comment[]> => {
-  try {
-    // REMOVED .orderBy('createdAt', 'desc') to fix Index Error
-    const snapshot = await db.collection(COMMENTS_COLLECTION)
-      .where('postId', '==', postId)
-      .get();
-      
-    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
-    
-    return comments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  } catch (error) {
-    console.error("Error getting comments", error);
-    return [];
-  }
+  try {
+    const snapshot = await db.collection(COMMENTS_COLLECTION)
+      .where('postId', '==', postId)
+      .get();
+
+    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+
+    return comments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    return [];
+  }
 };
 
-export const addComment = async (comment: Omit<Comment, 'id'>) => {
-  await db.collection(COMMENTS_COLLECTION).add(comment);
+export const addComment = async (comment: Omit<Comment, 'id' | 'createdAt'>) => {
+  await db.collection(COMMENTS_COLLECTION).add({
+    ...comment,
+    createdAt: new Date().toISOString(),
+  });
 };
 
-// --- REVIEWS (NEW) ---
+// --- REVIEWS (Star Ratings) ---
 
-/**
- * Fetches all reviews for a specific blog post ID, sorted by creation date.
- */
 export const getReviewsByPostId = async (postId: string): Promise<Review[]> => {
-  try {
-    const snapshot = await db.collection(REVIEWS_COLLECTION)
-      .where('postId', '==', postId)
-      .get();
-      
-    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
-    
-    // Sort reviews by date, newest first (client-side sorting)
-    return reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  } catch (error) {
-    console.error("Error getting reviews", error);
-    return [];
-  }
+  try {
+    const snapshot = await db.collection(REVIEWS_COLLECTION)
+      .where('postId', '==', postId)
+      .get();
+
+    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
+
+    return reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    return [];
+  }
 };
 
-/**
- * Adds a new review to the database.
- */
-export const addReview = async (review: Omit<Review, 'id'>) => {
-  try {
-    await db.collection(REVIEWS_COLLECTION).add({
-      ...review,
-      createdAt: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error("Error adding review: ", error);
-    throw error;
-  }
+export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
+  try {
+    await db.collection(REVIEWS_COLLECTION).add({
+      ...review,
+      createdAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error adding review:', error);
+    throw error;
+  }
 };
 
-// --- UTILS ---
+// --- SITEMAP GENERATION (Auto-updating) ---
 
-// ✅ UPDATED: Seed data now includes a basic slug for consistency
-export const seedDatabase = async () => {
-  const postsCollection = db.collection(POSTS_COLLECTION);
-  const snapshot = await postsCollection.get();
-  
-  if (!snapshot.empty) {
-    console.log("Database already has data. Skipping seed.");
-    return;
-  }
+export const getPublishedPostSlugs = async (): Promise<{ slug: string; updatedAt: string }[]> => {
+  try {
+    const snapshot = await db.collection(POSTS_COLLECTION)
+      .where('status', '==', 'published')
+      .get();
 
-  const promises = MOCK_POSTS.map(post => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id, ...postData } = post;
-    // Simple mock slug generation for seeding
-    const mockSlug = postData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
-    return postsCollection.add({
-      ...postData,
-      slug: mockSlug, // <-- Added slug here
-      status: 'published',
-      likes: [],
-      createdAt: new Date().toISOString()
-    });
-  });
-
-  // Seed categories too
-  const catSnapshot = await db.collection(CATEGORIES_COLLECTION).get();
-  if (catSnapshot.empty) {
-    CATEGORIES.forEach(cat => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { id, ...catData } = cat;
-      db.collection(CATEGORIES_COLLECTION).add(catData);
-    });
-  }
-
-  await Promise.all(promises);
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        slug: data.slug || doc.id,
+        updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching slugs for sitemap:', error);
+    return [];
+  }
 };
 
-// services/db.ts
-
-/**
- * Fetches only the ID, slug, and date for sitemap generation.
- */
-// services/db.ts
-
-// ... (your existing functions like getPosts, getPendingPosts, etc.)
-
-// --- SITEMAP UTILS (NEW) ---
-
-/**
- * Fetches only the ID, slug, and date for sitemap generation.
- */
-export const getPublishedPostSlugs = async (): Promise<{ slug: string; updatedAt?: any }[]> => {
+export const generateAndUploadSitemap = async (): Promise<string | null> => {
     try {
-      // We only query for published posts
-      // NOTE: We rely on the existing 'db' instance imported in db.ts from ./firebase
-      const querySnapshot = await db.collection(POSTS_COLLECTION)
-        .where('status', '==', 'published') 
+      console.log('Generating sitemap.xml...');
+  
+      // Get published posts from Firestore
+      const snapshot = await db.collection(POSTS_COLLECTION)
+        .where('status', '==', 'published')
         .get();
+  
+      const posts = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          slug: data.slug || doc.id,
+          updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
+        };
+      });
+  
+      const baseUrl = typeof window !== 'undefined'
+        ? window.location.origin
+        : 'https://lumina-blog.web.app';
+  
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+      <loc>${baseUrl}/</loc>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+    </url>
+    <url>
+      <loc>${baseUrl}/categories</loc>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+    <url>
+      <loc>${baseUrl}/about</loc>
+      <changefreq>monthly</changefreq>
+      <priority>0.5</priority>
+    </url>`;
+  
+      posts.forEach(post => {
+        xml += `
+    <url>
+      <loc>${baseUrl}/blog/${post.slug}</loc>
+      <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.7</priority>
+    </url>`;
+      });
+  
+      xml += `\n</urlset>`;
+  
+      // Just download the XML file (no Firebase Storage upload)
+      if (typeof window !== 'undefined') {
+        const blob = new Blob([xml], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'sitemap.xml';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
         
-      // The filtering of fields happens here, using the fetched data
-      return querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-              slug: data.slug || doc.id,
-              updatedAt: data.updatedAt || data.createdAt
-          };
-      }).filter(link => link !== null);
+        console.log('Sitemap XML downloaded locally');
+        alert('Sitemap downloaded! Upload this file to your hosting provider.');
+      }
+  
+      return `${baseUrl}/sitemap.xml`;
     } catch (error) {
-      console.error("Error getting post slugs for sitemap:", error);
-      return [];
+      console.error('Failed to generate sitemap:', error);
+      return null;
     }
   };
+
+// --- SEED ---
+
+export const seedDatabase = async () => {
+  const snapshot = await db.collection(POSTS_COLLECTION).get();
+  if (!snapshot.empty) {
+    console.log('DB already seeded.');
+    return;
+  }
+
+  const promises = MOCK_POSTS.map(post => {
+    const slug = post.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    return db.collection(POSTS_COLLECTION).add({
+      ...post,
+      slug,
+      status: 'published',
+      likes: [],
+      views: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  });
+
+  if ((await db.collection(CATEGORIES_COLLECTION).get()).empty) {
+    CATEGORIES.forEach(cat => db.collection(CATEGORIES_COLLECTION).add(cat));
+  }
+
+  await Promise.all(promises);
+  await generateAndUploadSitemap();
+  console.log('Database seeded + sitemap generated');
+};
