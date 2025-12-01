@@ -2,7 +2,7 @@ import { BlogPost, Category } from './types';
 
 export const MOCK_POSTS: BlogPost[] = [
   {
-    id: '1',
+    id: '1', 
     title: 'The Future of Web Development in 2025',
     excerpt: 'Exploring the latest trends in React, server components, and AI-driven development workflows.',
     content: `
