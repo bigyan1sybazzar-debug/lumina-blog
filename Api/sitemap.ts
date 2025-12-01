@@ -1,7 +1,7 @@
 // Api/sitemap.ts 
 import * as admin from 'firebase-admin';
-// Import the specific type for a document snapshot to fix TS7006
-import { QueryDocumentSnapshot } from 'firebase-admin/firestore'; 
+// Import the specific type from the standard path for Firestore
+import { QueryDocumentSnapshot } from 'firebase-admin/lib/firestore'; 
 
 // Maximum number of retries for the Firestore read
 const MAX_RETRIES = 3;
@@ -23,6 +23,7 @@ if (!admin.apps.length) {
   }
 }
 
+// Access Firestore service
 const db = admin.firestore();
 
 /**
