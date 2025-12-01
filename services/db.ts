@@ -346,3 +346,39 @@ export const seedDatabase = async () => {
 
   await Promise.all(promises);
 };
+
+// services/db.ts
+
+/**
+ * Fetches only the ID, slug, and date for sitemap generation.
+ */
+// services/db.ts
+
+// ... (your existing functions like getPosts, getPendingPosts, etc.)
+
+// --- SITEMAP UTILS (NEW) ---
+
+/**
+ * Fetches only the ID, slug, and date for sitemap generation.
+ */
+export const getPublishedPostSlugs = async (): Promise<{ slug: string; updatedAt?: any }[]> => {
+    try {
+      // We only query for published posts
+      // NOTE: We rely on the existing 'db' instance imported in db.ts from ./firebase
+      const querySnapshot = await db.collection(POSTS_COLLECTION)
+        .where('status', '==', 'published') 
+        .get();
+        
+      // The filtering of fields happens here, using the fetched data
+      return querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+              slug: data.slug || doc.id,
+              updatedAt: data.updatedAt || data.createdAt
+          };
+      }).filter(link => link !== null);
+    } catch (error) {
+      console.error("Error getting post slugs for sitemap:", error);
+      return [];
+    }
+  };
