@@ -1,6 +1,6 @@
 // Api/sitemap.ts 
-import * as admin from 'firebase-admin';
-// Removed explicit type imports to resolve persistent TS2307 errors.
+// Trying a different import method to resolve TS2307 module not found error.
+import admin from 'firebase-admin';
 
 // Maximum number of retries for the Firestore read
 const MAX_RETRIES = 3;
@@ -23,6 +23,7 @@ if (!admin.apps.length) {
 }
 
 // Access Firestore service
+// This is the correct way to get the firestore instance after initializing the admin app.
 const db = admin.firestore();
 
 /**
