@@ -1,13 +1,12 @@
 // api/index.ts
 
-// The static import for 'sitemap' package should still be 'require'
+// 💥 FIX 1: Use require() for external packages (CommonJS)
 const { SitemapStream, streamToPromise } = require('sitemap'); 
 
-// The Vercel types are complex to mix with CommonJS, so we simplify
+// ⭐ FIX 2: Define placeholder types to resolve TS2304 error
 type Req = any;
 type Res = any;
 
-// 💥 FIX 1: Change the function definition (remove 'export default')
 async function sitemap(req: Req, res: Res) {
     
     console.log("Sitemap function started..."); 
@@ -15,13 +14,13 @@ async function sitemap(req: Req, res: Res) {
     try {
         console.log("Attempting to generate XML...");
         
-        // Use dynamic import for the local service file:
-        const sitemapModule = await import('../services/sitemapGenerator');
+        // ⭐ FIX 3: Dynamic import with .js extension for CommonJS/ESM compatibility
+        const sitemapModule = await import('../services/sitemapGenerator.js'); 
         const { generateSitemapXml } = sitemapModule;
 
         const sitemapXml = await generateSitemapXml(); 
         
-        console.log("XML generation succeeded."); 
+        console.log("XML generation succeeded."); // TARGET LOG!
 
         res.setHeader('Content-Type', 'text/xml; charset=utf-8');
         res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate'); 
@@ -33,5 +32,5 @@ async function sitemap(req: Req, res: Res) {
     }
 }
 
-// 💥 FIX 2: Assign the function to module.exports for CommonJS compatibility
+// FIX 4: Use module.exports for CommonJS export
 module.exports = sitemap;
