@@ -2,13 +2,11 @@
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "/api"
-     }
-  ],
-  "builds": [
+      "destination": "/api/sitemap" 
+    },
     {
-      "src": "api/index.ts", 
-      "use": "@vercel/node"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

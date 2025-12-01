@@ -17,7 +17,6 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["vite/client"],
     
-    
     // ⭐ TEMPORARY ADJUSTMENT TO BYPASS PERSISTENT TS1345 ERROR ⭐
     "strictBindCallApply": false 
   },
