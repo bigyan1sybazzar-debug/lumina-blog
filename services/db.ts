@@ -1,20 +1,18 @@
-// db.ts
+// services/db.ts
 
-// 💥 FIX 1: Change 'firebase/compat/app' to CommonJS require() 
-// This is necessary because the entry file (api/index.js) forces CommonJS.
+// The original firebase import should be require()
 const firebase = require('firebase/compat/app');
 
-// 💥 FIX 2: Add the .js extension to the local dependency import
-import { db } from './firebase.js';
+// Fix 1: Add .js to local firebase import
+import { db } from './firebase.js'; 
 
-// 💥 FIX 3: Add the .js extension to the local dependency import
-// This resolves the ERR_MODULE_NOT_FOUND for these files.
+// 💥 Fix 2: Add .js to local types import
 import { BlogPost, Category, User, Comment, Review } from '../types.js';
 
-// 💥 FIX 4: Add the .js extension to the local dependency import
+// 💥 Fix 3: Add .js to local constants import
 import { MOCK_POSTS, CATEGORIES } from '../constants.js';
 
-// ... The rest of your existing db.ts code follows here ...
+// ... rest of the file ...
 // REMOVED: import { slugify } from '../lib/slugify'; - This function was imported but not used, causing a warning.
 
 const POSTS_COLLECTION = 'posts';
