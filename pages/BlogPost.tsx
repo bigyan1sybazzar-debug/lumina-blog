@@ -387,7 +387,7 @@ export const BlogPostPage: React.FC = () => {
                             </div>
                         ))
                     ) : (
-                        <p className="text-gray-500 dark:text-gray-400">No comments yet. Be the first!</p>
+                        <p className="text-gray-500 dark:text-gray-400">No Discussion yet. Be the first!</p>
                     )}
                 </div>
             </div>
