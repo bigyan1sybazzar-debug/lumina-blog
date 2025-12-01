@@ -1,7 +1,6 @@
 // Api/sitemap.ts 
 import * as admin from 'firebase-admin';
-// Import the specific type from the standard path for Firestore
-import { QueryDocumentSnapshot } from 'firebase-admin/lib/firestore'; 
+// Removed explicit type imports to resolve persistent TS2307 errors.
 
 // Maximum number of retries for the Firestore read
 const MAX_RETRIES = 3;
@@ -14,8 +13,8 @@ if (!admin.apps.length) {
       projectId: "lumina-blog-c92d8", 
     });
     console.log("Firebase Admin SDK initialized successfully.");
-  } catch (error: unknown) { // Use 'unknown' but check its type or cast it for safe access
-    // Cast the error to safely access the message property, fixing TS18046
+  } catch (error: unknown) { 
+    // Cast the error to safely access the message property
     const e = error as Error;
     if (!/already exists/u.test(e.message)) {
       console.error("Firebase Admin SDK initialization error:", e);
@@ -32,7 +31,8 @@ const db = admin.firestore();
  * @param res - The outgoing response object.
  */
 export default async function handler(_req: any, res: any) {
-  let snapshot;
+  // Using 'any' to bypass TS errors related to unresolvable module types.
+  let snapshot: any; 
   
   // Use a retry loop to handle transient network or initialization errors
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
@@ -45,7 +45,7 @@ export default async function handler(_req: any, res: any) {
       // If successful, break the retry loop
       break;
 
-    } catch (e: unknown) { // Fixing TS18046: 'e' is of type 'unknown'
+    } catch (e: unknown) {
       const error = e as Error;
       const errorMessage = `Firestore Query Attempt ${attempt + 1} failed: ${error.message || 'Unknown Error'}`;
       console.error(errorMessage);
@@ -69,8 +69,8 @@ export default async function handler(_req: any, res: any) {
     
     let urls = "";
     // 2. Iterate over the documents and generate <url> tags
-    // Explicitly type 'doc' as QueryDocumentSnapshot to fix TS7006
-    snapshot.forEach((doc: QueryDocumentSnapshot) => { 
+    // Using 'any' for document iteration to satisfy the compiler
+    snapshot.forEach((doc: any) => { 
       const data = doc.data();
       // Use the 'slug' field if it exists, otherwise fall back to the document ID
       const slug = data.slug || doc.id;
@@ -95,7 +95,7 @@ export default async function handler(_req: any, res: any) {
     res.setHeader("Cache-Control", "public, s-maxage=86400, stale-while-revalidate"); 
     res.status(200).send(xml);
 
-  } catch (e: unknown) { // Fixing TS18046
+  } catch (e: unknown) {
     const error = e as Error;
     console.error("Sitemap generation error:", error);
     // Handle errors from inside the handler logic
