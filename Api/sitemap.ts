@@ -1,4 +1,4 @@
-// api/sitemap.ts   ← CREATE THIS FILE
+// Api/sitemap.ts   ← exact path and name
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 
@@ -18,12 +18,13 @@ const db = firebase.firestore();
 
 export default async function handler(_req: any, res: any) {
   try {
-    const snapshot = await db.collection('posts')
+    const snapshot = await db
+      .collection('posts')
       .where('status', '==', 'published')
       .get();
 
     let urls = '';
-    snapshot.forEach(doc => {
+    snapshot.forEach((doc) => {
       const data = doc.data();
       const slug = data.slug || doc.id;
       urls += `<url><loc>https://bigyann.com.np/blog/${slug}</loc></url>`;
@@ -41,6 +42,7 @@ export default async function handler(_req: any, res: any) {
     res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate');
     res.status(200).send(xml);
   } catch (error) {
-    res.status(500).send('Error');
+    console.error("Sitemap error:", error);
+    res.status(500).send("Error generating sitemap");
   }
 }
