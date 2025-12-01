@@ -1,72 +1,34 @@
-import { SitemapStream, streamToPromise } from 'sitemap';
-import { Readable } from 'stream';
-// 1. Import the new function from your existing db.ts file
-import { getPublishedPostSlugs } from '../services/db'; 
-// IMPORTANT: Replace with your actual deployed domain
-const HOSTNAME = 'https://bigyann.com.np'; 
+// api/index.ts
 
-// 2. DEFINE TYPE: Fixes the TS7006 implicit 'any' error for the mapped post data
-type PostSlugData = {
-    slug: string; 
-    updatedAt?: any; // Retained 'any' for the Firestore Timestamp object
-};
+// 💥 FIX 1: Use require() for external packages in CommonJS context
+const { SitemapStream, streamToPromise } = require('sitemap'); 
 
-// Function to handle the Vercel/Node.js request and response
-export default async function Sitemap(req: any, res: any) {
+// The Vercel types are complex to mix with CommonJS, so we simplify
+type Req = any;
+type Res = any;
+
+export default async function sitemap(req: Req, res: Res) {
+    
+    console.log("Sitemap function started..."); 
+    
     try {
-        // 1. Define Static Links
-        const staticLinks = [
-            { url: '/', changefreq: 'weekly', priority: 1.0 },
-            { url: '/About', changefreq: 'monthly', priority: 0.8 },
-            { url: '/Contact', changefreq: 'monthly', priority: 0.8 },
-            // Add other static pages here
-        ];
-
-        // 2. Fetch Dynamic Blog Post Links using the new function
-        // This executes the Firestore query defined in db.ts
-        const posts = await getPublishedPostSlugs();
+        console.log("Attempting to generate XML...");
         
-        // 3. Map the retrieved data into sitemap format
-        const dynamicLinks = posts.map((post: PostSlugData) => { 
-            // NOTE: Ensure '/BlogPost/' matches your application's route structure
-            const postUrl = `/BlogPost/${post.slug}`;
-            
-            let lastModified = new Date().toISOString();
-            
-            // Safely handle Firestore Timestamp conversion
-            if (post.updatedAt && post.updatedAt.toDate) {
-                lastModified = post.updatedAt.toDate().toISOString();
-            } else if (typeof post.updatedAt === 'string') {
-                lastModified = post.updatedAt;
-            }
+        // ⭐ FIX 2: Use a dynamic import for your internal service file
+        // This is necessary because your services are still being treated as ESM.
+        const sitemapModule = await import('../services/sitemapGenerator');
+        const { generateSitemapXml } = sitemapModule;
 
-            return {
-                url: postUrl, 
-                changefreq: 'daily',
-                priority: 0.9,
-                lastModified: lastModified,
-            };
-        });
+        const sitemapXml = await generateSitemapXml(); 
+        
+        console.log("XML generation succeeded."); 
 
-        const links = staticLinks.concat(dynamicLinks);
-
-        // 4. Generate the XML Stream
-        const smStream = new SitemapStream({ hostname: HOSTNAME });
-        const sitemap = await streamToPromise(Readable.from(links).pipe(smStream));
-
-        // 5. Send the XML Response
-        res.setHeader('Content-Type', 'text/xml');
-        // Set caching headers to reduce Firestore reads (optional but recommended)
-        res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=86400, stale-while-revalidate=43200'); 
-        res.status(200).send(sitemap.toString());
+        res.setHeader('Content-Type', 'text/xml; charset=utf-8');
+        res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate'); 
+        res.status(200).send(sitemapXml);
 
     } catch (error) {
-        // 🎯 ENHANCED LOGGING: This ensures the specific reason for the 500 is sent to Vercel's logs.
-        console.error('Sitemap generation CRITICAL failure:', error);
-        
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error during function execution.';
-        
-        // Send a 500 status with a message prompting the user to check logs
-        res.status(500).setHeader('Content-Type', 'text/plain').end(`Internal Server Error: Function execution failed. Check Vercel logs for error: ${errorMessage}`);
+        console.error("RUNTIME CRASH ERROR:", error);
+        res.status(500).send('Error generating sitemap on the server. Check Vercel logs for details.');
     }
 }

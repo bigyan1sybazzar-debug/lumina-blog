@@ -1,7 +1,8 @@
-// services/sitemapGenerator.ts (FULL CODE)
+// services/sitemapGenerator.ts
 
+// 💥 FIX: Change the import to extension-less, which works with Dynamic Import:
 import { getPublishedPostSlugs } from './db'; 
-// NOTE: This assumes 'getPublishedPostSlugs' is exported from services/db.ts
+// NOTE: If this file imports EXTERNAL packages, use require() here too.
 
 const BASE_URL = "https://bigyann.com.np"; 
 
