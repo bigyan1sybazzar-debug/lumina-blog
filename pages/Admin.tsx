@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory } from '../services/db';
+import { generateBlogOutline, generateFullPost } from '../services/geminiService';
+import { useAuth } from '../context/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
+import { BlogPost, User, Category } from '../types';
+
+
+
+
+
+
 import { 
   LayoutDashboard, FileText, Settings, Sparkles, Loader2, Save, LogOut, Home, Database, 
   PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw, 
@@ -7,14 +18,8 @@ import {
   Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter
 } from 'lucide-react';
 import { ANALYTICS_DATA } from '../constants';
-import { 
-  getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, 
-  updatePostStatus, getUserPosts, getCategories, createCategory, deleteCategory, updatePost, deletePost, getPostById 
+import {  deleteCategory, updatePost, deletePost, getPostById 
 } from '../services/db';
-import { generateBlogOutline, generateFullPost } from '../services/geminiService';
-import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
-import { BlogPost, User, Category } from '../types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -75,7 +80,7 @@ export const Admin: React.FC = () => {
       if (isAdmin) {
         const allPostsData = await getPosts();
         const totalViews = allPostsData.reduce((acc, curr) => acc + (curr.views || 0), 0);
-        const totalComments = allPostsData.reduce((acc, curr) => acc + (curr.comments?.length || 0), 0);
+        const totalComments = allPostsData.reduce((acc, curr) => acc + (0 || 0), 0);
         
         setAllPosts(allPostsData);
         setStats({ 
