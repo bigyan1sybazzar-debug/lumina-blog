@@ -1,6 +1,6 @@
 import firebase from 'firebase/compat/app';
 import { db } from './firebase';
-import { BlogPost, Category, User, Comment, Review } from '../types';
+import { BlogPost, Category, User, Comment, Review } from '../types.js';
 import { MOCK_POSTS, CATEGORIES } from '../constants';
 // REMOVED: import { slugify } from '../lib/slugify'; - This function was imported but not used, causing a warning.
 
