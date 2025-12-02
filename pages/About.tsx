@@ -91,7 +91,7 @@ export const About: React.FC = () => {
         {/* Work Experience Cards */}
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
           Work Experience
-        </h2> 
+        </h2>
 
         <div className="grid gap-8">
           {experiences.map((exp, index) => (
@@ -115,7 +115,7 @@ export const About: React.FC = () => {
 
               <ul className="list-disc ml-6 mt-4 space-y-2 text-gray-700 dark:text-gray-300">
                 {exp.description.map((item, i) => (
-                  <li key={i}>{item}</li>    
+                  <li key={i}>{item}</li>
                 ))}
               </ul>
             </div>
@@ -124,9 +124,6 @@ export const About: React.FC = () => {
 
         {/* CTA */}
         <div className="mt-20 text-center">
-          <button className="px-10 py-4 bg-primary-600 text-white rounded-full font-bold hover:bg-primary-700 transition-colors shadow-xl text-lg">
-            Work With Me
-          </button>
           <button className="px-10 py-4 bg-primary-600 text-white rounded-full font-bold hover:bg-primary-700 transition-colors shadow-xl text-lg">
             Work With Me
           </button>

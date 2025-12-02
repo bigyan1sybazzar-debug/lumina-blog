@@ -310,100 +310,18 @@ export const Admin: React.FC = () => {
   const handleRegenerateSitemap = async () => {
     setIsGeneratingSitemap(true);
     try {
-      const baseUrl = window.location.origin;
-      const secret = import.meta.env.VITE_REVALIDATE_SECRET;
-      
-      if (!secret) {
-        alert('⚠️ VITE_REVALIDATE_SECRET not set in .env');
-        await useLocalGeneration();
-        return;
+      const url = await generateAndUploadSitemap();
+      if (url) {
+        setSitemapUrl(url);
+        alert('Sitemap generated and downloaded! Check your downloads folder for sitemap.xml');
       }
-  
-      // Test if API is available
-      const apiUrl = `${baseUrl}/api/generate-sitemap?secret=${secret}`;
-      
-      try {
-        console.log('Testing API endpoint...');
-        const testResponse = await fetch(apiUrl, { 
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (testResponse.ok) {
-          // API is available, use it
-          const result = await testResponse.json();
-          console.log('API Response:', result);
-          
-          if (result.success && result.sitemapUrl) {
-            // Download the sitemap
-            await downloadSitemap(result.sitemapUrl, result);
-            setSitemapUrl(result.sitemapUrl);
-            return;
-          }
-        }
-        
-        console.log('API test failed, using local');
-        await useLocalGeneration();
-        
-      } catch (apiError) {
-        console.log('API not available locally:', apiError);
-        alert('API not available in development. Using local generation.\n\nIn production, the API will work.');
-        await useLocalGeneration();
-      }
-      
-    } catch (error: any) {
-      console.error('Error:', error);
-      alert(`Failed: ${error.message}`);
+    } catch (error) {
+      alert('Error generating sitemap.');
+      console.error(error);
     } finally {
       setIsGeneratingSitemap(false);
     }
   };
-  
-  const useLocalGeneration = async () => {
-    const url = await generateAndUploadSitemap();
-    if (url) {
-      const response = await fetch(url + '?t=' + Date.now());
-      const xmlText = await response.text();
-      
-      const blob = new Blob([xmlText], { type: 'application/xml' });
-      const downloadUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = 'sitemap-local.xml';
-      link.click();
-      URL.revokeObjectURL(downloadUrl);
-      
-      setSitemapUrl(url);
-      alert('✅ Sitemap generated locally');
-    }
-  };
-  
-  const downloadSitemap = async (url: string, result: any) => {
-    const response = await fetch(url);
-    const xmlText = await response.text();
-    
-    const blob = new Blob([xmlText], { type: 'application/xml' });
-    const downloadUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = 'sitemap.xml';
-    link.click();
-    URL.revokeObjectURL(downloadUrl);
-    
-    alert(`✅ Sitemap generated via API!\n\nPosts: ${result.postsCount || 0}\nURL: ${url}`);
-  };
-// Helper function for download
-const triggerDownload = (xmlText: string, filename: string) => {
-  const blob = new Blob([xmlText], { type: 'application/xml' });
-  const downloadUrl = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = downloadUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(downloadUrl);
-  a.remove();
-};
   const handleLogout = () => {
     logout();
     navigate('/');
