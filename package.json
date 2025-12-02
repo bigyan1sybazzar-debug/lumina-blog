@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "build": "node scripts/generate-sitemap.js && vite build"
+"build": "tsc && node scripts/generate-sitemap.js && vite build",
+    "preview": "vite preview"
+    
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
