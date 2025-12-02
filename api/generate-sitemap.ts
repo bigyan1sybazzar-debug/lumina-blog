@@ -13,6 +13,10 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+/**
+ * @param {import('next').NextApiRequest} req
+ * @param {import('next').NextApiResponse} res
+ */
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -81,6 +85,6 @@ export default async function handler(req, res) {
     
   } catch (error) {
     console.error('Error generating sitemap:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error?.message || 'Unknown error' });
   }
 }
