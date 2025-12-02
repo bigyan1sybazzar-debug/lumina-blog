@@ -479,31 +479,69 @@ export const getPublishedPostSlugs = async (): Promise<{ slug: string; updatedAt
 
 export const generateAndUploadSitemap = async (): Promise<string | null> => {
   try {
-    console.log('Triggering sitemap regeneration via API...');
+    const baseUrl = window.location.origin;
+    const apiUrl = `${baseUrl}/api/generate-sitemap`;
     
-    const baseUrl = typeof window !== 'undefined'
-      ? window.location.origin
-      : 'https://lumina-blog.web.app';
+    console.log('Calling Vercel function:', apiUrl);
     
-    // Call your serverless function
-    const response = await fetch('/api/generate-sitemap', {
+    // Call Vercel function
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      // Optional: pass any data needed
-      body: JSON.stringify({ trigger: 'admin' })
     });
     
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Vercel function error (${response.status}): ${errorText}`);
     }
     
-    // Get the XML content
-    const xml = await response.text();
+    const result = await response.json();
     
-    // Also download it for the user
-    if (typeof window !== 'undefined') {
+    // Download the XML
+    const blob = new Blob([result.xml], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sitemap.xml';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('Sitemap generated via Vercel function:', result.sitemapUrl);
+    return result.sitemapUrl;
+    
+  } catch (error) {
+    console.error('Vercel function failed, falling back to local generation:', error);
+    
+    // Fallback to local generation
+    try {
+      const snapshot = await db.collection(POSTS_COLLECTION)
+        .where('status', '==', 'published')
+        .get();
+
+      const posts = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          slug: data.slug || doc.id,
+          updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
+        };
+      });
+
+      const baseUrl = window.location.origin;
+      
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${baseUrl}/</loc></url>
+  ${posts.map(post => `
+  <url>
+    <loc>${baseUrl}/blog/${post.slug}</loc>
+    <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
+  </url>`).join('')}
+</urlset>`;
+
       const blob = new Blob([xml], { type: 'application/xml' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -514,14 +552,12 @@ export const generateAndUploadSitemap = async (): Promise<string | null> => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      console.log('Sitemap downloaded');
+      alert('Vercel function unavailable. Sitemap downloaded locally. Upload to /public/sitemap.xml');
+      return `${baseUrl}/sitemap.xml`;
+    } catch (fallbackError) {
+      console.error('Fallback also failed:', fallbackError);
+      return null;
     }
-    
-    console.log('Sitemap regenerated successfully via API');
-    return `${baseUrl}/sitemap.xml`;
-  } catch (error) {
-    console.error('Failed to generate sitemap via API:', error);
-    return null;
   }
 };
 // --- SEED ---
