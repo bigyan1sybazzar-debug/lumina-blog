@@ -313,7 +313,14 @@ export const Admin: React.FC = () => {
       const url = await generateAndUploadSitemap();
       if (url) {
         setSitemapUrl(url);
-        alert('Sitemap generated and downloaded! Check your downloads folder for sitemap.xml');
+        alert(`
+          ✅ Sitemap generated successfully!
+          
+          Your sitemap is now available at: ${url}
+          
+          The sitemap.xml file has been updated on the server.
+          Search engines will automatically detect this update.
+        `);
       }
     } catch (error) {
       alert('Error generating sitemap.');
