@@ -1,72 +1,86 @@
-import { SitemapStream, streamToPromise } from 'sitemap';
-import { Readable } from 'stream';
-// 1. Import the new function from your existing db.ts file
-import { getPublishedPostSlugs } from '../services/db'; 
-// IMPORTANT: Replace with your actual deployed domain
-const HOSTNAME = 'https://bigyann.com.np'; 
+import admin from 'firebase-admin';
 
-// 2. DEFINE TYPE: Fixes the TS7006 implicit 'any' error for the mapped post data
-type PostSlugData = {
-    slug: string; 
-    updatedAt?: any; // Retained 'any' for the Firestore Timestamp object
-};
+// Initialize Firebase Admin if not already done
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
+}
 
-// Function to handle the Vercel/Node.js request and response
-export default async function Sitemap(req: any, res: any) {
-    try {
-        // 1. Define Static Links
-        const staticLinks = [
-            { url: '/', changefreq: 'weekly', priority: 1.0 },
-            { url: '/About', changefreq: 'monthly', priority: 0.8 },
-            { url: '/Contact', changefreq: 'monthly', priority: 0.8 },
-            // Add other static pages here
-        ];
+const db = admin.firestore();
 
-        // 2. Fetch Dynamic Blog Post Links using the new function
-        // This executes the Firestore query defined in db.ts
-        const posts = await getPublishedPostSlugs();
-        
-        // 3. Map the retrieved data into sitemap format
-        const dynamicLinks = posts.map((post: PostSlugData) => { 
-            // NOTE: Ensure '/BlogPost/' matches your application's route structure
-            const postUrl = `/BlogPost/${post.slug}`;
-            
-            let lastModified = new Date().toISOString();
-            
-            // Safely handle Firestore Timestamp conversion
-            if (post.updatedAt && post.updatedAt.toDate) {
-                lastModified = post.updatedAt.toDate().toISOString();
-            } else if (typeof post.updatedAt === 'string') {
-                lastModified = post.updatedAt;
-            }
-
-            return {
-                url: postUrl, 
-                changefreq: 'daily',
-                priority: 0.9,
-                lastModified: lastModified,
-            };
-        });
-
-        const links = staticLinks.concat(dynamicLinks);
-
-        // 4. Generate the XML Stream
-        const smStream = new SitemapStream({ hostname: HOSTNAME });
-        const sitemap = await streamToPromise(Readable.from(links).pipe(smStream));
-
-        // 5. Send the XML Response
-        res.setHeader('Content-Type', 'text/xml');
-        // Set caching headers to reduce Firestore reads (optional but recommended)
-        res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=86400, stale-while-revalidate=43200'); 
-        res.status(200).send(sitemap.toString());
-
-    } catch (error) {
-        // 🎯 ENHANCED LOGGING: This ensures the specific reason for the 500 is sent to Vercel's logs.
-        console.error('Sitemap generation CRITICAL failure:', error);
-        
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error during function execution.';
-        
-        // Send a 500 status with a message prompting the user to check logs
-        res.status(500).setHeader('Content-Type', 'text/plain').end(`Internal Server Error: Function execution failed. Check Vercel logs for error: ${errorMessage}`);
-    }
+export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle OPTIONS request for CORS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  
+  try {
+    console.log('Generating sitemap...');
+    
+    const snapshot = await db.collection('posts')
+      .where('status', '==', 'published')
+      .get();
+    
+    const posts = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        slug: data.slug || doc.id,
+        updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
+      };
+    });
+    
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://lumina-blog.web.app';
+    
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/categories</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>`;
+    
+    posts.forEach(post => {
+      xml += `
+  <url>
+    <loc>${baseUrl}/blog/${post.slug}</loc>
+    <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+    });
+    
+    xml += '\n</urlset>';
+    
+    // Set headers for XML response
+    res.setHeader('Content-Type', 'application/xml');
+    res.status(200).send(xml);
+    
+  } catch (error) {
+    console.error('Error generating sitemap:', error);
+    res.status(500).json({ error: error.message });
+  }
 }
