@@ -1,50 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LayoutDashboard, FileText, Settings, Sparkles, Loader2, Save, LogOut, Home, Database, PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw, Users, CheckCircle, Clock, Shield, Tag } from 'lucide-react';
+import { ANALYTICS_DATA } from '../constants';
 import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory } from '../services/db';
 import { generateBlogOutline, generateFullPost } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { BlogPost, User, Category } from '../types';
-
-
-
-
-
-
-import { 
-  LayoutDashboard, FileText, Settings, Sparkles, Loader2, Save, LogOut, Home, Database, 
-  PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw, 
-  Users, CheckCircle, Clock, Shield, Tag, Globe, ExternalLink, Trash2, Eye, 
-  Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter
-} from 'lucide-react';
-import { ANALYTICS_DATA } from '../constants';
-import {  deleteCategory, updatePost, deletePost, getPostById 
-} from '../services/db';
+    
+// Markdown with HTML support
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { generateAndUploadSitemap } from '../services/db';
+
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'users' | 'categories' | 'approvals'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
   // Data State
-  const [stats, setStats] = useState({ 
-    posts: 0, 
-    views: 0, 
-    users: 0, 
-    comments: 0,
-    engagement: 0 
-  });
+  const [stats, setStats] = useState({ posts: 0, views: 0 });
   const [usersList, setUsersList] = useState<User[]>([]);
   const [pendingPosts, setPendingPosts] = useState<BlogPost[]>([]);
   const [myPosts, setMyPosts] = useState<BlogPost[]>([]);
-  const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [sitemapUrl, setSitemapUrl] = useState<string | null>(null);
-  const [isGeneratingSitemap, setIsGeneratingSitemap] = useState(false);
   
   // Editor State
   const [editorMode, setEditorMode] = useState<'ai' | 'manual'>('manual');
@@ -52,66 +32,48 @@ export const Admin: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [outline, setOutline] = useState('');
-  const [editingPostId, setEditingPostId] = useState<string | null>(null);
   
-  // Post Data State
+  // Post Data State - FIXED: category now starts empty
   const [title, setTitle] = useState('');
   const [fullContent, setFullContent] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState(''); // ← NOW EMPTY (was 'Technology')
   const [tagsInput, setTagsInput] = useState('');
   const [coverImage, setCoverImage] = useState('https://picsum.photos/800/400?random=1');
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [excerpt, setExcerpt] = useState('');
 
   // Category creation
   const [newCatName, setNewCatName] = useState('');
   const [newCatDesc, setNewCatDesc] = useState('');
-  const [newCatIcon, setNewCatIcon] = useState('Tag');
-
-  // Search and filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [newCatIcon, setNewCatIcon] = useState('Hash');
 
   const isAdmin = user?.role === 'admin';
   const isModerator = user?.role === 'moderator' || isAdmin;
 
+  // FIXED: Set default category only after categories are loaded
   const refreshData = async () => {
-    try {
-      if (isAdmin) {
-        const allPostsData = await getPosts();
-        const totalViews = allPostsData.reduce((acc, curr) => acc + (curr.views || 0), 0);
-        const totalComments = allPostsData.reduce((acc, curr) => acc + (0 || 0), 0);
-        
-        setAllPosts(allPostsData);
-        setStats({ 
-          posts: allPostsData.length, 
-          views: totalViews, 
-          users: usersList.length,
-          comments: totalComments,
-          engagement: Math.round((totalViews / Math.max(allPostsData.length, 1)) * 100) / 100
-        });
-        
-        const pPending = await getPendingPosts();
-        setPendingPosts(pPending);
-
-        const allUsers = await getAllUsers();
-        setUsersList(allUsers);
-      }
-
-      if (user) {
-        const mine = await getUserPosts(user.id);
-        setMyPosts(mine);
-      }
+    if (isAdmin) {
+      const allPosts = await getPosts();
+      const totalViews = allPosts.reduce((acc, curr) => acc + (curr.views || 0), 0);
+      setStats({ posts: allPosts.length, views: totalViews });
       
-      const cats = await getCategories();
-      setCategories(cats);
+      const pPending = await getPendingPosts();
+      setPendingPosts(pPending);
 
-      // Auto-select first category only if none selected yet
-      if (cats.length > 0 && !category) {
-        setCategory(cats[0].name);
-      }
-    } catch (error) {
-      console.error('Error refreshing data:', error);
+      const allUsers = await getAllUsers();
+      setUsersList(allUsers);
+    }
+
+    if (user) {
+      const mine = await getUserPosts(user.id);
+      setMyPosts(mine);
+    }
+    
+    const cats = await getCategories();
+    setCategories(cats);
+
+    // Auto-select first category only if none selected yet
+    if (cats.length > 0 && !category) {
+      setCategory(cats[0].name);
     }
   };
 
@@ -122,37 +84,21 @@ export const Admin: React.FC = () => {
   const handleGenerateOutline = async () => {
     if (!topic) return;
     setIsGenerating(true);
-    try {
-      const result = await generateBlogOutline(topic);
-      setOutline(result);
-      const lines = result.split('\n');
-      const possibleTitle = lines.find(l => l.startsWith('#'))?.replace('#', '').trim() || `Post about ${topic}`;
-      setTitle(possibleTitle);
-      setExcerpt(`${possibleTitle} - An in-depth exploration of ${topic.toLowerCase()}.`);
-    } catch (error) {
-      alert('Failed to generate outline. Please try again.');
-      console.error(error);
-    } finally {
-      setIsGenerating(false);
-      setStep(2);
-    }
+    const result = await generateBlogOutline(topic);
+    setOutline(result);
+    const lines = result.split('\n');
+    const possibleTitle = lines.find(l => l.startsWith('#'))?.replace('#', '').trim() || `Post about ${topic}`;
+    setTitle(possibleTitle);
+    setIsGenerating(false);
+    setStep(2);   
   };
 
   const handleGenerateFull = async () => {
     setIsGenerating(true);
-    try {
-      const result = await generateFullPost(title, outline);
-      setFullContent(result);
-      if (!excerpt) {
-        setExcerpt(result.substring(0, 150).replace(/[#*`]/g, '') + '...');
-      }
-    } catch (error) {
-      alert('Failed to generate full post. Please try again.');
-      console.error(error);
-    } finally {
-      setIsGenerating(false);
-      setStep(3);
-    }
+    const result = await generateFullPost(title, outline);
+    setFullContent(result);
+    setIsGenerating(false);
+    setStep(3);
   };
 
   const handleSavePost = async () => {
@@ -160,216 +106,87 @@ export const Admin: React.FC = () => {
       alert("Please fill in Title, Content, and select a Category.");
       return;
     }
-    
     setIsSaving(true);
     try {
       const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0);
       if (editorMode === 'ai' && tags.length === 0) tags.push('AI Generated');
-  
-      const status: 'published' | 'pending' | 'draft' = isAdmin ? 'published' : 'pending';
-      const postData = {
+
+      const status = isAdmin ? 'published' : 'pending';
+
+      await createPost({
         title,
         content: fullContent,
-        excerpt: excerpt || fullContent.substring(0, 150).replace(/[#*`]/g, '') + '...',
+        excerpt: fullContent.substring(0, 150).replace(/[#*`]/g, '') + "...",
         author: { name: user.name, avatar: user.avatar, id: user.id },
         readTime: `${Math.ceil(fullContent.split(' ').length / 200)} min read`,
         category,
         tags,
         coverImage,
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        status, // Now properly typed
-        updatedAt: new Date().toISOString()
-      };
-  
-      if (editingPostId) {
-        await updatePost(editingPostId, postData);
-        alert('Post updated successfully!');
-      } else {
-        await createPost(postData);
-        alert(isAdmin ? 'Post published successfully!' : 'Post submitted for approval!');
-      }
+        status
+      });
+      
+      alert(isAdmin ? 'Post published successfully!' : 'Post submitted for approval!');
       
       // Reset form
-      resetEditor();
-      setActiveTab('posts');
+      setStep(1); setTopic(''); setTitle(''); setOutline(''); setFullContent(''); setTagsInput(''); setCategory('');
+      setEditorMode('manual'); 
+      setActiveTab('dashboard');
       refreshData();
-    } catch (error) {
-      alert('Failed to save post. Please check console for details.');
-      console.error(error);
-    } finally {
-      setIsSaving(false);
+    } catch (e) {
+      alert('Failed to save post. Check console.');
+      console.error(e);
     }
-  };
-
-  const handleEditPost = async (postId: string) => {
-    try {
-      const post = await getPostById(postId);
-      if (post) {
-        setTitle(post.title);
-        setFullContent(post.content);
-        setCategory(post.category);
-        setTagsInput(post.tags?.join(', ') || '');
-        setCoverImage(post.coverImage || 'https://picsum.photos/800/400?random=1');
-        setExcerpt(post.excerpt || '');
-        setEditingPostId(postId);
-        setEditorMode('manual');
-        setStep(3);
-        setActiveTab('editor');
-      }
-    } catch (error) {
-      console.error('Error loading post:', error);
-      alert('Failed to load post for editing.');
-    }
-  };
-
-  const handleDeletePost = async (postId: string) => {
-    if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-      try {
-        await deletePost(postId);
-        alert('Post deleted successfully!');
-        refreshData();
-      } catch (error) {
-        alert('Failed to delete post.');
-        console.error(error);
-      }
-    }
+    setIsSaving(false);
   };
 
   const handleApprovePost = async (postId: string) => {
-    try {
-      await updatePostStatus(postId, 'published');
-      alert('Post approved and published!');
-      refreshData();
-    } catch (error) {
-      alert('Failed to approve post.');
-      console.error(error);
-    }
+    await updatePostStatus(postId, 'published');
+    refreshData();
   };
-
-  const handleRejectPost = async (postId: string) => {
-    if (confirm('Are you sure you want to reject this post?')) {
-      try {
-        await updatePostStatus(postId, 'draft');
-        alert('Post rejected and moved to draft.');
-        refreshData();
-      } catch (error) {
-        alert('Failed to reject post.');
-        console.error(error);
-      }
-    }
-  };
-
   const handleChangeRole = async (userId: string, newRole: string) => {
-    try {
-      // Type assertion
-      await updateUserRole(userId, newRole as 'user' | 'moderator' | 'admin');
-      alert(`User role updated to ${newRole}`);
-      refreshData();
-    } catch (error) {
-      alert('Failed to update user role.');
-      console.error(error);
-    }
-  };
-
-  const handleCreateCategory = async () => {
-    if (!newCatName.trim()) {
-      alert('Please enter a category name.');
+    // Validate the role
+    const validRoles = ['user', 'moderator', 'admin'];
+    if (!validRoles.includes(newRole)) {
+      console.error('Invalid role selected:', newRole);
       return;
     }
     
-    try {
-      await createCategory({ 
-        name: newCatName, 
-        description: newCatDesc, 
-        icon: newCatIcon 
-      });
-      alert('Category created successfully!');
-      setNewCatName('');
-      setNewCatDesc('');
-      setNewCatIcon('Tag');
-      refreshData();
-    } catch (error) {
-      alert('Failed to create category.');
-      console.error(error);
-    }
+    await updateUserRole(userId, newRole as 'user' | 'moderator' | 'admin');
+    refreshData();
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (confirm('Are you sure? Posts in this category will need to be reassigned.')) {
-      try {
-        await deleteCategory(categoryId);
-        alert('Category deleted successfully!');
-        refreshData();
-      } catch (error) {
-        alert('Failed to delete category.');
-        console.error(error);
-      }
-    }
+  const handleCreateCategory = async () => {
+    if (!newCatName) return;
+    await createCategory({ name: newCatName, description: newCatDesc, icon: newCatIcon });
+    setNewCatName(''); setNewCatDesc(''); setNewCatIcon('Hash');
+    refreshData();
   };
 
-  const handleRegenerateSitemap = async () => {
-    setIsGeneratingSitemap(true);
-    try {
-      const url = await generateAndUploadSitemap();
-      if (url) {
-        setSitemapUrl(url);
-        alert('Sitemap generated and downloaded! Check your downloads folder for sitemap.xml');
-      }
-    } catch (error) {
-      alert('Error generating sitemap.');
-      console.error(error);
-    } finally {
-      setIsGeneratingSitemap(false);
-    }
-  };
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  const resetEditor = () => {
-    setTitle('');
-    setFullContent('');
-    setCategory('');
-    setTagsInput('');
-    setCoverImage(`https://picsum.photos/800/400?random=${Date.now()}`);
-    setExcerpt('');
-    setTopic('');
-    setOutline('');
-    setEditingPostId(null);
-    setStep(1);
-  };
-
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const setRandomImage = () => setCoverImage(`https://picsum.photos/800/400?random=${Math.floor(Math.random() * 1000)}`);
 
-  const goToEditor = (mode: 'manual' | 'ai', editPostId: string | null = null) => { 
+  // FIXED: Reset category properly when switching modes
+  const goToEditor = (mode: 'manual' | 'ai') => { 
     setEditorMode(mode); 
     setActiveTab('editor'); 
     setIsSidebarOpen(false);
-    setEditingPostId(editPostId);
     
-    if (!editPostId) {
-      resetEditor();
-      setStep(mode === 'ai' ? 1 : 3);
-      
-      if (categories.length > 0) {
-        setCategory(categories[0].name);
-      }
+    // Reset form
+    setTitle(''); setFullContent(''); setTagsInput(''); setTopic(''); setOutline('');
+    setCoverImage(`https://picsum.photos/800/400?random=${Date.now()}`);
+    setStep(mode === 'ai' ? 1 : 3);
+    
+    // Set default category safely
+    if (categories.length > 0) {
+      setCategory(categories[0].name);
     }
   };
-
-  // Filter posts based on search and status
-  const filteredPosts = allPosts.filter(post => {
-    const matchesSearch = searchQuery === '' || 
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesStatus = selectedStatus === 'all' || post.status === selectedStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
@@ -390,9 +207,7 @@ export const Admin: React.FC = () => {
             <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">
               Bigyann
             </span>
-            <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-500 uppercase">
-              {user?.role}
-            </span>
+            <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-500 uppercase">{user?.role}</span>
           </Link>
           <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-500">
             <X size={24} />
@@ -403,88 +218,49 @@ export const Admin: React.FC = () => {
           <div className="mb-8">
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4 px-4">Menu</h2>
             <nav className="space-y-1">
-              <button 
-                onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}
+              <button onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}
                 className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                   activeTab === 'dashboard' 
                     ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
-              >
+                }`}>
                 <LayoutDashboard size={18} className="mr-3" /> Dashboard
               </button>
               
-              <button 
-                onClick={() => goToEditor('manual')}
+              <button onClick={() => goToEditor('manual')}
                 className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                   activeTab === 'editor' 
                     ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
-              >
+                }`}>
                 <PenTool size={18} className="mr-3" /> Write Post
-              </button>
-
-              <button 
-                onClick={() => { setActiveTab('posts'); setIsSidebarOpen(false); }}
-                className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === 'posts' 
-                    ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
-              >
-                <FileText size={18} className="mr-3" /> All Posts
               </button>
 
               {isAdmin && (
                 <>
-                  <button 
-                    onClick={() => { setActiveTab('approvals'); setIsSidebarOpen(false); }}
+                  <button onClick={() => { setActiveTab('approvals'); setIsSidebarOpen(false); }}
                     className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                       activeTab === 'approvals' 
                         ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <CheckCircle size={18} className="mr-3" /> 
-                    Approvals {pendingPosts.length > 0 && (
-                      <span className="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">
-                        {pendingPosts.length}
-                      </span>
-                    )}
+                    }`}>
+                    <CheckCircle size={18} className="mr-3" /> Pending ({pendingPosts.length})
                   </button>
-                  
-                  <button 
-                    onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }}
+                  <button onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }}
                     className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                       activeTab === 'users' 
                         ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                  >
+                    }`}>
                     <Users size={18} className="mr-3" /> Users
                   </button>
-                  
-                  <button 
-                    onClick={() => { setActiveTab('categories'); setIsSidebarOpen(false); }}
+                  <button onClick={() => { setActiveTab('categories'); setIsSidebarOpen(false); }}
                     className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                       activeTab === 'categories' 
                         ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                  >
+                    }`}>
                     <Tag size={18} className="mr-3" /> Categories
-                  </button>
-
-                  <button 
-                    onClick={() => { setActiveTab('analytics'); setIsSidebarOpen(false); }}
-                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                      activeTab === 'analytics' 
-                        ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <TrendingUp size={18} className="mr-3" /> Analytics
                   </button>
                 </>
               )}
@@ -508,7 +284,8 @@ export const Admin: React.FC = () => {
               onClick={handleLogout}
               className="flex items-center w-full px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 dark:hover:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
             >
-              <LogOut size={16} className="mr-3" /> Sign Out
+              <LogOut size={16} className="mr-3" />
+              Sign Out
             </button>
           </div>
         </div>
@@ -534,107 +311,48 @@ export const Admin: React.FC = () => {
           
           {/* DASHBOARD TAB */}
           {activeTab === 'dashboard' && (
-            <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+            <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Hello, {user?.name}</h1>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">
-                    {isAdmin ? "Here's what's happening across the platform." : "Manage your stories and create something new."}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => goToEditor('manual')}
-                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm active:scale-95 transform duration-100"
-                  >
-                    <Plus size={16} />
-                    <span>Write New Story</span>
-                  </button>
-                  {isAdmin && (
-                    <>
-                      <button 
-                        onClick={async () => { if(confirm("Seed database with sample data?")) await seedDatabase(); refreshData(); }}
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Hello, {user?.name}</h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">
+                      {isAdmin ? "Here's what's happening across the platform." : "Manage your stories and create something new."}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => goToEditor('manual')}
+                      className="flex items-center justify-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm active:scale-95 transform duration-100"
+                    >
+                      <Plus size={16} />
+                      <span>Write New Story</span>
+                    </button>
+                    {isAdmin && (
+                    <button 
+                        onClick={async () => { if(confirm("Seed DB?")) await seedDatabase(); refreshData(); }}
                         className="flex items-center justify-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
-                      >
+                    >
                         <Database size={16} />
                         <span className="hidden sm:inline">Seed Data</span>
-                      </button>
-                      <button 
-                        onClick={handleRegenerateSitemap}
-                        disabled={isGeneratingSitemap}
-                        className="flex items-center justify-center space-x-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium disabled:opacity-50"
-                      >
-                        <Globe size={16} />
-                        <span className="hidden sm:inline">Update Sitemap</span>
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Views</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.views.toLocaleString()}</p>
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Posts</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.posts}</p>
-                </div>
-                {isAdmin && (
-                  <>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Review</p>
-                      <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">{pendingPosts.length}</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
-                      <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">{stats.users}</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Engagement Rate</p>
-                      <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">{stats.engagement}</p>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Sitemap Card for Admin */}
-              {isAdmin && sitemapUrl && (
-                <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl shadow-sm border border-gray-700 text-white">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <Globe size={24} className="text-emerald-400" />
-                      <div>
-                        <h3 className="font-bold text-lg">Sitemap</h3>
-                        <p className="text-sm text-gray-300">Last updated automatically</p>
-                      </div>
-                    </div>
-                    <a 
-                      href={sitemapUrl} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="flex items-center space-x-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
-                    >
-                      <ExternalLink size={16} />
-                      <span>View XML</span>
-                    </a>
-                  </div>
-                  <div className="flex justify-between items-center mt-4">
-                    <p className="text-sm text-gray-400">Updates automatically on publish. Force update if needed.</p>
-                    <button 
-                      onClick={handleRegenerateSitemap}
-                      disabled={isGeneratingSitemap}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center space-x-2"
-                    >
-                      {isGeneratingSitemap ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <RefreshCw size={16} />
-                      )}
-                      <span>Update Now</span>
                     </button>
+                    )}
+                  </div>
+              </div>
+
+              {/* Admin Stats Grid */}
+              {isAdmin && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Views</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.views}</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Posts</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.posts}</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Review</p>
+                    <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">{pendingPosts.length}</p>
                   </div>
                 </div>
               )}
@@ -661,15 +379,7 @@ export const Admin: React.FC = () => {
               
               {/* My Posts Section */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">My Recent Stories</h3>
-                  <button 
-                    onClick={() => setActiveTab('posts')}
-                    className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
-                  >
-                    View All →
-                  </button>
-                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">My Recent Stories</h3>
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead>
@@ -678,11 +388,10 @@ export const Admin: React.FC = () => {
                         <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Date</th>
                         <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Status</th>
                         <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Views</th>
-                        <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {myPosts.slice(0, 5).map(post => (
+                      {myPosts.length > 0 ? myPosts.map(post => (
                         <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                           <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white max-w-xs truncate">{post.title}</td>
                           <td className="py-3 px-4 text-sm text-gray-500">{post.date}</td>
@@ -695,32 +404,11 @@ export const Admin: React.FC = () => {
                               {post.status}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-sm text-gray-500">{post.views?.toLocaleString() || 0}</td>
-                          <td className="py-3 px-4">
-                            <div className="flex space-x-2">
-                              <button 
-                                onClick={() => handleEditPost(post.id)}
-                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
-                                title="Edit"
-                              >
-                                <Edit3 size={16} />
-                              </button>
-                              <button 
-                                onClick={() => window.open(`/blog/${post.id}`, '_blank')}
-                                className="text-gray-600 hover:text-gray-800 dark:text-gray-400"
-                                title="Preview"
-                              >
-                                <Eye size={16} />
-                              </button>
-                            </div>
-                          </td>
+                          <td className="py-3 px-4 text-sm text-gray-500">{post.views || 0}</td>
                         </tr>
-                      ))}
-                      {myPosts.length === 0 && (
+                      )) : (
                         <tr>
-                          <td colSpan={5} className="py-4 text-center text-sm text-gray-500">
-                            You haven't written any posts yet.
-                          </td>
+                          <td colSpan={4} className="py-4 text-center text-sm text-gray-500">You haven't written any posts yet.</td>
                         </tr>
                       )}
                     </tbody>
@@ -753,519 +441,160 @@ export const Admin: React.FC = () => {
             </div>
           )}
 
-          {/* ALL POSTS TAB */}
-          {activeTab === 'posts' && (
-            <div className="max-w-7xl mx-auto space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">All Posts</h1>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => goToEditor('manual')}
-                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
-                  >
-                    <Plus size={16} />
-                    <span>New Post</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Search and Filter */}
-              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="text"
-                      placeholder="Search posts..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
-                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="all">All Status</option>
-                      <option value="published">Published</option>
-                      <option value="pending">Pending</option>
-                      <option value="draft">Draft</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Posts Table */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-900/50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {filteredPosts.map(post => (
-                        <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <img 
-                                src={post.coverImage} 
-                                alt={post.title}
-                                className="w-10 h-10 rounded-lg object-cover mr-3"
-                              />
-                              <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-xs">
-                                  {post.title}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {post.tags?.slice(0, 2).map(tag => `#${tag}`).join(', ')}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <img src={post.author.avatar} alt={post.author.name} className="w-6 h-6 rounded-full mr-2" />
-                              <span className="text-sm text-gray-900 dark:text-white">{post.author.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {post.category}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              post.status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                              post.status === 'pending' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
-                              'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                            }`}>
-                              {post.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {post.views?.toLocaleString() || 0}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {post.date}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <div className="flex space-x-2">
-                              <button 
-                                onClick={() => handleEditPost(post.id)}
-                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 p-1"
-                                title="Edit"
-                              >
-                                <Edit3 size={16} />
-                              </button>
-                              <button 
-                                onClick={() => window.open(`/blog/${post.id}`, '_blank')}
-                                className="text-gray-600 hover:text-gray-800 dark:text-gray-400 p-1"
-                                title="Preview"
-                              >
-                                <Eye size={16} />
-                              </button>
-                              {isAdmin && (
-                                <button 
-                                  onClick={() => handleDeletePost(post.id)}
-                                  className="text-red-600 hover:text-red-800 dark:text-red-400 p-1"
-                                  title="Delete"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {filteredPosts.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                            No posts found. {searchQuery && 'Try a different search term.'}
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* APPROVALS TAB */}
+          {/* APPROVALS TAB (Admin) */}
           {activeTab === 'approvals' && isAdmin && (
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-w-6xl mx-auto space-y-6">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pending Approvals</h1>
-              
-              {pendingPosts.length > 0 ? (
-                <div className="space-y-4">
-                  {pendingPosts.map(post => (
-                    <div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                      <div className="flex flex-col md:flex-row justify-between gap-6">
-                        <div className="flex-1">
-                          <div className="flex items-start gap-4">
-                            <img 
-                              src={post.coverImage} 
-                              alt={post.title}
-                              className="w-24 h-24 rounded-lg object-cover"
-                            />
-                            <div>
-                              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{post.title}</h3>
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="flex items-center">
-                                  <img src={post.author.avatar} alt={post.author.name} className="w-5 h-5 rounded-full mr-2" />
-                                  <span className="text-sm text-gray-600 dark:text-gray-400">{post.author.name}</span>
-                                </div>
-                                <span className="text-sm text-gray-500">•</span>
-                                <span className="text-sm text-gray-500">{post.date}</span>
-                                <span className="text-sm text-gray-500">•</span>
-                                <span className="text-sm font-medium text-gray-900 dark:text-white">{post.category}</span>
-                              </div>
-                              <p className="text-gray-600 dark:text-gray-300 mb-3">{post.excerpt}</p>
-                              <div className="flex flex-wrap gap-2">
-                                {post.tags?.map(tag => (
-                                  <span key={tag} className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
-                                    #{tag}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2 md:w-48">
-                          <button 
-                            onClick={() => window.open(`/blog/${post.id}`, '_blank')}
-                            className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-                          >
-                            <Eye size={16} />
-                            Preview
-                          </button>
-                          <button 
-                            onClick={() => handleApprovePost(post.id)}
-                            className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                          >
-                            <CheckCircle size={16} />
-                            Approve
-                          </button>
-                          <button 
-                            onClick={() => handleRejectPost(post.id)}
-                            className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
-                          >
-                            <X size={16} />
-                            Reject
-                          </button>
-                        </div>
-                      </div>
+              <div className="space-y-4">
+                {pendingPosts.length > 0 ? pendingPosts.map(post => (
+                  <div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">{post.title}</h3>
+                      <p className="text-sm text-gray-500 mt-1">By {post.author.name} • {post.date}</p>
+                      <p className="text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">{post.excerpt}</p>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No pending approvals</h3>
-                  <p className="text-gray-500 dark:text-gray-400">All posts have been reviewed and approved.</p>
-                </div>
-              )}
+                    <div className="flex items-center gap-2">
+                       <button onClick={() => window.open(`#/blog/${post.id}`, '_blank')} className="btn-secondary text-sm">Preview</button>
+                       <button onClick={() => handleApprovePost(post.id)} className="btn-primary bg-green-600 hover:bg-green-700 text-sm">Approve</button>
+                    </div>
+                  </div>
+                )) : (
+                  <p className="text-gray-500">No pending posts to review.</p>
+                )}
+              </div>
             </div>
           )}
 
-          {/* USERS TAB */}
+          {/* USERS TAB (Admin) */}
           {activeTab === 'users' && isAdmin && (
-            <div className="max-w-7xl mx-auto space-y-6">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
-              
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="max-w-6xl mx-auto space-y-6">
+               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
+               <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-900/50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posts</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {usersList.map(u => {
-                        const userPosts = allPosts.filter(p => p.author.id === u.id);
-                        return (
-                          <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <img className="h-10 w-10 rounded-full" src={u.avatar} alt="" />
-                                <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900 dark:text-white">{u.name}</div>
-                                </div>
+                      {usersList.map(u => (
+                        <tr key={u.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <img className="h-10 w-10 rounded-full" src={u.avatar} alt="" />
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">{u.name}</div>
+                                <div className="text-sm text-gray-500">{u.email}</div>
                               </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {u.email}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                u.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 
-                                u.role === 'moderator' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 
-                                'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                              }`}>
-                                {u.role}
-                              </span>
-                            </td>
-                            
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {userPosts.length}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <select 
-                                value={u.role}
-                                onChange={(e) => handleChangeRole(u.id, e.target.value)}
-                                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:text-white"
-                              >
-                                <option value="user">User</option>
-                                <option value="moderator">Moderator</option>
-                                <option value="admin">Admin</option>
-                              </select>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              u.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
+                              u.role === 'moderator' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <select 
+  value={u.role}
+  onChange={(e) => handleChangeRole(u.id, e.target.value as 'user' | 'moderator' | 'admin')}
+  className="rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:ring-primary-500 focus:border-primary-500"
+>
+  <option value="user">User</option>
+  <option value="moderator">Moderator</option>
+  <option value="admin">Admin</option>
+</select>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
-                </div>
+               </div>
               </div>
-            </div>
           )}
 
-          {/* CATEGORIES TAB */}
+          {/* CATEGORIES TAB (Admin) */}
           {activeTab === 'categories' && isAdmin && (
-            <div className="max-w-7xl mx-auto space-y-8">
+            <div className="max-w-4xl mx-auto space-y-8">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Categories</h1>
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Create Category Form */}
-                <div className="lg:col-span-1">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4 sticky top-6">
-                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">Add New Category</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
-                        <input 
-                          type="text"
-                          placeholder="e.g., AI Trends" 
-                          value={newCatName}
-                          onChange={(e) => setNewCatName(e.target.value)}
-                          className="input-field"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icon Name</label>
-                        <input 
-                          type="text"
-                          placeholder="Lucide icon name" 
-                          value={newCatIcon}
-                          onChange={(e) => setNewCatIcon(e.target.value)}
-                          className="input-field"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Use icon names from Lucide React Icons</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                        <textarea 
-                          placeholder="Brief description of this category"
-                          value={newCatDesc}
-                          onChange={(e) => setNewCatDesc(e.target.value)}
-                          className="input-field min-h-[100px]"
-                        />
-                      </div>
-                      <button 
-                        onClick={handleCreateCategory}
-                        className="w-full btn-primary flex items-center justify-center gap-2"
-                      >
-                        <Plus size={18} />
-                        Create Category
-                      </button>
-                    </div>
-                  </div>
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
+                <h3 className="font-bold text-lg">Add New Category</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <input 
+                    placeholder="Name (e.g. AI Trends)" 
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    className="input-field"
+                   />
+                   <input 
+                    placeholder="Icon Name (Lucide)" 
+                    value={newCatIcon}
+                    onChange={(e) => setNewCatIcon(e.target.value)}
+                    className="input-field"
+                   />
                 </div>
-
-                {/* Categories List */}
-                <div className="lg:col-span-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {categories.map(cat => (
-                      <div key={cat.id} className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex justify-between items-start hover:shadow-md transition-shadow">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center">
-                              <Tag size={20} className="text-primary-600 dark:text-primary-400" />
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-lg text-gray-900 dark:text-white">{cat.name}</h4>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">{cat.description || 'No description'}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between mt-4">
-                            <span className="text-xs font-medium bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-gray-700 dark:text-gray-300">
-                              {cat.count || 0} posts
-                            </span>
-                            <div className="flex gap-2">
-                              <button 
-                                onClick={() => handleDeleteCategory(cat.id)}
-                                className="text-red-600 hover:text-red-800 dark:text-red-400 p-1"
-                                title="Delete"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {categories.length === 0 && (
-                      <div className="col-span-2 text-center py-12">
-                        <Tag size={48} className="mx-auto text-gray-400 mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No categories yet</h3>
-                        <p className="text-gray-500 dark:text-gray-400">Create your first category to organize posts.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <input 
+                  placeholder="Description" 
+                  value={newCatDesc}
+                  onChange={(e) => setNewCatDesc(e.target.value)}
+                  className="input-field"
+                />
+                <button onClick={handleCreateCategory} className="btn-primary">Create Category</button>
               </div>
-            </div>
-          )}
 
-          {/* ANALYTICS TAB */}
-          {activeTab === 'analytics' && isAdmin && (
-            <div className="max-w-7xl mx-auto space-y-8">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics Dashboard</h1>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Traffic Overview</h3>
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={ANALYTICS_DATA}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.1} />
-                          <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
-                          <Tooltip 
-                            contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#F3F4F6', borderRadius: '8px' }}
-                            itemStyle={{ color: '#F3F4F6' }}
-                          />
-                          <Bar dataKey="views" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={40} />
-                          <Bar dataKey="visitors" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={40} />
-                        </BarChart>
-                      </ResponsiveContainer>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {categories.map(cat => (
+                  <div key={cat.id} className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold">{cat.name}</h4>
+                      <p className="text-sm text-gray-500">{cat.description}</p>
                     </div>
+                    <div className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{cat.count} posts</div>
                   </div>
-                </div>
-                
-                <div className="space-y-6">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Top Performing Posts</h3>
-                    <div className="space-y-4">
-                      {allPosts
-                        .sort((a, b) => (b.views || 0) - (a.views || 0))
-                        .slice(0, 3)
-                        .map((post, index) => (
-                          <div key={post.id} className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <span className="text-sm font-medium text-gray-500 mr-3">#{index + 1}</span>
-                              <div>
-                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[150px]">
-                                  {post.title}
-                                </p>
-                                <p className="text-xs text-gray-500">{post.category}</p>
-                              </div>
-                            </div>
-                            <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
-                              {post.views?.toLocaleString() || 0} views
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Category Performance</h3>
-                    <div className="space-y-3">
-                      {categories.map(cat => {
-                        const catPosts = allPosts.filter(p => p.category === cat.name);
-                        const totalViews = catPosts.reduce((sum, post) => sum + (post.views || 0), 0);
-                        return (
-                          <div key={cat.id} className="flex justify-between items-center">
-                            <span className="text-sm text-gray-900 dark:text-white">{cat.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-500">{catPosts.length} posts</span>
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                {totalViews.toLocaleString()} views
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           )}
 
           {/* EDITOR TAB */}
           {activeTab === 'editor' && (
-            <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
+            <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
               
               {/* Editor Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                   <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                     {editorMode === 'ai' ? <Sparkles className="text-primary-500" /> : <PenTool className="text-green-500" />}
                     {editorMode === 'ai' ? 'AI Assistant' : 'Post Editor'}
-                    {editingPostId && <span className="text-sm font-normal text-gray-500">(Editing)</span>}
                   </h1>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">
-                    {editorMode === 'ai' ? 'Let AI help you write amazing content' : 'Create and edit your blog posts'}
-                  </p>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-lg self-start sm:self-auto">
                   <button
-                    onClick={() => setActiveTab('posts')}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    onClick={() => {setEditorMode('manual'); setStep(3)}} // Go straight to manual editing stage
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                      editorMode === 'manual' 
+                        ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white' 
+                        : 'text-gray-500 dark:text-gray-300'
+                    }`}
                   >
-                    Cancel
+                    Manual
                   </button>
-                  <div className="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-lg">
-                    <button
-                      onClick={() => {setEditorMode('manual'); setStep(3)}}
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                        editorMode === 'manual' 
-                          ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white' 
-                          : 'text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                      }`}
-                    >
-                      Manual
-                    </button>
-                    <button
-                      onClick={() => {setEditorMode('ai'); setStep(1)}}
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                        editorMode === 'ai' 
-                          ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white' 
-                          : 'text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                      }`}
-                    >
-                      AI Write
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {setEditorMode('ai'); setStep(1)}} // Reset AI flow to step 1
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                      editorMode === 'ai' 
+                        ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white' 
+                        : 'text-gray-500 dark:text-gray-300'
+                    }`}
+                  >
+                    AI Write
+                  </button>
                 </div>
               </div>
 
@@ -1275,254 +604,141 @@ export const Admin: React.FC = () => {
                 {editorMode === 'ai' && (
                   <>
                     {/* Step 1: Topic */}
-                    <div className={`space-y-6 ${step !== 1 ? 'hidden' : ''}`}>
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">What should we write about?</h2>
-                        <p className="text-gray-500 dark:text-gray-400">
-                          Enter a topic or prompt and let AI generate an outline for you.
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <label className="block text-base font-medium text-gray-700 dark:text-gray-200">
-                          Topic or Prompt *
-                        </label>
-                        <div className="flex flex-col md:flex-row gap-3">
-                          <input 
-                            type="text" 
-                            value={topic}
-                            onChange={(e) => setTopic(e.target.value)}
-                            placeholder="e.g., The future of JavaScript frameworks, How to learn React in 2024, Benefits of TypeScript..."
-                            className="input-field flex-1"
-                          />
-                          <button 
-                            onClick={handleGenerateOutline}
-                            disabled={isGenerating || !topic.trim()}
-                            className="btn-primary flex items-center justify-center min-w-[180px] h-[42px]"
-                          >
-                            {isGenerating ? (
-                              <Loader2 size={20} className="animate-spin mr-2" />
-                            ) : (
-                              <Wand2 size={20} className="mr-2" />
-                            )}
+                    <div className={`space-y-4 ${step !== 1 ? 'hidden' : ''}`}>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">What should we write about?</h2>
+                      <label className="block text-base font-medium text-gray-700 dark:text-gray-200">
+                        Enter a topic or prompt:
+                      </label>
+                      <div className="flex flex-col md:flex-row gap-3">
+                        <input 
+                          type="text" 
+                          value={topic}
+                          onChange={(e) => setTopic(e.target.value)}
+                          placeholder="e.g., The future of JavaScript frameworks..."
+                          className="input-field flex-1"
+                        />
+                        <button 
+                          onClick={handleGenerateOutline}
+                          disabled={isGenerating || !topic}
+                          className="btn-primary flex items-center justify-center min-w-[150px]"
+                        >
+                            {isGenerating ? <Loader2 size={20} className="animate-spin mr-2" /> : <Wand2 size={20} className="mr-2" />}
                             {isGenerating ? 'Generating...' : 'Generate Outline'}
-                          </button>
-                        </div>
-                        <p className="text-sm text-gray-500">
-                          Be specific for better results. Include keywords and target audience if possible.
-                        </p>
+                        </button>
                       </div>
                     </div>
                     
                     {/* Step 2: Outline */}
                     <div className={`space-y-6 ${step !== 2 ? 'hidden' : ''}`}>
-                      <button 
-                        onClick={() => setStep(1)}
-                        className="text-sm flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600"
-                      >
-                        <ArrowLeft size={16} className="mr-1" /> Back to Topic
-                      </button>
-                      
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Outline & Title</h2>
-                      <p className="text-gray-500 dark:text-gray-400 mb-4">
-                        Review and refine the AI-generated outline. A good outline leads to better content.
-                      </p>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Post Title</label>
-                          <input 
+                        <button onClick={() => setStep(1)} className="text-sm flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600">
+                          <ArrowLeft size={16} className="mr-1" /> Back to Topic
+                        </button>
+                        
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Outline & Title</h2>
+                        
+                        <input 
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Enter a compelling title..."
-                            className="input-field text-lg font-bold"
-                          />
-                        </div>
+                            placeholder="Post Title"
+                            className="input-field text-xl font-bold"
+                        />
                         
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Outline (Markdown)
-                            <span className="text-xs text-gray-500 ml-2">Edit as needed before generating full content</span>
-                          </label>
-                          <textarea
+                        <textarea
                             value={outline}
                             onChange={(e) => setOutline(e.target.value)}
-                            placeholder="The AI-generated outline will appear here..."
+                            placeholder="Edit the generated outline here..."
                             className="input-field min-h-[300px] font-mono text-sm"
-                          />
-                        </div>
+                        />
                         
                         <button 
                           onClick={handleGenerateFull}
-                          disabled={isGenerating || !outline.trim()}
+                          disabled={isGenerating || !outline}
                           className="btn-primary w-full flex items-center justify-center"
                         >
-                          {isGenerating ? (
-                            <Loader2 size={20} className="animate-spin mr-2" />
-                          ) : (
-                            <Sparkles size={20} className="mr-2" />
-                          )}
-                          {isGenerating ? 'Generating Full Post...' : 'Generate Full Post from Outline'}
+                            {isGenerating ? <Loader2 size={20} className="animate-spin mr-2" /> : <Sparkles size={20} className="mr-2" />}
+                            {isGenerating ? 'Generating Full Post...' : 'Generate Full Post from Outline'}
                         </button>
-                      </div>
                     </div>
 
                     {/* Step 3: Final Review (AI) */}
                     <div className={`space-y-6 ${step !== 3 ? 'hidden' : ''}`}>
-                      <button 
-                        onClick={() => setStep(2)}
-                        className="text-sm flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600"
-                      >
+                      <button onClick={() => setStep(2)} className="text-sm flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600">
                         <ArrowLeft size={16} className="mr-1" /> Back to Outline
                       </button>
                       
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Final Review</h2>
-                          <p className="text-gray-500 dark:text-gray-400">
-                            Review and refine the AI-generated content before publishing.
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (confirm('Generate new cover image?')) {
-                              setRandomImage();
-                            }
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          <RefreshCw size={16} />
-                          New Cover
-                        </button>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Final Review</h2>
+                      <p className="text-gray-500 dark:text-gray-400">Review and refine the AI-generated content before saving.</p>
+
+                      <input 
+                          type="text"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="Post Title"
+                          className="input-field text-xl font-bold"
+                      />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <select 
+                              value={category}
+                              onChange={(e) => setCategory(e.target.value)}
+                              className="input-field"
+                          >
+                              {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                          </select>
+                          <input 
+                              type="text"
+                              value={tagsInput}
+                              onChange={(e) => setTagsInput(e.target.value)}
+                              placeholder="Tags (comma-separated, e.g. react, webdev)"
+                              className="input-field"
+                          />
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                          <input 
+                              type="text"
+                              value={coverImage}
+                              onChange={(e) => setCoverImage(e.target.value)}
+                              placeholder="Cover Image URL (e.g. https://picsum.photos/800/400)"
+                              className="input-field flex-1"
+                          />
+                          <button onClick={setRandomImage} className="btn-secondary flex-shrink-0">
+                            <RefreshCw size={16} className="mr-2" /> Random
+                          </button>
                       </div>
 
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Left Column - Form */}
-                        <div className="space-y-6">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Post Title *</label>
-                            <input 
-                              type="text"
-                              value={title}
-                              onChange={(e) => setTitle(e.target.value)}
-                              placeholder="Enter a compelling title..."
-                              className="input-field text-xl font-bold"
-                            />
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category *</label>
-                              <select 
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                className="input-field"
-                              >
-                                {categories.map(c => (
-                                  <option key={c.id} value={c.name}>{c.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
-                              <input 
-                                type="text"
-                                value={tagsInput}
-                                onChange={(e) => setTagsInput(e.target.value)}
-                                placeholder="react, webdev, tutorial"
-                                className="input-field"
-                              />
-                              <p className="text-xs text-gray-500 mt-1">Comma-separated keywords</p>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Cover Image URL
-                            </label>
-                            <div className="flex gap-2">
-                              <input 
-                                type="text"
-                                value={coverImage}
-                                onChange={(e) => setCoverImage(e.target.value)}
-                                placeholder="https://example.com/image.jpg"
-                                className="input-field flex-1"
-                              />
-                              <button 
-                                onClick={setRandomImage}
-                                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                              >
-                                Random
-                              </button>
-                            </div>
-                            {coverImage && (
-                              <div className="mt-2">
-                                <img 
-                                  src={coverImage} 
-                                  alt="Cover preview" 
-                                  className="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                  }}
-                                />
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Excerpt</label>
-                            <textarea
-                              value={excerpt}
-                              onChange={(e) => setExcerpt(e.target.value)}
-                              placeholder="Brief summary of your post..."
-                              className="input-field min-h-[100px]"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Shown in post listings and SEO previews</p>
-                          </div>
-                        </div>
-
-                        {/* Right Column - Preview */}
-                        <div className="space-y-6">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Content Preview
-                            </label>
-                            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900 max-h-[500px] overflow-y-auto">
-                              <div className="prose dark:prose-invert max-w-none">
-                                <ReactMarkdown 
+                      <label htmlFor="content" className="block text-base font-medium text-gray-700 dark:text-gray-200 mt-6">
+                          Post Content (Markdown)
+                      </label>
+                      <textarea
+                          id="content"
+                          value={fullContent}
+                          onChange={(e) => setFullContent(e.target.value)}
+                          className="input-field min-h-[300px] font-mono text-sm"
+                          placeholder="Your fully generated blog post content in Markdown..."
+                      />
+                      
+                      {/* Content Preview with HTML Enabled */}
+                      <div className="border border-gray-200 dark:border-gray-700 p-6 rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+                          <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Live Preview:</h3>
+                          <div className="prose dark:prose-invert max-w-none">
+                              <ReactMarkdown 
                                   remarkPlugins={[remarkGfm]}
-                                  rehypePlugins={[rehypeRaw]}
-                                >
-                                  {fullContent || '*Your content will appear here...*'}
-                                </ReactMarkdown>
-                              </div>
-                            </div>
+                                  rehypePlugins={[rehypeRaw]} // <-- HTML enabled here!
+                              >
+                                  {fullContent}
+                              </ReactMarkdown>
                           </div>
-                          
-                          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-4">
-                            <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
-                              <Sparkles size={16} />
-                              AI-Generated Content
-                            </h4>
-                            <p className="text-sm text-blue-700 dark:text-blue-400">
-                              This content was generated by AI. Please review carefully for accuracy, tone, and relevance before publishing.
-                            </p>
-                          </div>
-                        </div>
                       </div>
 
                       <button 
-                        onClick={handleSavePost}
-                        disabled={isSaving || !title || !fullContent}
-                        className="btn-primary w-full flex items-center justify-center mt-6"
+                          onClick={handleSavePost}
+                          disabled={isSaving || !title || !fullContent}
+                          className="btn-primary w-full flex items-center justify-center mt-6"
                       >
-                        {isSaving ? (
-                          <Loader2 size={20} className="animate-spin mr-2" />
-                        ) : (
-                          <Save size={20} className="mr-2" />
-                        )}
-                        {isSaving ? 'Saving...' : editingPostId ? 'Update Post' : isAdmin ? 'Publish Post' : 'Submit for Review'}
+                          {isSaving ? <Loader2 size={20} className="animate-spin mr-2" /> : <Save size={20} className="mr-2" />}
+                          {isSaving ? 'Saving...' : isAdmin ? 'Publish Post' : 'Submit for Review'}
                       </button>
                     </div>
                   </>
@@ -1531,178 +747,80 @@ export const Admin: React.FC = () => {
                 {/* === MANUAL FLOW === */}
                 {editorMode === 'manual' && (
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {editingPostId ? 'Edit Post' : 'Create New Post'}
-                    </h2>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Post</h2>
+                    <input 
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Post Title"
+                        className="input-field text-xl font-bold"
+                    />
                     
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Left Column - Form */}
-                      <div className="space-y-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Post Title *</label>
-                          <input 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <select 
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            className="input-field"
+                        >
+                            {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                        </select>
+                        <input 
                             type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Enter a compelling title..."
-                            className="input-field text-xl font-bold"
-                          />
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category *</label>
-                            <select 
-                              value={category}
-                              onChange={(e) => setCategory(e.target.value)}
-                              className="input-field"
-                            >
-                              {categories.map(c => (
-                                <option key={c.id} value={c.name}>{c.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
-                            <input 
-                              type="text"
-                              value={tagsInput}
-                              onChange={(e) => setTagsInput(e.target.value)}
-                              placeholder="react, webdev, tutorial"
-                              className="input-field"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Comma-separated keywords</p>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Cover Image URL
-                          </label>
-                          <div className="flex gap-2">
-                            <input 
-                              type="text"
-                              value={coverImage}
-                              onChange={(e) => setCoverImage(e.target.value)}
-                              placeholder="https://example.com/image.jpg"
-                              className="input-field flex-1"
-                            />
-                            <button 
-                              onClick={setRandomImage}
-                              className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                            >
-                              Random
-                            </button>
-                          </div>
-                          {coverImage && (
-                            <div className="mt-2">
-                              <img 
-                                src={coverImage} 
-                                alt="Cover preview" 
-                                className="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Excerpt</label>
-                          <textarea
-                            value={excerpt}
-                            onChange={(e) => setExcerpt(e.target.value)}
-                            placeholder="Brief summary of your post..."
-                            className="input-field min-h-[100px]"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">Shown in post listings and SEO previews</p>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Content (Markdown & HTML) *
-                          </label>
-                          <textarea
-                            value={fullContent}
-                            onChange={(e) => setFullContent(e.target.value)}
-                            placeholder="Start writing your post using Markdown. You can also use HTML tags..."
-                            className="input-field min-h-[400px] font-mono text-sm"
-                          />
-                          <div className="flex justify-between items-center mt-2">
-                            <p className="text-xs text-gray-500">
-                              Supports: # Headers, **bold**, *italic*, `code`, ```code blocks```, &lt;html&gt;
-                            </p>
-                            <span className="text-xs text-gray-500">
-                              {fullContent.split(' ').length} words
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right Column - Preview */}
-                      <div className="space-y-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Live Preview
-                          </label>
-                          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-900 max-h-[600px] overflow-y-auto">
-                            {coverImage && (
-                              <img 
-                                src={coverImage} 
-                                alt="Cover" 
-                                className="w-full h-48 object-cover rounded-lg mb-6"
-                              />
-                            )}
-                            <div className="prose dark:prose-invert max-w-none">
-                              <h1 className="text-3xl font-bold mb-4">{title || 'Post Title'}</h1>
-                              <div className="flex items-center gap-4 text-sm text-gray-500 mb-6">
-                                <span>By {user?.name}</span>
-                                <span>•</span>
-                                <span>{new Date().toLocaleDateString()}</span>
-                                <span>•</span>
-                                <span>{Math.ceil((fullContent || '').split(' ').length / 200)} min read</span>
-                              </div>
-                              {excerpt && (
-                                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
-                                  <p className="text-gray-600 dark:text-gray-300 italic">{excerpt}</p>
-                                </div>
-                              )}
-                              <ReactMarkdown 
+                            value={tagsInput}
+                            onChange={(e) => setTagsInput(e.target.value)}
+                            placeholder="Tags (comma-separated, e.g. react, webdev)"
+                            className="input-field"
+                        />
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                        <input 
+                            type="text"
+                            value={coverImage}
+                            onChange={(e) => setCoverImage(e.target.value)}
+                            placeholder="Cover Image URL (e.g. https://picsum.photos/800/400)"
+                            className="input-field flex-1"
+                        />
+                        <button onClick={setRandomImage} className="btn-secondary flex-shrink-0">
+                            <RefreshCw size={16} className="mr-2" /> Random
+                        </button>
+                    </div>
+                    
+                    <label htmlFor="content-manual" className="block text-base font-medium text-gray-700 dark:text-gray-200 mt-6">
+                        Post Content (Markdown & HTML)
+                    </label>
+                    <textarea
+                        id="content-manual"
+                        value={fullContent}
+                        onChange={(e) => setFullContent(e.target.value)}
+                        className="input-field min-h-[300px] font-mono text-sm"
+                        placeholder="Start writing your post using Markdown (and optional HTML tags)..."
+                    />
+                    
+                    {/* Content Preview with HTML Enabled */}
+                    <div className="border border-gray-200 dark:border-gray-700 p-6 rounded-2xl bg-gray-50 dark:bg-gray-700/50">
+                        <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Live Preview:</h3>
+                        <div className="prose dark:prose-invert max-w-none">
+                            <ReactMarkdown 
                                 remarkPlugins={[remarkGfm]}
-                                rehypePlugins={[rehypeRaw]}
-                              >
-                                {fullContent || '*Start writing your content...*'}
-                              </ReactMarkdown>
-                            </div>
-                          </div>
+                                rehypePlugins={[rehypeRaw]} // <-- HTML enabled here!
+                            >
+                                {fullContent}
+                            </ReactMarkdown>
                         </div>
-                      </div>
                     </div>
 
-                    <div className="flex justify-between items-center pt-6 border-t border-gray-200 dark:border-gray-700">
-                      <button
-                        onClick={() => setActiveTab('posts')}
-                        className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      
-                      <button 
+                    <button 
                         onClick={handleSavePost}
-                        disabled={isSaving || !title || !fullContent || !category}
-                        className="btn-primary flex items-center justify-center px-6"
-                      >
-                        {isSaving ? (
-                          <Loader2 size={20} className="animate-spin mr-2" />
-                        ) : (
-                          <Save size={20} className="mr-2" />
-                        )}
-                        {isSaving ? 'Saving...' : editingPostId ? 'Update Post' : isAdmin ? 'Publish Post' : 'Submit for Review'}
-                      </button>
-                    </div>
+                        disabled={isSaving || !title || !fullContent}
+                        className="btn-primary w-full flex items-center justify-center mt-6"
+                    >
+                        {isSaving ? <Loader2 size={20} className="animate-spin mr-2" /> : <Save size={20} className="mr-2" />}
+                        {isSaving ? 'Saving...' : isAdmin ? 'Publish Post' : 'Submit for Review'}
+                    </button>
                   </div>
                 )}
+                
               </div>
             </div>
           )}
