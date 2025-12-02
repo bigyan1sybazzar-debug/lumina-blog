@@ -1,17 +1,17 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": null,
+  "devCommand": "npm run dev",
+
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "/api/sitemap" 
+      "destination": "/api/sitemap"
     },
     {
       "source": "/(.*)",
       "destination": "/index.html"
-    },
-    {
-      "buildCommand": "npm run build",
-      "outputDirectory": "dist",
-      "framework": null
     }
   ]
 }
