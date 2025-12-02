@@ -478,80 +478,112 @@ export const getPublishedPostSlugs = async (): Promise<{ slug: string; updatedAt
 };
 
 export const generateAndUploadSitemap = async (): Promise<string | null> => {
+  try {
+    console.log('Triggering sitemap regeneration via Vercel function...');
+    
+    const baseUrl = typeof window !== 'undefined'
+      ? window.location.origin
+      : 'https://lumina-blog.web.app';
+    
+    // Call Vercel serverless function
+    const apiUrl = `${baseUrl}/api/generate-sitemap`;
+    
+    console.log('Calling Vercel function:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Vercel function error (${response.status}): ${errorText}`);
+    }
+    
+    // Get the XML content from the response
+    const xml = await response.text();
+    
+    // Show success message - no automatic download
+    console.log('Sitemap generated successfully via Vercel function');
+    
+    // Return the URL where sitemap is available
+    return `${baseUrl}/sitemap.xml`;
+    
+  } catch (error) {
+    console.error('Vercel function failed:', error);
+    
+    // Fallback: Generate locally but don't auto-download
     try {
-      console.log('Generating sitemap.xml...');
-  
-      // Get published posts from Firestore
       const snapshot = await db.collection(POSTS_COLLECTION)
         .where('status', '==', 'published')
         .get();
-  
+
       const posts = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
-          id: doc.id,
           slug: data.slug || doc.id,
           updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
         };
       });
-  
-      const baseUrl = typeof window !== 'undefined'
-        ? window.location.origin
-        : 'https://lumina-blog.web.app';
-  
+
+      const baseUrl = window.location.origin;
+      
       let xml = `<?xml version="1.0" encoding="UTF-8"?>
-  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <url>
-      <loc>${baseUrl}/</loc>
-      <changefreq>daily</changefreq>
-      <priority>1.0</priority>
-    </url>
-    <url>
-      <loc>${baseUrl}/categories</loc>
-      <changefreq>weekly</changefreq>
-      <priority>0.8</priority>
-    </url>
-    <url>
-      <loc>${baseUrl}/about</loc>
-      <changefreq>monthly</changefreq>
-      <priority>0.5</priority>
-    </url>`;
-  
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/categories</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>`;
+      
       posts.forEach(post => {
         xml += `
-    <url>
-      <loc>${baseUrl}/blog/${post.slug}</loc>
-      <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
-      <changefreq>weekly</changefreq>
-      <priority>0.7</priority>
-    </url>`;
+  <url>
+    <loc>${baseUrl}/blog/${post.slug}</loc>
+    <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
       });
-  
-      xml += `\n</urlset>`;
-  
-      // Just download the XML file (no Firebase Storage upload)
-      if (typeof window !== 'undefined') {
-        const blob = new Blob([xml], { type: 'application/xml' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'sitemap.xml';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+      
+      xml += '\n</urlset>';
+
+      // Instead of auto-downloading, show the XML in a modal
+      alert(`
+        ✅ Sitemap generated successfully!
         
-        console.log('Sitemap XML downloaded locally');
-        alert('Sitemap downloaded! Upload this file to your hosting provider.');
-      }
-  
+        Since Vercel function is unavailable, the sitemap has been generated locally.
+        
+        To use it:
+        1. Copy the XML from console
+        2. Create /public/sitemap.xml with this content
+        3. Deploy your site
+        
+        Check browser console for the XML content.
+      `);
+      
+      // Log XML to console for easy copying
+      console.log('SITEMAP XML (copy this to /public/sitemap.xml):\n', xml);
+      
       return `${baseUrl}/sitemap.xml`;
-    } catch (error) {
-      console.error('Failed to generate sitemap:', error);
+    } catch (fallbackError) {
+      console.error('Fallback also failed:', fallbackError);
       return null;
     }
-  };
-
+  }
+};
 // --- SEED ---
 
 export const seedDatabase = async () => {
