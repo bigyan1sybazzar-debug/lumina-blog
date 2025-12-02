@@ -3,12 +3,11 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc, deploy && vite build",
-    "preview": "vite preview"
-    
-  },
+ "scripts": {
+  "dev": "vite",
+  "build": "tsc && node scripts/generate-sitemap.js && vite build",
+  "preview": "vite preview"
+},
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "firebase": "^10.14.1",
