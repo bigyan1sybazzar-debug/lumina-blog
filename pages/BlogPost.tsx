@@ -331,67 +331,7 @@ export const BlogPostPage: React.FC = () => {
             {/* ------------------------------------------- */}
             {/* Comments Section */}
             {/* ------------------------------------------- */}
-            <div id="comments-section" className="mt-16">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 border-b pb-3">
-                    Comments ({comments.length})
-                </h3>
-                
-                {/* Comment Input */}
-                {user ? (
-                    <div className="flex items-start space-x-4 mb-8 p-6 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                        <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
-                        <div className="flex-1">
-                            <textarea
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                placeholder="Write a comment..."
-                                rows={3}
-                                className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-primary-500 focus:border-primary-500"
-                            />
-                            <button
-                                onClick={handleSubmitComment}
-                                disabled={!newComment.trim()}
-                                className="mt-2 flex items-center bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <Send size={18} className="mr-2" /> Submit Comment
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <p className="text-gray-500 dark:text-gray-400 mb-8 p-4 border-l-4 border-primary-500 bg-primary-50/50 dark:bg-gray-700/30 rounded-md">
-                        <Link to={`/login?redirect=${encodeURIComponent(location.pathname)}`} className="text-primary-600 hover:underline font-bold">Log in</Link> to post a comment.
-                    </p>
-                )}
-
-                {/* Comment List */}
-                <div className="space-y-6">
-                    {comments.length > 0 ? (
-                        comments.map((comment) => (
-                            <div key={comment.id} className="flex items-start space-x-4 border-b border-gray-100 dark:border-gray-800 pb-4">
-                                <img 
-                                  src={comment.userAvatar} 
-                                  alt={comment.userName} 
-                                  className="w-10 h-10 rounded-full object-cover" 
-                                  onError={(e) => {
-                                    e.currentTarget.onerror = null; 
-                                    e.currentTarget.src = `https://placehold.co/40x40/4B5563/FFFFFF?text=${comment.userName.charAt(0)}`; 
-                                  }}
-                                />
-                                <div className="flex-1">
-                                    <p className="font-semibold text-gray-900 dark:text-white">{comment.userName}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                                        {new Date(comment.createdAt).toLocaleDateString()}
-                                    </p>
-                                    <p className="text-gray-700 dark:text-gray-300">{comment.content}</p>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-gray-500 dark:text-gray-400">No Discussion yet. Be the first!</p>
-                    )}
-                </div>
-            </div>
-
+            
           </article>
 
 
