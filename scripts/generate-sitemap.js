@@ -3,28 +3,34 @@ import { writeFileSync } from 'fs';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Load service account from env (set in Vercel)
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+// Safety: if no credentials → just write static sitemap (won't crash)
+const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-if (!getApps().length && Object.keys(serviceAccount).length > 0) {
-  initializeApp({
-    credential: cert(serviceAccount),
-  });
-}
+let urls = '';
 
-const db = getFirestore();
-
-async function generate() {
+if (serviceAccountJson) {
   try {
-    const snapshot = await db.collection('posts')
+    const serviceAccount = JSON.parse(serviceAccountJson);
+
+    if (!getApps().length) {
+      initializeApp({
+        credential: cert(serviceAccount),
+      });
+    }
+
+    const db = getFirestore();
+    const snapshot = await db
+      .collection('posts')
       .where('status', '==', 'published')
       .get();
 
-    let urls = '';
     snapshot.forEach(doc => {
       const data = doc.data();
       const slug = data.slug || doc.id;
-      const lastmod = (data.updatedAt || data.createdAt || new Date()).toISOString().split('T')[0];
+      const lastmod = (data.updatedAt?.toDate() || data.createdAt?.toDate() || new Date())
+        .toISOString()
+        .split('T')[0];
+
       urls += `  <url>
     <loc>https://bigyann.com.np/blog/${slug}</loc>
     <lastmod>${lastmod}</lastmod>
@@ -33,7 +39,15 @@ async function generate() {
   </url>\n`;
     });
 
-    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    console.log(`Generated sitemap with ${snapshot.size} published posts`);
+  } catch (e) {
+    console.error('Firebase failed, using static sitemap only:', e.message);
+  }
+} else {
+  console.log('No FIREBASE_SERVICE_ACCOUNT → static sitemap only');
+}
+
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://bigyann.com.np/</loc>
@@ -52,12 +66,5 @@ async function generate() {
   </url>
 ${urls}</urlset>`;
 
-    writeFileSync('public/sitemap.xml', sitemap.trim() + '\n');
-    console.log(`Sitemap generated with ${snapshot.size} posts`);
-  } catch (error) {
-    console.error('Sitemap error:', error);
-    // Keep old sitemap if fails
-  }
-}
-
-generate();
+writeFileSync('public/sitemap.xml', sitemap.trim() + '\n');
+console.log('public/sitemap.xml written');
