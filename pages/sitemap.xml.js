@@ -1,18 +1,20 @@
-// pages/sitemap.xml.js   ← must be this exact path and filename
-
-import { getPosts } from '../services/db';
+// /pages/sitemap.xml.js
+import { getPosts } from '../services/db'; // Adjust import path
 
 export default function Sitemap() {
-  return null; // This page never renders HTML
+  return null;
 }
 
-export const getServerSideProps = async ({ res }) => {
-  res.setHeader('Content-Type', 'application/xml');
-  res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-
-  const baseUrl = 'https://bigyann.com.np';
-
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>
+export async function getServerSideProps({ res }) {
+  if (!res) return { props: {} };
+  
+  try {
+    // Get ALL published posts
+    const posts = await getPosts();
+    
+    const baseUrl = 'https://bigyann.com.np';
+    
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>${baseUrl}/</loc>
@@ -20,45 +22,59 @@ export const getServerSideProps = async ({ res }) => {
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>${baseUrl}/about</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>${baseUrl}/categories</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/admin</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
   </url>`;
-
-  try {
-    const posts = await getPosts(); // ← This pulls only published posts from Firestore
-
+    
+    // Add each post
     posts.forEach(post => {
       const slug = post.slug || post.id;
-      const lastmod = post.updatedAt || post.createdAt || new Date().toISOString();
-
+      const lastmod = post.updatedAt || post.createdAt || post.date || new Date().toISOString();
+      
       xml += `
   <url>
     <loc>${baseUrl}/blog/${slug}</loc>
-    <lastmod>${new Date(lastmod).toISOString().split('T')[0]}</lastmod>
+    <lastmod>${new Date(lastmod).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>`;
     });
-
+    
     xml += '\n</urlset>';
-
+    
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
     res.write(xml);
     res.end();
   } catch (error) {
-    console.error('Sitemap generation failed:', error);
-    // Fallback so it never breaks
-    res.write(`<?xml version="1.0" encoding="UTF-8"?>
+    console.error('Error generating sitemap:', error);
+    
+    // Fallback to basic sitemap
+    const baseUrl = 'https://bigyann.com.np';
+    const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${baseUrl}/</loc></url>
-</urlset>`);
+  <url>
+    <loc>${baseUrl}/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`;
+    
+    res.setHeader('Content-Type', 'application/xml');
+    res.write(fallbackXml);
     res.end();
   }
-
+  
   return { props: {} };
-};
+}
