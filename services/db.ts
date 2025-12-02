@@ -479,42 +479,54 @@ export const getPublishedPostSlugs = async (): Promise<{ slug: string; updatedAt
 
 export const generateAndUploadSitemap = async (): Promise<string | null> => {
   try {
-    console.log('Triggering sitemap regeneration via Vercel function...');
-    
     const baseUrl = typeof window !== 'undefined'
       ? window.location.origin
-      : 'https://lumina-blog.web.app';
+      : 'https://bigyann.com.np';
     
-    // Call Vercel serverless function
-    const apiUrl = `${baseUrl}/api/generate-sitemap`;
+    console.log('Triggering sitemap cache clear...');
     
-    console.log('Calling Vercel function:', apiUrl);
+    // Since sitemap is generated dynamically, we just need to clear cache
+    // or trigger a revalidation. For Next.js, we can:
     
-    const response = await fetch(apiUrl, {
-      method: 'POST',
+    // 1. Fetch the sitemap to regenerate it
+    const sitemapUrl = `${baseUrl}/sitemap.xml`;
+    const response = await fetch(sitemapUrl, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
       },
     });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Vercel function error (${response.status}): ${errorText}`);
+      throw new Error(`Failed to regenerate sitemap: ${response.status}`);
     }
     
-    // Get the XML content from the response
-    const xml = await response.text();
+    // 2. Optional: Call an API route to trigger ISR revalidation
+    try {
+      await fetch(`${baseUrl}/api/revalidate?path=/sitemap.xml&secret=${process.env.REVALIDATE_SECRET}`, {
+        method: 'POST',
+      });
+    } catch (revalError) {
+      console.log('Revalidation not set up:', revalError);
+    }
     
-    // Show success message - no automatic download
-    console.log('Sitemap generated successfully via Vercel function');
+    console.log('Sitemap regenerated successfully');
     
-    // Return the URL where sitemap is available
-    return `${baseUrl}/sitemap.xml`;
+    alert(`
+      ✅ Sitemap regenerated successfully!
+      
+      Your sitemap is now available at: ${sitemapUrl}
+      It will automatically update with new posts.
+      
+      Search engines will see the latest content on their next crawl.
+    `);
+    
+    return sitemapUrl;
     
   } catch (error) {
-    console.error('Vercel function failed:', error);
+    console.error('Failed to regenerate sitemap:', error);
     
-    // Fallback: Generate locally but don't auto-download
+    // Fallback: Download XML locally for manual upload
     try {
       const snapshot = await db.collection(POSTS_COLLECTION)
         .where('status', '==', 'published')
@@ -560,22 +572,27 @@ export const generateAndUploadSitemap = async (): Promise<string | null> => {
       
       xml += '\n</urlset>';
 
-      // Instead of auto-downloading, show the XML in a modal
-      alert(`
-        ✅ Sitemap generated successfully!
-        
-        Since Vercel function is unavailable, the sitemap has been generated locally.
-        
-        To use it:
-        1. Copy the XML from console
-        2. Create /public/sitemap.xml with this content
-        3. Deploy your site
-        
-        Check browser console for the XML content.
-      `);
+      // Download XML
+      const blob = new Blob([xml], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sitemap.xml';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
       
-      // Log XML to console for easy copying
-      console.log('SITEMAP XML (copy this to /public/sitemap.xml):\n', xml);
+      alert(`
+        ⚠️ Dynamic sitemap generation failed
+        
+        The sitemap.xml file has been downloaded.
+        
+        To update your live site:
+        1. Replace /public/sitemap.xml with the downloaded file
+        2. Deploy to Vercel
+        3. Your sitemap will be available at: ${baseUrl}/sitemap.xml
+      `);
       
       return `${baseUrl}/sitemap.xml`;
     } catch (fallbackError) {
