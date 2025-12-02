@@ -478,88 +478,80 @@ export const getPublishedPostSlugs = async (): Promise<{ slug: string; updatedAt
 };
 
 export const generateAndUploadSitemap = async (): Promise<string | null> => {
-  try {
-    const baseUrl = window.location.origin;
-    const apiUrl = `${baseUrl}/api/generate-sitemap`;
-    
-    console.log('Calling Vercel function:', apiUrl);
-    
-    // Call Vercel function
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Vercel function error (${response.status}): ${errorText}`);
-    }
-    
-    const result = await response.json();
-    
-    // Download the XML
-    const blob = new Blob([result.xml], { type: 'application/xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'sitemap.xml';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    console.log('Sitemap generated via Vercel function:', result.sitemapUrl);
-    return result.sitemapUrl;
-    
-  } catch (error) {
-    console.error('Vercel function failed, falling back to local generation:', error);
-    
-    // Fallback to local generation
     try {
+      console.log('Generating sitemap.xml...');
+  
+      // Get published posts from Firestore
       const snapshot = await db.collection(POSTS_COLLECTION)
         .where('status', '==', 'published')
         .get();
-
+  
       const posts = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
+          id: doc.id,
           slug: data.slug || doc.id,
           updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
         };
       });
-
-      const baseUrl = window.location.origin;
-      
+  
+      const baseUrl = typeof window !== 'undefined'
+        ? window.location.origin
+        : 'https://lumina-blog.web.app';
+  
       let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${baseUrl}/</loc></url>
-  ${posts.map(post => `
-  <url>
-    <loc>${baseUrl}/blog/${post.slug}</loc>
-    <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
-  </url>`).join('')}
-</urlset>`;
-
-      const blob = new Blob([xml], { type: 'application/xml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'sitemap.xml';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      alert('Vercel function unavailable. Sitemap downloaded locally. Upload to /public/sitemap.xml');
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+      <loc>${baseUrl}/</loc>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+    </url>
+    <url>
+      <loc>${baseUrl}/categories</loc>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+    <url>
+      <loc>${baseUrl}/about</loc>
+      <changefreq>monthly</changefreq>
+      <priority>0.5</priority>
+    </url>`;
+  
+      posts.forEach(post => {
+        xml += `
+    <url>
+      <loc>${baseUrl}/blog/${post.slug}</loc>
+      <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.7</priority>
+    </url>`;
+      });
+  
+      xml += `\n</urlset>`;
+  
+      // Just download the XML file (no Firebase Storage upload)
+      if (typeof window !== 'undefined') {
+        const blob = new Blob([xml], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'sitemap.xml';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log('Sitemap XML downloaded locally');
+        alert('Sitemap downloaded! Upload this file to your hosting provider.');
+      }
+  
       return `${baseUrl}/sitemap.xml`;
-    } catch (fallbackError) {
-      console.error('Fallback also failed:', fallbackError);
+    } catch (error) {
+      console.error('Failed to generate sitemap:', error);
       return null;
     }
-  }
-};
+  };
+
 // --- SEED ---
 
 export const seedDatabase = async () => {
