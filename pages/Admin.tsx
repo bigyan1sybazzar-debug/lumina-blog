@@ -310,21 +310,34 @@ export const Admin: React.FC = () => {
   const handleRegenerateSitemap = async () => {
     setIsGeneratingSitemap(true);
     try {
+      // Step 1: Trigger regeneration on server (your existing function)
       const url = await generateAndUploadSitemap();
-      if (url) {
-        setSitemapUrl(url);
-        alert(`
-          ✅ Sitemap generated successfully!
-          
-          Your sitemap is now available at: ${url}
-          
-          The sitemap.xml file has been updated on the server.
-          Search engines will automatically detect this update.
-        `);
-      }
+  
+      if (!url) throw new Error('No URL returned');
+  
+      // Step 2: Fetch the fresh sitemap.xml as text
+      const response = await fetch(url + '?t=' + Date.now(), { cache: 'no-cache' });
+      if (!response.ok) throw new Error('Failed to fetch sitemap');
+  
+      const xmlText = await response.text();
+  
+      // Step 3: Trigger download
+      const blob = new Blob([xmlText], { type: 'application/xml' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = 'sitemap.xml';           // filename in Downloads folder
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      a.remove();
+  
+      // Success message
+      alert(`Sitemap regenerated & downloaded!\n\nCheck your Downloads folder → sitemap.xml`);
+      setSitemapUrl(url);
     } catch (error) {
-      alert('Error generating sitemap.');
       console.error(error);
+      alert('Failed to regenerate or download sitemap.');
     } finally {
       setIsGeneratingSitemap(false);
     }
