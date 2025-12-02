@@ -478,65 +478,80 @@ export const getPublishedPostSlugs = async (): Promise<{ slug: string; updatedAt
 };
 
 export const generateAndUploadSitemap = async (): Promise<string | null> => {
-  try {
-    const baseUrl = typeof window !== 'undefined'
-      ? window.location.origin
-      : 'https://bigyann.com.np';
-    
-    const sitemapUrl = `${baseUrl}/sitemap.xml`;
-    
-    console.log('Refreshing sitemap cache...');
-    
-    // Option 1: Just fetch the sitemap to trigger regeneration
     try {
-      await fetch(sitemapUrl, {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-        },
+      console.log('Generating sitemap.xml...');
+  
+      // Get published posts from Firestore
+      const snapshot = await db.collection(POSTS_COLLECTION)
+        .where('status', '==', 'published')
+        .get();
+  
+      const posts = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          slug: data.slug || doc.id,
+          updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
+        };
       });
-    } catch (fetchError) {
-      console.log('Cache refresh triggered (may fail silently):', fetchError);
-    }
-    
-    // Option 2: Try to call revalidate API (only if it exists)
-    try {
-      const revalidateSecret = process.env.REVALIDATE_SECRET;
-      if (revalidateSecret) {
-        await fetch(`${baseUrl}/api/revalidate?path=/sitemap.xml&secret=${revalidateSecret}`, {
-          method: 'POST',
-        });
+  
+      const baseUrl = typeof window !== 'undefined'
+        ? window.location.origin
+        : 'https://lumina-blog.web.app';
+  
+      let xml = `<?xml version="1.0" encoding="UTF-8"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+      <loc>${baseUrl}/</loc>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+    </url>
+    <url>
+      <loc>${baseUrl}/categories</loc>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>
+    <url>
+      <loc>${baseUrl}/about</loc>
+      <changefreq>monthly</changefreq>
+      <priority>0.5</priority>
+    </url>`;
+  
+      posts.forEach(post => {
+        xml += `
+    <url>
+      <loc>${baseUrl}/blog/${post.slug}</loc>
+      <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.7</priority>
+    </url>`;
+      });
+  
+      xml += `\n</urlset>`;
+  
+      // Just download the XML file (no Firebase Storage upload)
+      if (typeof window !== 'undefined') {
+        const blob = new Blob([xml], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'sitemap.xml';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log('Sitemap XML downloaded locally');
+        alert('Sitemap downloaded! Upload this file to your hosting provider.');
       }
-    } catch (apiError) {
-      console.log('Revalidation API not available (non-critical):', apiError);
+  
+      return `${baseUrl}/sitemap.xml`;
+    } catch (error) {
+      console.error('Failed to generate sitemap:', error);
+      return null;
     }
-    
-    alert(`
-      ✅ Sitemap cache cleared!
-      
-      Your updated sitemap is available at:
-      ${sitemapUrl}
-      
-      Search engines will see the latest content on their next crawl.
-    `);
-    
-    return sitemapUrl;
-    
-  } catch (error) {
-    console.error('Sitemap refresh error:', error);
-    
-    const baseUrl = window.location.origin;
-    alert(`
-      Sitemap refresh completed.
-      
-      Visit: ${baseUrl}/sitemap.xml
-      to see your updated sitemap.
-    `);
-    
-    return `${baseUrl}/sitemap.xml`;
-  }
-};
+  };
+
 // --- SEED ---
 
 export const seedDatabase = async () => {
