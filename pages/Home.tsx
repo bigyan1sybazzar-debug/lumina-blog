@@ -4,7 +4,7 @@ import { BlogPost } from '../types';
 import { PostCard } from '../components/PostCard';
 import { ArrowRight, TrendingUp, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { generateBlogOutline, generateFullPost } from '../services/geminiService'; // (Implicitly called elsewhere)
+
 const POSTS_PER_PAGE = 6;
 
 export const Home: React.FC = () => {

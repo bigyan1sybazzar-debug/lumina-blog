@@ -20,6 +20,6 @@
     // ⭐ TEMPORARY ADJUSTMENT TO BYPASS PERSISTENT TS1345 ERROR ⭐
     "strictBindCallApply": false 
   },
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx", "pages/sitemap.xml.js", "api/generate-sitemap.js"],
   "exclude": ["node_modules"]
 }
