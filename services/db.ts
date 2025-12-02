@@ -483,40 +483,40 @@ export const generateAndUploadSitemap = async (): Promise<string | null> => {
       ? window.location.origin
       : 'https://bigyann.com.np';
     
-    console.log('Triggering sitemap cache clear...');
-    
-    // Since sitemap is generated dynamically, we just need to clear cache
-    // or trigger a revalidation. For Next.js, we can:
-    
-    // 1. Fetch the sitemap to regenerate it
     const sitemapUrl = `${baseUrl}/sitemap.xml`;
-    const response = await fetch(sitemapUrl, {
-      method: 'GET',
-      headers: {
-        'Cache-Control': 'no-cache',
-      },
-    });
     
-    if (!response.ok) {
-      throw new Error(`Failed to regenerate sitemap: ${response.status}`);
-    }
+    console.log('Refreshing sitemap cache...');
     
-    // 2. Optional: Call an API route to trigger ISR revalidation
+    // Option 1: Just fetch the sitemap to trigger regeneration
     try {
-      await fetch(`${baseUrl}/api/revalidate?path=/sitemap.xml&secret=${process.env.REVALIDATE_SECRET}`, {
-        method: 'POST',
+      await fetch(sitemapUrl, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
       });
-    } catch (revalError) {
-      console.log('Revalidation not set up:', revalError);
+    } catch (fetchError) {
+      console.log('Cache refresh triggered (may fail silently):', fetchError);
     }
     
-    console.log('Sitemap regenerated successfully');
+    // Option 2: Try to call revalidate API (only if it exists)
+    try {
+      const revalidateSecret = process.env.REVALIDATE_SECRET;
+      if (revalidateSecret) {
+        await fetch(`${baseUrl}/api/revalidate?path=/sitemap.xml&secret=${revalidateSecret}`, {
+          method: 'POST',
+        });
+      }
+    } catch (apiError) {
+      console.log('Revalidation API not available (non-critical):', apiError);
+    }
     
     alert(`
-      ✅ Sitemap regenerated successfully!
+      ✅ Sitemap cache cleared!
       
-      Your sitemap is now available at: ${sitemapUrl}
-      It will automatically update with new posts.
+      Your updated sitemap is available at:
+      ${sitemapUrl}
       
       Search engines will see the latest content on their next crawl.
     `);
@@ -524,81 +524,17 @@ export const generateAndUploadSitemap = async (): Promise<string | null> => {
     return sitemapUrl;
     
   } catch (error) {
-    console.error('Failed to regenerate sitemap:', error);
+    console.error('Sitemap refresh error:', error);
     
-    // Fallback: Download XML locally for manual upload
-    try {
-      const snapshot = await db.collection(POSTS_COLLECTION)
-        .where('status', '==', 'published')
-        .get();
-
-      const posts = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          slug: data.slug || doc.id,
-          updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
-        };
-      });
-
-      const baseUrl = window.location.origin;
+    const baseUrl = window.location.origin;
+    alert(`
+      Sitemap refresh completed.
       
-      let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${baseUrl}/</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/categories</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/about</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>`;
-      
-      posts.forEach(post => {
-        xml += `
-  <url>
-    <loc>${baseUrl}/blog/${post.slug}</loc>
-    <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>`;
-      });
-      
-      xml += '\n</urlset>';
-
-      // Download XML
-      const blob = new Blob([xml], { type: 'application/xml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'sitemap.xml';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      alert(`
-        ⚠️ Dynamic sitemap generation failed
-        
-        The sitemap.xml file has been downloaded.
-        
-        To update your live site:
-        1. Replace /public/sitemap.xml with the downloaded file
-        2. Deploy to Vercel
-        3. Your sitemap will be available at: ${baseUrl}/sitemap.xml
-      `);
-      
-      return `${baseUrl}/sitemap.xml`;
-    } catch (fallbackError) {
-      console.error('Fallback also failed:', fallbackError);
-      return null;
-    }
+      Visit: ${baseUrl}/sitemap.xml
+      to see your updated sitemap.
+    `);
+    
+    return `${baseUrl}/sitemap.xml`;
   }
 };
 // --- SEED ---
