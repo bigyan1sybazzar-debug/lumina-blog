@@ -6,7 +6,10 @@
  "scripts": {
   "dev": "vite",
   "build": "tsc && node scripts/generate-sitemap.js && vite build",
-  "preview": "vite preview"
+  "preview": "vite preview",
+  
+  "build:deploy": "npm run build",
+  "vercel-build": "npm run build"
 },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
