@@ -1,12 +1,17 @@
 {
-  "rewrites": [
+  "dev": {
+    "port": 3000
+  },
+  "builds": [
     {
-      "source": "/sitemap.xml",
-      "destination": "/api/sitemap" 
-    },
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     }
   ]
 }
