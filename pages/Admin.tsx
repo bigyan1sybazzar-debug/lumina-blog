@@ -307,96 +307,91 @@ export const Admin: React.FC = () => {
     }
   };
 
-// In your Admin component
-const handleRegenerateSitemap = async () => {
-  setIsGeneratingSitemap(true);
-  try {
-    const baseUrl = window.location.origin;
-    const secret = process.env.REACT_APP_REVALIDATE_SECRET || process.env.REVALIDATE_SECRET;
-    
-    if (!secret) {
-      alert('⚠️ REVALIDATE_SECRET not configured. Please set it in environment variables.');
-      return;
-    }
-
-    // Step 1: Generate sitemap and upload to Vercel Blob Storage
-    console.log('Generating sitemap via API...');
-    
-    const response = await fetch(`${baseUrl}/api/generate-sitemap?secret=${secret}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    const result = await response.json();
-    
-    if (!result.success) {
-      throw new Error(result.message || 'Failed to generate sitemap');
-    }
-    
-    console.log('Sitemap generated:', result);
-    
-    // Use both URLs: API endpoint and direct blob URL
-    const apiSitemapUrl = `${baseUrl}/api/sitemap.xml`;
-    const blobSitemapUrl = result.sitemapUrl || `https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml`;
-    
-    // Step 2: Fetch the fresh sitemap.xml from blob storage
-    console.log('Fetching sitemap from blob storage...');
-    const blobResponse = await fetch(blobSitemapUrl + '?t=' + Date.now(), { 
-      cache: 'no-cache',
-      headers: {
-        'Cache-Control': 'no-cache'
-      }
-    });
-    
-    if (!blobResponse.ok) {
-      // Fallback to API endpoint
-      const apiResponse = await fetch(apiSitemapUrl + '?t=' + Date.now(), { cache: 'no-cache' });
-      if (!apiResponse.ok) throw new Error('Failed to fetch sitemap from both sources');
-      
-      const xmlText = await apiResponse.text();
-      triggerDownload(xmlText, 'sitemap-api.xml');
-      
-      alert(`✅ Sitemap Regenerated!\n\n📄 Downloaded: sitemap-api.xml (from API)\n🔗 API URL: ${apiSitemapUrl}\n🗂️ Blob URL: ${blobSitemapUrl}\n📊 Posts: ${result.postsCount || 'N/A'}`);
-      
-      // Update state with API URL
-      setSitemapUrl(apiSitemapUrl);
-    } else {
-      const xmlText = await blobResponse.text();
-      triggerDownload(xmlText, 'sitemap.xml');
-      
-      alert(`✅ Sitemap Regenerated & Downloaded!\n\n📄 File: sitemap.xml (from Blob Storage)\n🔗 Direct URL: ${blobSitemapUrl}\n🔗 API URL: ${apiSitemapUrl}\n📊 Posts: ${result.postsCount || 'N/A'}\n🕒 Generated: ${new Date(result.timestamp).toLocaleString()}`);
-      
-      // Update state with blob URL
-      setSitemapUrl(blobSitemapUrl);
-    }
-    
-  } catch (error) {
-    console.error('Sitemap regeneration error:', error);
-    
-    // Fallback to your original method
+  const handleRegenerateSitemap = async () => {
+    setIsGeneratingSitemap(true);
     try {
-      console.log('Trying fallback method...');
-      const url = await generateAndUploadSitemap();
-      if (url) {
-        const response = await fetch(url + '?t=' + Date.now(), { cache: 'no-cache' });
-        if (response.ok) {
-          const xmlText = await response.text();
-          triggerDownload(xmlText, 'sitemap-fallback.xml');
-          alert('Sitemap regenerated (fallback method). Check Downloads folder.');
-          setSitemapUrl(url);
-        }
+      const baseUrl = window.location.origin;
+      const secret = import.meta.env.VITE_REVALIDATE_SECRET;
+      
+      if (!secret) {
+        alert('⚠️ VITE_REVALIDATE_SECRET not set in .env');
+        await useLocalGeneration();
+        return;
       }
-    } catch (fallbackError) {
-      console.error('Fallback also failed:', fallbackError);
-      alert(`❌ Failed to regenerate sitemap API is deployed\n2. Environment variables are set\n3. Vercel Blob Storage is configured`);
+  
+      // Test if API is available
+      const apiUrl = `${baseUrl}/api/generate-sitemap?secret=${secret}`;
+      
+      try {
+        console.log('Testing API endpoint...');
+        const testResponse = await fetch(apiUrl, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (testResponse.ok) {
+          // API is available, use it
+          const result = await testResponse.json();
+          console.log('API Response:', result);
+          
+          if (result.success && result.sitemapUrl) {
+            // Download the sitemap
+            await downloadSitemap(result.sitemapUrl, result);
+            setSitemapUrl(result.sitemapUrl);
+            return;
+          }
+        }
+        
+        console.log('API test failed, using local');
+        await useLocalGeneration();
+        
+      } catch (apiError) {
+        console.log('API not available locally:', apiError);
+        alert('API not available in development. Using local generation.\n\nIn production, the API will work.');
+        await useLocalGeneration();
+      }
+      
+    } catch (error: any) {
+      console.error('Error:', error);
+      alert(`Failed: ${error.message}`);
+    } finally {
+      setIsGeneratingSitemap(false);
     }
-  } finally {
-    setIsGeneratingSitemap(false);
-  }
-};
-
+  };
+  
+  const useLocalGeneration = async () => {
+    const url = await generateAndUploadSitemap();
+    if (url) {
+      const response = await fetch(url + '?t=' + Date.now());
+      const xmlText = await response.text();
+      
+      const blob = new Blob([xmlText], { type: 'application/xml' });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = 'sitemap-local.xml';
+      link.click();
+      URL.revokeObjectURL(downloadUrl);
+      
+      setSitemapUrl(url);
+      alert('✅ Sitemap generated locally');
+    }
+  };
+  
+  const downloadSitemap = async (url: string, result: any) => {
+    const response = await fetch(url);
+    const xmlText = await response.text();
+    
+    const blob = new Blob([xmlText], { type: 'application/xml' });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = 'sitemap.xml';
+    link.click();
+    URL.revokeObjectURL(downloadUrl);
+    
+    alert(`✅ Sitemap generated via API!\n\nPosts: ${result.postsCount || 0}\nURL: ${url}`);
+  };
 // Helper function for download
 const triggerDownload = (xmlText: string, filename: string) => {
   const blob = new Blob([xmlText], { type: 'application/xml' });
