@@ -307,41 +307,108 @@ export const Admin: React.FC = () => {
     }
   };
 
-  const handleRegenerateSitemap = async () => {
-    setIsGeneratingSitemap(true);
-    try {
-      // Step 1: Trigger regeneration on server (your existing function)
-      const url = await generateAndUploadSitemap();
-  
-      if (!url) throw new Error('No URL returned');
-  
-      // Step 2: Fetch the fresh sitemap.xml as text
-      const response = await fetch(url + '?t=' + Date.now(), { cache: 'no-cache' });
-      if (!response.ok) throw new Error('Failed to fetch sitemap');
-  
-      const xmlText = await response.text();
-  
-      // Step 3: Trigger download
-      const blob = new Blob([xmlText], { type: 'application/xml' });
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = 'sitemap.xml';           // filename in Downloads folder
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(downloadUrl);
-      a.remove();
-  
-      // Success message
-      alert(`Sitemap regenerated & downloaded!\n\nCheck your Downloads folder → sitemap.xml`);
-      setSitemapUrl(url);
-    } catch (error) {
-      console.error(error);
-      alert('Failed to regenerate or download sitemap.');
-    } finally {
-      setIsGeneratingSitemap(false);
+// In your Admin component
+const handleRegenerateSitemap = async () => {
+  setIsGeneratingSitemap(true);
+  try {
+    const baseUrl = window.location.origin;
+    const secret = process.env.REACT_APP_REVALIDATE_SECRET || process.env.REVALIDATE_SECRET;
+    
+    if (!secret) {
+      alert('⚠️ REVALIDATE_SECRET not configured. Please set it in environment variables.');
+      return;
     }
-  };
+
+    // Step 1: Generate sitemap and upload to Vercel Blob Storage
+    console.log('Generating sitemap via API...');
+    
+    const response = await fetch(`${baseUrl}/api/generate-sitemap?secret=${secret}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to generate sitemap');
+    }
+    
+    console.log('Sitemap generated:', result);
+    
+    // Use both URLs: API endpoint and direct blob URL
+    const apiSitemapUrl = `${baseUrl}/api/sitemap.xml`;
+    const blobSitemapUrl = result.sitemapUrl || `https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml`;
+    
+    // Step 2: Fetch the fresh sitemap.xml from blob storage
+    console.log('Fetching sitemap from blob storage...');
+    const blobResponse = await fetch(blobSitemapUrl + '?t=' + Date.now(), { 
+      cache: 'no-cache',
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    });
+    
+    if (!blobResponse.ok) {
+      // Fallback to API endpoint
+      const apiResponse = await fetch(apiSitemapUrl + '?t=' + Date.now(), { cache: 'no-cache' });
+      if (!apiResponse.ok) throw new Error('Failed to fetch sitemap from both sources');
+      
+      const xmlText = await apiResponse.text();
+      triggerDownload(xmlText, 'sitemap-api.xml');
+      
+      alert(`✅ Sitemap Regenerated!\n\n📄 Downloaded: sitemap-api.xml (from API)\n🔗 API URL: ${apiSitemapUrl}\n🗂️ Blob URL: ${blobSitemapUrl}\n📊 Posts: ${result.postsCount || 'N/A'}`);
+      
+      // Update state with API URL
+      setSitemapUrl(apiSitemapUrl);
+    } else {
+      const xmlText = await blobResponse.text();
+      triggerDownload(xmlText, 'sitemap.xml');
+      
+      alert(`✅ Sitemap Regenerated & Downloaded!\n\n📄 File: sitemap.xml (from Blob Storage)\n🔗 Direct URL: ${blobSitemapUrl}\n🔗 API URL: ${apiSitemapUrl}\n📊 Posts: ${result.postsCount || 'N/A'}\n🕒 Generated: ${new Date(result.timestamp).toLocaleString()}`);
+      
+      // Update state with blob URL
+      setSitemapUrl(blobSitemapUrl);
+    }
+    
+  } catch (error) {
+    console.error('Sitemap regeneration error:', error);
+    
+    // Fallback to your original method
+    try {
+      console.log('Trying fallback method...');
+      const url = await generateAndUploadSitemap();
+      if (url) {
+        const response = await fetch(url + '?t=' + Date.now(), { cache: 'no-cache' });
+        if (response.ok) {
+          const xmlText = await response.text();
+          triggerDownload(xmlText, 'sitemap-fallback.xml');
+          alert('Sitemap regenerated (fallback method). Check Downloads folder.');
+          setSitemapUrl(url);
+        }
+      }
+    } catch (fallbackError) {
+      console.error('Fallback also failed:', fallbackError);
+      alert(`❌ Failed to regenerate sitemap API is deployed\n2. Environment variables are set\n3. Vercel Blob Storage is configured`);
+    }
+  } finally {
+    setIsGeneratingSitemap(false);
+  }
+};
+
+// Helper function for download
+const triggerDownload = (xmlText: string, filename: string) => {
+  const blob = new Blob([xmlText], { type: 'application/xml' });
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(downloadUrl);
+  a.remove();
+};
   const handleLogout = () => {
     logout();
     navigate('/');

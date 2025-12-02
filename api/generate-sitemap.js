@@ -1,51 +1,29 @@
 // /api/generate-sitemap.js
-import { kv } from '@vercel/kv'; // If using Vercel KV
-// OR use fetch to your Firebase
-import fetch from 'node-fetch';
+import { put } from '@vercel/blob';
+import { list } from '@vercel/blob';
 
 export default async function handler(req, res) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
-  // Handle OPTIONS request for CORS
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      message: 'Method not allowed. Use POST.' 
+    });
   }
-  
+
   try {
+    // Check for secret token
+    if (req.query.secret !== process.env.REVALIDATE_SECRET) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+
     console.log('Generating sitemap...');
     
-    // Method 1: Fetch from your Firebase Firestore
-    const firebaseApiKey = process.env.FIREBASE_API_KEY;
-    const projectId = process.env.FIREBASE_PROJECT_ID;
+    // Fetch your posts from database or API
+    const posts = await fetchPosts(); // Implement this
     
-    // Get published posts from Firebase REST API
-    const firebaseUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/posts?key=${firebaseApiKey}`;
+    const baseUrl = 'https://bigyann.com.np';
     
-    const response = await fetch(firebaseUrl);
-    const data = await response.json();
-    
-    // Filter published posts
-    const publishedPosts = data.documents?.filter(doc => {
-      const fields = doc.fields;
-      return fields?.status?.stringValue === 'published';
-    }) || [];
-    
-    // Process posts
-    const posts = publishedPosts.map(doc => {
-      const fields = doc.fields;
-      return {
-        slug: fields?.slug?.stringValue || doc.name.split('/').pop(),
-        updatedAt: fields?.updatedAt?.stringValue || fields?.createdAt?.stringValue || new Date().toISOString(),
-      };
-    });
-    
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'https://bigyann.com.np';
-    
+    // Generate XML content
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -61,50 +39,71 @@ export default async function handler(req, res) {
   <url>
     <loc>${baseUrl}/about</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/admin</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
   </url>`;
     
+    // Add posts dynamically
     posts.forEach(post => {
+      const slug = post.slug || post.id;
+      const lastmod = post.updatedAt || post.createdAt || new Date().toISOString();
+      
       xml += `
   <url>
-    <loc>${baseUrl}/blog/${post.slug}</loc>
-    <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
+    <loc>${baseUrl}/blog/${slug}</loc>
+    <lastmod>${new Date(lastmod).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>`;
     });
     
     xml += '\n</urlset>';
     
-    // Save to Vercel KV if available
-    try {
-      if (process.env.KV_REST_API_URL) {
-        await kv.set('sitemap-xml', xml);
-        console.log('Sitemap saved to Vercel KV');
-      }
-    } catch (kvError) {
-      console.log('KV not available:', kvError);
-    }
+    // Upload to Vercel Blob Storage
+    const blob = await put('sitemap.xml', xml, {
+      access: 'public',
+      contentType: 'application/xml',
+      addRandomSuffix: false // Keep the name as sitemap.xml
+    });
     
-    // Return both JSON and XML
-    if (req.headers['accept']?.includes('application/xml')) {
-      res.setHeader('Content-Type', 'application/xml');
-      res.status(200).send(xml);
-    } else {
-      res.status(200).json({
-        message: 'Sitemap generated successfully',
-        sitemapUrl: `${baseUrl}/sitemap.xml`,
-        xml: xml,
-        postCount: posts.length,
-        generatedAt: new Date().toISOString()
-      });
-    }
+    console.log('Sitemap uploaded to:', blob.url);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Sitemap generated and uploaded successfully',
+      sitemapUrl: blob.url,
+      postsCount: posts.length,
+      timestamp: new Date().toISOString()
+    });
     
   } catch (error) {
     console.error('Error generating sitemap:', error);
-    res.status(500).json({ 
-      error: error.message || 'Unknown error',
-      note: 'Make sure Firebase environment variables are set'
+    return res.status(500).json({ 
+      success: false,
+      message: 'Failed to generate sitemap',
+      error: error.message 
     });
+  }
+}
+
+// Function to fetch posts - adjust based on your data source
+async function fetchPosts() {
+  try {
+    // Example: Fetch from your database or API
+    const response = await fetch('https://your-api.com/api/posts');
+    const data = await response.json();
+    return data.posts || [];
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return [];
   }
 }
