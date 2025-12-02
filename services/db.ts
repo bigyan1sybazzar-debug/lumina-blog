@@ -153,18 +153,9 @@ export const createPost = async (
 
     const docRef = await db.collection(POSTS_COLLECTION).add(newPost);
 
-    // Trigger sitemap regeneration via API if published
+    // Auto-update sitemap if published
     if (post.status === 'published') {
-      try {
-        await fetch('/api/generate-sitemap', { 
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        console.log('Sitemap regeneration triggered for new published post');
-      } catch (apiError) {
-        console.log('Sitemap API call failed (non-critical):', apiError);
-        // Still proceed with success - the post was created
-      }
+      await generateAndUploadSitemap();
     }
 
     return docRef.id;
@@ -174,54 +165,42 @@ export const createPost = async (
   }
 };
 
-// Update an existing post
+// Update an existing post - fix the type definition
 export const updatePost = async (
-  postId: string, 
-  postData: Partial<Omit<BlogPost, 'id' | 'slug' | 'createdAt' | 'updatedAt'>>
-): Promise<void> => {
-  try {
-    const updateData: Record<string, any> = {
-      ...postData,
-      updatedAt: new Date().toISOString(),
-    };
-
-    // If title changed, regenerate slug
-    if (postData.title) {
-      const slug = postData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-        .substring(0, 100);
-      updateData.slug = slug;
-    }
-
-    await db.collection(POSTS_COLLECTION).doc(postId).update(updateData);
-
-    // Check if post status changed to published
-    const currentPost = await getPostById(postId);
-    const isNowPublished = postData.status === 'published' || 
-                          (!postData.status && currentPost?.status === 'published');
-    
-    // Trigger sitemap regeneration via API if post is published
-    if (isNowPublished) {
-      try {
-        await fetch('/api/generate-sitemap', { 
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        console.log('Sitemap regeneration triggered for updated published post');
-      } catch (apiError) {
-        console.log('Sitemap API call failed (non-critical):', apiError);
+    postId: string, 
+    postData: Partial<Omit<BlogPost, 'id' | 'slug' | 'createdAt' | 'updatedAt'>>
+  ): Promise<void> => {
+    try {
+      const updateData: Record<string, any> = {
+        ...postData,
+        updatedAt: new Date().toISOString(),
+      };
+  
+      // If title changed, regenerate slug
+      if (postData.title) {
+        const slug = postData.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '')
+          .substring(0, 100);
+        updateData.slug = slug;
       }
+  
+      await db.collection(POSTS_COLLECTION).doc(postId).update(updateData);
+  
+      // Regenerate sitemap if post is published
+      // Fix: Cast status to the correct type or check properly
+      const status = postData.status as 'published' | 'pending' | 'draft' | undefined;
+      if (status === 'published') {
+        await generateAndUploadSitemap();
+      }
+  
+      console.log(`Post ${postId} updated successfully`);
+    } catch (error) {
+      console.error('Error updating post:', error);
+      throw error;
     }
-
-    console.log(`Post ${postId} updated successfully`);
-  } catch (error) {
-    console.error('Error updating post:', error);
-    throw error;
-  }
-};
-
+  };
 // Delete a post
 export const deletePost = async (postId: string): Promise<void> => {
   try {
@@ -230,8 +209,6 @@ export const deletePost = async (postId: string): Promise<void> => {
     if (!post) {
       throw new Error('Post not found');
     }
-
-    const wasPublished = post.status === 'published';
 
     // Delete the post
     await db.collection(POSTS_COLLECTION).doc(postId).delete();
@@ -256,17 +233,9 @@ export const deletePost = async (postId: string): Promise<void> => {
 
     await Promise.all([...deleteCommentsPromises, ...deleteReviewsPromises]);
 
-    // Trigger sitemap regeneration via API if the deleted post was published
-    if (wasPublished) {
-      try {
-        await fetch('/api/generate-sitemap', { 
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        console.log('Sitemap regeneration triggered after deleting published post');
-      } catch (apiError) {
-        console.log('Sitemap API call failed (non-critical):', apiError);
-      }
+    // Regenerate sitemap if the deleted post was published
+    if (post.status === 'published') {
+      await generateAndUploadSitemap();
     }
 
     console.log(`Post ${postId} and associated data deleted successfully`);
@@ -276,32 +245,17 @@ export const deletePost = async (postId: string): Promise<void> => {
   }
 };
 
-export const updatePostStatus = async (postId: string, status: 'published' | 'pending' | 'draft'): Promise<void> => {
-  try {
-    await db.collection(POSTS_COLLECTION).doc(postId).update({
-      status,
-      updatedAt: new Date().toISOString(),
-    });
+export const updatePostStatus = async (postId: string, status: 'published' | 'pending' | 'draft') => {
+  await db.collection(POSTS_COLLECTION).doc(postId).update({
+    status,
+    updatedAt: new Date().toISOString(),
+  });
 
-    // Trigger sitemap regeneration via API if status changed to published
-    if (status === 'published') {
-      try {
-        await fetch('/api/generate-sitemap', { 
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        console.log('Sitemap regeneration triggered after status update to published');
-      } catch (apiError) {
-        console.log('Sitemap API call failed (non-critical):', apiError);
-      }
-    }
-
-    console.log(`Post ${postId} status updated to ${status}`);
-  } catch (error) {
-    console.error('Error updating post status:', error);
-    throw error;
+  if (status === 'published') {
+    await generateAndUploadSitemap();
   }
 };
+
 export const toggleLikePost = async (postId: string, userId: string): Promise<boolean> => {
   const ref = db.collection(POSTS_COLLECTION).doc(postId);
   const doc = await ref.get();
@@ -391,16 +345,8 @@ export const getAllUsers = async (): Promise<User[]> => {
   }
 };
 
-export const updateUserRole = async (userId: string, role: string) => {
-  // Validate the role
-  const validRoles = ['user', 'moderator', 'admin'];
-  if (!validRoles.includes(role)) {
-    throw new Error(`Invalid role: ${role}. Must be one of: ${validRoles.join(', ')}`);
-  }
-  
-  await db.collection(USERS_COLLECTION).doc(userId).update({ 
-    role: role as 'user' | 'moderator' | 'admin' 
-  });
+export const updateUserRole = async (userId: string, role: 'user' | 'moderator' | 'admin') => {
+  await db.collection(USERS_COLLECTION).doc(userId).update({ role });
 };
 
 // --- COMMENTS ---
@@ -530,27 +476,28 @@ export const generateAndUploadSitemap = async (): Promise<string | null> => {
       xml += `\n</urlset>`;
   
       // Just download the XML file (no Firebase Storage upload)
-      if (typeof window !== 'undefined') {
-        const blob = new Blob([xml], { type: 'application/xml' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'sitemap.xml';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        console.log('Sitemap XML downloaded locally');
-        alert('Sitemap downloaded! Upload this file to your hosting provider.');
-      }
-  
-      return `${baseUrl}/sitemap.xml`;
-    } catch (error) {
-      console.error('Failed to generate sitemap:', error);
-      return null;
-    }
-  };
+           // Just download the XML file (browser only)
+           if (typeof window !== 'undefined') {
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sitemap.xml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+    
+          console.log('Sitemap generated successfully.');
+          return xml;
+    
+        } catch (error) {
+          console.error('Error generating sitemap:', error);
+          return null;
+        }
+    };
+    
 
 // --- SEED ---
 
