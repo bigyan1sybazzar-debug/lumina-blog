@@ -1,6 +1,8 @@
 // api/sitemap.ts
 import { put } from '@vercel/blob';
 import admin from 'firebase-admin';
+import { writeFileSync } from 'fs';
+import { join } from 'path';
 
 export default async function handler(req: any, res: any) {
   // CORS
@@ -8,14 +10,8 @@ export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
 
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Only POST allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Only POST allowed' });
 
   const auth = req.headers.authorization || '';
   if (auth !== `Bearer ${process.env.SITEMAP_SECRET}`) {
@@ -23,7 +19,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    // Initialize Firebase Admin (using full service account JSON)
+    // Initialize Firebase Admin
     if (!admin.apps.length) {
       const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT!);
       admin.initializeApp({
@@ -33,12 +29,10 @@ export default async function handler(req: any, res: any) {
 
     const db = admin.firestore();
     const BASE_URL = 'https://bigyann.com.np';
-    const SITEMAP_URL = 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
+    const BLOB_URL = 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
 
-    // Fetch all published posts
-    const snapshot = await db.collection('posts')
-      .where('status', '==', 'published')
-      .get();
+    // Fetch published posts
+    const snapshot = await db.collection('posts').where('status', '==', 'published').get();
 
     const posts = snapshot.docs.map(doc => {
       const d = doc.data();
@@ -61,26 +55,50 @@ export default async function handler(req: any, res: any) {
   </url>`).join('')}
 </urlset>`.trim();
 
-    // Upload + OVERWRITE the existing file (this fixes the error)
+    // 1. Upload to Vercel Blob (always works)
     await put('sitemap.xml', xml, {
       access: 'public',
       addRandomSuffix: false,
       contentType: 'application/xml',
-      allowOverwrite: true,  // THIS LINE FIXES THE "blob already exists" ERROR
+      allowOverwrite: true,
     });
 
-    // Success!
+    // 2. Try to save to public/sitemap.xml (only works locally or during build)
+    let publicSaved = false;
+    let publicMessage = '';
+
+    try {
+      const publicPath = join(process.cwd(), 'public', 'sitemap.xml');
+      writeFileSync(publicPath, xml, 'utf-8');
+      publicSaved = true;
+      publicMessage = 'Sitemap saved to public/sitemap.xml (visible at /sitemap.xml)';
+      console.log('public/sitemap.xml updated successfully');
+    } catch (writeError) {
+      publicSaved = false;
+      publicMessage = 'Warning: Could not write to public/sitemap.xml (normal on Vercel serverless — will update on next deploy)';
+      console.warn('Warning: Local write failed (expected on Vercel):', writeError);
+    }
+
+    // Final success response with clear status
     res.status(200).json({
       success: true,
       posts: posts.length,
-      url: SITEMAP_URL,
-      message: 'Sitemap updated successfully!',
+      totalUrls: posts.length + 1,
+      blobUrl: BLOB_URL,
+      publicUrl: `${BASE_URL}/sitemap.xml`,
+      localSaveStatus: publicSaved ? 'Success: Saved to public folder' : 'Warning: Not saved locally (Vercel serverless)',
+      message: publicSaved
+        ? 'Sitemap fully updated — ready for Google!'
+        : 'Sitemap updated on Blob — public version updates on next deploy',
+      tip: publicSaved
+        ? 'Visit http://localhost:5173/sitemap.xml to see it now!'
+        : 'Deploy to see latest at bigyann.com.np/sitemap.xml',
     });
 
   } catch (error: any) {
     console.error('Sitemap generation error:', error);
-    res.status(500).json({ 
-      error: error.message || 'Internal server error' 
+    res.status(500).json({
+      error: error.message || 'Failed to generate sitemap',
     });
   }
 }

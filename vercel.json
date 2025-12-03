@@ -1,18 +1,49 @@
 {
+  "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": null,
   "devCommand": "npm run dev",
+
+  "functions": {
+    "api/sitemap.ts": {
+      "runtime": "@vercel/node@20.x"
+    }
+  },
+
   "rewrites": [
     {
-      
       "source": "/sitemap.xml",
-      "destination": "https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml"
+      "destination": "/sitemap.xml"
     },
     {
-      
       "source": "/(.*)",
       "destination": "/index.html"
+    }
+  ],
+
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/xml; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=3600, stale-while-revalidate=60"
+        }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain"
+        }
+      ]
     }
   ]
 }
