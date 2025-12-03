@@ -5,12 +5,6 @@
   "framework": null,
   "devCommand": "npm run dev",
 
-  "functions": {
-    "api/sitemap.ts": {
-      "runtime": "@vercel/node@20.x"
-    }
-  },
-
   "rewrites": [
     {
       "source": "/sitemap.xml",
