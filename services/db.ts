@@ -402,105 +402,35 @@ export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
   }
 };
 
-// --- SITEMAP GENERATION (Auto-updating) ---
-
-// This function remains available if other parts of the client need the published post slugs.
-export const getPublishedPostSlugs = async (): Promise<{ slug: string; updatedAt: string }[]> => {
-  try {
-      const snapshot = await db.collection(POSTS_COLLECTION)
-          .where('status', '==', 'published')
-          .get();
-
-      return snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-              slug: data.slug || doc.id,
-              updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
-          };
-      });
-  } catch (error) {
-      console.error('Error fetching slugs for sitemap:', error);
-      return [];
-  }
-};
-type SitemapGenerationSuccess = {
-  /** The public URL where the sitemap was deployed (e.g., Vercel Blob URL). */
-  url: string;
-  /** An optional status message from the server. */
-  message?: string;
-};
+// services/db.ts  ← replace the whole function
 export const generateAndUploadSitemap = async (): Promise<string | null> => {
-  const apiRoute = '/api/sitemap';
-  const maxRetries = 3;
-  const initialDelayMs = 1000;
+  const SITEMAP_SECRET = 'bigyann-2025-super-secret-987654321'; // ← MUST match Vercel env
 
-  console.log(`[Sitemap] Triggering serverless sitemap regeneration via ${apiRoute}...`);
+  try {
+    const response = await fetch('/api/sitemap', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SITEMAP_SECRET}`,  // ← THIS WAS MISSING!
+      },
+    });
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-          // 1. Call the serverless API route using a POST request
-          const response = await fetch(apiRoute, {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-                  // SECURITY NOTE: In a production app, add an authentication token (e.g., JWT)
-                  // or a deployment secret here to prevent unauthorized execution.
-                  // 'Authorization': `Bearer ${process.env.ADMIN_TOKEN}`,
-              },
-              // Optional: You could pass configuration data in the body if needed
-              // body: JSON.stringify({ forceRegeneration: true }),
-          });
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('Sitemap API error:', response.status, err);
+      alert('Sitemap failed: ' + (err || response.statusText));
+      return null;
+    }
 
-          if (!response.ok) {
-              // Read the error response body
-              let errorDetails = response.statusText;
-              try {
-                  const errorData = await response.json() as { error?: string };
-                  errorDetails = errorData.error || response.statusText;
-              } catch (e) {
-                  // Ignore JSON parsing errors if the response wasn't JSON
-              }
+    const data = await response.json();
+    alert(`Sitemap Updated!\n${data.posts || 'All'} posts indexednnLive URL:n${data.url || 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml'}`);
+    return data.url;
 
-              // Treat HTTP 5xx errors (server-side issues) as potentially retriable
-              if (response.status >= 500 && response.status < 600 && attempt < maxRetries) {
-                  const delay = initialDelayMs * Math.pow(2, attempt - 1);
-                  console.warn(`[Sitemap] Server error (${response.status}). Retrying in ${delay / 1000}s... (Attempt ${attempt}/${maxRetries})`);
-                  await new Promise(resolve => setTimeout(resolve, delay));
-                  continue; // Go to the next iteration (retry)
-              }
-
-              // Throw an error for non-retriable or final failed attempts
-              throw new Error(`Sitemap deployment failed: HTTP ${response.status} - ${errorDetails}`);
-          }
-
-          // 2. Extract the deployed URL from the server's successful response
-          const data: SitemapGenerationSuccess = await response.json();
-          const sitemapUrl = data.url;
-
-          console.log(`[Sitemap] Successfully deployed. Public URL: ${sitemapUrl}`);
-          return sitemapUrl;
-
-      } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          console.error(`[Sitemap] Error during automated sitemap deployment trigger (Attempt ${attempt}):`, errorMessage);
-          
-          // If the failure was a non-retriable catch (e.g., network error, JSON parse error) 
-          // and we are not on the last attempt, we can still try to retry.
-          if (attempt < maxRetries) {
-              const delay = initialDelayMs * Math.pow(2, attempt - 1);
-              console.warn(`[Sitemap] Non-HTTP error. Retrying in ${delay / 1000}s... (Attempt ${attempt}/${maxRetries})`);
-              await new Promise(resolve => setTimeout(resolve, delay));
-              continue;
-          }
-
-          // After all retries fail
-          console.warn('[Sitemap] FINAL FAILURE: Check the server logs for the /api/sitemap route.');
-          return null;
-      }
+  } catch (err) {
+    console.error('Network error:', err);
+    alert('Check internet or Vercel deployment');
+    return null;
   }
-
-  // Should be unreachable if maxRetries > 0, but added for safety/compiler
-  return null; 
 };
 // --- SEED ---
 
