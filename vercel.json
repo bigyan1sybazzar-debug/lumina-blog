@@ -3,13 +3,14 @@
   "outputDirectory": "dist",
   "framework": null,
   "devCommand": "npm run dev",
-
   "rewrites": [
     {
+      
       "source": "/sitemap.xml",
-      "destination": "/api/sitemap"
+      "destination": "https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml"
     },
     {
+      
       "source": "/(.*)",
       "destination": "/index.html"
     }
