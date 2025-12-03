@@ -3,12 +3,12 @@ import { put } from '@vercel/blob';
 import admin from 'firebase-admin';
 
 export default async function handler(req: any, res: any) {
-  // FULL CORS SUPPORT — THIS FIXES THE ERROR
+  // CORS — THIS FIXES THE ERROR
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
 
-  // Handle preflight
+  // Handle preflight (OPTIONS) — THIS IS THE MISSING PIECE
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -37,23 +37,17 @@ export default async function handler(req: any, res: any) {
     const BASE_URL = 'https://bigyann.com.np';
     const SITEMAP_URL = 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
 
-    const snapshot = await db.collection('posts')
-      .where('status', '==', 'published')
-      .get();
+    const snapshot = await db.collection('posts').where('status', '==', 'published').get();
 
     const posts = snapshot.docs.map(doc => {
       const d = doc.data();
       const date = d.updatedAt?.toDate?.() || d.createdAt?.toDate?.() || new Date();
-      return {
-        slug: (d.slug as string) || doc.id,
-        updatedAt: date.toISOString(),
-      };
+      return { slug: (d.slug as string) || doc.id, updatedAt: date.toISOString() };
     });
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${BASE_URL}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
-  <url><loc>${BASE_URL}/categories</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   ${posts.map(p => `
   <url>
     <loc>${BASE_URL}/blog/${p.slug}</loc>
@@ -68,13 +62,9 @@ export default async function handler(req: any, res: any) {
       contentType: 'application/xml',
     });
 
-    res.status(200).json({
-      success: true,
-      url: SITEMAP_URL,
-      posts: posts.length,
-    });
+    res.status(200).json({ success: true, posts: posts.length, url: SITEMAP_URL });
   } catch (error: any) {
-    console.error('Sitemap error:', error);
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 }
