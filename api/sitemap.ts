@@ -3,12 +3,12 @@ import { put } from '@vercel/blob';
 import admin from 'firebase-admin';
 
 export default async function handler(req: any, res: any) {
-  // CORS — THIS FIXES THE ERROR
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
 
-  // Handle preflight (OPTIONS) — THIS IS THE MISSING PIECE
+  // Handle preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -23,13 +23,11 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    // NEW: Use the full service account JSON (this fixes the "project_id" error)
     if (!admin.apps.length) {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT!);
       admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID!,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-        }),
+        credential: admin.credential.cert(serviceAccount),
       });
     }
 
@@ -37,12 +35,17 @@ export default async function handler(req: any, res: any) {
     const BASE_URL = 'https://bigyann.com.np';
     const SITEMAP_URL = 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
 
-    const snapshot = await db.collection('posts').where('status', '==', 'published').get();
+    const snapshot = await db.collection('posts')
+      .where('status', '==', 'published')
+      .get();
 
     const posts = snapshot.docs.map(doc => {
       const d = doc.data();
       const date = d.updatedAt?.toDate?.() || d.createdAt?.toDate?.() || new Date();
-      return { slug: (d.slug as string) || doc.id, updatedAt: date.toISOString() };
+      return {
+        slug: (d.slug as string) || doc.id,
+        updatedAt: date.toISOString(),
+      };
     });
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -62,9 +65,14 @@ export default async function handler(req: any, res: any) {
       contentType: 'application/xml',
     });
 
-    res.status(200).json({ success: true, posts: posts.length, url: SITEMAP_URL });
+    res.status(200).json({
+      success: true,
+      posts: posts.length,
+      url: SITEMAP_URL,
+    });
+
   } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    console.error('Sitemap generation error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }
