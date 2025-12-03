@@ -404,101 +404,104 @@ export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
 
 // --- SITEMAP GENERATION (Auto-updating) ---
 
+// This function remains available if other parts of the client need the published post slugs.
 export const getPublishedPostSlugs = async (): Promise<{ slug: string; updatedAt: string }[]> => {
   try {
-    const snapshot = await db.collection(POSTS_COLLECTION)
-      .where('status', '==', 'published')
-      .get();
+      const snapshot = await db.collection(POSTS_COLLECTION)
+          .where('status', '==', 'published')
+          .get();
 
-    return snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        slug: data.slug || doc.id,
-        updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
-      };
-    });
+      return snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+              slug: data.slug || doc.id,
+              updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
+          };
+      });
   } catch (error) {
-    console.error('Error fetching slugs for sitemap:', error);
-    return [];
+      console.error('Error fetching slugs for sitemap:', error);
+      return [];
   }
 };
-
+type SitemapGenerationSuccess = {
+  /** The public URL where the sitemap was deployed (e.g., Vercel Blob URL). */
+  url: string;
+  /** An optional status message from the server. */
+  message?: string;
+};
 export const generateAndUploadSitemap = async (): Promise<string | null> => {
-    try {
-      console.log('Generating sitemap.xml...');
-  
-      // Get published posts from Firestore
-      const snapshot = await db.collection(POSTS_COLLECTION)
-        .where('status', '==', 'published')
-        .get();
-  
-      const posts = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          slug: data.slug || doc.id,
-          updatedAt: data.updatedAt || data.createdAt || new Date().toISOString(),
-        };
-      });
-  
-      const baseUrl = typeof window !== 'undefined'
-        ? window.location.origin
-        : 'https://lumina-blog.web.app';
-  
-      let xml = `<?xml version="1.0" encoding="UTF-8"?>
-  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <url>
-      <loc>${baseUrl}/</loc>
-      <changefreq>daily</changefreq>
-      <priority>1.0</priority>
-    </url>
-    <url>
-      <loc>${baseUrl}/categories</loc>
-      <changefreq>weekly</changefreq>
-      <priority>0.8</priority>
-    </url>
-    <url>
-      <loc>${baseUrl}/about</loc>
-      <changefreq>monthly</changefreq>
-      <priority>0.5</priority>
-    </url>`;
-  
-      posts.forEach(post => {
-        xml += `
-    <url>
-      <loc>${baseUrl}/blog/${post.slug}</loc>
-      <lastmod>${new Date(post.updatedAt).toISOString()}</lastmod>
-      <changefreq>weekly</changefreq>
-      <priority>0.7</priority>
-    </url>`;
-      });
-  
-      xml += `\n</urlset>`;
-  
-      // Just download the XML file (no Firebase Storage upload)
-           // Just download the XML file (browser only)
-           if (typeof window !== 'undefined') {
-            const blob = new Blob([xml], { type: 'application/xml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'sitemap.xml';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          }
-    
-          console.log('Sitemap generated successfully.');
-          return xml;
-    
-        } catch (error) {
-          console.error('Error generating sitemap:', error);
-          return null;
-        }
-    };
-    
+  const apiRoute = '/api/sitemap';
+  const maxRetries = 3;
+  const initialDelayMs = 1000;
 
+  console.log(`[Sitemap] Triggering serverless sitemap regeneration via ${apiRoute}...`);
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+          // 1. Call the serverless API route using a POST request
+          const response = await fetch(apiRoute, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  // SECURITY NOTE: In a production app, add an authentication token (e.g., JWT)
+                  // or a deployment secret here to prevent unauthorized execution.
+                  // 'Authorization': `Bearer ${process.env.ADMIN_TOKEN}`,
+              },
+              // Optional: You could pass configuration data in the body if needed
+              // body: JSON.stringify({ forceRegeneration: true }),
+          });
+
+          if (!response.ok) {
+              // Read the error response body
+              let errorDetails = response.statusText;
+              try {
+                  const errorData = await response.json() as { error?: string };
+                  errorDetails = errorData.error || response.statusText;
+              } catch (e) {
+                  // Ignore JSON parsing errors if the response wasn't JSON
+              }
+
+              // Treat HTTP 5xx errors (server-side issues) as potentially retriable
+              if (response.status >= 500 && response.status < 600 && attempt < maxRetries) {
+                  const delay = initialDelayMs * Math.pow(2, attempt - 1);
+                  console.warn(`[Sitemap] Server error (${response.status}). Retrying in ${delay / 1000}s... (Attempt ${attempt}/${maxRetries})`);
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                  continue; // Go to the next iteration (retry)
+              }
+
+              // Throw an error for non-retriable or final failed attempts
+              throw new Error(`Sitemap deployment failed: HTTP ${response.status} - ${errorDetails}`);
+          }
+
+          // 2. Extract the deployed URL from the server's successful response
+          const data: SitemapGenerationSuccess = await response.json();
+          const sitemapUrl = data.url;
+
+          console.log(`[Sitemap] Successfully deployed. Public URL: ${sitemapUrl}`);
+          return sitemapUrl;
+
+      } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`[Sitemap] Error during automated sitemap deployment trigger (Attempt ${attempt}):`, errorMessage);
+          
+          // If the failure was a non-retriable catch (e.g., network error, JSON parse error) 
+          // and we are not on the last attempt, we can still try to retry.
+          if (attempt < maxRetries) {
+              const delay = initialDelayMs * Math.pow(2, attempt - 1);
+              console.warn(`[Sitemap] Non-HTTP error. Retrying in ${delay / 1000}s... (Attempt ${attempt}/${maxRetries})`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+          }
+
+          // After all retries fail
+          console.warn('[Sitemap] FINAL FAILURE: Check the server logs for the /api/sitemap route.');
+          return null;
+      }
+  }
+
+  // Should be unreachable if maxRetries > 0, but added for safety/compiler
+  return null; 
+};
 // --- SEED ---
 
 export const seedDatabase = async () => {
