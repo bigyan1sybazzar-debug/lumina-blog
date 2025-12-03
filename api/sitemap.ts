@@ -23,7 +23,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    // NEW: Use the full service account JSON (this fixes the "project_id" error)
+    // Initialize Firebase Admin (using full service account JSON)
     if (!admin.apps.length) {
       const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT!);
       admin.initializeApp({
@@ -35,6 +35,7 @@ export default async function handler(req: any, res: any) {
     const BASE_URL = 'https://bigyann.com.np';
     const SITEMAP_URL = 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
 
+    // Fetch all published posts
     const snapshot = await db.collection('posts')
       .where('status', '==', 'published')
       .get();
@@ -48,6 +49,7 @@ export default async function handler(req: any, res: any) {
       };
     });
 
+    // Generate XML
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${BASE_URL}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
@@ -59,20 +61,26 @@ export default async function handler(req: any, res: any) {
   </url>`).join('')}
 </urlset>`.trim();
 
+    // Upload + OVERWRITE the existing file (this fixes the error)
     await put('sitemap.xml', xml, {
       access: 'public',
       addRandomSuffix: false,
       contentType: 'application/xml',
+      allowOverwrite: true,  // THIS LINE FIXES THE "blob already exists" ERROR
     });
 
+    // Success!
     res.status(200).json({
       success: true,
       posts: posts.length,
       url: SITEMAP_URL,
+      message: 'Sitemap updated successfully!',
     });
 
   } catch (error: any) {
     console.error('Sitemap generation error:', error);
-    res.status(500).json({ error: error.message || 'Internal server error' });
+    res.status(500).json({ 
+      error: error.message || 'Internal server error' 
+    });
   }
 }
