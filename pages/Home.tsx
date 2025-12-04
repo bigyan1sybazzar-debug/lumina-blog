@@ -44,6 +44,51 @@ export const Home: React.FC = () => {
   }
 
   return (
+    
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
+      {/* Hero Section - Mobile Optimized */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-white via-gray-50 to-primary-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 pt-16 pb-20 md:pt-32 md:pb-40 px-4 sm:px-6">
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary-100/20 dark:to-primary-900/10" />
+        <div className="absolute top-10 left-4 w-48 h-48 bg-primary-300/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-10 right-4 w-64 h-64 bg-purple-300/10 rounded-full blur-3xl" />
+        
+        <div className="max-w-7xl mx-auto relative">
+          <div className="text-center animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div className="inline-flex items-center gap-2 px-4 py-2.5 mb-4 sm:mb-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full border border-gray-200 dark:border-gray-700">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-500" />
+              <span className="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">
+                Welcome to Bigyann
+              </span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight sm:leading-[1.1] px-2">
+              Your daily tech &{' '}
+              <span className="bg-gradient-to-r from-primary-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
+                science feed
+              </span>
+            </h1>
+
+            <p className="mt-4 sm:mt-6 max-w-xl mx-auto text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed px-2">
+              Explore cutting-edge discoveries, gadgets, AI updates, space science, and everything in between.
+            </p>
+
+            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center gap-3 px-2">
+              <a
+                href="#posts"
+                className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-full bg-gradient-to-r from-primary-500 to-purple-500 text-white font-semibold text-sm hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary-500/25"
+              >
+                Start Reading
+              </a>
+              <Link
+                to="/categories"
+                className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white font-semibold text-sm border border-gray-300 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 active:scale-95 transition-all"
+              >
+                Explore Topics
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
       {/* Hero Section - Mobile Optimized */}
       <section id="posts" className="py-10 sm:py-12 md:py-20 bg-transparent px-4 sm:px-6">
