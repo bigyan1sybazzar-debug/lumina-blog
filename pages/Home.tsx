@@ -46,105 +46,66 @@ export const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
       {/* Hero Section - Mobile Optimized */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-white via-gray-50 to-primary-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 pt-16 pb-20 md:pt-32 md:pb-40 px-4 sm:px-6">
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary-100/20 dark:to-primary-900/10" />
-        <div className="absolute top-10 left-4 w-48 h-48 bg-primary-300/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-4 w-64 h-64 bg-purple-300/10 rounded-full blur-3xl" />
-        
-        <div className="max-w-7xl mx-auto relative">
-          <div className="text-center animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <div className="inline-flex items-center gap-2 px-4 py-2.5 mb-4 sm:mb-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full border border-gray-200 dark:border-gray-700">
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-500" />
-              <span className="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">
-                Welcome to Bigyann
-              </span>
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight sm:leading-[1.1] px-2">
-              Your daily tech &{' '}
-              <span className="bg-gradient-to-r from-primary-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                science feed
-              </span>
-            </h1>
-
-            <p className="mt-4 sm:mt-6 max-w-xl mx-auto text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed px-2">
-              Explore cutting-edge discoveries, gadgets, AI updates, space science, and everything in between.
-            </p>
-
-            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center gap-3 px-2">
-              <a
-                href="#posts"
-                className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-full bg-gradient-to-r from-primary-500 to-purple-500 text-white font-semibold text-sm hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary-500/25"
-              >
-                Start Reading
-              </a>
-              <Link
-                to="/categories"
-                className="px-6 sm:px-8 py-3 sm:py-3.5 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white font-semibold text-sm border border-gray-300 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 active:scale-95 transition-all"
-              >
-                Explore Topics
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Latest Posts - 2 columns on mobile */}
       <section id="posts" className="py-10 sm:py-12 md:py-20 bg-transparent px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-3 sm:gap-4">
-            <div>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Latest Articles</h2>
-              <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">Fresh content every week</p>
-            </div>
-            <Link
-              to="/all-posts"
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary-600 dark:text-primary-400 hover:gap-3 transition-all"
+  <div className="max-w-7xl mx-auto">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-3 sm:gap-4">
+      <div>
+        {/* ENHANCEMENT 1: Gradient Title */}
+        <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-purple-600 dark:from-primary-400 dark:to-purple-400">
+          Latest Articles
+        </h2>
+        <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">Fresh content every week</p>
+      </div>
+      <Link
+        to="/all-posts"
+        // ENHANCEMENT 2: Smoother Link Transition & Semibold
+        className="inline-flex items-center gap-2 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:gap-3 transition-all duration-200 ease-in-out"
+      >
+        View all <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+      </Link>
+    </div>
+
+    {posts.length > 0 ? (
+      <>
+        {/* Grid: 2 columns on mobile, 3 on md+, 4 on lg+ */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+          {currentPosts.map((post) => (
+            <div 
+              key={post.id} 
+              // ENHANCEMENT 3: Enhanced Hover Effect (Scale + Shadow)
+              className="h-full transform transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-primary-500/10 active:scale-[0.98] rounded-xl"
             >
-              View all <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </Link>
-          </div>
-
-          {posts.length > 0 ? (
-            <>
-              {/* 2 columns on mobile, 3 on tablet+, 4 on large screens */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-                {currentPosts.map((post) => (
-                  <div 
-                    key={post.id} 
-                    className="h-full transform transition-transform hover:scale-[1.01] active:scale-[0.99]"
-                  >
-                    <PostCard post={post} />
-                  </div>
-                ))}
-              </div>
-
-              {/* Pagination - Mobile Optimized */}
-              {totalPages > 1 && (
-                <div className="mt-10 sm:mt-12 flex flex-wrap justify-center gap-1.5 sm:gap-2">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`min-w-8 sm:min-w-10 px-2.5 sm:px-3 py-1.5 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
-                        currentPage === page
-                          ? 'bg-gradient-to-r from-primary-500 to-purple-500 text-white shadow-lg shadow-primary-500/25'
-                          : 'bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-12 sm:py-16 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700">
-              <p className="text-sm text-gray-500 dark:text-gray-400">No posts yet. Check back soon!</p>
+              <PostCard post={post} />
             </div>
-          )}
+          ))}
         </div>
-      </section>
+
+        {/* Pagination - Mobile Optimized */}
+        {totalPages > 1 && (
+          <div className="mt-10 sm:mt-12 flex flex-wrap justify-center gap-1.5 sm:gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`min-w-7 sm:min-w-8 px-2 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                  currentPage === page
+                    ? 'bg-gradient-to-r from-primary-500 to-purple-500 text-white shadow-lg shadow-primary-500/25'
+                    : 'bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+        )}
+      </>
+    ) : (
+      <div className="text-center py-12 sm:py-16 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700">
+        <p className="text-sm text-gray-500 dark:text-gray-400">No posts yet. Check back soon!</p>
+      </div>
+    )}
+  </div>
+</section>
 
       {/* Trending Section - Mobile Friendly */}
       <section className="py-10 sm:py-12 md:py-20 bg-gradient-to-b from-white/50 to-gray-50/50 dark:from-gray-900/50 dark:to-gray-800/50 border-t border-gray-200/50 dark:border-gray-800/50 px-4 sm:px-6">
