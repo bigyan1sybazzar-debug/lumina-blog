@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Menu, X, Sun, Moon, LogOut, User as UserIcon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-
-const { Link, useLocation, useNavigate } = ReactRouterDOM;
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,7 +33,6 @@ export const Header: React.FC = () => {
   };
 
   return (
-    
     <header className="sticky top-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -47,8 +44,9 @@ export const Header: React.FC = () => {
             </span>
           </Link>
           <meta name="msvalidate.01" content="79CB5F780A824FA1F4111194F951AFB0" />
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center space-x-8">
+
+          {/* Desktop Nav - Changed md:flex to lg:flex to hide on Tablet Portrait */}
+          <nav className="hidden lg:flex items-center space-x-8">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -77,8 +75,8 @@ export const Header: React.FC = () => {
             )}
           </nav>
 
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center space-x-4">
+          {/* Desktop Actions - Changed md:flex to lg:flex */}
+          <div className="hidden lg:flex items-center space-x-4">
             <div className="relative group">
               <input
                 type="text"
@@ -108,7 +106,7 @@ export const Header: React.FC = () => {
                 
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl py-2 border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
-                     <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                       <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{user.name}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
                       <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 mt-1 capitalize">{user.role}</p>
@@ -140,8 +138,8 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Mobile Actions */}
-          <div className="md:hidden flex items-center space-x-2">
+          {/* Mobile/Tablet Actions - Changed md:hidden to lg:hidden */}
+          <div className="lg:hidden flex items-center space-x-2">
              <button
               onClick={toggleTheme}
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
@@ -158,10 +156,21 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile/Tablet Menu Overlay - Changed md:hidden to lg:hidden */}
       {isMenuOpen && (
-        <div className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-xl animate-in slide-in-from-top-4 duration-200">
-          <div className="px-4 pt-2 pb-6 space-y-1">
+        <div className="lg:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-xl animate-in slide-in-from-top-4 duration-200">
+          <div className="px-4 pt-4 pb-6 space-y-2">
+            
+            {/* Added Search Bar to Mobile/Tablet Menu */}
+            <div className="relative mb-4">
+               <input
+                type="text"
+                placeholder="Search articles..."
+                className="w-full pl-10 pr-4 py-2.5 text-base rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            </div>
+
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -190,22 +199,22 @@ export const Header: React.FC = () => {
             
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               {user ? (
-                 <div className="space-y-4 px-3">
-                   <div className="flex items-center space-x-3">
-                     <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
-                     <div>
-                       <p className="text-sm font-bold text-gray-900 dark:text-white">{user.name}</p>
-                       <p className="text-xs text-gray-500">{user.email}</p>
-                     </div>
-                   </div>
-                   <button 
-                    onClick={handleLogout}
-                    className="w-full flex items-center justify-center px-4 py-2 rounded-lg text-base font-medium text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
-                   >
-                     <LogOut size={18} className="mr-2" />
-                     Sign out
-                   </button>
-                 </div>
+                  <div className="space-y-4 px-3">
+                    <div className="flex items-center space-x-3">
+                      <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{user.name}</p>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
+                    <button 
+                     onClick={handleLogout}
+                     className="w-full flex items-center justify-center px-4 py-2 rounded-lg text-base font-medium text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
+                    >
+                      <LogOut size={18} className="mr-2" />
+                      Sign out
+                    </button>
+                  </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4 px-3">
                   <Link 
