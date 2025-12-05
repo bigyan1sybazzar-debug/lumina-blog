@@ -5,7 +5,7 @@ import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogIm
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { BlogPost, User, Category } from '../types';
-
+import { submitToIndexNow,submitToGoogleIndexingAPI } from '../services/indexingService';
 import { 
   LayoutDashboard, FileText, Settings, Sparkles, Loader2, Save, LogOut, Home, Database, 
   PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw, 
@@ -270,52 +270,68 @@ export const Admin: React.FC = () => {
     }
   };
 
-  const handleSavePost = async () => {
-    if (!title || !fullContent || !user || !category) {
+  // components/Admin.tsx
+
+const handleSavePost = async () => {
+  if (!title || !fullContent || !user || !category) {
       alert("Please fill in Title, Content, and select a Category.");
       return;
-    }
-    
-    setIsSaving(true);
-    try {
+  }
+  
+  setIsSaving(true);
+  try {
       const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0);
       if (editorMode === 'ai' && tags.length === 0) tags.push('AI Generated');
-  
+
+      // Post status depends on the user's role
       const status: 'published' | 'pending' | 'draft' = isAdmin ? 'published' : 'pending';
       const postData = {
-        title,
-        content: fullContent,
-        excerpt: excerpt || fullContent.substring(0, 150).replace(/[#*`]/g, '') + '...',
-        author: { name: user.name, avatar: user.avatar, id: user.id },
-        readTime: `${Math.ceil(fullContent.split(' ').length / 200)} min read`,
-        category,
-        tags,
-        coverImage,
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        status, // Now properly typed
-        updatedAt: new Date().toISOString()
+          title,
+          content: fullContent,
+          excerpt: excerpt || fullContent.substring(0, 150).replace(/[#*`]/g, '') + '...',
+          author: { name: user.name, avatar: user.avatar, id: user.id },
+          readTime: `${Math.ceil(fullContent.split(' ').length / 200)} min read`,
+          category,
+          tags,
+          coverImage,
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          status,
+          updatedAt: new Date().toISOString()
       };
-  
+
+      // Determine the final URL for indexing BEFORE saving (based on the title)
+      const postSlug = postData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const postUrl = `https://bigyann.com.np/blog/${postSlug}`;
+      
       if (editingPostId) {
-        await updatePost(editingPostId, postData);
-        alert('Post updated successfully!');
+          await updatePost(editingPostId, postData);
+          alert('Post updated successfully!');
       } else {
-        await createPost(postData);
-        alert(isAdmin ? 'Post published successfully!' : 'Post submitted for approval!');
+          await createPost(postData);
+          alert(isAdmin ? 'Post published successfully!' : 'Post submitted for approval!');
       }
       
+      // >>> INDEXING INTEGRATION: PUBLISH/UPDATE <<<
+      if (status === 'published') {
+          // IndexNow is used for general blog posts (Bing/Yandex)
+          await submitToIndexNow([postUrl]);
+          console.log(`Indexing: Notified IndexNow for update/publish of ${postUrl}`);
+          
+          // OPTIONAL: Use Google Indexing API only if content is JobPosting/BroadcastEvent
+          // await submitToGoogleIndexingAPI([postUrl], 'URL_UPDATED'); 
+      }
+
       // Reset form
       resetEditor();
       setActiveTab('posts');
       refreshData();
-    } catch (error) {
+  } catch (error) {
       alert('Failed to save post. Please check console for details.');
       console.error(error);
-    } finally {
+  } finally {
       setIsSaving(false);
-    }
-  };
-
+  }
+};
   const handleEditPost = async (postId: string) => {
     try {
       const post = await getPostById(postId);
@@ -339,28 +355,63 @@ export const Admin: React.FC = () => {
 
   const handleDeletePost = async (postId: string) => {
     if (confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-      try {
-        await deletePost(postId);
-        alert('Post deleted successfully!');
-        refreshData();
-      } catch (error) {
-        alert('Failed to delete post.');
-        console.error(error);
-      }
-    }
-  };
+        try {
+            // 1. Get the post data before deleting it to calculate the URL
+            const deletedPost = allPosts.find(p => p.id === postId);
+            const postSlug = deletedPost?.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const postUrl = postSlug ? `https://bigyann.com.np/blog/${postSlug}` : null;
 
-  const handleApprovePost = async (postId: string) => {
-    try {
+            // 2. Delete from DB
+            await deletePost(postId);
+            alert('Post deleted successfully!');
+            
+            // >>> INDEXING INTEGRATION: DELETE <<<
+            if (postUrl) {
+                // Notify Google that the URL should be removed
+                await submitToGoogleIndexingAPI([postUrl], 'URL_DELETED');
+                console.log(`Indexing: Notified Google API about deletion of ${postUrl}`);
+
+                // Notify IndexNow (Bing/Yandex) about the deletion
+                // IndexNow uses the same endpoint for deletion, submitting the URL marks it for removal.
+                await submitToIndexNow([postUrl]); 
+                console.log(`Indexing: Notified IndexNow about deletion of ${postUrl}`);
+            }
+
+            refreshData();
+        } catch (error) {
+            alert('Failed to delete post.');
+            console.error(error);
+        }
+    }
+};
+
+const handleApprovePost = async (postId: string) => {
+  try {
+      // 1. Get the post data to generate the URL
+      const approvedPost = pendingPosts.find(p => p.id === postId);
+      if (!approvedPost) throw new Error("Post not found in pending list.");
+
+      // 2. Update status in DB
       await updatePostStatus(postId, 'published');
       alert('Post approved and published!');
+
+      // 3. Generate URL
+      const postSlug = approvedPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const postUrl = `https://bigyann.com.np/blog/${postSlug}`;
+      
+      // >>> INDEXING INTEGRATION: PUBLISH <<<
+      await submitToIndexNow([postUrl]);
+      console.log(`Indexing: Notified IndexNow for approval/publish of ${postUrl}`);
+
+      // OPTIONAL: Use Google Indexing API only if content is JobPosting/BroadcastEvent
+      // await submitToGoogleIndexingAPI([postUrl], 'URL_UPDATED'); 
+
       refreshData();
-    } catch (error) {
+  } catch (error) {
       alert('Failed to approve post.');
       console.error(error);
-    }
-  };
-
+  }
+};
   const handleRejectPost = async (postId: string) => {
     if (confirm('Are you sure you want to reject this post?')) {
       try {
