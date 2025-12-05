@@ -1,21 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory } from '../services/db';
-import { generateBlogOutline, generateFullPost } from '../services/geminiService';
+import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { BlogPost, User, Category } from '../types';
-
-
-
-
-
 
 import { 
   LayoutDashboard, FileText, Settings, Sparkles, Loader2, Save, LogOut, Home, Database, 
   PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw, 
   Users, CheckCircle, Clock, Shield, Tag, Globe, ExternalLink, Trash2, Eye, 
-  Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter
+  Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter,
+  Bot, Zap, Play, Pause, AlertTriangle, Terminal
 } from 'lucide-react';
 import { ANALYTICS_DATA } from '../constants';
 import {  deleteCategory, updatePost, deletePost, getPostById 
@@ -24,8 +20,17 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { generateAndUploadSitemap } from '../services/db';
+
+// Automation Types
+interface AutoLog {
+  id: string;
+  timestamp: string;
+  message: string;
+  type: 'info' | 'success' | 'error' | 'warning';
+}
+
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -71,6 +76,15 @@ export const Admin: React.FC = () => {
   // Search and filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+
+  // Automation State
+  const [isAutoPilotOn, setIsAutoPilotOn] = useState(false);
+  const [autoLogs, setAutoLogs] = useState<AutoLog[]>([]);
+  const [nextRunTime, setNextRunTime] = useState<number | null>(null);
+  const [autoIntervalId, setAutoIntervalId] = useState<any>(null);
+  const [postsGeneratedToday, setPostsGeneratedToday] = useState(0);
+
+  const logsEndRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = user?.role === 'admin';
   const isModerator = user?.role === 'moderator' || isAdmin;
@@ -118,6 +132,107 @@ export const Admin: React.FC = () => {
   useEffect(() => {
     refreshData();
   }, [user, activeTab]);
+
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [autoLogs]);
+
+  // --- AUTOMATION LOGIC ---
+
+  const addLog = (message: string, type: 'info' | 'success' | 'error' | 'warning' = 'info') => {
+    setAutoLogs(prev => [...prev, {
+      id: Date.now().toString(),
+      timestamp: new Date().toLocaleTimeString(),
+      message,
+      type
+    }]);
+  };
+
+  const runAutomationCycle = async () => {
+    if (categories.length === 0) {
+      addLog('No categories found. Cannot run automation.', 'error');
+      return;
+    }
+
+    addLog('Starting automation cycle...', 'info');
+
+    try {
+      // 1. Pick a random category
+      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+      addLog(`Selected category: ${randomCategory.name}`, 'info');
+      addLog(`Fetching trending news and generating article via Gemini...`, 'info');
+
+      // 2. Generate Content via Gemini (Search + Writing)
+      const { title: aiTitle, content: aiContent, sources } = await generateNewsPost(randomCategory.name);
+      addLog(`Content generated: "${aiTitle}"`, 'success');
+
+      // 3. Generate Image
+      addLog(`Generating AI header image for: "${aiTitle}"...`, 'info');
+      const aiImage = await generateBlogImage(aiTitle);
+      addLog('Image generated successfully.', 'success');
+
+      // 4. Create Post Object
+      const postData = {
+        title: aiTitle,
+        content: aiContent,
+        excerpt: aiContent.substring(0, 150).replace(/[#*`]/g, '') + '...',
+        author: { name: 'Bigyann AI', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=bigyann', id: 'ai-bot' },
+        readTime: `${Math.ceil(aiContent.split(' ').length / 200)} min read`,
+        category: randomCategory.name,
+        tags: [randomCategory.name, 'News', 'AI Generated'],
+        coverImage: aiImage,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        status: 'published' as const,
+        updatedAt: new Date().toISOString()
+      };
+
+      // 5. Save to DB
+      await createPost(postData);
+      addLog('Post published successfully!', 'success');
+      setPostsGeneratedToday(prev => prev + 1);
+      
+      // Refresh list
+      refreshData();
+
+    } catch (error: any) {
+      addLog(`Automation failed: ${error.message}`, 'error');
+    }
+  };
+
+  const toggleAutoPilot = () => {
+    if (isAutoPilotOn) {
+      // Turn Off
+      if (autoIntervalId) clearInterval(autoIntervalId);
+      setIsAutoPilotOn(false);
+      setNextRunTime(null);
+      addLog('Auto-Pilot stopped.', 'warning');
+    } else {
+      // Turn On
+      setIsAutoPilotOn(true);
+      addLog('Auto-Pilot activated. Scheduling 4 posts per day.', 'success');
+      
+      // Calculate interval for 4 times a day (approx every 6 hours)
+      // For demo purposes, we can set it faster, but let's do a logic check
+      const postsPerDay = 4;
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const interval = msPerDay / postsPerDay;
+      
+      // Run one immediately? No, let's schedule.
+      const run = () => {
+        runAutomationCycle();
+        setNextRunTime(Date.now() + interval);
+      };
+
+      run(); // Run first one now
+      const id = setInterval(run, interval); // Then every 6 hours
+      setAutoIntervalId(id);
+      setNextRunTime(Date.now() + interval);
+    }
+  };
+
+  // --- EDITOR HANDLERS ---
 
   const handleGenerateOutline = async () => {
     if (!topic) return;
@@ -309,15 +424,25 @@ export const Admin: React.FC = () => {
 
   const handleRegenerateSitemap = async () => {
     setIsGeneratingSitemap(true);
+  
     try {
-      const url = await generateAndUploadSitemap();
-      if (url) {
-        setSitemapUrl(url);
-        alert('Sitemap generated and downloaded! Check your downloads folder for sitemap.xml');
+      const response = await fetch('https://bigyann.com.np/api/sitemap', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer bigyann-2025-super-secret-987654321',
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      const data = await response.json();
+  
+      if (data.success) {
+        alert(`Sitemap Updated!\n${data.posts} posts indexed\n\nLive URL:\nhttps://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml`);
+      } else {
+        alert('Failed: ' + data.error);
       }
-    } catch (error) {
-      alert('Error generating sitemap.');
-      console.error(error);
+    } catch (err) {
+      alert('Deploy vercel.json + api/sitemap.ts first!');
     } finally {
       setIsGeneratingSitemap(false);
     }
@@ -438,6 +563,21 @@ export const Admin: React.FC = () => {
 
               {isAdmin && (
                 <>
+                  <button 
+                    onClick={() => { setActiveTab('automation'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                      activeTab === 'automation' 
+                        ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' 
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <Bot size={18} className="mr-3" /> 
+                    Auto-Pilot
+                    {isAutoPilotOn && (
+                      <span className="ml-auto w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    )}
+                  </button>
+
                   <button 
                     onClick={() => { setActiveTab('approvals'); setIsSidebarOpen(false); }}
                     className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
@@ -750,6 +890,137 @@ export const Admin: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+          
+          {/* AUTOMATION TAB */}
+          {activeTab === 'automation' && isAdmin && (
+            <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
+               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Bot size={28} className="text-primary-600" />
+                    Auto-Pilot Automation
+                  </h1>
+                  <p className="text-gray-500 dark:text-gray-400 mt-1">
+                    Automatically fetch news, generate articles, create images, and publish 4 times a day.
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                   <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg text-sm">
+                      <span className="text-gray-500 mr-2">Posts Today:</span>
+                      <span className="font-bold text-gray-900 dark:text-white">{postsGeneratedToday}/4</span>
+                   </div>
+                   
+                   <button 
+                     onClick={toggleAutoPilot}
+                     className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all shadow-sm ${
+                       isAutoPilotOn 
+                         ? 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800' 
+                         : 'bg-green-600 text-white hover:bg-green-700 shadow-lg hover:shadow-green-500/20'
+                     }`}
+                   >
+                     {isAutoPilotOn ? <Pause size={18} /> : <Play size={18} />}
+                     {isAutoPilotOn ? 'Stop Auto-Pilot' : 'Start Auto-Pilot'}
+                   </button>
+                </div>
+              </div>
+
+              {/* Status Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden">
+                  <div className={`absolute top-0 right-0 p-4 opacity-10 ${isAutoPilotOn ? 'text-green-500' : 'text-gray-400'}`}>
+                    <Zap size={64} />
+                  </div>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h3>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`w-3 h-3 rounded-full ${isAutoPilotOn ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></span>
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {isAutoPilotOn ? 'Running' : 'Stopped'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {isAutoPilotOn ? 'Scheduled to run 4 times/day' : 'Click start to begin'}
+                  </p>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Next Scheduled Run</h3>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Clock size={24} className="text-blue-500" />
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {nextRunTime ? new Date(nextRunTime).toLocaleTimeString() : '--:--'}
+                    </span>
+                  </div>
+                   <p className="text-xs text-orange-500 mt-2 flex items-center gap-1">
+                    <AlertTriangle size={12} />
+                    Keep this tab open for automation to work
+                  </p>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Target Categories</h3>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {categories.slice(0, 5).map(c => (
+                      <span key={c.id} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300">
+                        {c.name}
+                      </span>
+                    ))}
+                    {categories.length > 5 && (
+                      <span className="text-xs text-gray-400 self-center">+{categories.length - 5} more</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Console Log Area */}
+              <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-700 shadow-2xl flex flex-col h-[400px]">
+                <div className="bg-gray-800 px-4 py-2 flex items-center justify-between border-b border-gray-700">
+                  <div className="flex items-center gap-2">
+                    <Terminal size={16} className="text-gray-400" />
+                    <span className="text-sm font-mono text-gray-300">Automation Logs</span>
+                  </div>
+                  <button 
+                    onClick={() => setAutoLogs([])} 
+                    className="text-xs text-gray-400 hover:text-white hover:underline"
+                  >
+                    Clear Logs
+                  </button>
+                </div>
+                <div className="flex-1 p-4 overflow-y-auto font-mono text-sm space-y-2">
+                  {autoLogs.length === 0 && (
+                    <div className="text-gray-600 italic text-center mt-10">No activity logs yet...</div>
+                  )}
+                  {autoLogs.map((log) => (
+                    <div key={log.id} className="flex gap-3">
+                      <span className="text-gray-500 shrink-0">[{log.timestamp}]</span>
+                      <span className={`break-all ${
+                        log.type === 'error' ? 'text-red-400' : 
+                        log.type === 'success' ? 'text-green-400' : 
+                        log.type === 'warning' ? 'text-yellow-400' : 
+                        'text-blue-300'
+                      }`}>
+                        {log.type === 'success' && '✓ '}
+                        {log.type === 'error' && '✕ '}
+                        {log.message}
+                      </span>
+                    </div>
+                  ))}
+                  <div ref={logsEndRef} />
+                </div>
+              </div>
+
+              {/* Manual Trigger for Testing */}
+              <div className="flex justify-end">
+                <button 
+                  onClick={runAutomationCycle}
+                  disabled={isAutoPilotOn}
+                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50"
+                >
+                  Trigger Single Run (Test)
+                </button>
+              </div>
             </div>
           )}
 
@@ -1136,84 +1407,6 @@ export const Admin: React.FC = () => {
                         <p className="text-gray-500 dark:text-gray-400">Create your first category to organize posts.</p>
                       </div>
                     )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ANALYTICS TAB */}
-          {activeTab === 'analytics' && isAdmin && (
-            <div className="max-w-7xl mx-auto space-y-8">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics Dashboard</h1>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Traffic Overview</h3>
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={ANALYTICS_DATA}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.1} />
-                          <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
-                          <Tooltip 
-                            contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#F3F4F6', borderRadius: '8px' }}
-                            itemStyle={{ color: '#F3F4F6' }}
-                          />
-                          <Bar dataKey="views" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={40} />
-                          <Bar dataKey="visitors" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={40} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-6">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Top Performing Posts</h3>
-                    <div className="space-y-4">
-                      {allPosts
-                        .sort((a, b) => (b.views || 0) - (a.views || 0))
-                        .slice(0, 3)
-                        .map((post, index) => (
-                          <div key={post.id} className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <span className="text-sm font-medium text-gray-500 mr-3">#{index + 1}</span>
-                              <div>
-                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[150px]">
-                                  {post.title}
-                                </p>
-                                <p className="text-xs text-gray-500">{post.category}</p>
-                              </div>
-                            </div>
-                            <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
-                              {post.views?.toLocaleString() || 0} views
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Category Performance</h3>
-                    <div className="space-y-3">
-                      {categories.map(cat => {
-                        const catPosts = allPosts.filter(p => p.category === cat.name);
-                        const totalViews = catPosts.reduce((sum, post) => sum + (post.views || 0), 0);
-                        return (
-                          <div key={cat.id} className="flex justify-between items-center">
-                            <span className="text-sm text-gray-900 dark:text-white">{cat.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-500">{catPosts.length} posts</span>
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                {totalViews.toLocaleString()} views
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
                   </div>
                 </div>
               </div>
