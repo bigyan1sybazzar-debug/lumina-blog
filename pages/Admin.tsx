@@ -309,25 +309,15 @@ export const Admin: React.FC = () => {
 
   const handleRegenerateSitemap = async () => {
     setIsGeneratingSitemap(true);
-  
     try {
-      const response = await fetch('https://bigyann.com.np/api/sitemap', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer bigyann-2025-super-secret-987654321',
-          'Content-Type': 'application/json',
-        },
-      });
-  
-      const data = await response.json();
-  
-      if (data.success) {
-        alert(`Sitemap Updated!\n${data.posts} posts indexed\n\nLive URL:\nhttps://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml`);
-      } else {
-        alert('Failed: ' + data.error);
+      const url = await generateAndUploadSitemap();
+      if (url) {
+        setSitemapUrl(url);
+        alert('Sitemap generated and downloaded! Check your downloads folder for sitemap.xml');
       }
-    } catch (err) {
-      alert('Deploy vercel.json + api/sitemap.ts first!');
+    } catch (error) {
+      alert('Error generating sitemap.');
+      console.error(error);
     } finally {
       setIsGeneratingSitemap(false);
     }

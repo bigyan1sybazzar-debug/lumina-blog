@@ -80,7 +80,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ postId }) => {
   return (
     <div id="reviews-section" className="mt-12 pt-6 border-t border-gray-200 dark:border-gray-700">
       <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-        Customer Reviews ({totalReviews})
+        Reviews and Discussions ({totalReviews})
         <span className="ml-4 flex items-center text-xl">
             {averageRating !== 'N/A' && (
                 <>
