@@ -47,67 +47,67 @@ const sliderSettings = {
       prevArrow: <CustomArrow direction="prev" className="hidden sm:flex" />,
       nextArrow: <CustomArrow direction="next" className="hidden sm:flex" />,
      responsive: [
-    // Ultra-Wide Screens (>= 1920px)
-    {
-      breakpoint: 1920,
-      settings: {
-        slidesToShow: 5,
-        slidesToScroll: 1
-      }
-    },
-  
-    // Very Large Desktop (>= 1600px)
-    {
-      breakpoint: 1600,
-      settings: {
-        slidesToShow: 4,
-        slidesToScroll: 1
-      }
-    },
-  
-    // Large Desktop (>= 1280px)
-    {
-      breakpoint: 1280,
-      settings: {
-        slidesToShow: 3,
-        slidesToScroll: 1
-      }
-    },
-  
-    // Tablet / Medium Screens (<= 768px)
-    {
-      breakpoint: 768,
-      settings: {
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        arrows: true,
-        dots: false
-      }
-    },
-  
-    // Small Mobile (<= 640px)
-    {
-      breakpoint: 640,
-      settings: {
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        arrows: false,
-        dots: true
-      }
-    },
-  
-    // Extra Small Mobile (<= 480px)
-    {
-      breakpoint: 480,
-      settings: {
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        arrows: false,
-        dots: true
-      }
-    }
-  ]
-  
+    // Ultra-Wide Screens (>= 1920px)
+    {
+      breakpoint: 1920,
+      settings: {
+        slidesToShow: 5,
+        slidesToScroll: 1
+      }
+    },
+  
+    // Very Large Desktop (>= 1600px)
+    {
+      breakpoint: 1600,
+      settings: {
+        slidesToShow: 4,
+        slidesToScroll: 1
+      }
+    },
+  
+    // Large Desktop (>= 1280px)
+    {
+      breakpoint: 1280,
+      settings: {
+        slidesToShow: 3,
+        slidesToScroll: 1
+      }
+    },
+  
+    // Tablet / Medium Screens (<= 768px)
+    {
+      breakpoint: 768,
+      settings: {
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: true,
+        dots: false
+      }
+    },
+  
+    // Small Mobile (<= 640px)
+    {
+      breakpoint: 640,
+      settings: {
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: false,
+        dots: true
+      }
+    },
+  
+    // Extra Small Mobile (<= 480px)
+    {
+      breakpoint: 480,
+      settings: {
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: false,
+        dots: true
+      }
+    }
+  ]
+  
     };
 
 export const Home: React.FC = () => {
@@ -262,19 +262,20 @@ export const Home: React.FC = () => {
         <h2 className="text-lg sm:text-2xl font-extrabold text-gray-900 dark:text-white">
           Hot & Fresh
         </h2>
-      </div>
+        </div>
 
       <Slider {...sliderSettings}>
         {sliderPosts.map(post => (
           <div key={post.id} className="px-2">
             <div className="h-full">
               <PostCard
-                // Truncate to 5 words on mobile/tablet screens (isMobile is true below 768px), 8 words on desktop
+                // Truncate to 5 words on mobile/tablet screens (isMobile is true below 768px), 5 words on desktop
                 post={{ ...post, title: truncateTitle(post.title, isMobile ? 5 : 5) }}
                 variant="vertical"
-                increasedTitle={true}
-                // Font size: text-base on mobile, text-lg on sm+ for the large slider cards
-                textSizeClass="text-base sm:text-lg"
+                // 1. Enforce Left Alignment for all elements in this card
+                alignLeft={true} 
+                // 2. Set Consistent Font Size (text-lg is a good balance for this prominent section)
+                textSizeClass="text-lg" 
               />
             </div>
           </div>
@@ -323,8 +324,10 @@ export const Home: React.FC = () => {
                       <PostCard 
                         // Truncate title to 5 words on mobile/tablet screens (isMobile is true below 768px), 8 words on desktop
                         post={{ ...post, title: truncateTitle(post.title, isMobile ? 5 : 8) }}
-                        // Font Size: Ensure small font size on mobile (text-xs) for 2-column layout to fit
-                        textSizeClass="text-xs sm:text-sm"
+                        // 1. Enforce Left Alignment for all elements in this card
+                        alignLeft={true}
+                        // 2. Set Consistent Font Size (text-base is a good default for grid)
+                        textSizeClass="text-base"
                       />
                   </div>
                   ))}
@@ -375,14 +378,17 @@ export const Home: React.FC = () => {
                       // Truncate title to 5 words on mobile/tablet screens (isMobile is true below 768px), 8 words on desktop
                       post={{ ...post, title: truncateTitle(post.title, isMobile ? 5 : 8) }} 
                       variant="horizontal" 
-                      textSizeClass="text-base md:text-lg" 
+                        // 1. Enforce Left Alignment for all elements in this card
+                        alignLeft={true}
+                      // 2. Set Consistent Font Size (text-lg for prominence)
+                      textSizeClass="text-lg" 
                     />
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Sidebar */}
+            {/* Sidebar (No changes needed) */}
             <aside className="lg:col-span-4 space-y-6">
               {/* WhatsApp */}
               <div className="p-6 bg-gradient-to-br from-white/80 to-primary-50/30 dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm rounded-2xl border border-gray-300/50 dark:border-gray-700/50">

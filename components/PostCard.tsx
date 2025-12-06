@@ -10,22 +10,26 @@ interface PostCardProps {
   categoryName?: string;
   variant?: 'vertical' | 'horizontal';
   increasedTitle?: boolean;
-  textSizeClass?: string; // Crucial prop for responsive font sizing
+  textSizeClass?: string; 
+  alignLeft?: boolean; 
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ 
     post, 
     categoryName, 
     variant = 'vertical',
-    // Setting a sensible default that prioritizes small font on mobile (text-sm)
-    textSizeClass = 'text-sm sm:text-lg', 
-    increasedTitle 
+    // Using a smaller default size for better consistency when a specific class isn't passed
+    textSizeClass = 'text-base', 
+    increasedTitle,
+    alignLeft = false 
 }) => {
-  // Safe URL: uses slug if exists, falls back to id (never breaks)
   const postUrl = `/blog/${post.slug ?? post.id}`;
-
-  // The title is now assumed to be pre-truncated by the parent component (Home.tsx)
   const displayTitle = post.title;
+
+  // --- Alignment Control ---
+  // Ensure text is left-aligned and that the flex container for text also aligns items to the start.
+  const alignmentClass = alignLeft ? 'text-left' : 'text-center'; 
+  const contentFlexAlignment = alignLeft ? 'items-start' : 'items-center';
 
   if (variant === 'horizontal') {
     return (
@@ -37,22 +41,27 @@ export const PostCard: React.FC<PostCardProps> = ({
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </div>
-        <div className="flex-1 py-1">
-          {/* FIXED: Ensure date/read time is small (text-xs) */}
+        {/* HORIZONTAL VARIANT: All text content is wrapped in alignmentClass */}
+        <div className={`flex-1 py-1 ${alignmentClass}`}>
+          
+          {/* Date/Read Time/Category: Consistent smaller font (text-xs) */}
           <div className="flex items-center space-x-2 text-xs text-primary-600 dark:text-primary-400 font-semibold uppercase tracking-wide mb-2">
             <span>{categoryName || post.category || 'Uncategorized'}</span>
             <span>•</span>
             <span className="text-gray-500 dark:text-gray-500 font-normal">{post.readTime}</span>
           </div>
 
-          {/* APPLIED textSizeClass for responsive font size on title */}
+          {/* Title: Consistent font size (textSizeClass) */}
           <h3 className={`font-bold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-primary-600 transition-colors ${textSizeClass}`}>
             {displayTitle}
           </h3>
 
+          {/* Excerpt: Consistent font size (text-sm) */}
           <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-4">
             {post.excerpt}
           </p>
+          
+          {/* Read More link */}
           <div className="flex items-center text-sm font-medium text-gray-900 dark:text-gray-100">
             Read more <ArrowRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />
           </div>
@@ -75,8 +84,10 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
       </Link>
 
-      <div className="flex-1 p-6 flex flex-col">
-        {/* FIXED: Dates/Times/Category text set to text-xs */}
+      {/* VERTICAL VARIANT: Apply text-left and items-start to the main flex container */}
+      <div className={`flex-1 p-6 flex flex-col ${alignmentClass} ${contentFlexAlignment}`}>
+        
+        {/* Date and time to read: Consistent smaller font (text-xs), aligned left */}
         <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3 space-x-3">
           <span>{post.date}</span>
           <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
@@ -87,20 +98,26 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
 
         <Link to={postUrl} className="block mb-3">
-          {/* APPLIED textSizeClass for responsive font size on title */}
+          {/* Title: Consistent font size (textSizeClass) */}
           <h3 className={`font-bold text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors ${textSizeClass}`}>
             {displayTitle}
           </h3>
         </Link>
 
-        <div className="flex items-center justify-between mt-auto">
+        {/* Excerpt is now missing in the vertical card. Adding it back here: */}
+        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-3">
+          {post.excerpt}
+        </p>
+
+        {/* Author details: Left aligned (flex items-center) */}
+        <div className="flex items-center justify-between mt-auto w-full"> {/* Added w-full to ensure it spans full width */}
           <div className="flex items-center space-x-2">
             <img
               src={post.author.avatar}
               alt={post.author.name}
               className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700"
             />
-            {/* FIXED: Author name text set to text-sm */}
+            {/* Author name: Consistent font size (text-sm) */}
             <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
               {post.author.name}
             </span>
