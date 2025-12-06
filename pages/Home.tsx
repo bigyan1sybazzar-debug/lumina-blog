@@ -1,449 +1,415 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { getPosts } from '../services/db';
 import { BlogPost } from '../types';
 import { PostCard } from '../components/PostCard';
-import { ArrowRight, TrendingUp, Loader2, Sparkles, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, Loader2, Sparkles, Send, Zap, ChevronLeft, ChevronRight, Hash, Calendar, Clock, TrendingUp, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Slider from 'react-slick';
 
-// Responsive breakpoints
-const BREAKPOINTS = {
-  mobile: 480,
-  tablet: 768, // md breakpoint in Tailwind (used for truncation limit)
-  desktop: 1024, // lg breakpoint in Tailwind (used for 4-column limit)
-};
-
-// Custom Arrows for Slider
-interface CustomArrowProps {
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
-  direction: 'prev' | 'next';
-  className?: string;
-}
-
-const CustomArrow: React.FC<CustomArrowProps> = ({ onClick, direction, className }) => {
-  const Icon = direction === 'prev' ? ChevronLeft : ChevronRight;
-  return (
-    <button
-      onClick={onClick}
-      className={`absolute top-1/2 -translate-y-1/2 z-10 p-2 h-10 w-10 flex items-center justify-center 
-                  rounded-full bg-white/90 dark:bg-gray-800/90 shadow-xl border border-gray-200 dark:border-gray-700 
-                  hover:bg-primary-500/10 transition-all ${direction === 'prev' ? '-left-4' : '-right-4'} ${className}`}
-      aria-label={direction === 'prev' ? 'Previous' : 'Next'}
-    >
-      <Icon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-    </button>
-  );
-};
-
-const sliderSettings = {
-      dots: true,
-      infinite: true,
-      speed: 500,
-      slidesToShow: 2, // Default for large screens
-      slidesToScroll: 1,
-      autoplay: true,
-      autoplaySpeed: 4000,
-      pauseOnHover: true,
-      prevArrow: <CustomArrow direction="prev" className="hidden sm:flex" />,
-      nextArrow: <CustomArrow direction="next" className="hidden sm:flex" />,
-     responsive: [
-    // Ultra-Wide Screens (>= 1920px)
-    {
-      breakpoint: 1920,
-      settings: {
-        slidesToShow: 5,
-        slidesToScroll: 1
-      }
-    },
-  
-    // Very Large Desktop (>= 1600px)
-    {
-      breakpoint: 1600,
-      settings: {
-        slidesToShow: 4,
-        slidesToScroll: 1
-      }
-    },
-  
-    // Large Desktop (>= 1280px)
-    {
-      breakpoint: 1280,
-      settings: {
-        slidesToShow: 3,
-        slidesToScroll: 1
-      }
-    },
-  
-    // Tablet / Medium Screens (<= 768px)
-    {
-      breakpoint: 768,
-      settings: {
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        arrows: true,
-        dots: false
-      }
-    },
-  
-    // Small Mobile (<= 640px)
-    {
-      breakpoint: 640,
-      settings: {
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        arrows: false,
-        dots: true
-      }
-    },
-  
-    // Extra Small Mobile (<= 480px)
-    {
-      breakpoint: 480,
-      settings: {
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        arrows: false,
-        dots: true
-      }
-    }
-  ]
-  
-    };
-
+// --- Component Start ---
 export const Home: React.FC = () => {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [postsLimit, setPostsLimit] = useState(4); 
-  const [isMobile, setIsMobile] = useState(false); 
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
-  // Function to determine posts limit based on screen width
-  const getPostsPerCategory = (width: number) => {
-    // We only show 2 posts per category in the layout (grid-cols-2 on mobile)
-    if (width <= BREAKPOINTS.tablet) return 2; 
-    if (width <= BREAKPOINTS.desktop) return 3; 
-    return 4; 
-  };
+  // Placeholder fetchPosts function
+  const fetchPosts = async (): Promise<BlogPost[]> => {
+    for (let i = 0; i < 4; i++) {
+      try {
+        const result = await getPosts();
+        return Array.isArray(result) ? result : [];
+      } catch (err) {
+        if (i === 3) {
+          console.error('Failed to fetch posts after 4 attempts');
+          return [];
+        }
+        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+      }
+    }
+    return [];
+  };
 
-  // Responsive logic
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      setPostsLimit(getPostsPerCategory(width));
-      // isMobile is true below 768px (md breakpoint)
-      setIsMobile(width <= BREAKPOINTS.tablet); 
-    };
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const data = await fetchPosts();
+      const sorted = data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setPosts(sorted);
+      setLoading(false);
+    };
+    load();
+  }, []);
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // Memoized list of unique categories for the filter bar
+  const categories = useMemo(() => {
+    const cats = new Set<string>(posts.map(p => p.category).filter(Boolean) as string[]);
+    return ['All', ...Array.from(cats).sort()];
+  }, [posts]);
 
-  // Placeholder fetchPosts function (replace with your actual implementation)
-  const fetchPosts = async (): Promise<BlogPost[]> => {
-    for (let i = 0; i < 4; i++) {
-      try {
-        const result = await getPosts();
-        return Array.isArray(result) ? result : [];
-      } catch (err) {
-        if (i === 3) {
-          console.error('Failed to fetch posts after 4 attempts');
-          return [];
-        }
-        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
-      }
-    }
-    return [];
-  };
+  // Filtered posts based on selected category
+  const filteredPosts = useMemo(() => {
+    if (selectedCategory === 'All') {
+      return posts;
+    }
+    return posts.filter(p => p.category === selectedCategory);
+  }, [posts, selectedCategory]);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const data = await fetchPosts();
-      const sorted = data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setPosts(sorted);
-      setLoading(false);
-    };
-    load();
-  }, []);
+  // Featured posts - Take first 6-8 posts for slider
+  const featuredPosts = useMemo(() => posts.slice(0, 8), [posts]);
 
-  const postsByCategory = useMemo(() => {
-    const map = new Map<string, BlogPost[]>();
-    posts.forEach(post => {
-      const cat = post.category || 'General';
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(post);
-    });
+  const scrollSlider = (direction: 'left' | 'right') => {
+    if (!sliderRef.current) return;
+    
+    const scrollAmount = sliderRef.current.clientWidth * 0.8; // Scroll 80% of container width
+    if (direction === 'left') {
+      sliderRef.current.scrollLeft -= scrollAmount;
+    } else {
+      sliderRef.current.scrollLeft += scrollAmount;
+    }
+  };
 
-    return Array.from(map.entries())
-      .map(([category, list]) => ({
-        category,
-        posts: list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      }))
-      .sort((a, b) => a.category.localeCompare(b.category));
-  }, [posts]);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+        <div className="text-center">
+          <Loader2 className="w-16 h-16 animate-spin text-primary-500 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading articles...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const sliderPosts = useMemo(() => posts.slice(0, 8), [posts]);
+  // Define the WhatsApp URL
+  const whatsappUrl = "https://wa.me/9779805671898?text=Hello%20Bigyann!%20I'm%20reaching%20out%20from%20your%20homepage%20on%20the%20blog.";
 
-  const truncateTitle = (title: string, wordLimit: number = 5) => {
-    // FIX: Re-introduced ellipsis only if truncation happens
-    const words = title.split(/\s+/);
-    return words.length > wordLimit ? words.slice(0, wordLimit).join(' ') + '...' : title; 
-  };
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+      {/* Hero Section - Modern Design */}
+      <section className="relative overflow-hidden px-4 pt-20 pb-12 md:pt-24 md:pb-20">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-50/30 to-transparent dark:from-primary-900/10"></div>
+        <div className="max-w-7xl mx-auto relative">
+          <div className="grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-medium">
+                <Sparkles className="w-4 h-4" />
+                Welcome to the Bigyann
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 dark:text-white">
+                AI{' '}
+                <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
+                  Powered
+                </span>{' '}
+                Reviews & Discussions
+              </h1>
+              <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl">
+                Dive into AI powered articles on latest tech, design, and technology. Stay updated with the latest trends and best practices.
+              </p>
+              <div className="flex flex-wrap gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    document.getElementById('featured-posts')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5"
+                >
+                  Explore Articles
+                </button>
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-black dark:bg-gray-800 dark:hover:bg-gray-700 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5"
+                >
+                  <Send className="w-4 h-4" />
+                  Contact Me
+                </a>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="grid grid-cols-2 gap-4">
+                {featuredPosts.slice(0, 3).map((post, index) => (
+                  <div 
+                    key={post.id} 
+                    className={`relative rounded-2xl overflow-hidden group ${index === 0 ? 'col-span-2 aspect-[16/9]' : 'aspect-square'}`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent z-10"></div>
+                    <img
+                      src={post.coverImage}
+                      alt={post.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20">
+                      <span className="inline-block px-3 py-1 mb-2 rounded-full bg-white/20 backdrop-blur text-xs font-medium text-white">
+                        {post.category}
+                      </span>
+                      <h3 className="text-white font-bold text-sm md:text-base line-clamp-2">
+                        <Link to={`/categories/${post.slug ?? post.id}`} className="hover:text-primary-200 transition-colors">
+                          {post.title}
+                        </Link>
+                      </h3>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 to-gray-900">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-primary-500 to-purple-500 animate-pulse" />
-          <Loader2 className="w-16 h-16 animate-spin text-white absolute inset-0 m-auto" />
-        </div>
-        <span className="mt-6 block text-sm font-medium text-gray-600 dark:text-gray-400">
-          Loading ...
-        </span>
-      </div>
-    );
-  }
+      {/* Category Filter Section */}
+      <section className="sticky top-16 md:top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Browse by Topic</h2>
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="md:hidden p-2 rounded-lg bg-gray-100 dark:bg-gray-800"
+              aria-label="Toggle filter menu"
+            >
+              <Hash className="w-5 h-5" />
+            </button>
+          </div>
+          
+          {/* Desktop Filter Bar */}
+          <div className="hidden md:flex flex-wrap gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                  selectedCategory === cat
+                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {cat === 'All' ? <Sparkles className="w-4 h-4" /> : <Hash className="w-4 h-4" />}
+                {cat}
+              </button>
+            ))}
+          </div>
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 to-gray-900">
+          {/* Mobile Filter Drawer */}
+          {isFilterOpen && (
+            <div className="md:hidden mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl">
+              <div className="grid grid-cols-2 gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setSelectedCategory(cat);
+                      setIsFilterOpen(false);
+                    }}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedCategory === cat
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-white via-gray-50 to-primary-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 pt-16 pb-20 md:pt-32 md:pb-40 px-4 sm:px-6">
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary-100/20 dark:to-primary-900/10" />
-        <div className="absolute top-10 left-4 w-48 h-48 bg-primary-300/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-4 w-64 h-64 bg-purple-300/10 rounded-full blur-3xl" />
+      {/* Featured Posts Slider */}
+      {featuredPosts.length > 0 && (
+        <section id="featured-posts" className="py-12 md:py-16 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-3 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-medium">
+                  <TrendingUp className="w-4 h-4" />
+                  Featured Posts
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                  Editor's Picks
+                </h2>
+              </div>
+              <Link 
+                to="/categories" 
+                className="hidden md:flex items-center gap-2 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-semibold"
+              >
+                View All
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
 
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2.5 mb-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full border border-gray-200 dark:border-gray-700">
-            <Sparkles className="w-4 h-4 text-primary-500" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
-              Welcome to Bigyann
-            </span>
-          </div>
+            {/* Slider Container */}
+            <div className="relative">
+              {/* Navigation Arrows */}
+              <button
+                onClick={() => scrollSlider('left')}
+                className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-10 w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition-all hover:shadow-lg"
+                aria-label="Previous posts"
+              >
+                <ChevronLeft className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              </button>
+              
+              <button
+                onClick={() => scrollSlider('right')}
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-10 w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition-all hover:shadow-lg"
+                aria-label="Next posts"
+              >
+                <ChevronRight className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              </button>
 
-          <h1 className="text-xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Your daily tech &{' '}
-            <span className="bg-gradient-to-r from-primary-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-              science feed
-            </span>
-          </h1>
-
-          <p className="mt-4 sm:mt-6 max-w-xl mx-auto text-sm text-gray-600 dark:text-gray-400 px-2">
-            Explore cutting-edge discoveries, gadgets, AI updates, space science, and everything in between.
-          </p>
-
-          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center gap-3">
-            <a
-              href="#categories"
-              className="px-8 py-3.5 rounded-full bg-gradient-to-r from-primary-500 to-purple-500 text-white font-semibold hover:shadow-lg hover:scale-105 active:scale-95 transition-all"
-            >
-              Explore Categories
-            </a>
-            <Link
-              to="/categories"
-              className="px-8 py-3.5 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white font-semibold border border-gray-300 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 transition"
-            >
-              All Topics
-            </Link>
-          </div>
-        </div>
-      </section>
-
-
-
-     {/* Hot & Fresh Slider – FIXED to 1 item on mobile/small tablet */}
-{sliderPosts.length > 0 && (
-  <section className="py-12 md:py-16 px-4 sm:px-6">
-    <div className="max-w-7xl mx-auto">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 bg-gradient-to-r from-primary-500/20 to-purple-500/20 rounded-lg">
-          <Zap className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-        </div>
-        <h2 className="text-lg sm:text-2xl font-extrabold text-gray-900 dark:text-white">
-          Hot & Fresh
-        </h2>
-        </div>
-
-      <Slider {...sliderSettings}>
-        {sliderPosts.map(post => (
-          <div key={post.id} className="px-2">
-            <div className="h-full">
-              <PostCard
-                // Truncate to 5 words on mobile/tablet screens (isMobile is true below 768px), 5 words on desktop
-                post={{ ...post, title: truncateTitle(post.title, isMobile ? 5 : 5) }}
-                variant="vertical"
-                // 1. Enforce Left Alignment for all elements in this card
-                alignLeft={true} 
-                // 2. Set Consistent Font Size (text-lg is a good balance for this prominent section)
-                textSizeClass="text-lg" 
-              />
-            </div>
-          </div>
-        ))}
-      </Slider>
-    </div>
-  </section>
-)}
-
-
-      {/* Browse by Category */}
-      <section id="categories" className="py-12 md:py-16 px-4 sm:px-6 bg-gray-50/50 dark:bg-gray-950/50">
-        <div className="max-w-7xl mx-auto">
-
-          <div className="max-w-2xl mb-8">
-            <h2 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
-              Browse by Category
-            </h2>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Discover the topics that interest you the most
-            </p>
-          </div>
-
-          <div className="space-y-10">
-            {postsByCategory.map(({ category, posts: catPosts }) => (
-              <div key={category}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"> 
-                    {category}
-                  </h3>
-                  <Link
-                    to="/categories"
-                    className="flex items-center gap-1 text-sm font-medium text-primary-600 dark:text-primary-400 hover:gap-2 transition-all"
-                  >
-                    View all <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-
-                {/* Grid with fixed grid-cols-2 for mobile/small screens */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                  {catPosts.slice(0, postsLimit).map(post => (
-                    <div
-                      key={post.id}
-                      className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary-500/10 rounded-xl"
-                    >
-                      <PostCard 
-                        // Truncate title to 5 words on mobile/tablet screens (isMobile is true below 768px), 8 words on desktop
-                        post={{ ...post, title: truncateTitle(post.title, isMobile ? 5 : 8) }}
-                        // 1. Enforce Left Alignment for all elements in this card
+              {/* Scrollable Slider */}
+              <div 
+                ref={sliderRef}
+                className="flex overflow-x-auto scrollbar-hide gap-4 md:gap-6 pb-4 scroll-smooth"
+              >
+                {featuredPosts.map((post) => (
+                  <div 
+                    key={post.id} 
+                    className="flex-shrink-0 w-[calc(100%-2rem)] sm:w-[calc(50%-1rem)] md:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1rem)]"
+                  >
+                    <div className="h-full">
+                      <PostCard 
+                        post={post}
+                        variant="vertical"
+                        textSizeClass="text-lg"
                         alignLeft={true}
-                        // 2. Set Consistent Font Size (text-base is a good default for grid)
-                        textSizeClass="text-base"
-                      />
-                  </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-          {postsByCategory.length === 0 && (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-12">
-              No categories available yet.
-            </p>
-          )}
-        </div>
-      </section>
+              {/* Mobile Swipe Hint */}
+              <div className="md:hidden text-center mt-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  ← Swipe to see more posts →
+                </p>
+              </div>
 
-    
+              {/* Post Counter */}
+              <div className="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
+                Showing {Math.min(featuredPosts.length, 8)} featured posts
+              </div>
+            </div>
 
-      {/* Must Read + Sidebar */}
-      <section className="py-16 md:py-20 px-4 sm:px-6 border-t border-gray-200/50 dark:border-gray-800/50">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-            {/* Must Read */}
-            <div className="lg:col-span-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-gradient-to-r from-primary-500/20 to-purple-500/20 rounded-lg">
-                  <TrendingUp className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                </div>
-                <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-gray-900 dark:text-white">
-                  Must Read
-                </h2>
-                <Link
-                  to="/categories"
-                  className="ml-auto flex items-center gap-1 text-sm font-medium text-primary-600 dark:text-primary-400 hover:gap-2 transition-all"
-                >
-                  View all <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-              <div className="space-y-4">
-                {posts.slice(0, 4).map((post, i) => (
-                  <div
-                    key={post.id}
-                    className={`p-2 -m-2 rounded-xl transition hover:bg-white/60 dark:hover:bg-gray-800/40 ${
-                      i > 0 ? 'border-t border-gray-200/50 dark:border-gray-700/50 pt-6' : ''
-                    }`}
-                  >
-                    <PostCard 
-                      // Truncate title to 5 words on mobile/tablet screens (isMobile is true below 768px), 8 words on desktop
-                      post={{ ...post, title: truncateTitle(post.title, isMobile ? 5 : 8) }} 
-                      variant="horizontal" 
-                        // 1. Enforce Left Alignment for all elements in this card
-                        alignLeft={true}
-                      // 2. Set Consistent Font Size (text-lg for prominence)
-                      textSizeClass="text-lg" 
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Mobile View All */}
+            <div className="mt-8 md:hidden text-center">
+              <Link 
+                to="/blog" 
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl font-semibold transition-colors"
+              >
+                View All Articles
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
-            {/* Sidebar (No changes needed) */}
-            <aside className="lg:col-span-4 space-y-6">
-              {/* WhatsApp */}
-              <div className="p-6 bg-gradient-to-br from-white/80 to-primary-50/30 dark:from-gray-800/80 dark:to-gray-900/80 backdrop-blur-sm rounded-2xl border border-gray-300/50 dark:border-gray-700/50">
-                <h3 className="text-lg font-bold mb-3">Get In Touch</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Have questions or feedback? Chat with me directly!
-                </p>
-                <a
-                  href="https://wa.me/9779805671898?text=Hi!%20I%20found%20you%20from%20Bigyann%20Blog"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#25D366] hover:bg-[#128C7E] text-white font-semibold rounded-xl transition active:scale-95"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 21.5c-2.5 0-4.8-.9-6.6-2.4l-.4-.3-4.1.9 1-4-.3-.4C3.9 12.8 3 10.5 3 8c0-5 4-9 9-9s9 4 9 9-4 9-9 9zm0-16c-3.9 0-7 3.1-7 7 0 1.5.5 2.9 1.3 4.1l.8 1.2-1.1.7.7-1.1 1.2.8c1.2.8 2.6 1.3 4.1 1.3 3.9 0 7-3.1 7-7s-3.1-7-7-7z"/>
-                  </svg>
-                  WhatsApp Me
-                </a>
-              </div>
+      {/* Latest Posts Grid */}
+      <section className="py-12 md:py-16 px-4 bg-gray-50/50 dark:bg-gray-900/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-sm font-medium">
+              <BookOpen className="w-4 h-4" />
+              Latest Articles
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+              {selectedCategory === 'All' ? 'All Articles' : `${selectedCategory} Articles`}
+              <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                ({filteredPosts.length} posts)
+              </span>
+            </h2>
+          </div>
 
-              {/* Popular Tags */}
-              <div>
-                <h3 className="text-lg font-bold mb-3">Popular Tags</h3>
-                <div className="flex flex-wrap gap-2">
-                  {['React', 'AI', 'Design', 'Firebase', 'TypeScript', 'Next.js', 'Tailwind', 'Space'].map(tag => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1.5 text-xs font-medium bg-white/80 dark:bg-gray-800/80 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-primary-100 dark:hover:bg-gray-700 cursor-pointer transition"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
+          {filteredPosts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredPosts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  categoryName={post.category}
+                  variant="vertical"
+                  textSizeClass="text-base"
+                  increasedTitle={false}
+                  alignLeft={true}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 md:py-16">
+              <div className="max-w-md mx-auto">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <BookOpen className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  No articles found
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  There are no articles in the <span className="font-semibold">{selectedCategory}</span> category yet.
+                </p>
+                <button
+                  onClick={() => setSelectedCategory('All')}
+                  className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors"
+                >
+                  View All Articles
+                </button>
+              </div>
+            </div>
+          )}
 
-              {/* Quick Stats */}
-              <div className="p-5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-300/50 dark:border-gray-700/50">
-                <h3 className="text-lg font-bold mb-4">Quick Stats</h3>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="p-4 bg-white/50 dark:bg-gray-900/50 rounded-xl">
-                    <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{posts.length}</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">Articles</div>
-                  </div>
-                  <div className="p-4 bg-white/50 dark:bg-gray-900/50 rounded-xl">
-                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">24/7</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">Updates</div>
-                  </div>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
+          {filteredPosts.length > 8 && (
+            <div className="mt-12 text-center">
+              <button className="px-8 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-xl font-semibold text-gray-700 dark:text-gray-300 transition-all hover:shadow-lg">
+                Load More Articles
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 md:py-20 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 to-black dark:from-gray-800 dark:to-gray-900 p-8 md:p-12">
+            <div className="relative z-10">
+              <div className="text-center max-w-2xl mx-auto">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-4 rounded-full bg-white/20 backdrop-blur text-sm font-medium text-white">
+                  <Send className="w-4 h-4" />
+                  Let's Connect
+                </div>
+                <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                  Have a project in mind?
+                </h3>
+                <p className="text-gray-300 mb-8 text-lg">
+                  I'm always open to discussing new opportunities, feedback on articles, or collaboration ideas.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#25D366] hover:bg-[#128C7E] text-white font-semibold rounded-xl transition-all hover:shadow-xl hover:-translate-y-0.5 shadow-lg shadow-green-500/30"
+                  >
+                    <Send className="w-5 h-5" />
+                    Message on WhatsApp
+                  </a>
+                  <Link
+                    to="/categories"
+                    className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 text-white font-semibold rounded-xl transition-all hover:shadow-xl hover:-translate-y-0.5"
+                  >
+                    <BookOpen className="w-5 h-5" />
+                    Browse Articles
+                  </Link>
+                </div>
+              </div>
+            </div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-500/20 to-purple-500/20 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 };
 
 export default Home;
