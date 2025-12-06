@@ -36,24 +36,27 @@ const CustomArrow: React.FC<CustomArrowProps> = ({ onClick, direction, className
 };
 
 const sliderSettings = {
-  dots: true, // Show dots for mobile clarity
-  infinite: true,
-  speed: 500,
-  slidesToShow: 3,
-  slidesToScroll: 1,
-  autoplay: true,
-  autoplaySpeed: 4000,
-  pauseOnHover: true,
-  prevArrow: <CustomArrow direction="prev" className="hidden sm:flex" />,
-  nextArrow: <CustomArrow direction="next" className="hidden sm:flex" />,
- responsive: [
-        { breakpoint: 1280, settings: { slidesToShow: 3, slidesToScroll: 1 } },
-        { breakpoint: 768, settings: { slidesToShow: 2, slidesToScroll: 1, arrows: true, dots: false } },
-        // CRITICAL FIX: This ensures only 1 slide is shown on narrow mobile screens (<= 640px / 480px)
-        { breakpoint: 640, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false, dots: true } }, 
-      ],
-};
-
+      dots: true,
+      infinite: true,
+      speed: 500,
+      slidesToShow: 3, // Keep the desktop default
+      slidesToScroll: 1,
+      autoplay: true,
+      autoplaySpeed: 4000,
+      pauseOnHover: true,
+      prevArrow: <CustomArrow direction="prev" className="hidden sm:flex" />,
+      nextArrow: <CustomArrow direction="next" className="hidden sm:flex" />,
+      responsive: [
+            // Desktop/Large Tablet (>= 1280px)
+            { breakpoint: 1280, settings: { slidesToShow: 3, slidesToScroll: 1 } },
+            // Tablet/Medium Screens (<= 768px)
+            { breakpoint: 768, settings: { slidesToShow: 2, slidesToScroll: 1, arrows: true, dots: false } },
+            // Small Mobile (<= 640px) - Tailwind's 'sm' breakpoint is often 640px
+            { breakpoint: 640, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false, dots: true } },
+            // Extra Small Mobile (<= 480px) - Ensure even the smallest screens get 1 slide
+            { breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false, dots: true } }, 
+          ],
+    };
 export const Home: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
