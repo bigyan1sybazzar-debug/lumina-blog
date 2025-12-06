@@ -198,7 +198,7 @@ export const Home: React.FC = () => {
           <Loader2 className="w-16 h-16 animate-spin text-white absolute inset-0 m-auto" />
         </div>
         <span className="mt-6 block text-sm font-medium text-gray-600 dark:text-gray-400">
-          Loading articles...
+          Loading ...
         </span>
       </div>
     );
