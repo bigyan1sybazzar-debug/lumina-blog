@@ -71,7 +71,7 @@ export const About: React.FC = () => {
           />
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Hey, I'm Bigyan Neupane</h1>
           <p className="text-primary-500 text-lg font-medium mt-2">
-            SEO Expert • Full Stack Developer • Digital Strategist
+            AEO Expert • SEO Expert • Full Stack Developer • Digital Strategist
           </p>
         </div>
 
