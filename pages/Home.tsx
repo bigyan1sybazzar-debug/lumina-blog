@@ -36,27 +36,80 @@ const CustomArrow: React.FC<CustomArrowProps> = ({ onClick, direction, className
 };
 
 const sliderSettings = {
-      dots: true,
-      infinite: true,
-      speed: 500,
-      slidesToShow: 3, // Keep the desktop default
-      slidesToScroll: 1,
-      autoplay: true,
-      autoplaySpeed: 4000,
-      pauseOnHover: true,
-      prevArrow: <CustomArrow direction="prev" className="hidden sm:flex" />,
-      nextArrow: <CustomArrow direction="next" className="hidden sm:flex" />,
-      responsive: [
-            // Desktop/Large Tablet (>= 1280px)
-            { breakpoint: 1280, settings: { slidesToShow: 3, slidesToScroll: 1 } },
-            // Tablet/Medium Screens (<= 768px)
-            { breakpoint: 768, settings: { slidesToShow: 2, slidesToScroll: 1, arrows: true, dots: false } },
-            // Small Mobile (<= 640px) - Tailwind's 'sm' breakpoint is often 640px
-            { breakpoint: 640, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false, dots: true } },
-            // Extra Small Mobile (<= 480px) - Ensure even the smallest screens get 1 slide
-            { breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1, arrows: false, dots: true } }, 
-          ],
-    };
+      dots: true,
+      infinite: true,
+      speed: 500,
+      slidesToShow: 2, // Default for large screens
+      slidesToScroll: 1,
+      autoplay: true,
+      autoplaySpeed: 4000,
+      pauseOnHover: true,
+      prevArrow: <CustomArrow direction="prev" className="hidden sm:flex" />,
+      nextArrow: <CustomArrow direction="next" className="hidden sm:flex" />,
+     responsive: [
+    // Ultra-Wide Screens (>= 1920px)
+    {
+      breakpoint: 1920,
+      settings: {
+        slidesToShow: 5,
+        slidesToScroll: 1
+      }
+    },
+  
+    // Very Large Desktop (>= 1600px)
+    {
+      breakpoint: 1600,
+      settings: {
+        slidesToShow: 4,
+        slidesToScroll: 1
+      }
+    },
+  
+    // Large Desktop (>= 1280px)
+    {
+      breakpoint: 1280,
+      settings: {
+        slidesToShow: 3,
+        slidesToScroll: 1
+      }
+    },
+  
+    // Tablet / Medium Screens (<= 768px)
+    {
+      breakpoint: 768,
+      settings: {
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: true,
+        dots: false
+      }
+    },
+  
+    // Small Mobile (<= 640px)
+    {
+      breakpoint: 640,
+      settings: {
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: false,
+        dots: true
+      }
+    },
+  
+    // Extra Small Mobile (<= 480px)
+    {
+      breakpoint: 480,
+      settings: {
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: false,
+        dots: true
+      }
+    }
+  ]
+  
+    };
+
 export const Home: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +129,7 @@ export const Home: React.FC = () => {
     const handleResize = () => {
       const width = window.innerWidth;
       setPostsLimit(getPostsPerCategory(width));
-      // Truncate titles to 5 words on screens below 768px (mobile/tablet)
+      // isMobile is true below 768px (md breakpoint)
       setIsMobile(width <= BREAKPOINTS.tablet); 
     };
 
@@ -132,10 +185,9 @@ export const Home: React.FC = () => {
   const sliderPosts = useMemo(() => posts.slice(0, 8), [posts]);
 
   const truncateTitle = (title: string, wordLimit: number = 5) => {
-    // Truncates title to specified wordLimit (5 on mobile/tablet)
+    // FIX: Re-introduced ellipsis only if truncation happens
     const words = title.split(/\s+/);
-    // FIX: Remove the ellipsis/dots as requested
-    return words.length <= wordLimit ? title : words.slice(0, wordLimit).join(' '); 
+    return words.length > wordLimit ? words.slice(0, wordLimit).join(' ') + '...' : title; 
   };
 
   if (loading) {
@@ -169,7 +221,6 @@ export const Home: React.FC = () => {
             </span>
           </div>
 
-          {/* Font Size check: text-xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl (Appropriate scaling) */}
           <h1 className="text-xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-gray-900 dark:text-white">
             Your daily tech &{' '}
             <span className="bg-gradient-to-r from-primary-500 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
@@ -200,41 +251,41 @@ export const Home: React.FC = () => {
 
 
 
-     {/* Hot & Fresh Slider – 1 item on mobile, title always max 5 words */}
+     {/* Hot & Fresh Slider – FIXED to 1 item on mobile/small tablet */}
 {sliderPosts.length > 0 && (
-  <section className="py-12 md:py-16 px-4 sm:px-6">
-    <div className="max-w-7xl mx-auto">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 bg-gradient-to-r from-primary-500/20 to-purple-500/20 rounded-lg">
-          <Zap className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-        </div>
-        <h2 className="text-lg sm:text-2xl font-extrabold text-gray-900 dark:text-white">
-          Hot & Fresh
-        </h2>
-      </div>
+  <section className="py-12 md:py-16 px-4 sm:px-6">
+    <div className="max-w-7xl mx-auto">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-2 bg-gradient-to-r from-primary-500/20 to-purple-500/20 rounded-lg">
+          <Zap className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+        </div>
+        <h2 className="text-lg sm:text-2xl font-extrabold text-gray-900 dark:text-white">
+          Hot & Fresh
+        </h2>
+      </div>
 
-      <Slider {...sliderSettings}>
-        {sliderPosts.map(post => (
-          <div key={post.id} className="px-2">
-            <div className="h-full">
-              <PostCard
-                // Always truncate to 5 words – clean and consistent
-                post={{ ...post, title: truncateTitle(post.title, 5) }}
-                variant="vertical"
-                increasedTitle={true}
-                // Optional: slightly larger title in slider
-                textSizeClass="text-base sm:text-lg"
-              />
-            </div>
-          </div>
-        ))}
-      </Slider>
-    </div>
-  </section>
+      <Slider {...sliderSettings}>
+        {sliderPosts.map(post => (
+          <div key={post.id} className="px-2">
+            <div className="h-full">
+              <PostCard
+                // Truncate to 5 words on mobile/tablet screens (isMobile is true below 768px), 8 words on desktop
+                post={{ ...post, title: truncateTitle(post.title, isMobile ? 5 : 5) }}
+                variant="vertical"
+                increasedTitle={true}
+                // Font size: text-base on mobile, text-lg on sm+ for the large slider cards
+                textSizeClass="text-base sm:text-lg"
+              />
+            </div>
+          </div>
+        ))}
+      </Slider>
+    </div>
+  </section>
 )}
 
 
-      {/* Browse by Category – Fixed Grid to 2 on Mobile and Font Size */}
+      {/* Browse by Category */}
       <section id="categories" className="py-12 md:py-16 px-4 sm:px-6 bg-gray-50/50 dark:bg-gray-950/50">
         <div className="max-w-7xl mx-auto">
 
@@ -270,7 +321,7 @@ export const Home: React.FC = () => {
                       className="transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary-500/10 rounded-xl"
                     >
                       <PostCard 
-                        // Truncate title to 5 words on mobile/tablet screens (isMobile is true below 768px)
+                        // Truncate title to 5 words on mobile/tablet screens (isMobile is true below 768px), 8 words on desktop
                         post={{ ...post, title: truncateTitle(post.title, isMobile ? 5 : 8) }}
                         // Font Size: Ensure small font size on mobile (text-xs) for 2-column layout to fit
                         textSizeClass="text-xs sm:text-sm"
@@ -292,7 +343,7 @@ export const Home: React.FC = () => {
 
     
 
-      {/* Must Read + Sidebar - Fixed Title Truncation */}
+      {/* Must Read + Sidebar */}
       <section className="py-16 md:py-20 px-4 sm:px-6 border-t border-gray-200/50 dark:border-gray-800/50">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
@@ -321,7 +372,7 @@ export const Home: React.FC = () => {
                     }`}
                   >
                     <PostCard 
-                      // Truncate title to 5 words on mobile/tablet screens 
+                      // Truncate title to 5 words on mobile/tablet screens (isMobile is true below 768px), 8 words on desktop
                       post={{ ...post, title: truncateTitle(post.title, isMobile ? 5 : 8) }} 
                       variant="horizontal" 
                       textSizeClass="text-base md:text-lg" 

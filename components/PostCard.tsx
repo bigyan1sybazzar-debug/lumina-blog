@@ -14,19 +14,17 @@ interface PostCardProps {
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ 
-    post, 
-    categoryName, 
-    variant = 'vertical',
-    // Set a default class for safety, but rely on the parent for responsive sizes
-    textSizeClass = 'text-base sm:text-lg', 
-    increasedTitle // Retained for interface consistency
+    post, 
+    categoryName, 
+    variant = 'vertical',
+    // Setting a sensible default that prioritizes small font on mobile (text-sm)
+    textSizeClass = 'text-sm sm:text-lg', 
+    increasedTitle 
 }) => {
   // Safe URL: uses slug if exists, falls back to id (never breaks)
   const postUrl = `/blog/${post.slug ?? post.id}`;
 
-  // --- CRITICAL CHANGE: Removed all internal trimming logic (useState and useEffect) ---
-  // We now use the title directly from the post prop, assuming the parent (Home.tsx) 
-  // has already handled truncation if necessary for layout.
+  // The title is now assumed to be pre-truncated by the parent component (Home.tsx)
   const displayTitle = post.title;
 
   if (variant === 'horizontal') {
@@ -40,13 +38,14 @@ export const PostCard: React.FC<PostCardProps> = ({
           />
         </div>
         <div className="flex-1 py-1">
+          {/* FIXED: Ensure date/read time is small (text-xs) */}
           <div className="flex items-center space-x-2 text-xs text-primary-600 dark:text-primary-400 font-semibold uppercase tracking-wide mb-2">
             <span>{categoryName || post.category || 'Uncategorized'}</span>
             <span>•</span>
             <span className="text-gray-500 dark:text-gray-500 font-normal">{post.readTime}</span>
           </div>
 
-          {/* Applied textSizeClass for responsive font size */}
+          {/* APPLIED textSizeClass for responsive font size on title */}
           <h3 className={`font-bold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-primary-600 transition-colors ${textSizeClass}`}>
             {displayTitle}
           </h3>
@@ -77,6 +76,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       </Link>
 
       <div className="flex-1 p-6 flex flex-col">
+        {/* FIXED: Dates/Times/Category text set to text-xs */}
         <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3 space-x-3">
           <span>{post.date}</span>
           <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
@@ -87,7 +87,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
 
         <Link to={postUrl} className="block mb-3">
-          {/* Applied textSizeClass for responsive font size */}
+          {/* APPLIED textSizeClass for responsive font size on title */}
           <h3 className={`font-bold text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors ${textSizeClass}`}>
             {displayTitle}
           </h3>
@@ -100,6 +100,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               alt={post.author.name}
               className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700"
             />
+            {/* FIXED: Author name text set to text-sm */}
             <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
               {post.author.name}
             </span>
