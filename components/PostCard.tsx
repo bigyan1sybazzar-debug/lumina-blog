@@ -10,6 +10,7 @@ interface PostCardProps {
   categoryName?: string;
   variant?: 'vertical' | 'horizontal';
   increasedTitle?: boolean;
+  textSizeClass?: string; // Making it optional, as you don't always use it
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant = 'vertical' }) => {
