@@ -307,23 +307,41 @@ export const Home: React.FC = () => {
 
       {/* Latest Posts Grid */}
       <section className="py-12 md:py-16 px-4 bg-gray-50/50 dark:bg-gray-900/50">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-sm font-medium">
-              <BookOpen className="w-4 h-4" />
-              Latest Articles
-            </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-              {selectedCategory === 'All' ? 'All Articles' : `${selectedCategory} Articles`}
-              <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
-                ({filteredPosts.length} posts)
-              </span>
-            </h2>
-          </div>
+  <div className="max-w-7xl mx-auto">
+    <div className="mb-8">
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-sm font-medium">
+        <BookOpen className="w-4 h-4" />
+        Latest Articles
+      </div>
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+        {selectedCategory === 'All' ? 'All Articles' : `${selectedCategory} Articles`}
+        <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+          ({filteredPosts.length} posts)
+        </span>
+      </h2>
+    </div>
 
-          {filteredPosts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredPosts.map((post) => (
+    {filteredPosts.length > 0 ? (
+      <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredPosts.slice(0, 16).map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              categoryName={post.category}
+              variant="vertical"
+              textSizeClass="text-base"
+              increasedTitle={false}
+              alignLeft={true}
+            />
+          ))}
+        </div>
+
+        {/* Show the rest of posts in hidden state initially */}
+        {filteredPosts.length > 16 && (
+          <div id="more-posts" className="hidden">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
+              {filteredPosts.slice(16).map((post) => (
                 <PostCard
                   key={post.id}
                   post={post}
@@ -335,37 +353,55 @@ export const Home: React.FC = () => {
                 />
               ))}
             </div>
-          ) : (
-            <div className="text-center py-12 md:py-16">
-              <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <BookOpen className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                  No articles found
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  There are no articles in the <span className="font-semibold">{selectedCategory}</span> category yet.
-                </p>
-                <button
-                  onClick={() => setSelectedCategory('All')}
-                  className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors"
-                >
-                  View All Articles
-                </button>
-              </div>
-            </div>
-          )}
+          </div>
+        )}
 
-          {filteredPosts.length > 8 && (
-            <div className="mt-12 text-center">
-              <button className="px-8 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-xl font-semibold text-gray-700 dark:text-gray-300 transition-all hover:shadow-lg">
-                Load More Articles
-              </button>
-            </div>
-          )}
+        {/* Load More Button - Show if there are more than 16 posts */}
+        {filteredPosts.length > 16 && (
+          <div className="mt-12 text-center">
+            <button
+              onClick={() => {
+                const morePostsSection = document.getElementById('more-posts');
+                const loadMoreBtn = document.getElementById('load-more-btn');
+                if (morePostsSection) {
+                  morePostsSection.classList.remove('hidden');
+                  morePostsSection.classList.add('block');
+                }
+                if (loadMoreBtn) {
+                  loadMoreBtn.classList.add('hidden');
+                }
+              }}
+              id="load-more-btn"
+              className="px-8 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-xl font-semibold text-gray-700 dark:text-gray-300 transition-all hover:shadow-lg hover:-translate-y-0.5"
+            >
+              Load More Articles ({filteredPosts.length - 16} more)
+            </button>
+          </div>
+        )}
+      </>
+    ) : (
+      <div className="text-center py-12 md:py-16">
+        <div className="max-w-md mx-auto">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <BookOpen className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            No articles found
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            There are no articles in the <span className="font-semibold">{selectedCategory}</span> category yet.
+          </p>
+          <button
+            onClick={() => setSelectedCategory('All')}
+            className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors"
+          >
+            View All Articles
+          </button>
         </div>
-      </section>
+      </div>
+    )}
+  </div>
+</section>
 
       {/* CTA Section */}
       <section className="py-16 md:py-20 px-4">
