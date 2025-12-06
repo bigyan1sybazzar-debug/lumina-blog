@@ -9,6 +9,7 @@ interface PostCardProps {
   post: BlogPost;
   categoryName?: string;
   variant?: 'vertical' | 'horizontal';
+  increasedTitle?: boolean;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, categoryName, variant = 'vertical' }) => {

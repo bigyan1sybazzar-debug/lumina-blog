@@ -17,6 +17,10 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["vite/client"],
     
+    // ⭐ Add these two lines here ⭐
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
     // ⭐ TEMPORARY ADJUSTMENT TO BYPASS PERSISTENT TS1345 ERROR ⭐
     "strictBindCallApply": false 
   },
