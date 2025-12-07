@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
@@ -15,41 +15,37 @@ import { Signup } from './pages/Signup';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HelmetProvider } from 'react-helmet-async';
 
-// ADD THESE 3 IMPORTS
+// Your added pages
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Disclaimer from './pages/Disclaimer';
+import LiveFootball from './pages/LiveFootball';
 
-import "slick-carousel/slick/slick.css"; 
-import "slick-carousel/slick/slick-theme.css"; 
+// Slick Carousel CSS (optional, keep if you're using carousels)
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
-// Sitemap redirect
-const SITEMAP_URL = 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
-
-const SitemapRedirect = () => {
-  useEffect(() => {
-    window.location.href = SITEMAP_URL;
-  }, []);
-  return (
-    <div className="flex items-center justify-center min-h-screen text-gray-500">
-      Redirecting to sitemap...
-    </div>
-  );
-};
-
+// Layout component — hides Header/Footer on admin, auth, and pure asset routes
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+
+  const noLayoutPaths = [
+    '/login',
+    '/signup',
+    '/sitemap.xml',        // even if someone hits it via React (won't happen with public file)
+    '/robots.txt',
+  ];
+
   const isAdmin = location.pathname.startsWith('/admin');
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
-  const isSitemap = location.pathname === '/sitemap.xml';
+  const shouldHideLayout = isAdmin || noLayoutPaths.includes(location.pathname);
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!isAdmin && !isAuthPage && !isSitemap && <Header />}
+      {!shouldHideLayout && <Header />}
       <main className="flex-grow">
         {children}
       </main>
-      {!isAdmin && !isAuthPage && !isSitemap && <Footer />}
+      {!shouldHideLayout && <Footer />}
     </div>
   );
 };
@@ -62,32 +58,32 @@ export default function App() {
           <BrowserRouter>
             <Layout>
               <Routes>
+                {/* Core Pages */}
                 <Route path="/" element={<Home />} />
-
-                {/* Old URL Redirect */}
-                <Route 
-                  path="/2025/11/Yono-tv-live.html" 
-                  element={<Navigate to="/blog/yono-tv-npl-live-streaming" replace />} 
-                />
-
+                <Route path="/live-football" element={<LiveFootball />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
                 <Route path="/categories" element={<Categories />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
+
+                {/* Auth */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
-                {/* ADD THESE 3 ROUTES — This is all you needed! */}
+                {/* Legal & Info Pages */}
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/disclaimer" element={<Disclaimer />} />
 
-                {/* Sitemap */}
-                <Route path="/sitemap.xml" element={<SitemapRedirect />} />
+                {/* Legacy Redirects */}
+                <Route
+                  path="/2025/11/Yono-tv-live.html"
+                  element={<Navigate to="/blog/yono-tv-npl-live-streaming" replace />}
+                />
 
-                {/* Admin */}
-                <Route 
-                  path="/admin" 
+                {/* Admin Dashboard */}
+                <Route
+                  path="/admin/*"
                   element={
                     <ProtectedRoute requireAdmin={false}>
                       <Admin />
@@ -95,7 +91,7 @@ export default function App() {
                   }
                 />
 
-                {/* Optional: 404 fallback */}
+                {/* 404 Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>
