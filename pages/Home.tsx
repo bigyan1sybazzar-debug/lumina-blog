@@ -90,7 +90,7 @@ export const Home: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
         <div className="text-center">
           <Loader2 className="w-16 h-16 animate-spin text-primary-500 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Sign for better experience..</p>
+          <p className="text-gray-600 dark:text-gray-400">Sign in for better experience..</p>
         </div>
       </div>
     );
