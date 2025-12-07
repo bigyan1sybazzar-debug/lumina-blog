@@ -1,11 +1,13 @@
-// src/pages/ChatAssistant.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+// 💡 FIX 1: Import useNavigate for redirection
+import { useNavigate } from 'react-router-dom'; 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { sendChatMessage, startNewChat } from '../services/geminiChat';
-import { Loader2, Send, Copy, Check, Bot, User, Sparkles, RefreshCw, Zap, Command, Search } from 'lucide-react';
+// Assuming these are wrappers around your API calls
+import { sendChatMessage, startNewChat } from '../services/geminiChat'; 
+import { Loader2, Send, Copy, Check, Bot, User, Sparkles, RefreshCw, Zap, Command, Search, X } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -13,7 +15,13 @@ interface Message {
   content: string;
 }
 
+// Maximum free chats before login prompt appears
+const MAX_FREE_CHATS = 2;
+
 export default function ChatAssistant() {
+  // 💡 FIX 2: Initialize the navigate function
+  const navigate = useNavigate(); 
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -24,15 +32,17 @@ export default function ChatAssistant() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [chatCount, setChatCount] = useState(0); // Tracks user messages sent
+  const [showLoginPopup, setShowLoginPopup] = useState(false); // Controls the login modal
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
   const handleCopy = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
@@ -49,10 +59,18 @@ export default function ChatAssistant() {
         content: "Hi! I'm **Bigyann AI Assistant** – your expert on smartphones, gadgets, AI, and global tech trends.\n\nAsk me anything — specs, prices, comparisons, rumors... I'm ready!",
       }
     ]);
+    setShowLoginPopup(false);
   };
 
   const sendMessage = async () => {
+    // Prevent sending if input is empty or request is ongoing
     if (!input.trim() || isLoading) return;
+
+    // 1. Check if the user is out of free chats
+    if (chatCount >= MAX_FREE_CHATS) {
+      setShowLoginPopup(true);
+      return; // Stop execution if limit is reached
+    }
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -63,12 +81,14 @@ export default function ChatAssistant() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
+    setChatCount(prev => prev + 1); // Increment chat counter
 
     const assistantMsgId = (Date.now() + 1).toString();
     setMessages(prev => [...prev, { id: assistantMsgId, role: 'assistant', content: '' }]);
 
     try {
       for await (const chunk of sendChatMessage(userMsg.content)) {
+        // Use functional update to avoid stale state during streaming
         setMessages(prev =>
           prev.map(m =>
             m.id === assistantMsgId ? { ...m, content: m.content + chunk } : m
@@ -97,8 +117,52 @@ export default function ChatAssistant() {
     "Pixel 8 Pro camera review"
   ];
 
+  const handleLoginClick = () => {
+    // Simulate successful login logic
+    setChatCount(0); 
+    setShowLoginPopup(false);
+    
+    // 💡 FIX 3: Redirect the user to the login page
+    navigate('/login'); 
+  };
+
+  const hasUserSentMessages = messages.filter(m => m.role === 'user').length > 0;
+
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-gray-50 via-blue-50/50 to-indigo-50/30 dark:from-gray-900 dark:via-gray-800/50 dark:to-indigo-950/30">
+      
+      {/* Login Popup Modal */}
+      {showLoginPopup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 w-full max-w-sm m-4 relative border border-indigo-500/30">
+            <button
+              onClick={() => setShowLoginPopup(false)}
+              className="absolute top-3 right-3 p-1 text-gray-400 hover:text-gray-100 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="text-center">
+              <Zap className="w-8 h-8 text-indigo-500 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                Continue the Conversation
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                You've used your **{MAX_FREE_CHATS} free chats**. Log in to unlock unlimited access and save your history!
+              </p>
+              <button
+                onClick={handleLoginClick}
+                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
+              >
+                Log In / Sign Up Now
+              </button>
+              <p className="text-xs text-gray-500 mt-4 cursor-pointer hover:text-indigo-400" onClick={() => setShowLoginPopup(false)}>
+                Maybe later
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Glass Morphism Header */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 shadow-lg">
         <div className="max-w-3xl mx-auto px-4 py-4">
@@ -119,6 +183,9 @@ export default function ChatAssistant() {
             </div>
             
             <div className="flex items-center gap-2">
+              <div className="text-xs text-gray-500 dark:text-gray-400 p-1.5 rounded-lg border border-dashed border-indigo-400 dark:border-indigo-600">
+                Free Chats Left: **{MAX_FREE_CHATS - chatCount > 0 ? MAX_FREE_CHATS - chatCount : 0}**
+              </div>
               <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition">
                 <Command className="w-3 h-3" />
                 <span className="text-gray-600 dark:text-gray-300">Ctrl K</span>
@@ -138,10 +205,11 @@ export default function ChatAssistant() {
       {/* Main Content - Centered & Narrow */}
       <main className="flex-1 overflow-hidden">
         <div className="h-full max-w-3xl mx-auto px-4">
-          {/* Welcome Section - Only show when no user messages */}
-          {messages.length === 1 && (
-            <div className="py-8 px-2 animate-fadeIn">
-              <div className="text-center mb-10">
+          
+          {/* Welcome Section / Suggested Questions (Only show when no user messages) */}
+          {!hasUserSentMessages && (
+            <div className="py-8 px-2 animate-fadeIn h-full flex flex-col justify-center">
+              <div className="text-center mb-10 mt-[-50px]">
                 <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-xl">
                   <Zap className="w-8 h-8 text-white" />
                 </div>
@@ -154,7 +222,7 @@ export default function ChatAssistant() {
               </div>
 
               {/* Suggested Questions */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8 max-w-lg mx-auto">
                 {suggestedQuestions.map((question, index) => (
                   <button
                     key={index}
@@ -172,7 +240,7 @@ export default function ChatAssistant() {
           )}
 
           {/* Chat Messages */}
-          <div className="h-full overflow-y-auto py-6">
+          <div className={`overflow-y-auto ${hasUserSentMessages ? 'h-full py-6' : 'hidden'}`}>
             <div className="space-y-6">
               {messages.map((msg) => (
                 <div
@@ -188,10 +256,10 @@ export default function ChatAssistant() {
                   )}
 
                   <div
-                    className={`max-w-[85%] ${msg.role === 'user' ? 'max-w-[85%]' : 'max-w-[85%]'} ${
+                    className={`max-w-[85%] ${
                       msg.role === 'user'
                         ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
-                        : 'bg-white dark:bg-gray-800'
+                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                     } rounded-2xl px-5 py-3 shadow-lg`}
                   >
                     <ReactMarkdown
@@ -254,7 +322,7 @@ export default function ChatAssistant() {
                     {msg.role === 'assistant' && msg.content && (
                       <button
                         onClick={() => handleCopy(msg.content, msg.id)}
-                        className="mt-2 text-xs opacity-50 hover:opacity-100 flex items-center gap-1 transition"
+                        className="mt-2 text-xs opacity-50 hover:opacity-100 flex items-center gap-1 transition text-gray-500 dark:text-gray-400"
                       >
                         {copiedId === msg.id ? (
                           <>
@@ -311,13 +379,14 @@ export default function ChatAssistant() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                placeholder="Ask about latest smartphones, AI features, tech trends..."
+                placeholder={chatCount >= MAX_FREE_CHATS ? "Please log in to continue chatting..." : "Ask about latest smartphones, AI features, tech trends..."}
                 className="flex-1 px-4 py-3 bg-transparent focus:outline-none text-base placeholder-gray-400 dark:placeholder-gray-500"
-                disabled={isLoading}
+                // 💡 FIX 4: Only disable if loading OR if the modal is visible (to allow Enter to trigger the modal)
+                disabled={isLoading || showLoginPopup} 
               />
               <button
                 onClick={sendMessage}
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !input.trim() || showLoginPopup}
                 className="px-5 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 hover:scale-105 active:scale-95"
               >
                 {isLoading ? (
@@ -325,7 +394,7 @@ export default function ChatAssistant() {
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    <span className="hidden sm:inline">Send</span>
+                    <span className="hidden sm:inline">{chatCount >= MAX_FREE_CHATS ? 'Log In' : 'Send'}</span>
                   </>
                 )}
               </button>
