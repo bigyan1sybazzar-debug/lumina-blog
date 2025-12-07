@@ -90,7 +90,7 @@ export const Home: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
         <div className="text-center">
           <Loader2 className="w-16 h-16 animate-spin text-primary-500 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading amazing content...</p>
+          <p className="text-gray-600 dark:text-gray-400">Sign for better experience..</p>
         </div>
       </div>
     );
@@ -153,6 +153,7 @@ export const Home: React.FC = () => {
           </div>
         </div>
       </section>
+      
 
       {/* Hot & Fresh Slider - Latest 8 Posts */}
       {editorPicks.length > 0 && (
@@ -191,9 +192,7 @@ export const Home: React.FC = () => {
               </div>
 
               {/* Post Counter */}
-              <div className="text-center mt-6 text-sm text-gray-500 dark:text-gray-400">
-                Showing featured posts
-              </div>
+              
             </div>
 
             {/* Mobile View All */}
@@ -209,6 +208,63 @@ export const Home: React.FC = () => {
           </div>
         </section>
       )}
+  {/* Category Filter Section */}
+  <section className="sticky top-16 md:top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Browse by Categories</h2>
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="md:hidden p-2 rounded-lg bg-gray-100 dark:bg-gray-800"
+              aria-label="Toggle filter menu"
+            >
+              <Hash className="w-5 h-5" />
+            </button>
+          </div>
+          
+          {/* Desktop Filter Bar */}
+          <div className="hidden md:flex flex-wrap gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                  selectedCategory === cat
+                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {cat === 'All' ? <Sparkles className="w-4 h-4" /> : <Hash className="w-4 h-4" />}
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Mobile Filter Drawer */}
+          {isFilterOpen && (
+            <div className="md:hidden mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-xl">
+              <div className="grid grid-cols-2 gap-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setSelectedCategory(cat);
+                      setIsFilterOpen(false);
+                    }}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedCategory === cat
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Latest Posts Grid */}
       <section className="py-12 md:py-16 px-4 bg-gray-50/50 dark:bg-gray-900/50">
