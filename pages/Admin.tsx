@@ -5,17 +5,19 @@ import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogIm
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { BlogPost, User, Category } from '../types';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../services/firebase';
 
 import { 
   LayoutDashboard, FileText, Settings, Sparkles, Loader2, Save, LogOut, Home, Database, 
   PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw, 
   Users, CheckCircle, Clock, Shield, Tag, Globe, ExternalLink, Trash2, Eye, 
   Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter,
-  Bot, Zap, Play, Pause, AlertTriangle, Terminal
+  Bot, Zap, Play, Pause, AlertTriangle, Terminal, GripVertical
 } from 'lucide-react';
+
 import { ANALYTICS_DATA } from '../constants';
-import {  deleteCategory, updatePost, deletePost, getPostById 
-} from '../services/db';
+import { deleteCategory, updatePost, deletePost, getPostById } from '../services/db';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -30,19 +32,13 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
   // Data State
-  const [stats, setStats] = useState({ 
-    posts: 0, 
-    views: 0, 
-    users: 0, 
-    comments: 0,
-    engagement: 0 
-  });
+  const [stats, setStats] = useState({ posts: 0, views: 0, users: 0, comments: 0, engagement: 0 });
   const [usersList, setUsersList] = useState<User[]>([]);
   const [pendingPosts, setPendingPosts] = useState<BlogPost[]>([]);
   const [myPosts, setMyPosts] = useState<BlogPost[]>([]);
@@ -84,30 +80,74 @@ export const Admin: React.FC = () => {
   const [autoIntervalId, setAutoIntervalId] = useState<any>(null);
   const [postsGeneratedToday, setPostsGeneratedToday] = useState(0);
 
-  const logsEndRef = useRef<HTMLDivElement>(null);
+  // Featured Posts Manager State
+  const [featuredPosts, setFeaturedPosts] = useState<BlogPost[]>([]);
+  const [availablePosts, setAvailablePosts] = useState<BlogPost[]>([]);
+  const [isSavingFeatured, setIsSavingFeatured] = useState(false);
 
+  const logsEndRef = useRef<HTMLDivElement>(null);
   const isAdmin = user?.role === 'admin';
   const isModerator = user?.role === 'moderator' || isAdmin;
+
+  // === Load & Save Featured Posts ===
+  const loadFeaturedPosts = async () => {
+    try {
+      const configDoc = await getDoc(doc(db, 'config', 'featured'));
+      if (configDoc.exists()) {
+        const ids: string[] = configDoc.data().postIds || [];
+        const ordered: BlogPost[] = [];
+        ids.forEach(id => {
+          const post = allPosts.find(p => p.id === id);
+          if (post) ordered.push(post);
+        });
+        setFeaturedPosts(ordered);
+        setAvailablePosts(allPosts.filter(p => !ids.includes(p.id)));
+      } else {
+        setFeaturedPosts([]);
+        setAvailablePosts(allPosts);
+      }
+    } catch (err) {
+      console.error('Failed to load featured posts');
+    }
+  };
+
+  const saveFeaturedOrder = async () => {
+    setIsSavingFeatured(true);
+    try {
+      await setDoc(doc(db, 'config', 'featured'), {
+        postIds: featuredPosts.map(p => p.id),
+        updatedAt: new Date().toISOString()
+      });
+      alert('Featured posts saved successfully!');
+    } catch (err) {
+      alert('Failed to save featured posts');
+    } finally {
+      setIsSavingFeatured(false);
+    }
+  };
+
+  useEffect(() => {
+    if (allPosts.length > 0 && activeTab === 'featured') {
+      loadFeaturedPosts();
+    }
+  }, [allPosts, activeTab]);
 
   const refreshData = async () => {
     try {
       if (isAdmin) {
         const allPostsData = await getPosts();
         const totalViews = allPostsData.reduce((acc, curr) => acc + (curr.views || 0), 0);
-        const totalComments = allPostsData.reduce((acc, curr) => acc + (0 || 0), 0);
-        
         setAllPosts(allPostsData);
         setStats({ 
           posts: allPostsData.length, 
           views: totalViews, 
           users: usersList.length,
-          comments: totalComments,
+          comments: 0,
           engagement: Math.round((totalViews / Math.max(allPostsData.length, 1)) * 100) / 100
         });
         
         const pPending = await getPendingPosts();
         setPendingPosts(pPending);
-
         const allUsers = await getAllUsers();
         setUsersList(allUsers);
       }
@@ -119,8 +159,6 @@ export const Admin: React.FC = () => {
       
       const cats = await getCategories();
       setCategories(cats);
-
-      // Auto-select first category only if none selected yet
       if (cats.length > 0 && !category) {
         setCategory(cats[0].name);
       }
@@ -560,6 +598,9 @@ export const Admin: React.FC = () => {
               >
                 <FileText size={18} className="mr-3" /> All Posts
               </button>
+              <button onClick={() => { setActiveTab('featured'); setIsSidebarOpen(false); }} className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'featured' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                  <Sparkles size={18} className="mr-3" /> Featured Posts
+                </button>
 
               {isAdmin && (
                 <>
@@ -671,7 +712,101 @@ export const Admin: React.FC = () => {
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
-          
+          {/* === FEATURED POSTS TAB === */}
+        {activeTab === 'featured' && isAdmin && (
+          <div className="max-w-6xl mx-auto space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                  <Sparkles className="text-yellow-500" />
+                  Featured Posts Manager
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">Choose and reorder the 3 posts shown in the homepage hero section</p>
+              </div>
+              <button
+                onClick={saveFeaturedOrder}
+                disabled={isSavingFeatured}
+                className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {isSavingFeatured ? <Loader2 className="animate-spin" /> : <Save size={18} />}
+                Save Changes
+              </button>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* Current Featured */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+                <h2 className="text-xl font-bold mb-4">Current Featured ({featuredPosts.length}/3)</h2>
+                {featuredPosts.length === 0 ? (
+                  <p className="text-center py-12 text-gray-500">No posts selected yet</p>
+                ) : (
+                  <div className="space-y-4">
+                    {featuredPosts.map((post, index) => (
+                      <div
+                        key={post.id}
+                        draggable
+                        onDragStart={(e) => (e.dataTransfer as any).setData('index', index)}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const fromIndex = Number((e.dataTransfer as any).getData('index'));
+                          const newPosts = [...featuredPosts];
+                          const [moved] = newPosts.splice(fromIndex, 1);
+                          newPosts.splice(index, 0, moved);
+                          setFeaturedPosts(newPosts);
+                        }}
+                        className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl cursor-move hover:shadow-md border-2 border-dashed border-transparent hover:border-primary-400 transition-all"
+                      >
+                        <GripVertical className="text-gray-400" />
+                        <span className="text-2xl font-bold text-primary-600 w-8">{index + 1}</span>
+                        <img src={post.coverImage} alt="" className="w-16 h-16 object-cover rounded-lg" />
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{post.title}</h4>
+                          <p className="text-sm text-gray-500">{post.category} • {post.date}</p>
+                        </div>
+                        <button onClick={() => setFeaturedPosts(featuredPosts.filter(p => p.id !== post.id))} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-lg">
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Available Posts */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+                <h2 className="text-xl font-bold mb-4">Add from All Posts</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                  {availablePosts.map(post => (
+                    <div
+                      key={post.id}
+                      onClick={() => {
+                        if (featuredPosts.length < 3) {
+                          setFeaturedPosts([...featuredPosts, post]);
+                          setAvailablePosts(availablePosts.filter(p => p.id !== post.id));
+                        } else {
+                          alert('Maximum 3 featured posts allowed');
+                        }
+                      }}
+                      className="group relative bg-gray-50 dark:bg-gray-700 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all"
+                    >
+                      <img src={post.coverImage} alt="" className="w-full h-32 object-cover" />
+                      <div className="p-3">
+                        <h4 className="font-medium text-sm line-clamp-2">{post.title}</h4>
+                        <p className="text-xs text-gray-500 mt-1">{post.category}</p>
+                      </div>
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="bg-primary-600 text-white px-5 py-2 rounded-lg text-sm font-medium">
+                          + Add to Featured
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
           {/* DASHBOARD TAB */}
           {activeTab === 'dashboard' && (
             <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">

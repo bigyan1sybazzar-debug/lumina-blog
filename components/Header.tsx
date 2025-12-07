@@ -48,7 +48,7 @@ export const Header: React.FC = () => {
 </a>
           </Link>
           <meta name="msvalidate.01" content="79CB5F780A824FA1F4111194F951AFB0" />
-
+          <meta name="google-adsense-account" content="ca-pub-8714969386201280"></meta>
           {/* Desktop Nav - Changed md:flex to lg:flex to hide on Tablet Portrait */}
           <nav className="hidden lg:flex items-center space-x-8">
             {navLinks.map((link) => (

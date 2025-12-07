@@ -14,9 +14,16 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HelmetProvider } from 'react-helmet-async';
+
+// ADD THESE 3 IMPORTS
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import Disclaimer from './pages/Disclaimer';
+
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css"; 
-// URL from Admin.tsx
+
+// Sitemap redirect
 const SITEMAP_URL = 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
 
 const SitemapRedirect = () => {
@@ -35,6 +42,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isAdmin = location.pathname.startsWith('/admin');
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
   const isSitemap = location.pathname === '/sitemap.xml';
+
   return (
     <div className="flex flex-col min-h-screen">
       {!isAdmin && !isAuthPage && !isSitemap && <Header />}
@@ -50,48 +58,49 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-      <HelmetProvider>
-        <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              {/* *** REDIRECT IMPLEMENTATION START ***
-                
-                The old path (relative to the base URL bigyann.com.np) is:
-                /2025/11/Yono-tv-live.html
-                
-                The new path (relative to the base URL bigyann.com.np) is:
-                /blog/yono-tv-npl-live-streaming
-                
-                We use the <Navigate /> component to redirect the user.
-              */}
-              <Route 
-                path="/2025/11/Yono-tv-live.html" 
-                element={<Navigate to="/blog/yono-tv-npl-live-streaming" replace />} 
-              />
-              {/* *** REDIRECT IMPLEMENTATION END ***
-              */}
-              <Route path="/blog/:slug" element={<BlogPostPage />} />
-              <Route path="/categories" element={<Categories />} />
-                            <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-                            {/* Redirect /sitemap.xml to the actual blob URL */}
-              <Route path="/sitemap.xml" element={<SitemapRedirect />} />
-              {/* Admin/Dashboard Route: Accessible to any logged in user, role checks inside */}
-              <Route 
-                path="/admin" 
-                element={
-                  <ProtectedRoute requireAdmin={false}>
-                    <Admin />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </Layout>
-        </BrowserRouter>
-      </HelmetProvider>
+        <HelmetProvider>
+          <BrowserRouter>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Home />} />
+
+                {/* Old URL Redirect */}
+                <Route 
+                  path="/2025/11/Yono-tv-live.html" 
+                  element={<Navigate to="/blog/yono-tv-npl-live-streaming" replace />} 
+                />
+
+                <Route path="/blog/:slug" element={<BlogPostPage />} />
+                <Route path="/categories" element={<Categories />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+
+                {/* ADD THESE 3 ROUTES — This is all you needed! */}
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/disclaimer" element={<Disclaimer />} />
+
+                {/* Sitemap */}
+                <Route path="/sitemap.xml" element={<SitemapRedirect />} />
+
+                {/* Admin */}
+                <Route 
+                  path="/admin" 
+                  element={
+                    <ProtectedRoute requireAdmin={false}>
+                      <Admin />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Optional: 404 fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Layout>
+          </BrowserRouter>
+        </HelmetProvider>
       </ThemeProvider>
     </AuthProvider>
   );
