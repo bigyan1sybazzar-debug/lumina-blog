@@ -21,7 +21,7 @@ interface Message {
 const initialAssistantMessage: Message = {
   id: '1',
   role: 'assistant',
-  content: "Hello! I'm **Grok 4.1 Fast**, powered by Puter.js. Ask me anything about technology, coding, or the latest news!",
+  content: "Hello! I'm **Bigyann AI**, Ask me anything about Mobile, Science technology, AI, or the latest news!",
 };
 
 export default function ChatAssistant() {
