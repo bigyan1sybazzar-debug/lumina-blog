@@ -5,6 +5,14 @@
   "framework": null,
   "devCommand": "npm run dev",
 
+  "redirects": [
+    {
+      "source": "/blog/fm3g9qgx4JGycFGkc3M3",
+      "destination": "/blog/samsung-galaxy-a24-price-in-nepal",
+      "statusCode": 301
+    }
+  ],
+
   "rewrites": [
     {
       "source": "/sitemap.xml",
