@@ -14,7 +14,7 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HelmetProvider } from 'react-helmet-async';
-import ChatAssistant from "./pages/ChatAssistant"// Your added pages
+import ChatAssistant from "./pages/ChatAssistant"
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Disclaimer from './pages/Disclaimer';
@@ -31,7 +31,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const noLayoutPaths = [
     '/login',
     '/signup',
-    '/sitemap.xml',        // even if someone hits it via React (won't happen with public file)
+    // Note: sitemap.xml and robots.txt should be served as static files by your server/CDN, 
+    // not routed through React. These paths here only ensure the React layout is skipped 
+    // if someone accidentally routes to them.
+    '/sitemap.xml',
     '/robots.txt',
   ];
 
@@ -65,6 +68,7 @@ export default function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/chat" element={<ChatAssistant />} />
+                
                 {/* Auth */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
@@ -74,10 +78,16 @@ export default function App() {
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/disclaimer" element={<Disclaimer />} />
 
-                {/* Legacy Redirects */}
+                {/* Legacy Redirects (Client-Side Fallbacks) */}
                 <Route
                   path="/2025/11/Yono-tv-live.html"
                   element={<Navigate to="/blog/yono-tv-npl-live-streaming" replace />}
+                />
+                
+                {/* 🎯 NEW ID-TO-SLUG CLIENT-SIDE REDIRECT (As requested) */}
+                <Route
+                  path="/blog/fm3g9qgx4JGycFGkc3M3"
+                  element={<Navigate to="/blog/samsung-galaxy-a24-price-in-nepal" replace />}
                 />
 
                 {/* Admin Dashboard */}
