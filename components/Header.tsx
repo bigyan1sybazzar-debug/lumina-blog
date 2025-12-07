@@ -23,6 +23,8 @@ export const Header: React.FC = () => {
     { name: 'Articles', path: '/categories' },
     { name: 'About', path: '/about' },
     { name: 'Contact', path: '/contact' },
+    { name: 'AI Chat', path: '/Chat' },
+  
   ];
 
   const isActive = (path: string) => location.pathname === path;

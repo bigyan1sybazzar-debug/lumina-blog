@@ -14,8 +14,7 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HelmetProvider } from 'react-helmet-async';
-
-// Your added pages
+import ChatAssistant from "./pages/ChatAssistant"// Your added pages
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Disclaimer from './pages/Disclaimer';
@@ -65,7 +64,7 @@ export default function App() {
                 <Route path="/categories" element={<Categories />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
-
+                <Route path="/chat" element={<ChatAssistant />} />
                 {/* Auth */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
