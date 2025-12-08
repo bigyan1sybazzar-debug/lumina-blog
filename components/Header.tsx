@@ -1,32 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Sun, Moon, LogOut, User as UserIcon } from 'lucide-react';
+import { Search, Menu, X, Sun, Moon, LogOut, User as UserIcon, ChevronDown } from 'lucide-react'; // Added ChevronDown
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+
+// --- DATA STRUCTURES ---
+
+// Define standard navigation links
+const STANDARD_LINKS = [
+  { name: 'Home', path: '/' },
+  { name: 'Articles', path: '/categories' },
+  { name: 'AI Chat', path: '/Chat' },
+  { name: 'About', path: '/about' },
+  { name: 'Contact', path: '/contact' },
+];
+
+// Define dropdown links (Tools)
+const TOOL_LINKS = [
+  { name: 'My Phone Price', path: '/price/my-phone-price' },
+  { name: 'EMI Calculator', path: '/tools/emi-calculator' },
+  { name: 'Exchange Offer', path: '/tools/exchange-offer' }, // NEW LINK ADDED
+];
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isToolsDropdownOpen, setIsToolsDropdownOpen] = useState(false); // State for the new Tools dropdown
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Close menu on route change
+  // Close menu and dropdowns on route change
   useEffect(() => {
     setIsMenuOpen(false);
     setIsProfileOpen(false);
+    setIsToolsDropdownOpen(false); // Close tools dropdown on route change
   }, [location.pathname]);
 
-  const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Articles', path: '/categories' },
-    { name: 'AI Chat', path: '/Chat' },
-    { name: 'About', path: '/about' },
-    { name: 'Contact', path: '/contact' },
-    
-  
-  ];
+  // Combined links for mobile menu
+  const mobileLinks = [...STANDARD_LINKS, ...TOOL_LINKS];
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -40,10 +53,9 @@ export const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
-          
           <Link to="https://bigyann.com.np/" className="flex items-center space-x-2 flex-shrink-0">
           <a href="https://bigyann.com.np/">
-  <img 
+          <img 
     src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAe1BMVEX////78vL45ufrlZvbACPcFDLcFTLbACLdK0LdLkTdKEDcJD745OX45+jcHTriYmzngYLbESngTVz21tfdJzPjdX/ur7LcGTbqmqD++fnYAAD33uDvt7voiIvbISrhW1/dMjr1ztLdNUvfRFbso6Tng4vhWWTmfH7lc3pUlbFDAAAApklEQVR4AbWSAw7AAAxFO9u2cf8Tzu4W7oU/NeBPCPIGATsUzbAXGI7a42heuMNtsSQ7a1EaEVcjI8OCMhtVTR/RDB4xiuYiLJt/GlUHFlwPN/qSE4wKN1JcqED0Ehk7MUCivteMUty4kkl4Q3meABQe3hAjSQqQJY9GllU9rgGPXGieRrFaRFAzyOKlthvpS2NdPHIyib+djOA+jj3uFH+T7wf7hwE23xD0wroPdwAAAABJRU5ErkJggg==" 
     alt="Bigyann.com.np Logo" 
     className="h-9 w-auto" 
@@ -52,9 +64,10 @@ export const Header: React.FC = () => {
           </Link>
           <meta name="msvalidate.01" content="79CB5F780A824FA1F4111194F951AFB0" />
           <meta name="google-adsense-account" content="ca-pub-8714969386201280"></meta>
-          {/* Desktop Nav - Changed md:flex to lg:flex to hide on Tablet Portrait */}
+          
+          {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center space-x-8">
-            {navLinks.map((link) => (
+            {STANDARD_LINKS.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
@@ -67,6 +80,38 @@ export const Header: React.FC = () => {
                 {link.name}
               </Link>
             ))}
+
+            {/* NEW: Tools Dropdown Menu */}
+            <div className="relative">
+                <button
+                    onClick={() => setIsToolsDropdownOpen(!isToolsDropdownOpen)}
+                    className={`flex items-center text-sm font-medium transition-colors hover:text-primary-600 dark:hover:text-primary-400 ${
+                        isToolsDropdownOpen || TOOL_LINKS.some(link => isActive(link.path))
+                            ? 'text-primary-600 dark:text-primary-400'
+                            : 'text-gray-700 dark:text-gray-300'
+                    }`}
+                >
+                    Tools
+                    <ChevronDown size={16} className={`ml-1 transition-transform duration-200 ${isToolsDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
+                </button>
+                
+                {isToolsDropdownOpen && (
+                    <div className="absolute left-1/2 transform -translate-x-1/2 mt-3 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
+                        {TOOL_LINKS.map((link) => (
+                            <Link
+                                key={link.path}
+                                to={link.path}
+                                className={`block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                                    isActive(link.path) ? 'font-bold bg-primary-50 dark:bg-primary-900/20' : ''
+                                }`}
+                            >
+                                {link.name}
+                            </Link>
+                        ))}
+                    </div>
+                )}
+            </div>
+            
             {/* Dashboard Link for Logged In Users */}
             {user && (
               <Link
@@ -82,7 +127,7 @@ export const Header: React.FC = () => {
             )}
           </nav>
 
-          {/* Desktop Actions - Changed md:flex to lg:flex */}
+          {/* Desktop Actions */}
           <div className="hidden lg:flex items-center space-x-4">
             <div className="relative group">
               <input
@@ -145,9 +190,9 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Mobile/Tablet Actions - Changed md:hidden to lg:hidden */}
+          {/* Mobile/Tablet Actions */}
           <div className="lg:hidden flex items-center space-x-2">
-             <button
+              <button
               onClick={toggleTheme}
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
             >
@@ -163,7 +208,7 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile/Tablet Menu Overlay - Changed md:hidden to lg:hidden */}
+      {/* Mobile/Tablet Menu Overlay */}
       {isMenuOpen && (
         <div className="lg:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-xl animate-in slide-in-from-top-4 duration-200">
           <div className="px-4 pt-4 pb-6 space-y-2">
@@ -178,7 +223,8 @@ export const Header: React.FC = () => {
               <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
             </div>
 
-            {navLinks.map((link) => (
+            {/* Use the combined mobileLinks for the mobile menu */}
+            {mobileLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
@@ -191,6 +237,7 @@ export const Header: React.FC = () => {
                 {link.name}
               </Link>
             ))}
+            
             {user && (
               <Link
                 to="/admin"

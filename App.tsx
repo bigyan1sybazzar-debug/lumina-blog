@@ -19,7 +19,11 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Disclaimer from './pages/Disclaimer';
 import LiveFootball from './pages/LiveFootball';
-
+// ⭐️ NEW IMPORT: Phone Price Calculator Page
+// App.tsx (Correct Import)
+import { MyPhonePrice } from './pages/My-phone-price';
+import {Emicalculator} from './pages/Emicalculator'
+import {ExchangeOffer} from './pages/ExchangeOffer'
 // Slick Carousel CSS (optional, keep if you're using carousels)
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -31,11 +35,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const noLayoutPaths = [
     '/login',
     '/signup',
-    // Note: sitemap.xml and robots.txt should be served as static files by your server/CDN, 
-    // not routed through React. These paths here only ensure the React layout is skipped 
-    // if someone accidentally routes to them.
     '/sitemap.xml',
     '/robots.txt',
+    // ⭐️ NEW: Tool page often looks better without layout
+    '/price/my-phone-price', 
   ];
 
   const isAdmin = location.pathname.startsWith('/admin');
@@ -61,6 +64,7 @@ export default function App() {
             <Layout>
               <Routes>
                 {/* Core Pages */}
+                <Route path="/tools/exchange-offer" element={<ExchangeOffer />} />
                 <Route path="/" element={<Home />} />
                 <Route path="/live-football" element={<LiveFootball />} />
                 <Route path="/blog/:slug" element={<BlogPostPage />} />
@@ -68,7 +72,10 @@ export default function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/chat" element={<ChatAssistant />} />
-                
+                <Route path="/tools/emi-calculator" element={<Emicalculator />} />
+                {/* ⭐️ NEW ROUTE: Phone Price Calculator */}
+                <Route path="/price/my-phone-price" element={<MyPhonePrice />} />
+
                 {/* Auth */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
