@@ -194,71 +194,77 @@ export const BlogPostPage: React.FC = () => {
     <>
       {/* ==================== ULTIMATE SEO HEAD ==================== */}
       <Helmet>
-        {/* Basic */}
-        <title>{post.title} | Bigyann</title>
-        <meta name="description" content={post.excerpt} />
-        <link rel="canonical" href={canonicalUrl} />
+  {/* Basic */}
+  <title>{post.title} | Bigyann</title>
+  <meta name="description" content={post.excerpt} />
+  <link rel="canonical" href={canonicalUrl} />
 
-        {/* Open Graph – Facebook, LinkedIn, WhatsApp, etc. */}
-        <meta property="og:title" content={`${post.title} | Bigyann`} />
-        <meta property="og:description" content={post.excerpt} />
-        <meta property="og:image" content={post.coverImage} />
-        <meta property="og:image:alt" content={post.title} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="article" />
-        <meta property="og:site_name" content="Bigyann" />
-        <meta property="og:locale" content="en_US" />
-        <meta property="article:published_time" content={post.date} />
-        <meta property="article:author" content={post.author.name} />
-        <meta property="article:section" content={post.category} />
+  {/* Open Graph – Facebook, LinkedIn, WhatsApp, etc. */}
+  <meta property="og:title" content={`${post.title} | Bigyann`} />
+  <meta property="og:description" content={post.excerpt} />
+  {/* Add itemProp for image confirmation (supplementary) */}
+  <meta property="og:image" content={post.coverImage} itemProp="image" /> 
+  <meta property="og:image:alt" content={post.title} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Bigyann" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="article:published_time" content={post.date} />
+  {/* ✅ ADDED: article:modified_time for better freshness signal */}
+  <meta property="article:modified_time" content={post.updatedAt || post.date} /> 
+  <meta property="article:author" content={post.author.name} />
+  <meta property="article:section" content={post.category} />
 
-        {/* Twitter Cards */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@bigyann" />
-        <meta name="twitter:creator" content="@bigyann" />
-        <meta name="twitter:title" content={`${post.title} | Bigyann`} />
-        <meta name="twitter:description" content={post.excerpt} />
-        <meta name="twitter:image" content={post.coverImage} />
-        <meta name="twitter:image:alt" content={post.title} />
+  {/* Twitter Cards */}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@bigyann" />
+  <meta name="twitter:creator" content="@bigyann" />
+  <meta name="twitter:title" content={`${post.title} | Bigyann`} />
+  <meta name="twitter:description" content={post.excerpt} />
+  <meta name="twitter:image" content={post.coverImage} />
+  <meta name="twitter:image:alt" content={post.title} />
+  {/* ✅ ADDED: twitter:label & twitter:data for read time UX */}
+  <meta name="twitter:label1" content="Reading time" />
+  <meta name="twitter:data1" content={post.readTime} /> 
 
-        {/* Favicon & App Icons */}
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/logo192.png" />
+  {/* Favicon & App Icons (No changes needed, already great) */}
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/logo192.png" />
 
-        {/* Structured Data – Google Rich Results */}
-        <script type="application/ld+json">
-          {JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'BlogPosting',
-            headline: post.title,
-            description: post.excerpt,
-            image: post.coverImage,
-            author: {
-              '@type': 'Person',
-              name: post.author.name,
-              url: `https://bigyann.com.np/author/${post.author.id}`,
-            },
-            publisher: {
-              '@type': 'Organization',
-              name: 'Bigyann',
-              logo: {
-                '@type': 'ImageObject',
-                url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAe1BMVEX////78vL45ufrlZvbACPcFDLcFTLbACLdK0LdLkTdKEDcJD745OX45+jcHTriYmzngYLbESngTVz21tfdJzPjdX/ur7LcGTbqmqD++fnYAAD33uDvt7voiIvbISrhW1/dMjr1ztLdNUvfRFbso6Tng4vhWWTmfH7lc3pUlbFDAAAApklEQVR4AbWSAw7AAAxFO9u2cf8Tzu4W7oU/NeBPCPIGATsUzbAXGI7a42heuMNtsSQ7a1EaEVcjI8OCMhtVTR/RDB4xiuYiLJt/GlUHFlwPN/qSE4wKN1JcqED0Ehk7MUCivteMUty4kkl4Q3meABQe3hAjSQqQJY9GllU9rgGPXGieRrFaRFAzyOKlthvpS2NdPHIyib+djOA+jj3uFH+T7wf7hwE23xD0wroPdwAAAABJRU5ErkJggg==',
-              },
-            },
-            datePublished: post.date,
-            dateModified: post.updatedAt || post.date,
-            mainEntityOfPage: {
-              '@type': 'WebPage',
-              '@id': canonicalUrl,
-            },
-            wordCount: post.content.split(/\s+/).length,
-            keywords: post.tags?.join(', ') || post.category,
-          })}
-        </script>
-      </Helmet>
+  {/* Structured Data – Google Rich Results (No changes needed, already perfect) */}
+  <script type="application/ld+json">
+    {JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.title,
+      description: post.excerpt,
+      image: post.coverImage,
+      author: {
+        '@type': 'Person',
+        name: post.author.name,
+        url: `https://bigyann.com.np/author/${post.author.id}`,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: 'Bigyann',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAe1BMVEX////78vL45ufrlZvbACPcFDLcFTLbACLdK0LdLkTdKEDcJD745OX45+jcHTriYmzngYLbESngTVz21tfdJzPjdX/ur7LcGTbqmqD++fnYAAD33uDvt7voiIvbISrhW1/dMjr1ztLdNUvfRFbso6Tng4vhWWTmfH7lc3pUlbFDAAAApklEQVR4AbWSAw7AAAxFO9u2cf8Tzu4W7oU/NeBPCPIGATsUzbAXGI7a42heuMNtsSQ7a1EaEVcjI8OCMhtVTR/RDB4xiuYiLJt/GlUHFlwPN/qSE4wKN1JcqED0Ehk7MUCivteMUty4kkl4Q3meABQe3hAjSQqQJY9GllU9rgGPXGieRrFaRFAzyOKlthvpS2NdPHIyib+djOA+jj3uFH+T7wf7hwE23xD0wroPdwAAAABJRU5ErkJggg==',
+        },
+      },
+      datePublished: post.date,
+      dateModified: post.updatedAt || post.date,
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': canonicalUrl,
+      },
+      wordCount: post.content.split(/\s+/).length,
+      keywords: post.tags?.join(', ') || post.category,
+    })}
+  </script>
+</Helmet>
 
       {/* ==================== PAGE CONTENT ==================== */}
       <div className="bg-white dark:bg-gray-900 min-h-screen pb-20">
