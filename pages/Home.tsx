@@ -504,7 +504,7 @@ export const Home: React.FC = () => {
             </Link>
           ) : (
             <Link
-              to="/https://bigyann.com.np/admin"
+              to="https://bigyann.com.np/admin"
               className="flex items-center justify-center gap-3 px-8 py-4 text-lg font-bold rounded-xl bg-white text-primary-700 hover:bg-gray-100 transition-colors duration-300 shadow-xl w-full sm:w-auto"
             >
               <Edit className="w-5 h-5" />
