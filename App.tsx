@@ -24,7 +24,7 @@ import LiveFootball from './pages/LiveFootball';
 import { MyPhonePrice } from './pages/My-phone-price';
 import {Emicalculator} from './pages/Emicalculator'
 import {ExchangeOffer} from './pages/ExchangeOffer'
-// Slick Carousel CSS (optional, keep if you're using carousels)
+import { SubmissionGuidePage } from './pages/Submission-guide'; // Corrected casing (Assuming file is SubmissionGuide.tsx)// Slick Carousel CSS (optional, keep if you're using carousels)
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -64,6 +64,7 @@ export default function App() {
             <Layout>
               <Routes>
                 {/* Core Pages */}
+                <Route path="/author-guide" element={<SubmissionGuidePage />} />
                 <Route path="/tools/exchange-offer" element={<ExchangeOffer />} />
                 <Route path="/" element={<Home />} />
                 <Route path="/live-football" element={<LiveFootball />} />
