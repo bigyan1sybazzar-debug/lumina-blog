@@ -4,6 +4,7 @@ import firebase from 'firebase/compat/app';
 import { db } from './firebase';
 import { BlogPost, Category, User, Comment, Review } from '../types';
 import { MOCK_POSTS, CATEGORIES } from '../constants';
+import { slugify } from '../lib/slugify'; // <-- NEW IMPORT
 
 const POSTS_COLLECTION = 'posts';
 const USERS_COLLECTION = 'users';
@@ -16,6 +17,15 @@ const sortByDateDesc = (a: any, b: any) => {
   const dateA = new Date(a.updatedAt || a.createdAt || a.date).getTime();
   const dateB = new Date(b.updatedAt || b.createdAt || b.date).getTime();
   return dateB - dateA;
+};
+
+// Helper: Check if a slug already exists in the database
+const checkSlugExists = async (slug: string): Promise<boolean> => {
+  const snapshot = await db.collection(POSTS_COLLECTION)
+    .where('slug', '==', slug)
+    .limit(1)
+    .get();
+  return !snapshot.empty;
 };
 
 // --- POSTS ---
@@ -130,21 +140,31 @@ export const getPostBySlug = async (slugOrId: string): Promise<BlogPost | null> 
   }
 };
 
+/**
+ * Creates a new post with a guaranteed unique slug.
+ * If the generated slug already exists, a counter is appended (e.g., 'post-title-2').
+ */
 export const createPost = async (
   post: Omit<BlogPost, 'id' | 'slug' | 'likes' | 'views' | 'createdAt' | 'updatedAt'> & {
     status: 'published' | 'pending' | 'draft';
   }
 ) => {
   try {
-    const slug = post.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
-      .substring(0, 100); // limit length
+    // 1. Generate base slug using the imported helper
+    const baseSlug = slugify(post.title); 
+
+    let slug = baseSlug;
+    let counter = 1;
+
+    // 2. Ensure slug is unique
+    while (await checkSlugExists(slug)) {
+      counter++;
+      slug = `${baseSlug}-${counter}`;
+    }
 
     const newPost = {
       ...post,
-      slug,
+      slug, // <-- Now guaranteed unique
       likes: [],
       views: 0,
       createdAt: new Date().toISOString(),
@@ -165,7 +185,10 @@ export const createPost = async (
   }
 };
 
-// Update an existing post - fix the type definition
+/**
+ * Updates an existing post. If the title is changed, it regenerates and checks
+ * for a unique slug.
+ */
 export const updatePost = async (
     postId: string, 
     postData: Partial<Omit<BlogPost, 'id' | 'slug' | 'createdAt' | 'updatedAt'>>
@@ -176,20 +199,31 @@ export const updatePost = async (
         updatedAt: new Date().toISOString(),
       };
   
-      // If title changed, regenerate slug
+      // If title changed, regenerate and check slug uniqueness
       if (postData.title) {
-        const slug = postData.title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '')
-          .substring(0, 100);
+        const baseSlug = slugify(postData.title);
+
+        let slug = baseSlug;
+        let counter = 1;
+
+        // Check for uniqueness, ensuring we don't conflict with other posts
+        while (await checkSlugExists(slug)) {
+          // Check if the existing post has this slug. If it does, we can keep it.
+          const existingPost = await getPostBySlug(slug);
+          if (existingPost && existingPost.id === postId) {
+            break; 
+          }
+          
+          counter++;
+          slug = `${baseSlug}-${counter}`;
+        }
+  
         updateData.slug = slug;
       }
   
       await db.collection(POSTS_COLLECTION).doc(postId).update(updateData);
   
       // Regenerate sitemap if post is published
-      // Fix: Cast status to the correct type or check properly
       const status = postData.status as 'published' | 'pending' | 'draft' | undefined;
       if (status === 'published') {
         await generateAndUploadSitemap();
@@ -201,6 +235,7 @@ export const updatePost = async (
       throw error;
     }
   };
+
 // Delete a post
 export const deletePost = async (postId: string): Promise<void> => {
   try {
@@ -402,7 +437,8 @@ export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
   }
 };
 
-// services/db.ts  ← replace the whole function
+// --- SITEMAP ---
+
 export const generateAndUploadSitemap = async (): Promise<string | null> => {
   const SITEMAP_SECRET = 'bigyann-2025-super-secret-987654321'; // ← MUST match Vercel env
 
@@ -411,27 +447,32 @@ export const generateAndUploadSitemap = async (): Promise<string | null> => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SITEMAP_SECRET}`,  // ← THIS WAS MISSING!
+        'Authorization': `Bearer ${SITEMAP_SECRET}`, 
       },
     });
 
     if (!response.ok) {
       const err = await response.text();
       console.error('Sitemap API error:', response.status, err);
-      alert('Sitemap failed: ' + (err || response.statusText));
+      // NOTE: Alerts removed for cleaner server/service code.
+      // alert('Sitemap failed: ' + (err || response.statusText));
       return null;
     }
 
     const data = await response.json();
-    alert(`Sitemap Updated!\n${data.posts || 'All'} posts indexednnLive URL:n${data.url || 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml'}`);
+    // NOTE: Alerts removed for cleaner server/service code.
+    // alert(`Sitemap Updated!\n${data.posts || 'All'} posts indexednnLive URL:n${data.url || 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml'}`);
+    console.log(`Sitemap Updated! Indexed ${data.posts || 'All'} posts. URL: ${data.url}`);
     return data.url;
 
   } catch (err) {
     console.error('Network error:', err);
-    alert('Check internet or Vercel deployment');
+    // NOTE: Alerts removed for cleaner server/service code.
+    // alert('Check internet or Vercel deployment');
     return null;
   }
 };
+
 // --- SEED ---
 
 export const seedDatabase = async () => {
@@ -442,7 +483,8 @@ export const seedDatabase = async () => {
   }
 
   const promises = MOCK_POSTS.map(post => {
-    const slug = post.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    // Use slugify for consistent seeding
+    const slug = slugify(post.title); 
     return db.collection(POSTS_COLLECTION).add({
       ...post,
       slug,

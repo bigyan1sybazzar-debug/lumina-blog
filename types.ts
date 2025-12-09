@@ -11,32 +11,31 @@ export interface User {
 }
 
 export interface BlogPost {
-  id: string;                    // Firestore document ID (required internally)
-  slug?: string;                 // ← NEW: Optional for backward compatibility
-                                 //     New posts will have this, old ones fall back to id
-
+  id: string;                    // Firestore document ID
+  slug: string;                  // REQUIRED (Guaranteed unique by db.ts)
+  
   title: string;
   excerpt: string;
   content: string;
   coverImage: string;
 
   author: {
-    id?: string;                 // Author user ID (optional if old post)
+    id: string;                   // Author user ID (REQUIRED)
     name: string;
     avatar: string;
   };
 
-  date: string;                  // e.g. "November 28, 2025"
-  readTime: string;              // e.g. "8 min read"
+  date: string;                  // e.g. "November 28, 2025"
+  readTime: string;              // e.g. "8 min read"
   category: string;
   tags?: string[];
 
-  views?: number;                // Made optional to match real usage
+  views: number;                  // REQUIRED (Defaulted to 0 in db.ts)
   status: 'published' | 'pending' | 'draft';
-  likes?: string[];              // Array of user IDs who liked
+  likes: string[];               // REQUIRED (Defaulted to [] in db.ts)
 
-  createdAt?: string;            // ISO string (optional)
-  updatedAt?: string;            // ISO string (optional)
+  createdAt: string;             // ISO string (REQUIRED)
+  updatedAt: string;             // ISO string (REQUIRED)
 }
 
 export interface Category {
@@ -54,7 +53,7 @@ export interface Comment {
   userName: string;
   userAvatar: string;
   content: string;
-  createdAt: string;             // ISO string
+  createdAt: string;             // ISO string
 }
 
 export interface Review {
@@ -63,9 +62,9 @@ export interface Review {
   userId: string;
   userName: string;
   userAvatar: string;
-  rating: number;                // 1–5
+  rating: number;                // 1–5
   content: string;
-  createdAt: string;             // ISO string
+  createdAt: string;             // ISO string
 }
 
 export interface AnalyticsData {
@@ -73,14 +72,3 @@ export interface AnalyticsData {
   views: number;
   visitors: number;
 }
-
-// Helper function – improved version (collapses multiple dashes)
-export const slugify = (text: string): string => {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, '')      // Remove special characters
-    .replace(/[\s_]+/g, '-')       // Replace spaces & underscores with single dash
-    .replace(/-+/g, '-')           // Collapse multiple dashes
-    .replace(/^-+|-+$/g, '');      // Trim dashes from start/end
-};
