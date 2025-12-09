@@ -229,90 +229,97 @@ export const Home: React.FC = () => {
       )}
       {/* AI Tools Section (Reduced py- from py-24 to py-16) */}
       <section className="py-12 md:py-16 bg-gradient-to-br from-gray-100 to-white dark:from-gray-900 dark:to-gray-950">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-8 text-gray-900 dark:text-white"> {/* Reduced mb- from mb-10 to mb-8 */}
-            Explore Our AI Tools 💡
-          </h2>
-          
-          {/* Main Flex Container: This ensures the three tabs are always on the same row. */}
-          <div className="flex w-full overflow-hidden rounded-3xl shadow-2xl shadow-primary-500/10 dark:shadow-purple-500/10">
-            
-            {/* Tab 1: Calculate Old Phone Price (Internal Link) */}
-            <Link
-              to="/price/my-phone-price" 
-              className="flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-gray-800 text-center 
-                        transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-                        group flex-auto border-r border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
-              aria-label="Calculate your old phone price"
-            >
-              
-              {/* Icon with Gradient Circle: Primary/Purple */}
-              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary-400 to-purple-500 dark:from-primary-600 dark:to-purple-700 
-                            flex items-center justify-center mb-3 shadow-lg shadow-primary-500/30 group-hover:scale-105 transition-transform duration-300">
-                <Send className="w-6 h-6 text-white" />
-              </div>
-              
-              <h3 className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-white mb-1">
-                Old Phone Price
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
-                Get best price for your old phone 
-              </p>
-            </Link>
+  <div className="max-w-7xl mx-auto px-4">
+  <h2 className="text-3xl md:text-4xl font-extrabold text-left mb-8 text-gray-900 dark:text-white">
+  Explore Our AI Tools 💡
+</h2>
 
-            {/* Tab 2: Calculate EMI (External Link) */}
-            <a
-              href="https://bigyann.com.np/tools/emi-calculator" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-gray-800 text-center 
-                        transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-                        group flex-auto border-r border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
-              aria-label="Calculate EMI"
-            >
-              
-              {/* Icon with Gradient Circle: Blue/Cyan */}
-              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-400 to-cyan-500 dark:from-blue-600 dark:to-cyan-700 
-                            flex items-center justify-center mb-3 shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform duration-300">
-                <Calculator className="w-6 h-6 text-white" />
-              </div>
+    
+   {/* Main Grid Container */}
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-0">
 
-              <h3 className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-white mb-1">
-                Calculate EMI
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
-                Dedicated tool for quick EMI estimates.
-              </p>
-            </a>
-            
-            {/* Tab 3: Exchange Offer (New Addition) */}
-            <a
-              href="/tools/exchange-offer" 
-              className="flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-gray-800 text-center 
-                        transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-                        group flex-auto transform hover:-translate-y-1"
-              aria-label="Exchange Offer"
-            >
-              
-              {/* Icon with Gradient Circle: Green/Teal */}
-              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-green-400 to-teal-500 dark:from-green-600 dark:to-teal-700 
-                            flex items-center justify-center mb-3 shadow-lg shadow-green-500/30 group-hover:scale-105 transition-transform duration-300">
-                <RefreshCw className="w-6 h-6 text-white" />
-              </div>
+{/* Tab 1: Old Phone Price */}
+<Link
+  to="/price/my-phone-price"
+  className="text-sm flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-gray-800 text-center 
+             transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
+             group rounded-2xl lg:rounded-none lg:rounded-l-3xl lg:border-r border-gray-100 dark:border-gray-700/50 
+             transform hover:-translate-y-1 shadow-lg lg:shadow-2xl shadow-primary-500/10 dark:shadow-purple-500/10"
+  aria-label="Calculate your old phone price"
+>
 
-              <h3 className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-white mb-1">
-                Exchange Offer
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
-                Check eligibility and value here.
-              </p>
-            </a>
-            
-          </div>
+  {/* Icon */}
+  <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-tr from-primary-400 to-purple-500 dark:from-primary-600 dark:to-purple-700
+                  flex items-center justify-center shadow-lg shadow-primary-500/30 group-hover:scale-105 transition-transform">
+    <Send className="w-6 h-6 text-white" />
+  </div>
 
-        </div>
-      </section>
-      
+  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+    Old Phone Price
+  </h3>
+
+  <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
+    Get best price for your old phone
+  </p>
+</Link>
+
+{/* Tab 2: Calculate EMI */}
+<a
+  href="https://bigyann.com.np/tools/emi-calculator"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="text-sm flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-gray-800 text-center 
+             transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
+             group rounded-2xl lg:rounded-none lg:border-r border-gray-100 dark:border-gray-700/50 
+             transform hover:-translate-y-1 shadow-lg lg:shadow-2xl shadow-blue-500/10 dark:shadow-blue-500/10"
+  aria-label="Calculate EMI"
+>
+
+  {/* Icon */}
+  <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-tr from-blue-400 to-cyan-500 dark:from-blue-600 dark:to-cyan-700
+                  flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
+    <Calculator className="w-6 h-6 text-white" />
+  </div>
+
+  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+    Calculate EMI
+  </h3>
+
+  <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
+    Dedicated tool for quick EMI estimates.
+  </p>
+</a>
+
+{/* Tab 3: Exchange Offer */}
+<a
+  href="/tools/exchange-offer"
+  className="text-sm flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-gray-800 text-center 
+             transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
+             group rounded-2xl lg:rounded-none lg:rounded-r-3xl 
+             transform hover:-translate-y-1 shadow-lg lg:shadow-2xl shadow-green-500/10 dark:shadow-teal-500/10"
+  aria-label="Exchange Offer"
+>
+
+  {/* Icon */}
+  <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-tr from-green-400 to-teal-500 dark:from-green-600 dark:to-teal-700
+                  flex items-center justify-center shadow-lg shadow-green-500/30 group-hover:scale-105 transition-transform">
+    <RefreshCw className="w-6 h-6 text-white" />
+  </div>
+
+  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+    Exchange Offer
+  </h3>
+
+  <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
+    Check eligibility and value here.
+  </p>
+</a>
+
+</div>
+
+
+  </div>
+</section>
       {/* Category Filter Section (Removed py- from parent, added py- to inner div) */}
       <section className="sticky top-16 md:top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -493,11 +500,11 @@ export const Home: React.FC = () => {
               className="flex items-center justify-center gap-3 px-8 py-4 text-lg font-bold rounded-xl bg-white text-primary-700 hover:bg-gray-100 transition-colors duration-300 shadow-xl w-full sm:w-auto"
             >
               <LogIn className="w-5 h-5" />
-              Login to Post Your Content
+              Login to Post 
             </Link>
           ) : (
             <Link
-              to="/create-post"
+              to="/https://bigyann.com.np/admin"
               className="flex items-center justify-center gap-3 px-8 py-4 text-lg font-bold rounded-xl bg-white text-primary-700 hover:bg-gray-100 transition-colors duration-300 shadow-xl w-full sm:w-auto"
             >
               <Edit className="w-5 h-5" />
