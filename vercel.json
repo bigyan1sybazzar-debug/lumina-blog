@@ -6,13 +6,19 @@
   "devCommand": "npm run dev",
 
   "redirects": [
-  
     {
-      "source": "https://www.bigyann.com.np/(.*)",
-      "destination": "https://bigyann.com.np/$1",
+      "source": "/(.*)", 
+      "has": [
+        {
+          "type": "host",
+          "value": "www.bigyann.com.np"
+        }
+      ],
+      "destination": "https://bigyann.com.np/$1", 
       "statusCode": 301
     },
-    
+
+   
     {
       "source": "/",
       "destination": "/.",
