@@ -231,7 +231,7 @@ export const Home: React.FC = () => {
             
             {/* Tab 1: Calculate Old Phone Price (Internal Link) */}
             <Link
-              to="/" 
+              to="/price/my-phone-price" 
               className="flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-gray-800 text-center 
                         transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
                         group flex-auto border-r border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
@@ -248,7 +248,7 @@ export const Home: React.FC = () => {
                 Old Phone Price
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
-                AI Powered Tech and Science
+                Get best price for your old phone 
               </p>
             </Link>
 
@@ -273,7 +273,7 @@ export const Home: React.FC = () => {
                 Calculate EMI
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
-                Dedicated tool for quick estimates.
+                Dedicated tool for quick EMI estimates.
               </p>
             </a>
             
