@@ -6,6 +6,7 @@ import { ArrowRight, Loader2, Sparkles, Send, ChevronLeft, ChevronRight, Hash, T
 import { Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { Helmet } from 'react-helmet-async';
 
 export const Home: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -99,7 +100,24 @@ export const Home: React.FC = () => {
   const whatsappUrl = "https://wa.me/9779805671898?text=Hello%20Bigyann!%20I'm%20reaching%20out%20from%20your%20homepage.";
 
   return (
+  
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+        <Helmet>
+    
+    <title>AI Powered Tech and Science - Bigyann | Reviews & Discussions</title>
+   
+    <link rel="canonical" href="https://bigyann.com.np/" /> 
+   
+    <meta 
+      name="description" 
+      content="AI powered Articles, Reviews & Discussions on latest tech, design, and AI technology. Explore Articles." 
+    />
+   
+    <meta property="og:title" content="AI Powered Tech and Science - Bigyann" />
+    <meta property="og:url" content="https://bigyann.com.np/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Bigyann" />
+  </Helmet>
       {/* Hero Section - Admin Chosen Posts */}
       <section className="relative overflow-hidden px-4 pt-20 pb-12 md:pt-24 md:pb-20">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-50/30 to-transparent dark:from-primary-900/10"></div>
