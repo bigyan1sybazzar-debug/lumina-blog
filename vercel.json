@@ -7,26 +7,6 @@
 
   "redirects": [
     {
-      "source": "/(.*)", 
-      "has": [
-        {
-          "type": "host",
-          "value": "www.bigyann.com.np"
-        }
-      ],
-      "destination": "https://bigyann.com.np/$1", 
-      "statusCode": 301
-    },
-
-   
-    {
-      "source": "/",
-      "destination": "/.",
-      "statusCode": 308
-    },
-
-    
-    {
       "source": "/blog/fm3g9qgx4JGycFGkc3M3",
       "destination": "/blog/samsung-galaxy-a24-price-in-nepal",
       "statusCode": 301
