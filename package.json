@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run build:sitemap && tsc && vite build",
+    "build:sitemap": "npx ts-node api/update-public-sitemap.ts",
     "preview": "vite preview"
   },
   "dependencies": {
     "@google/genai": "^1.31.0",
     "@google/generative-ai": "^0.21.0",
     "@splidejs/react-splide": "^0.7.12",
-    "@vercel/blob": "^2.0.0",
+    "fast-xml-parser": "^5.3.2",
     "firebase": "^10.14.1",
     "firebase-admin": "^13.6.0",
     "googleapis": "^167.0.0",
@@ -32,14 +33,18 @@
     "slick-carousel": "^1.8.1"
   },
   "devDependencies": {
+    "@types/node": "^24.10.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/react-slick": "^0.23.13",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@vercel/blob": "^2.0.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
+    "sitemap-ts": "^1.10.1",
     "tailwindcss": "^3.4.13",
-    "typescript": "^5.5.3"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

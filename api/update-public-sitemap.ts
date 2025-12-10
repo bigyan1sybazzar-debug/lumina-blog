@@ -1,50 +1,147 @@
 // api/update-public-sitemap.ts
+// Generates a clean, SEO-optimized sitemap.xml with proper formatting
+
+import { db } from '../services/firebase.ts';
+import * as fs from 'fs';
+import * as path from 'path';
 import { put } from '@vercel/blob';
-import { writeFileSync } from 'fs';
-import path from 'path';
+import { SitemapStream, streamToPromise } from 'sitemap';
+import { Readable } from 'stream';
+import { Timestamp } from 'firebase/firestore'; // Assuming you have the correct firebase import structure
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+const BASE_URL = 'https://www.bigyann.com.np';
 
-export default async function handler(req: any, res: any) {
-  // Only allow POST from your admin (same secret)
-  if (req.method !== 'POST') return res.status(405).end();
-  const auth = req.headers.authorization || '';
-  if (auth !== `Bearer ${process.env.SITEMAP_SECRET}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+const STATIC_ROUTES = [
+  '/',
+  '/about',
+  '/admin',
+  '/categories',
+  '/chatassistant',
+  '/communitytopicsapp',
+  '/contact',
+  '/disclaimer',
+  '/emicalculator',
+  '/exchangeoffer',
+  '/livefootball',
+  '/login',
+] as const;
 
-  try {
-    // 1. Fetch the latest sitemap from Vercel Blob
-    const blobUrl = 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
-    const response = await fetch(blobUrl);
-    if (!response.ok) throw new Error('Failed to fetch sitemap from Blob');
-
-    const xmlContent = await response.text();
-
-    // 2. Write it to public/sitemap.xml (Vercel allows this during build/deploy)
-    // This path works in Vercel serverless functions
-    const publicPath = path.join(process.cwd(), 'public', 'sitemap.xml');
-    writeFileSync(publicPath, xmlContent, 'utf-8');
-
-    // Optional: Also re-upload with overwrite (in case someone visits the Blob directly)
-    await put('sitemap.xml', xmlContent, {
-      access: 'public',
-      addRandomSuffix: false,
-      contentType: 'application/xml',
-      allowOverwrite: true,
-    });
-
-    res.status(200).json({
-      success: true,
-      message: 'public/sitemap.xml updated automatically!',
-      url: 'https://bigyann.com.np/sitemap.xml',
-    });
-  } catch (error: any) {
-    console.error('Auto-update failed:', error);
-    res.status(500).json({ error: error.message });
-  }
+interface Post {
+  slug: string;
+  updatedAt?: any;
 }
+
+// Convert any Firestore timestamp to ISO string
+function toISODate(value: any): string | undefined {
+  if (!value) return undefined;
+
+  // Added check for firestore Timestamp structure
+  if (value instanceof Timestamp) return new Date(value.toMillis()).toISOString(); 
+  if (typeof value.toDate === 'function') return value.toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  if (value.seconds != null) {
+    return new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1e6).toISOString();
+  }
+  return undefined;
+}
+
+// Fetch all blog post slugs from Firestore
+async function fetchPostSlugs(): Promise<Post[]> {
+  try {
+    const snapshot = await db.collection('posts').get();
+    const posts: Post[] = [];
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (typeof data.slug === 'string' && data.slug.trim()) {
+        posts.push({
+          slug: data.slug,
+          updatedAt: data.updatedAt,
+        });
+      }
+    });
+
+    return posts;
+  } catch (error) {
+    console.error('Failed to fetch posts for sitemap:', error);
+    return [];
+  }
+}
+
+// Main sitemap generation
+async function generateSitemap() {
+  console.log('Starting sitemap generation...');
+
+  const smStream = new SitemapStream({
+    hostname: BASE_URL,
+    
+  });
+
+  // Add static routes
+  STATIC_ROUTES.forEach((route) => {
+    const url = route === '/' ? '/' : route.toLowerCase();
+    smStream.write({
+      url,
+      changefreq: 'weekly',
+      priority: url === '/' ? 1.0 : 0.8,
+    } as any);
+  });
+
+  // Add dynamic blog posts
+  const posts = await fetchPostSlugs();
+  console.log(`Found ${posts.length} blog posts to index`);
+
+  posts.forEach((post) => {
+    smStream.write({
+      url: `/blog/${post.slug}`,
+      changefreq: 'daily',
+      priority: 0.9,
+      lastmod: toISODate(post.updatedAt),
+    } as any);
+  });
+
+  smStream.end();
+
+  // Generate XML string
+  const xmlContent = await streamToPromise(smStream).then((data) => data.toString());
+
+  // Save to public folder (for static hosting + local preview)
+  const publicDir = path.join(process.cwd(), 'public');
+  const sitemapPath = path.join(publicDir, 'sitemap.xml');
+
+  if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
+  }
+
+  fs.writeFileSync(sitemapPath, xmlContent, 'utf-8');
+
+  const totalUrls = STATIC_ROUTES.length + posts.length;
+  console.log(`Sitemap generated successfully!`);
+  console.log(`→ ${totalUrls} URLs indexed (${STATIC_ROUTES.length} static + ${posts.length} blog posts)`);
+  console.log(`→ Saved: ${sitemapPath}`);
+
+  // Upload to Vercel Blob (only in production)
+  if (process.env.VERCEL) {
+    try {
+      const { url } = await put('sitemap.xml', xmlContent, {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: 'application/xml',
+        allowOverwrite: true,
+      });
+      console.log(`Uploaded to Vercel Blob → ${url}`);
+    } catch (err: any) {
+      console.warn('Vercel Blob upload failed (normal locally):', err.message);
+    }
+  } else {
+    console.log('Local build → Vercel Blob upload skipped');
+  }
+}
+
+// Run
+generateSitemap()
+  .then(() => console.log('Sitemap generation completed successfully!'))
+  .catch((err) => {
+    console.error('Sitemap generation failed:', err);
+    process.exit(1);
+  });
