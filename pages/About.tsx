@@ -8,20 +8,20 @@ import { Helmet } from "react-helmet-async";
 
 // Define an interface for type safety (optional but good practice)
 interface Skill {
-    name: string;
-    level: number;
-    color: string; // Added color property
+  name: string;
+  level: number;
+  color: string; // Added color property
 }
 
 interface Experience {
-    role: string;
-    company: string;
-    type: string;
-    period: string;
-    location: string;
-    description: string[];
-    icon: JSX.Element;
-    metrics: string[];
+  role: string;
+  company: string;
+  type: string;
+  period: string;
+  location: string;
+  description: string[];
+  icon: JSX.Element;
+  metrics: string[];
 }
 
 export const About: React.FC = () => {
@@ -250,12 +250,7 @@ export const About: React.FC = () => {
         <meta name="twitter:title" content="Bigyan Neupane - SEO Expert in Nepal" />
         <meta name="twitter:description" content="4000+ keywords ranked | 50+ websites built | 200%+ traffic growth" />
         <meta name="twitter:image" content="https://appflicks.com/wp-content/uploads/2025/08/FB_IMG_16036454436998781.jpg" />
-        <link 
-    rel="icon" 
-    type="image/png" 
-    sizes="28x28"
-    href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAe1BMVEX////78vL45ufrlZvbACPcFDLcFTLbACLdK0LdLkTdKEDcJD745OX45+jcHTriYmzngYLbESngTVz21tfdJzPjdX/ur7LcGTbqmqD++fnYAAD33uDvt7voiIvbISrhW1/dJjr1ztLdNUvfRFbso6Tng4vhWWTmfH7lc3pUlbFDAAAApklEQVR4AbWSAw7AAAxFO9u2cf8Tzu4W7oU/NeBPCPIGATsUzbAXGI7a42heuMNtsSQ7a1EaEVcjI8OCMhtVTR/RDB4xiuYiLJt/GlUHFlwPN/qSE4wKN1JcqED0Ehk7MUCivteMUty4kkl4Q3meABQe3hAjSQqQJY9GllU9rgGPXGieRrFaRFAzyOKlthvpS2NdPHIyib+djOA+jj3uFH+T7wf7hwE23xD0wroPdwAAAABJRU5ErkJggg=="
-/>
+
         <script type="application/ld+json">{JSON.stringify(schemaPerson)}</script>
         <script type="application/ld+json">{JSON.stringify(schemaFAQ)}</script>
       </Helmet>
@@ -265,74 +260,79 @@ export const About: React.FC = () => {
 
           {/* Hero */}
           <section className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+            {/* FIX 1: Reduced base text size from text-4xl to text-3xl, and from md:text-5xl to md:text-4xl */}
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
               Bigyan Neupane <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">SEO Expert in Nepal</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-4xl mx-auto leading-relaxed">
+            {/* FIX 2: Reduced base text size from text-xl to text-lg, and from md:text-2xl to md:text-xl */}
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-4xl mx-auto leading-relaxed">
               Top-rated <strong>SEO freelancer in Kathmandu</strong> helping businesses dominate Google with proven strategies. 
               Ranked <strong>4,000+ keywords</strong>, built <strong>50+ high-performance websites</strong>, and delivered <strong>200%+ traffic growth</strong> for clients worldwide.
             </p>
           </section>
 
           {/* Profile Card with Social Links & Email */}
-          <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 p-10 md:p-12 mb-16 shadow-2xl border border-gray-200 dark:border-gray-700">
+          <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-gray-800 p-8 md:p-12 mb-16 shadow-2xl border border-gray-200 dark:border-gray-700">
             <div className="flex flex-col lg:flex-row items-center gap-10">
-              {/* Profile Photo */}
+              {/* Profile Photo - No change needed here */}
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary-500/30 to-purple-500/30 rounded-full blur-xl opacity-70 animate-pulse" />
                 <img
                   src="https://appflicks.com/wp-content/uploads/2025/08/FB_IMG_16036454436998781.jpg"
                   alt="Bigyan Neupane - SEO Expert in Nepal"
-                  className="relative w-40 h-40 rounded-full border-8 border-white dark:border-gray-800 shadow-2xl object-cover ring-4 ring-primary-500/20"
+                  className="relative w-36 h-36 md:w-40 md:h-40 rounded-full border-8 border-white dark:border-gray-800 shadow-2xl object-cover ring-4 ring-primary-500/20"
                   loading="eager"
                 />
                 {/* Online Indicator */}
-                <div className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-green-500 border-4 border-white dark:border-gray-800 shadow-lg animate-pulse"></div>
+                <div className="absolute bottom-2 right-2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-500 border-4 border-white dark:border-gray-800 shadow-lg animate-pulse"></div>
               </div>
 
               {/* Text & Social Links */}
               <div className="text-center lg:text-left flex-1 space-y-6">
                 <div>
-                  <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-3">
+                  {/* FIX 3: Reduced name text size from text-4xl to text-3xl, and from md:text-5xl to md:text-4xl */}
+                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-2">
                     Hi, I'm <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">Bigyan Neupane</span>
                   </h2>
-                  <p className="text-xl text-primary-600 dark:text-primary-400 font-semibold">
+                  {/* FIX 4: Reduced role description size from text-xl to text-lg */}
+                  <p className="text-lg text-primary-600 dark:text-primary-400 font-semibold">
                     SEO Expert in Nepal • Full-Stack Developer • Growth Strategist
                   </p>
                 </div>
 
-                <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl">
+                {/* FIX 5: Reduced description size from text-lg to text-base on mobile */}
+                <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl">
                   A passionate <strong>SEO freelancer based in Kathmandu, Nepal</strong> helping businesses rank #1 on Google with proven technical SEO, lightning-fast websites, and high-ROI digital strategies.
                 </p>
 
                 {/* Contact Info & Social Links */}
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-4">
-                  {/* Email */}
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 md:gap-4 pt-4">
+                  {/* Email Button - Reduced padding on mobile (px-4 py-2) */}
                   <a
                     href="mailto:bigyan.neupane6@gmail.com"
-                    className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-600 to-purple-600 text-white font-medium rounded-xl hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
+                    className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 bg-gradient-to-r from-primary-600 to-purple-600 text-white font-medium text-sm md:text-base rounded-xl hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    bigyan.neupane6@gmail.com
+                    <span className="hidden sm:inline">bigyan.neupane6@gmail.com</span>
+                    <span className="sm:hidden">Email Me</span>
                   </a>
 
-                  {/* WhatsApp */}
+                  {/* WhatsApp Button - Reduced padding on mobile (px-4 py-2) */}
                   <a
                     href="https://wa.me/9779805671898?text=Hi%20Bigyan!%20I%20found%20you%20from%20your%20website%20-%20let's%20talk%20about%20SEO!"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-5 py-3 bg-[#25D366] text-white font-medium rounded-xl hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
+                    className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 bg-[#25D366] text-white font-medium text-sm md:text-base rounded-xl hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
                   >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 21.5c-2.5 0-4.8-.9-6.6-2.4l-.4-.3-4.1.9 1-4-.3-.4C3.9 12.8 3 10.5 3 8c0-5 4-9 9-9s9 4 9 9-4 9-9 9zm0-16c-3.9 0-7 3.1-7 7 0 1.5.5 2.9 1.3 4.1l.8 1.2-1.1.7.7-1.1 1.2.8c1.2.8 2.6 1.3 4.1 1.3 3.9 0 7-3.1 7-7s-3.1-7-7-7z"/>
                     </svg>
                     WhatsApp Me
                   </a>
                 </div>
-
-                {/* Social Icons */}
+                {/* Social Icons - Icons are fine, size is proportional */}
                 <div className="flex justify-center lg:justify-start gap-4 pt-2">
                   <a
                     href="https://www.linkedin.com/in/bigyanneupane1/"
@@ -377,9 +377,11 @@ export const About: React.FC = () => {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
             {["4000+", "50+", "200%+", "95%"].map((stat, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center shadow-lg border border-gray-200 dark:border-gray-700">
-                <div className="text-4xl font-bold text-primary-600 dark:text-primary-400 mb-2">{stat}</div>
-                <div className="text-gray-600 dark:text-gray-400">
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 text-center shadow-lg border border-gray-200 dark:border-gray-700">
+                {/* FIX 6: Reduced stat number size from text-4xl to text-3xl */}
+                <div className="text-3xl md:text-4xl font-bold text-primary-600 dark:text-primary-400 mb-2">{stat}</div>
+                {/* FIX 7: Ensured stat description text size is appropriate */}
+                <div className="text-sm md:text-base text-gray-600 dark:text-gray-400">
                   {["Keywords Ranked", "Websites Built", "Avg Traffic Growth", "Client Satisfaction"][i]}
                 </div>
               </div>
@@ -388,23 +390,24 @@ export const About: React.FC = () => {
 
           {/* Skills with Animated Progress Bars */}
           <div ref={skillsRef} className="mb-16">
-            <div className="flex items-center gap-3 mb-10">
-              <Award className="w-8 h-8 text-primary-500" />
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Core Expertise</h2>
+            {/* FIX 8: Reduced section title size from text-3xl to text-2xl on mobile */}
+            <div className="flex items-center gap-3 mb-8 md:mb-10">
+              <Award className="w-6 h-6 md:w-8 md:h-8 text-primary-500" />
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Core Expertise</h2>
             </div>
-            <div className="grid gap-6">
+            <div className="grid gap-4 md:gap-6">
               {skills.map((skill, i) => (
-                <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-md">
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-6 border border-gray-200 dark:border-gray-700 shadow-md">
                   <div className="flex justify-between mb-3">
-                    <span className="text-lg font-semibold text-gray-900 dark:text-white">{skill.name}</span>
-                    <span className="text-xl font-bold text-primary-600 dark:text-primary-400">{skill.level}%</span>
+                    {/* FIX 9: Reduced skill name text size from text-lg to text-base */}
+                    <span className="text-base font-semibold text-gray-900 dark:text-white">{skill.name}</span>
+                    {/* FIX 10: Reduced percentage text size from text-xl to text-lg */}
+                    <span className="text-lg font-bold text-primary-600 dark:text-primary-400">{skill.level}%</span>
                   </div>
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
-                      // **Key Fix**: Dynamic gradient class added here
                       className={`h-full bg-gradient-to-r ${skill.color} rounded-full transition-all duration-1000 ease-out`}
                       style={{
-                        // **Key Fix**: Applied transition to the width property
                         width: animatedSkills[i] ? `${skill.level}%` : "0%"
                       }}
                     />
@@ -418,15 +421,17 @@ export const About: React.FC = () => {
 
           {/* Key Achievements */}
           <div className="mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-amber-500" />
+            {/* FIX 11: Reduced section title size from text-3xl to text-2xl on mobile */}
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6 md:mb-8 flex items-center gap-3">
+              <Trophy className="w-6 h-6 md:w-8 md:h-8 text-amber-500" />
               Key Achievements
             </h2>
-            <div className="grid md:grid-cols-2 gap-5">
+            <div className="grid md:grid-cols-2 gap-4 md:gap-5">
               {achievements.map((ach, i) => (
-                <div key={i} className="flex items-start gap-4 bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-                  <CheckCircle className="w-6 h-6 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300 leading-relaxed">{ach}</span>
+                <div key={i} className="flex items-start gap-3 md:gap-4 bg-white dark:bg-gray-800 rounded-xl p-4 md:p-5 border border-gray-200 dark:border-gray-700">
+                  <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-500 mt-0.5 flex-shrink-0" />
+                  {/* FIX 12: Ensured achievement text is a sensible size */}
+                  <span className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed">{ach}</span>
                 </div>
               ))}
             </div>
@@ -436,12 +441,13 @@ export const About: React.FC = () => {
 
           {/* Work Experience */}
           <div className="mb-20">
-            <div className="flex items-center gap-3 mb-10">
-              <Briefcase className="w-8 h-8 text-primary-500" />
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Professional Journey</h2>
+            {/* FIX 13: Reduced section title size from text-3xl to text-2xl on mobile */}
+            <div className="flex items-center gap-3 mb-8 md:mb-10">
+              <Briefcase className="w-6 h-6 md:w-8 md:h-8 text-primary-500" />
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Professional Journey</h2>
             </div>
 
-            <div className="space-y-8">
+            <div className="space-y-6 md:space-y-8">
               {experiences.map((exp, index) => (
                 <div
                   key={index}
@@ -450,25 +456,28 @@ export const About: React.FC = () => {
                   }`}
                 >
                   <div
-                    className="p-6 md:p-8 cursor-pointer flex items-start justify-between"
+                    className="p-5 md:p-8 cursor-pointer flex items-start justify-between"
                     onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
                   >
-                    <div className="flex items-start gap-5 flex-1">
-                      <div className="p-4 rounded-xl bg-primary-50 dark:bg-primary-900/30">
+                    <div className="flex items-start gap-4 md:gap-5 flex-1">
+                      <div className="p-3 md:p-4 rounded-xl bg-primary-50 dark:bg-primary-900/30">
                         {exp.icon}
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{exp.role}</h3>
-                        <div className="flex flex-wrap items-center gap-3 mt-2">
-                          <span className="text-primary-600 dark:text-primary-400 font-semibold text-lg">
+                        {/* FIX 14: Reduced role size from text-2xl to text-xl on mobile */}
+                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{exp.role}</h3>
+                        <div className="flex flex-wrap items-center gap-3 mt-1 md:mt-2">
+                          {/* FIX 15: Reduced company name size from text-lg to text-base */}
+                          <span className="text-base text-primary-600 dark:text-primary-400 font-semibold">
                             {exp.company}
                           </span>
-                          <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm font-medium">
+                          {/* FIX 16: Reduced type pill size from text-sm to text-xs on mobile */}
+                          <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full text-xs font-medium">
                             {exp.type}
                           </span>
                         </div>
 
-                        <div className="flex flex-wrap gap-4 mt-4 text-gray-600 dark:text-gray-400">
+                        <div className="flex flex-wrap gap-4 mt-3 text-gray-600 dark:text-gray-400 text-sm">
                           <span className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" /> {exp.period}
                           </span>
@@ -477,11 +486,12 @@ export const About: React.FC = () => {
                           </span>
                         </div>
 
-                        <div className="flex flex-wrap gap-3 mt-5">
+                        <div className="flex flex-wrap gap-2 mt-4">
                           {exp.metrics.map((m, i) => (
                             <span
                               key={i}
-                              className="px-4 py-2 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm font-semibold"
+                              // FIX 17: Reduced metric pill size from text-sm to text-xs on mobile
+                              className="px-3 py-1 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-xs font-semibold"
                             >
                               {m}
                             </span>
@@ -490,23 +500,24 @@ export const About: React.FC = () => {
                       </div>
                     </div>
 
-                    <button className="ml-4 p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors" aria-expanded={expandedIndex === index}>
+                    <button className="ml-4 p-2 md:p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors flex-shrink-0" aria-expanded={expandedIndex === index}>
                       {expandedIndex === index ? (
-                        <ChevronUp className="w-6 h-6" />
+                        <ChevronUp className="w-5 h-5 md:w-6 md:h-6" />
                       ) : (
-                        <ChevronDown className="w-6 h-6" />
+                        <ChevronDown className="w-5 h-5 md:w-6 md:h-6" />
                       )}
                     </button>
                   </div>
 
                   {/* Expanded Details */}
                   <div className={`transition-all duration-500 overflow-hidden ${expandedIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-                    <div className="px-6 md:px-8 pb-8 pt-2 border-t border-gray-200 dark:border-gray-700">
-                      <ul className="space-y-4 mt-6">
+                    <div className="px-5 md:px-8 pb-5 md:pb-8 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <ul className="space-y-3 mt-4">
                         {exp.description.map((item, i) => (
-                          <li key={i} className="flex items-start gap-4 text-gray-700 dark:text-gray-300">
+                          <li key={i} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
                             <div className="w-2 h-2 rounded-full bg-primary-500 mt-2 flex-shrink-0" />
-                            <span className="leading-relaxed">{item}</span>
+                            {/* FIX 18: Ensured description text is a sensible size */}
+                            <span className="text-sm md:text-base leading-relaxed">{item}</span>
                           </li>
                         ))}
                       </ul>
@@ -520,36 +531,41 @@ export const About: React.FC = () => {
           <hr className="my-16 border-gray-200 dark:border-gray-700" />
 
           {/* Philosophy */}
-          <div className="mb-16 p-10 bg-gradient-to-br from-primary-600 to-purple-700 rounded-3xl text-white shadow-2xl">
-            <Trophy className="w-12 h-12 text-amber-300 mb-4" />
-            <h3 className="text-3xl font-bold mb-4">
+          <div className="mb-16 p-8 md:p-10 bg-gradient-to-br from-primary-600 to-purple-700 rounded-3xl text-white shadow-2xl">
+            <Trophy className="w-10 h-10 md:w-12 md:h-12 text-amber-300 mb-4" />
+            {/* FIX 19: Reduced philosophy title size from text-3xl to text-2xl on mobile */}
+            <h3 className="text-2xl md:text-3xl font-bold mb-3 md:mb-4">
               "Your website isn’t just a page — it’s your most powerful growth engine."
             </h3>
-            <p className="text-xl opacity-90">
+            {/* FIX 20: Reduced philosophy body size from text-xl to text-lg on mobile */}
+            <p className="text-lg opacity-90">
               I don’t just build websites. I build digital empires — optimized, fast, and designed to dominate search and convert visitors into customers.
             </p>
           </div>
 
           {/* Final CTA */}
-          <div className="text-center py-16">
-              <h3 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          <div className="text-center py-10 md:py-16">
+              {/* FIX 21: Reduced final CTA heading size from text-4xl to text-3xl on mobile */}
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-5 md:mb-6">
                 Ready to Rank #1 on Google?
               </h3>
-              <p className="text-xl text-gray-600 dark:text-gray-400 mb-10 max-w-2xl mx-auto">
+              {/* FIX 22: Reduced final CTA paragraph size from text-xl to text-lg on mobile */}
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 md:mb-10 max-w-2xl mx-auto">
                 Let’s grow your business with proven SEO, fast websites, and smart digital strategies.
               </p>
               <a
                 href="https://wa.me/9779805671898?text=Hi%20Bigyan!%20I'm%20ready%20to%20rank%20higher%20on%20Google!"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-4 px-10 py-5 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-xl rounded-2xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all"
+                // FIX 23: Reduced button text size and padding
+                className="inline-flex items-center gap-3 px-8 py-4 md:px-10 md:py-5 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-lg md:text-xl rounded-2xl shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all"
               >
-                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 md:w-8 md:h-8" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 21.5c-2.5 0-4.8-.9-6.6-2.4l-.4-.3-4.1.9 1-4-.3-.4C3.9 12.8 3 10.5 3 8c0-5 4-9 9-9s9 4 9 9-4 9-9 9zm0-16c-3.9 0-7 3.1-7 7 0 1.5.5 2.9 1.3 4.1l.8 1.2-1.1.7.7-1.1 1.2.8c1.2.8 2.6 1.3 4.1 1.3 3.9 0 7-3.1 7-7s-3.1-7-7-7z"/>
-                </svg>
-                Hire Me on WhatsApp
-              </a>
-              <p className="mt-4 text-gray-500 font-medium">Replies in under 30 mins</p>
+              </svg>
+              Hire Me on WhatsApp
+            </a>
+            <p className="mt-3 md:mt-4 text-gray-500 font-medium text-sm md:text-base">Replies in under 30 mins</p>
           </div>
         </div>
       </div>
