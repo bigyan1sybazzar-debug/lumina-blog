@@ -9,7 +9,7 @@ import { SitemapStream, streamToPromise } from 'sitemap';
 import { Readable } from 'stream';
 import { Timestamp } from 'firebase/firestore'; // Assuming you have the correct firebase import structure
 
-const BASE_URL = 'https://www.bigyann.com.np';
+const BASE_URL = 'https://bigyann.com.np';
 
 const STATIC_ROUTES = [
   '/',
