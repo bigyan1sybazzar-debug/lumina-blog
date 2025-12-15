@@ -1272,7 +1272,7 @@ export const Admin: React.FC = () => {
                                 <Edit3 size={16} />
                               </button>
                               <button 
-                                onClick={() => window.open(`${post.id}`, '_blank')}
+                                onClick={() => window.open(`/${post.id}`, '_blank')}
                                 className="text-gray-600 hover:text-gray-800 dark:text-gray-400 p-1"
                                 title="Preview"
                               >
@@ -1347,7 +1347,7 @@ export const Admin: React.FC = () => {
                         </div>
                         <div className="flex flex-col gap-2 md:w-48">
                           <button 
-                            onClick={() => window.open(`${post.id}`, '_blank')}
+                            onClick={() => window.open(`/${post.id}`, '_blank')}
                             className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
                           >
                             <Eye size={16} />
