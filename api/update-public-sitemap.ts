@@ -14,7 +14,7 @@ const BASE_URL = 'https://bigyann.com.np';
 const STATIC_ROUTES = [
   '/',
   '/about',
-  '/admin',
+  
   '/categories',
   '/chatassistant',
   '/communitytopicsapp',
@@ -93,7 +93,7 @@ async function generateSitemap() {
 
   posts.forEach((post) => {
     smStream.write({
-      url: `/blog/${post.slug}`,
+      url: `${post.slug}`,
       changefreq: 'daily',
       priority: 0.9,
       lastmod: toISODate(post.updatedAt),

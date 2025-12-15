@@ -68,7 +68,7 @@ export default function App() {
                 <Route path="/tools/exchange-offer" element={<ExchangeOffer />} />
                 <Route path="/" element={<Home />} />
                 <Route path="/live-football" element={<LiveFootball />} />
-                <Route path="/blog/:slug" element={<BlogPostPage />} />
+                <Route path="/:slug" element={<BlogPostPage />} />
                 <Route path="/categories" element={<Categories />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />

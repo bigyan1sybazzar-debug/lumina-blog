@@ -22,7 +22,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   increasedTitle,
   alignLeft = false
 }) => {
-  const postUrl = `/blog/${post.slug ?? post.id}`;
+  const postUrl = `${post.slug ?? post.id}`;
   const displayTitle = post.title;
 
   // Alignment Control

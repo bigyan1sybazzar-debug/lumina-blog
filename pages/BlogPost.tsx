@@ -88,7 +88,7 @@ export const BlogPostPage: React.FC = () => {
       if (p) {
         // Redirect to canonical slug if needed
         if (p.slug && slug !== p.slug) {
-          navigate(`/blog/${p.slug}`, { replace: true });
+          navigate(`${p.slug}`, { replace: true });
           return;
         }
 
@@ -188,7 +188,7 @@ export const BlogPostPage: React.FC = () => {
     month: 'long',
     day: 'numeric',
   });
-  const canonicalUrl = `https://bigyann.com.np/blog/${post.slug}`;
+  const canonicalUrl = `https://bigyann.com.np/${post.slug}`;
 
   return (
     <>
@@ -428,7 +428,7 @@ export const BlogPostPage: React.FC = () => {
                   {relatedPosts.map((rp) => (
                     <Link
                       key={rp.id}
-                      to={`/blog/${rp.slug || rp.id}`}
+                      to={`/${rp.slug || rp.id}`}
                       className="block group transition-all hover:translate-x-1"
                     >
                       <div className="aspect-video rounded-xl overflow-hidden mb-4 shadow-md">

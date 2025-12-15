@@ -164,7 +164,7 @@ export const Home: React.FC = () => {
                         {post.category}
                       </span>
                       <h3 className="text-white font-bold text-sm md:text-base line-clamp-2">
-                        <Link to={`/blog/${post.slug ?? post.id}`} className="hover:text-primary-200 transition-colors">
+                        <Link to={`${post.slug ?? post.id}`} className="hover:text-primary-200 transition-colors">
                           {post.title}
                         </Link>
                       </h3>

@@ -49,7 +49,7 @@ export default async function handler(req: any, res: any) {
   <url><loc>${BASE_URL}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
   ${posts.map(p => `
   <url>
-    <loc>${BASE_URL}/blog/${p.slug}</loc>
+    <loc>${BASE_URL}/${p.slug}</loc>
     <lastmod>${p.updatedAt.split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq><priority>0.7</priority>
   </url>`).join('')}
