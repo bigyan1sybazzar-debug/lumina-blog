@@ -22,7 +22,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { generateAndUploadSitemap } from '../services/db';
-
+import { Navigate, useParams } from 'react-router-dom';
+function RedirectOldBlogPost() {
+  const { slug } = useParams(); // captures whatever comes after /blog/
+  return <Navigate to={`/${slug}`} replace />;
+}
 // Automation Types
 interface AutoLog {
   id: string;
@@ -743,7 +747,7 @@ export const Admin: React.FC = () => {
                   <div className="space-y-4">
                     {featuredPosts.map((post, index) => (
                       <div
-                        key={post.id}
+                        key={post.slug}
                         draggable
                         onDragStart={(e) => (e.dataTransfer as any).setData('index', index)}
                         onDragOver={(e) => e.preventDefault()}
@@ -764,7 +768,7 @@ export const Admin: React.FC = () => {
                           <h4 className="font-semibold">{post.title}</h4>
                           <p className="text-sm text-gray-500">{post.category} • {post.date}</p>
                         </div>
-                        <button onClick={() => setFeaturedPosts(featuredPosts.filter(p => p.id !== post.id))} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-lg">
+                        <button onClick={() => setFeaturedPosts(featuredPosts.filter(p => p.id !== post.slug))} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-lg">
                           <Trash2 size={18} />
                         </button>
                       </div>
@@ -779,11 +783,11 @@ export const Admin: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
                   {availablePosts.map(post => (
                     <div
-                      key={post.id}
+                      key={post.slug}
                       onClick={() => {
                         if (featuredPosts.length < 3) {
                           setFeaturedPosts([...featuredPosts, post]);
-                          setAvailablePosts(availablePosts.filter(p => p.id !== post.id));
+                          setAvailablePosts(availablePosts.filter(p => p.id !== post.slug));
                         } else {
                           alert('Maximum 3 featured posts allowed');
                         }
@@ -958,7 +962,7 @@ export const Admin: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {myPosts.slice(0, 5).map(post => (
-                        <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <tr key={post.slug} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                           <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white max-w-xs truncate">{post.title}</td>
                           <td className="py-3 px-4 text-sm text-gray-500">{post.date}</td>
                           <td className="py-3 px-4">
@@ -974,14 +978,14 @@ export const Admin: React.FC = () => {
                           <td className="py-3 px-4">
                             <div className="flex space-x-2">
                               <button 
-                                onClick={() => handleEditPost(post.id)}
+                                onClick={() => handleEditPost(post.slug)}
                                 className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
                                 title="Edit"
                               >
                                 <Edit3 size={16} />
                               </button>
                               <button 
-                                onClick={() => window.open(`/${post.id}`, '_blank')}
+                                onClick={() => window.open(`/${post.slug}`, '_blank')}
                                 className="text-gray-600 hover:text-gray-800 dark:text-gray-400"
                                 title="Preview"
                               >
@@ -1220,7 +1224,7 @@ export const Admin: React.FC = () => {
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredPosts.map(post => (
-                        <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <tr key={post.slug} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <img 
@@ -1265,14 +1269,14 @@ export const Admin: React.FC = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <div className="flex space-x-2">
                               <button 
-                                onClick={() => handleEditPost(post.id)}
+                                onClick={() => handleEditPost(post.slug)}
                                 className="text-blue-600 hover:text-blue-800 dark:text-blue-400 p-1"
                                 title="Edit"
                               >
                                 <Edit3 size={16} />
                               </button>
                               <button 
-                                onClick={() => window.open(`/${post.id}`, '_blank')}
+                                onClick={() => window.open(`/${post.slug}`, '_blank')}
                                 className="text-gray-600 hover:text-gray-800 dark:text-gray-400 p-1"
                                 title="Preview"
                               >
@@ -1280,7 +1284,7 @@ export const Admin: React.FC = () => {
                               </button>
                               {isAdmin && (
                                 <button 
-                                  onClick={() => handleDeletePost(post.id)}
+                                  onClick={() => handleDeletePost(post.slug)}
                                   className="text-red-600 hover:text-red-800 dark:text-red-400 p-1"
                                   title="Delete"
                                 >
@@ -1313,7 +1317,7 @@ export const Admin: React.FC = () => {
               {pendingPosts.length > 0 ? (
                 <div className="space-y-4">
                   {pendingPosts.map(post => (
-                    <div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div key={post.slug} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
                       <div className="flex flex-col md:flex-row justify-between gap-6">
                         <div className="flex-1">
                           <div className="flex items-start gap-4">
@@ -1347,21 +1351,21 @@ export const Admin: React.FC = () => {
                         </div>
                         <div className="flex flex-col gap-2 md:w-48">
                           <button 
-                            onClick={() => window.open(`/${post.id}`, '_blank')}
+                            onClick={() => window.open(`/${post.slug}`, '_blank')}
                             className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
                           >
                             <Eye size={16} />
                             Preview
                           </button>
                           <button 
-                            onClick={() => handleApprovePost(post.id)}
+                            onClick={() => handleApprovePost(post.slug)}
                             className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
                           >
                             <CheckCircle size={16} />
                             Approve
                           </button>
                           <button 
-                            onClick={() => handleRejectPost(post.id)}
+                            onClick={() => handleRejectPost(post.slug)}
                             className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
                           >
                             <X size={16} />
