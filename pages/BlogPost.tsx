@@ -76,22 +76,23 @@ export const BlogPostPage: React.FC = () => {
   const [likeCount, setLikeCount] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
 
-  // Fetch post + related data
+  // BASE URL SETUP: Must match Google Search Console "Google-selected canonical"
+  const SITE_URL = "https://bigyann.com.np";
+
   useEffect(() => {
     window.scrollTo(0, 0);
     const fetchData = async () => {
       if (!slug) return;
 
       const p = await getPostBySlug(slug);
-      setPost(p);
 
       if (p) {
-        // Redirect to canonical slug if needed
         if (p.slug && slug !== p.slug) {
           navigate(`/${p.slug}`, { replace: true });
           return;
         }
 
+        setPost(p);
         setLikeCount(p.likes?.length || 0);
         if (user && p.likes?.includes(user.id)) setIsLiked(true);
 
@@ -110,7 +111,6 @@ export const BlogPostPage: React.FC = () => {
     fetchData();
   }, [slug, user, navigate]);
 
-  // Auto-hide "Copied!" toast
   useEffect(() => {
     if (isCopied) {
       const t = setTimeout(() => setIsCopied(false), 2000);
@@ -188,87 +188,77 @@ export const BlogPostPage: React.FC = () => {
     month: 'long',
     day: 'numeric',
   });
-  const canonicalUrl = `https://bigyann.com.np/${post.slug}`;
+
+  // CRITICAL SEO FIX: Matches the "www" version Google preferred
+  const canonicalUrl = `${SITE_URL}/${post.slug}`;
+  const isoPublishDate = new Date(post.date).toISOString();
+  const isoUpdateDate = post.updatedAt ? new Date(post.updatedAt).toISOString() : isoPublishDate;
 
   return (
     <>
-      {/* ==================== ULTIMATE SEO HEAD ==================== */}
       <Helmet>
-  {/* Basic */}
-  <title>{post.title} | Bigyann</title>
-  <meta name="description" content={post.excerpt} />
-  <link rel="canonical" href={canonicalUrl} />
+        {/* Basic SEO */}
+        <title>{post.title} | Bigyann</title>
+        <meta name="description" content={post.excerpt} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
 
-  {/* Open Graph – Facebook, LinkedIn, WhatsApp, etc. */}
-  <meta property="og:title" content={`${post.title} | Bigyann`} />
-  <meta property="og:description" content={post.excerpt} />
-  {/* Add itemProp for image confirmation (supplementary) */}
-  <meta property="og:image" content={post.coverImage} itemProp="image" /> 
-  <meta property="og:image:alt" content={post.title} />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:url" content={canonicalUrl} />
-  <meta property="og:type" content="article" />
-  <meta property="og:site_name" content="Bigyann" />
-  <meta property="og:locale" content="en_US" />
-  <meta property="article:published_time" content={post.date} />
-  {/* ✅ ADDED: article:modified_time for better freshness signal */}
-  <meta property="article:modified_time" content={post.updatedAt || post.date} /> 
-  <meta property="article:author" content={post.author.name} />
-  <meta property="article:section" content={post.category} />
+        {/* Open Graph */}
+        <meta property="og:title" content={`${post.title} | Bigyann`} />
+        <meta property="og:description" content={post.excerpt} />
+        <meta property="og:image" content={post.coverImage} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Bigyann" />
+        <meta property="article:published_time" content={isoPublishDate} />
+        <meta property="article:modified_time" content={isoUpdateDate} />
+        <meta property="article:author" content={post.author.name} />
+        <meta property="article:section" content={post.category} />
 
-  {/* Twitter Cards */}
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@bigyann" />
-  <meta name="twitter:creator" content="@bigyann" />
-  <meta name="twitter:title" content={`${post.title} | Bigyann`} />
-  <meta name="twitter:description" content={post.excerpt} />
-  <meta name="twitter:image" content={post.coverImage} />
-  <meta name="twitter:image:alt" content={post.title} />
-  {/* ✅ ADDED: twitter:label & twitter:data for read time UX */}
-  <meta name="twitter:label1" content="Reading time" />
-  <meta name="twitter:data1" content={post.readTime} /> 
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={post.title} />
+        <meta name="twitter:description" content={post.excerpt} />
+        <meta name="twitter:image" content={post.coverImage} />
+        <meta name="twitter:label1" content="Written by" />
+        <meta name="twitter:data1" content={post.author.name} />
+        <meta name="twitter:label2" content="Est. reading time" />
+        <meta name="twitter:data2" content={post.readTime} />
 
-  {/* Favicon & App Icons (No changes needed, already great) */}
-  <link rel="icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" href="/logo192.png" />
+        {/* JSON-LD Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BlogPosting',
+            'headline': post.title,
+            'description': post.excerpt,
+            'image': post.coverImage,
+            'datePublished': isoPublishDate,
+            'dateModified': isoUpdateDate,
+            'author': {
+              '@type': 'Person',
+              'name': post.author.name,
+              'url': `${SITE_URL}/author/${post.author.id}`,
+            },
+            'publisher': {
+              '@type': 'Organization',
+              'name': 'Bigyann',
+              'logo': {
+                '@type': 'ImageObject',
+                'url': `${SITE_URL}/logo.png`,
+              },
+            },
+            'mainEntityOfPage': {
+              '@type': 'WebPage',
+              '@id': canonicalUrl,
+            },
+            'wordCount': post.content.split(/\s+/).length,
+            'keywords': post.tags?.join(', ') || post.category,
+          })}
+        </script>
+      </Helmet>
 
-  {/* Structured Data – Google Rich Results (No changes needed, already perfect) */}
-  <script type="application/ld+json">
-    {JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'BlogPosting',
-      headline: post.title,
-      description: post.excerpt,
-      image: post.coverImage,
-      author: {
-        '@type': 'Person',
-        name: post.author.name,
-        url: `https://bigyann.com.np/author/${post.author.id}`,
-      },
-      publisher: {
-        '@type': 'Organization',
-        name: 'Bigyann',
-        logo: {
-          '@type': 'ImageObject',
-          url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAe1BMVEX////78vL45ufrlZvbACPcFDLcFTLbACLdK0LdLkTdKEDcJD745OX45+jcHTriYmzngYLbESngTVz21tfdJzPjdX/ur7LcGTbqmqD++fnYAAD33uDvt7voiIvbISrhW1/dMjr1ztLdNUvfRFbso6Tng4vhWWTmfH7lc3pUlbFDAAAApklEQVR4AbWSAw7AAAxFO9u2cf8Tzu4W7oU/NeBPCPIGATsUzbAXGI7a42heuMNtsSQ7a1EaEVcjI8OCMhtVTR/RDB4xiuYiLJt/GlUHFlwPN/qSE4wKN1JcqED0Ehk7MUCivteMUty4kkl4Q3meABQe3hAjSQqQJY9GllU9rgGPXGieRrFaRFAzyOKlthvpS2NdPHIyib+djOA+jj3uFH+T7wf7hwE23xD0wroPdwAAAABJRU5ErkJggg==',
-        },
-      },
-      datePublished: post.date,
-      dateModified: post.updatedAt || post.date,
-      mainEntityOfPage: {
-        '@type': 'WebPage',
-        '@id': canonicalUrl,
-      },
-      wordCount: post.content.split(/\s+/).length,
-      keywords: post.tags?.join(', ') || post.category,
-    })}
-  </script>
-</Helmet>
-
-      {/* ==================== PAGE CONTENT ==================== */}
       <div className="bg-white dark:bg-gray-900 min-h-screen pb-20">
-        {/* Hero Header */}
         <div className="h-[50vh] w-full relative">
           <img
             src={post.coverImage}
@@ -276,9 +266,7 @@ export const BlogPostPage: React.FC = () => {
             className="w-full h-full object-cover"
             onError={(e) => {
               e.currentTarget.onerror = null;
-              e.currentTarget.src = `https://placehold.co/1200x600/1F2937/F3F4F6?text=${encodeURIComponent(
-                post.title
-              )}`;
+              e.currentTarget.src = `https://placehold.co/1200x600/1F2937/F3F4F6?text=${encodeURIComponent(post.title)}`;
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent" />
@@ -316,10 +304,8 @@ export const BlogPostPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content Grid */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            {/* Left Sticky Social */}
             <div className="hidden lg:block lg:col-span-1">
               <div className="sticky top-24 flex flex-col items-center space-y-6">
                 <button
@@ -355,7 +341,6 @@ export const BlogPostPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Article Body */}
             <article className="lg:col-span-8">
               <div className="prose prose-lg dark:prose-invert max-w-none">
                 <p className="lead text-xl italic text-gray-600 dark:text-gray-300 border-l-4 border-primary-500 pl-6 mb-10 font-serif">
@@ -367,20 +352,20 @@ export const BlogPostPage: React.FC = () => {
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeRaw]}
                     components={{
-                      html: ({ node, ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
-                      h2: ({ node, ...props }) => (
+                      html: ({ ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
+                      h2: ({ ...props }) => (
                         <h2
                           className="text-3xl font-extrabold mt-12 mb-6 pb-3 border-b border-gray-200 dark:border-gray-700"
                           {...props}
                         />
                       ),
-                      h3: ({ node, ...props }) => (
+                      h3: ({ ...props }) => (
                         <h3
                           className="text-2xl font-bold mt-10 mb-4 pt-6 border-t border-gray-200 dark:border-gray-700"
                           {...props}
                         />
                       ),
-                      h4: ({ node, ...props }) => (
+                      h4: ({ ...props }) => (
                         <h4 className="text-xl font-semibold mt-8 mb-3" {...props} />
                       ),
                     }}
@@ -389,7 +374,6 @@ export const BlogPostPage: React.FC = () => {
                   </ReactMarkdown>
                 </div>
 
-                {/* Author Bio */}
                 <div className="mt-20 p-8 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl flex flex-col md:flex-row items-center md:items-start gap-6">
                   <img
                     src={post.author.avatar}
@@ -411,14 +395,12 @@ export const BlogPostPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Reviews Section */}
                 <div id="reviews-section" className="mt-16">
                   {post.id && <ReviewSection postId={post.id} />}
                 </div>
               </div>
             </article>
 
-            {/* Right Sidebar – Related Posts */}
             <aside className="hidden lg:block lg:col-span-3">
               <div className="sticky top-24">
                 <h3 className="text-xl font-bold mb-6 pb-3 border-b border-gray-300 dark:border-gray-700">
@@ -428,7 +410,7 @@ export const BlogPostPage: React.FC = () => {
                   {relatedPosts.map((rp) => (
                     <Link
                       key={rp.id}
-                      to={`${rp.slug || rp.id}`}
+                      to={`/${rp.slug || rp.id}`}
                       className="block group transition-all hover:translate-x-1"
                     >
                       <div className="aspect-video rounded-xl overflow-hidden mb-4 shadow-md">
