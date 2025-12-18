@@ -76,7 +76,6 @@ export const BlogPostPage: React.FC = () => {
   const [likeCount, setLikeCount] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
 
-  // BASE URL SETUP: Must match Google Search Console "Google-selected canonical"
   const SITE_URL = "https://bigyann.com.np";
 
   useEffect(() => {
@@ -166,20 +165,34 @@ export const BlogPostPage: React.FC = () => {
     await addComment(commentData);
   };
 
+  // 1. Loading State with Metadata (Prevents Google from indexing "Loading...")
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
-        <Loader2 className="animate-spin mr-3" size={28} />
-        Loading...
-      </div>
+      <>
+        <Helmet>
+          <title>Loading... | Bigyann</title>
+          <meta name="robots" content="noindex" />
+        </Helmet>
+        <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
+          <Loader2 className="animate-spin mb-4" size={32} />
+          <p>Illuminating post content...</p>
+        </div>
+      </>
     );
   }
 
+  // 2. Error State
   if (!post || (post.status !== 'published' && user?.id !== post.author.id && user?.role !== 'admin')) {
     return (
-      <div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
-        Post not found.
-      </div>
+      <>
+        <Helmet>
+          <title>Post Not Found | Bigyann</title>
+          <meta name="robots" content="noindex" />
+        </Helmet>
+        <div className="min-h-screen flex items-center justify-center dark:bg-gray-900 text-white">
+          Post not found or unavailable.
+        </div>
+      </>
     );
   }
 
@@ -189,7 +202,6 @@ export const BlogPostPage: React.FC = () => {
     day: 'numeric',
   });
 
-  // CRITICAL SEO FIX: Matches the "www" version Google preferred
   const canonicalUrl = `${SITE_URL}/${post.slug}`;
   const isoPublishDate = new Date(post.date).toISOString();
   const isoUpdateDate = post.updatedAt ? new Date(post.updatedAt).toISOString() : isoPublishDate;
@@ -197,14 +209,14 @@ export const BlogPostPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        {/* Basic SEO */}
-        <title>{post.title} | Bigyann</title>
+        {/* Basic SEO - Unique part of title first */}
+        <title>{post.title} - Bigyann</title>
         <meta name="description" content={post.excerpt} />
         <link rel="canonical" href={canonicalUrl} />
         <meta name="robots" content="index, follow, max-image-preview:large" />
 
         {/* Open Graph */}
-        <meta property="og:title" content={`${post.title} | Bigyann`} />
+        <meta property="og:title" content={`${post.title} - Bigyann`} />
         <meta property="og:description" content={post.excerpt} />
         <meta property="og:image" content={post.coverImage} />
         <meta property="og:url" content={canonicalUrl} />
@@ -220,10 +232,6 @@ export const BlogPostPage: React.FC = () => {
         <meta name="twitter:title" content={post.title} />
         <meta name="twitter:description" content={post.excerpt} />
         <meta name="twitter:image" content={post.coverImage} />
-        <meta name="twitter:label1" content="Written by" />
-        <meta name="twitter:data1" content={post.author.name} />
-        <meta name="twitter:label2" content="Est. reading time" />
-        <meta name="twitter:data2" content={post.readTime} />
 
         {/* JSON-LD Structured Data */}
         <script type="application/ld+json">
@@ -284,10 +292,6 @@ export const BlogPostPage: React.FC = () => {
                     src={post.author.avatar}
                     alt={post.author.name}
                     className="w-10 h-10 rounded-full border-2 border-white/30 object-cover"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = `https://placehold.co/40x40/6B7280/FFFFFF?text=${post.author.name[0]}`;
-                    }}
                   />
                   <span className="font-medium">{post.author.name}</span>
                 </div>
@@ -365,9 +369,6 @@ export const BlogPostPage: React.FC = () => {
                           {...props}
                         />
                       ),
-                      h4: ({ ...props }) => (
-                        <h4 className="text-xl font-semibold mt-8 mb-3" {...props} />
-                      ),
                     }}
                   >
                     {post.content}
@@ -379,18 +380,14 @@ export const BlogPostPage: React.FC = () => {
                     src={post.author.avatar}
                     alt={post.author.name}
                     className="w-24 h-24 rounded-full object-cover shadow-lg"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = `https://placehold.co/96x96/10B981/FFFFFF?text=${post.author.name[0]}`;
-                    }}
                   />
                   <div className="text-center md:text-left">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                       About {post.author.name}
                     </h3>
                     <p className="mt-2 text-gray-600 dark:text-gray-400">
-                      Tech enthusiast and senior developer sharing insights on modern web technologies, AI,
-                      design, and the future of digital experiences.
+                      Tech enthusiast sharing insights on modern web technologies, AI,
+                      and the future of digital experiences on Bigyann.
                     </p>
                   </div>
                 </div>
@@ -418,10 +415,6 @@ export const BlogPostPage: React.FC = () => {
                           src={rp.coverImage}
                           alt={rp.title}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = `https://placehold.co/400x225/1F2937/F3F4F6?text=Related`;
-                          }}
                         />
                       </div>
                       <h4 className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 line-clamp-2">
@@ -436,9 +429,6 @@ export const BlogPostPage: React.FC = () => {
                       </p>
                     </Link>
                   ))}
-                  {relatedPosts.length === 0 && (
-                    <p className="text-gray-500 text-sm">No related posts yet.</p>
-                  )}
                 </div>
               </div>
             </aside>
