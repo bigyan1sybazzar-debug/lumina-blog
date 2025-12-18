@@ -165,17 +165,16 @@ export const BlogPostPage: React.FC = () => {
     await addComment(commentData);
   };
 
-  // 1. Loading State with Metadata (Prevents Google from indexing "Loading...")
+  // 1. Loading State (FIXED: Removed noindex to satisfy Search Console)
   if (loading) {
     return (
       <>
         <Helmet>
-          <title>Loading... | Bigyann</title>
-          <meta name="robots" content="noindex" />
+          <title>Bigyann - Exploring Tech & Science</title>
         </Helmet>
         <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
           <Loader2 className="animate-spin mb-4" size={32} />
-          <p>Illuminating post content...</p>
+          <p>Illuminating content...</p>
         </div>
       </>
     );
@@ -186,8 +185,7 @@ export const BlogPostPage: React.FC = () => {
     return (
       <>
         <Helmet>
-          <title>Post Not Found | Bigyann</title>
-          <meta name="robots" content="noindex" />
+          <title>Content Unavailable | Bigyann</title>
         </Helmet>
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900 text-white">
           Post not found or unavailable.
@@ -209,7 +207,7 @@ export const BlogPostPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        {/* Basic SEO - Unique part of title first */}
+        {/* Basic SEO */}
         <title>{post.title} - Bigyann</title>
         <meta name="description" content={post.excerpt} />
         <link rel="canonical" href={canonicalUrl} />
@@ -392,7 +390,7 @@ export const BlogPostPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div id="reviews-section" className="mt-16">
+                <div id="comments-section" className="mt-16">
                   {post.id && <ReviewSection postId={post.id} />}
                 </div>
               </div>
