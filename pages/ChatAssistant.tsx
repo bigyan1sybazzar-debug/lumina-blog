@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-// FIXED: atomDark is fully supported in v16+ (coy was removed)
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism'; 
 import { sendChatMessage, startNewChat } from '../services/puterGrokChat';
 import { Loader2, Send, Copy, Check, Bot, User, Sparkles, RefreshCw, Zap, Command, Search, X, StopCircle } from 'lucide-react';
