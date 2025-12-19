@@ -14,12 +14,13 @@ export default defineConfig(({ mode }): Config => {
 
     ssgOptions: {
       script: 'async',
-
+      formatting: 'minify',
     },
 
     ssr: {
-      // We removed react-helmet-async from here because you are using <Head />
+      // This forces the SSG engine to bundle these libraries correctly
       noExternal: [
+        'react-helmet-async',
         'react-syntax-highlighter',
         'react-router-dom',
         'lucide-react',
@@ -28,12 +29,8 @@ export default defineConfig(({ mode }): Config => {
       ],
     },
 
-    preview: {
-      port: 5173,
-    },
-    server: {
-      port: 5173,
-    },
+    preview: { port: 5173 },
+    server: { port: 5173 },
 
     define: {
       'process.env': env,
@@ -42,12 +39,10 @@ export default defineConfig(({ mode }): Config => {
     
     resolve: {
       alias: {
-        // Fix for syntax highlighter ESM bug
+        // Fixes the SyntaxHighlighter ESM issue
         'react-syntax-highlighter/dist/esm/styles/prism/coy': 'react-syntax-highlighter/dist/cjs/styles/prism/coy.js',
-        
-        // This line tells Vite: "If anything tries to import helmet, give it nothing."
-        // This stops the SyntaxError: Named export 'HelmetProvider' not found.
-        'react-helmet-async': 'identity-obj-proxy', 
+        // Fixes the "Named Export" issue by pointing to the main file
+        'react-helmet-async': 'react-helmet-async'
       }
     }
   }
