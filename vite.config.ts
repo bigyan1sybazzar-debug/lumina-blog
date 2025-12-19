@@ -13,7 +13,7 @@ export default defineConfig(({ mode }): Config => {
     plugins: [react()],
 
     optimizeDeps: {
-      include: ['react-helmet-async'],  // ← Add this
+      include: ['react-helmet-async'],
     },
 
     ssgOptions: {
@@ -22,7 +22,8 @@ export default defineConfig(({ mode }): Config => {
 
     ssr: {
       noExternal: [
-        'react-helmet-async',  // Keep this (it's still needed)
+        /^react-helmet-async/,     // ← Add this regex
+        'react-helmet-async',      // ← Keep this
         'react-syntax-highlighter',
         'react-router-dom',
         'lucide-react',
