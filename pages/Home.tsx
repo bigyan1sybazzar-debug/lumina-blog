@@ -1,3 +1,4 @@
+// src/pages/Home.tsx
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { getPosts } from '../services/db';
 import { BlogPost } from '../types';
@@ -6,10 +7,12 @@ import { ArrowRight, Loader2, Sparkles, Send, ChevronLeft, ChevronRight, Hash, T
 import { Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import { Helmet } from 'react-helmet-async';
-import { Calculator, RefreshCw } from 'lucide-react';
-import { LogIn, FileText, Edit } from 'lucide-react';
+import { Helmet , HelmetProvider} from 'react-helmet-async';
+import { Calculator, RefreshCw, LogIn, FileText, Edit } from 'lucide-react';
+
+// Import the hook but don't call it directly at top level
 import { useAuth } from '../context/AuthContext';
+
 export const Home: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [heroFeatured, setHeroFeatured] = useState<BlogPost[]>([]);
@@ -19,9 +22,11 @@ export const Home: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
 
-  // REPLACE your fake isLoggedIn with real auth
-  const { user, isLoading: authLoading } = useAuth();
+  // Auth state — starts as null (safe for SSG)
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
+  // Fetch posts (unchanged)
   const fetchPosts = async (): Promise<BlogPost[]> => {
     for (let i = 0; i < 4; i++) {
       try {
@@ -38,17 +43,17 @@ export const Home: React.FC = () => {
     return [];
   };
 
- 
-
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+
+      // Load posts
       const data = await fetchPosts();
       const sorted = data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setPosts(sorted);
-      setEditorPicks(sorted.slice(0, 8)); // ← Latest 8 for slider
+      setEditorPicks(sorted.slice(0, 8));
 
-      // Load Admin-selected Hero Posts
+      // Load hero featured posts
       try {
         const configDoc = await getDoc(doc(db, 'config', 'featured'));
         if (configDoc.exists()) {
@@ -75,9 +80,22 @@ export const Home: React.FC = () => {
 
       setLoading(false);
     };
+
     load();
-    
-    
+  }, []);
+
+  // NEW: Safely read auth ONLY on client after mount
+  useEffect(() => {
+    try {
+      const { user, isLoading } = useAuth();
+      setUser(user);
+      setAuthLoading(isLoading);
+    } catch (error) {
+      // If useAuth throws (e.g., no provider during SSG), ignore gracefully
+      console.warn('Auth context not available during initial render (expected in SSG)');
+      setUser(null);
+      setAuthLoading(false);
+    }
   }, []);
 
   const categories = useMemo(() => {
@@ -95,7 +113,7 @@ export const Home: React.FC = () => {
     sliderRef.current.scrollLeft += direction === 'left' ? -scrollAmount : scrollAmount;
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
         <div className="text-center">
@@ -110,6 +128,7 @@ export const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+      <HelmetProvider>
       <Helmet>
         <title>AI Powered Tech and Science - Bigyann | Reviews & Discussions</title>
         <link rel="canonical" href="https://bigyann.com.np/" />
@@ -122,13 +141,13 @@ export const Home: React.FC = () => {
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Bigyann" />
       </Helmet>
-      
-      {/* Hero Section - Admin Chosen Posts (Reduced pb- from pb-20 to pb-10) */}
+  </HelmetProvider>
+      {/* Hero Section */}
       <section className="relative overflow-hidden px-4 pt-20 pb-10 md:pt-24 md:pb-16">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-50/30 to-transparent dark:from-primary-900/10"></div>
         <div className="max-w-7xl mx-auto relative">
           <div className="grid lg:grid-cols-2 gap-8 md:gap-10 items-center">
-            <div className="space-y-4 md:space-y-6"> {/* Reduced general space-y */}
+            <div className="space-y-4 md:space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-medium">
                 <Sparkles className="w-4 h-4" />
                 Welcome to the Bigyann
@@ -139,17 +158,19 @@ export const Home: React.FC = () => {
               <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl">
                 AI powered Articles, Reviews & Discussions on latest tech, design, and AI technology.
               </p>
-              <div className="flex flex-wrap gap-3 pt-2"> {/* Reduced pt- from pt-4 to pt-2 */}
+              <div className="flex flex-wrap gap-3 pt-2">
                 <button
                   onClick={() => document.getElementById('featured-posts')?.scrollIntoView({ behavior: 'smooth' })}
                   className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5"
                 >
                   Explore Articles
                 </button>
-                <a href='https://bigyann.com.np/Chat' 
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-black dark:bg-gray-800 dark:hover:bg-gray-700 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5">
-                  <Send className="w-4 h-4" /> Ask AI 
-                </a>
+                <Link
+                  to="/chat"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-black dark:bg-gray-800 dark:hover:bg-gray-700 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5"
+                >
+                  <Send className="w-4 h-4" /> Ask AI
+                </Link>
               </div>
             </div>
 

@@ -1,3 +1,4 @@
+// src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import { auth, db, googleProvider } from '../services/firebase';
@@ -9,17 +10,34 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Default "safe" context value — prevents throw during SSG
+const defaultContextValue: AuthContextType = {
+  user: null,
+  isLoading: false,
+  login: async () => {},
+  loginWithGoogle: async () => {},
+  signup: async () => {},
+  logout: async () => {},
+};
+
+const AuthContext = createContext<AuthContextType>(defaultContextValue);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Firebase auth listener — only runs in browser
   useEffect(() => {
-    // Ensure persistence is set to LOCAL to avoid environment issues with session storage
+    // Guard: only run in browser (not during SSG/SSR)
+    if (typeof window === 'undefined') {
+      setIsLoading(false);
+      return;
+    }
+
+    // Set persistence
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
       .then(() => {
         const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
@@ -30,30 +48,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (userDoc.exists) {
                 setUser({ id: firebaseUser.uid, ...userDoc.data() } as User);
               } else {
-                // New user via Google or other method not yet in DB
                 const newUser: User = {
                   id: firebaseUser.uid,
                   name: firebaseUser.displayName || 'User',
                   email: firebaseUser.email || '',
-                  role: 'user', // Default role
-                  avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${firebaseUser.email}&background=random`
+                  role: 'user',
+                  avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.email || 'User')}&background=random`,
                 };
-                // Save to DB
                 await db.collection('users').doc(firebaseUser.uid).set(newUser);
                 setUser(newUser);
               }
             } catch (error) {
-              console.error("Error fetching user profile:", error);
+              console.error('Error fetching user profile:', error);
+              setUser(null);
             }
           } else {
             setUser(null);
           }
           setIsLoading(false);
         });
+
         return () => unsubscribe();
       })
       .catch((error) => {
-        console.error("Auth Persistence Error:", error);
+        console.error('Auth Persistence Error:', error);
         setIsLoading(false);
       });
   }, []);
@@ -69,28 +87,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithGoogle = async () => {
-        setIsLoading(true);
-        try {
-            // 👇 FIX: Check if googleProvider is null
-            if (!googleProvider) {
-                // This case should ideally only happen during server-side rendering (SSR), 
-                // but is a good safeguard.
-                throw new Error("Google Provider failed to initialize.");
-            }
-            
-            // TypeScript now knows googleProvider is a non-null AuthProvider
-            await auth.signInWithPopup(googleProvider); 
-            
-        } catch (error: any) {
-          setIsLoading(false);
-          console.error("Google Sign In Error:", error);
-          if (error.code === 'auth/operation-not-supported-in-this-environment') {
-            throw new Error('Google Sign-In is not supported in this environment (e.g. HTTP without localhost). Please use Email/Password.');
-          }
-          throw error;
-        }
-      };
+    if (typeof window === 'undefined') {
+      throw new Error('Google Sign-In not available during server render');
+    }
+
+    setIsLoading(true);
+    try {
+      if (!googleProvider) {
+        throw new Error('Google Provider failed to initialize.');
+      }
+      await auth.signInWithPopup(googleProvider);
+    } catch (error: any) {
+      setIsLoading(false);
+      console.error('Google Sign In Error:', error);
+      if (error.code === 'auth/operation-not-supported-in-this-environment') {
+        throw new Error('Google Sign-In requires HTTPS (except localhost). Use Email/Password instead.');
+      }
+      throw error;
+    }
+  };
+
   const signup = async (name: string, email: string, password: string) => {
+    if (typeof window === 'undefined') return;
+
     setIsLoading(true);
     try {
       const userCredential = await auth.createUserWithEmailAndPassword(email, password);
@@ -99,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!firebaseUser) return;
 
       const role = email === 'admin@lumina.blog' ? 'admin' : 'user';
-      
+
       const newUserProfile: User = {
         id: firebaseUser.uid,
         name,
@@ -117,25 +136,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    if (typeof window === 'undefined') {
+      setUser(null);
+      return;
+    }
+
     try {
       await auth.signOut();
       setUser(null);
     } catch (error) {
-      console.error("Logout failed", error);
+      console.error('Logout failed', error);
     }
   };
 
+  const value: AuthContextType = {
+    user,
+    isLoading,
+    login,
+    loginWithGoogle,
+    signup,
+    logout,
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, loginWithGoogle, signup, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
+// Safe hook — never throws during SSG
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+
+  // During SSG or if somehow not wrapped, return safe defaults instead of throwing
+  if (context === defaultContextValue && typeof window === 'undefined') {
+    return {
+      user: null,
+      isLoading: false,
+      login: async () => console.warn('Auth not available during static render'),
+      loginWithGoogle: async () => console.warn('Auth not available during static render'),
+      signup: async () => console.warn('Auth not available during static render'),
+      logout: async () => console.warn('Auth not available during static render'),
+    };
   }
+
   return context;
 };

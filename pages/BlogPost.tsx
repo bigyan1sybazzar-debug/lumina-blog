@@ -15,7 +15,7 @@ import ReviewSection from '../components/ReviewSection';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { Helmet } from 'react-helmet-async';
+import { Helmet , HelmetProvider} from 'react-helmet-async';
 
 // ------------------------------------------------------------------
 // HtmlRenderer – Clean up old Blogger-style image separators
@@ -146,13 +146,12 @@ export const BlogPostPage: React.FC = () => {
     document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // 1. Loading State (FIXED: Unique title but NO 'noindex' to satisfy Search Console)
   if (loading) {
     return (
-      <>
+      <><HelmetProvider>
         <Helmet>
           <title data-rh="true">Loading Content... | Bigyann</title>
-        </Helmet>
+        </Helmet></HelmetProvider>
         <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
           <Loader2 className="animate-spin mb-4" size={32} />
           <p>Illuminating content...</p>
@@ -161,13 +160,12 @@ export const BlogPostPage: React.FC = () => {
     );
   }
 
-  // 2. Error State
   if (!post || (post.status !== 'published' && user?.id !== post.author.id && user?.role !== 'admin')) {
     return (
-      <>
+      <><HelmetProvider>
         <Helmet>
           <title data-rh="true">Post Not Found | Bigyann</title>
-        </Helmet>
+        </Helmet> </HelmetProvider>
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900 text-white">
           Post not found or unavailable.
         </div>
@@ -186,15 +184,13 @@ export const BlogPostPage: React.FC = () => {
   const isoUpdateDate = post.updatedAt ? new Date(post.updatedAt).toISOString() : isoPublishDate;
 
   return (
-    <>
+    <> <HelmetProvider>
       <Helmet>
-        {/* Basic SEO - Putting Post Title First for Google visibility */}
         <title data-rh="true">{post.title} | Price, Specs & News - Bigyann</title>
         <meta name="description" content={post.excerpt} data-rh="true" />
         <link rel="canonical" href={canonicalUrl} data-rh="true" />
         <meta name="robots" content="index, follow, max-image-preview:large" data-rh="true" />
 
-        {/* Open Graph / Facebook */}
         <meta property="og:title" content={`${post.title} - Bigyann`} data-rh="true" />
         <meta property="og:description" content={post.excerpt} data-rh="true" />
         <meta property="og:image" content={post.coverImage} data-rh="true" />
@@ -206,13 +202,11 @@ export const BlogPostPage: React.FC = () => {
         <meta property="article:author" content={post.author.name} data-rh="true" />
         <meta property="article:section" content={post.category} data-rh="true" />
 
-        {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" data-rh="true" />
         <meta name="twitter:title" content={post.title} data-rh="true" />
         <meta name="twitter:description" content={post.excerpt} data-rh="true" />
         <meta name="twitter:image" content={post.coverImage} data-rh="true" />
 
-        {/* JSON-LD Structured Data */}
         <script type="application/ld+json">
           {JSON.stringify({
             '@context': 'https://schema.org',
@@ -244,7 +238,7 @@ export const BlogPostPage: React.FC = () => {
           })}
         </script>
       </Helmet>
-
+</HelmetProvider>
       <div className="bg-white dark:bg-gray-900 min-h-screen pb-20">
         <div className="h-[50vh] w-full relative">
           <img
@@ -287,11 +281,15 @@ export const BlogPostPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 relative">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            {/* Sidebar Left: Actions */}
-            <div className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-24 flex flex-col items-center space-y-6">
+            
+            {/* Sidebar Left: Actions - Relative container with calc/vw logic */}
+            <div className="hidden lg:block lg:col-span-1 relative">
+              <div 
+                className="sticky top-24 flex flex-col items-center space-y-6"
+                style={{ width: 'clamp(50px, 5vw, 80px)' }}
+              >
                 <button
                   onClick={handleLike}
                   className={`p-4 rounded-full transition-all ${
@@ -327,97 +325,89 @@ export const BlogPostPage: React.FC = () => {
 
             {/* Main Content Area */}
             <article className="lg:col-span-8">
-  <div className="prose prose-lg dark:prose-invert max-w-none">
-    {/* Lead/Excerpt Section */}
-    <p className="lead text-xl italic text-gray-600 dark:text-gray-300 border-l-4 border-primary-500 pl-6 mb-10 font-serif">
-      {post.excerpt}
-    </p>
+              <div className="prose prose-lg dark:prose-invert max-w-none">
+                <p className="lead text-xl italic text-gray-600 dark:text-gray-300 border-l-4 border-primary-500 pl-6 mb-10 font-serif">
+                  {post.excerpt}
+                </p>
 
-    <div className="font-sans text-lg leading-relaxed text-gray-800 dark:text-gray-200">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-        components={{
-          html: ({ ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
-          
-          // --- HEADERS ---
-          h2: ({ ...props }) => (
-            <h2 className="text-3xl font-extrabold mt-12 mb-6 pb-3 border-b-2 border-primary-500 dark:border-primary-800 text-gray-900 dark:text-white uppercase tracking-tight" {...props} />
-          ),
-          h3: ({ ...props }) => (
-            <h3 className="text-2xl font-bold mt-10 mb-4 text-primary-600 dark:text-primary-400 flex items-center gap-2" {...props} />
-          ),
-          h4: ({ ...props }) => (
-            <h4 className="text-xl font-bold mt-8 mb-3 text-gray-800 dark:text-gray-100 italic" {...props} />
-          ),
+                <div className="font-sans text-lg leading-relaxed text-gray-800 dark:text-gray-200">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw]}
+                    components={{
+                      html: ({ ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
+                      h2: ({ ...props }) => (
+                        <h2 className="text-3xl font-extrabold mt-12 mb-6 pb-3 border-b-2 border-primary-500 dark:border-primary-800 text-gray-900 dark:text-white uppercase tracking-tight" {...props} />
+                      ),
+                      h3: ({ ...props }) => (
+                        <h3 className="text-2xl font-bold mt-10 mb-4 text-primary-600 dark:text-primary-400 flex items-center gap-2" {...props} />
+                      ),
+                      h4: ({ ...props }) => (
+                        <h4 className="text-xl font-bold mt-8 mb-3 text-gray-800 dark:text-gray-100 italic" {...props} />
+                      ),
+                      table: ({ ...props }) => (
+                        <div className="my-8 w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm scrollbar-thin scrollbar-thumb-gray-300">
+                          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 table-auto" {...props} />
+                        </div>
+                      ),
+                      thead: ({ ...props }) => <thead className="bg-gray-50 dark:bg-gray-800" {...props} />,
+                      th: ({ ...props }) => <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider" {...props} />,
+                      td: ({ ...props }) => <td className="px-4 py-3 text-sm border-t border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300" {...props} />,
+                      ul: ({ ...props }) => <ul className="space-y-4 my-6 list-none pl-0" {...props} />,
+                      li: ({ children }) => (
+                        <li className="flex items-start gap-3 group">
+                          <span className="mt-2 h-2 w-2 rounded-full bg-primary-500 group-hover:scale-125 transition-transform shrink-0" />
+                          <div className="text-gray-700 dark:text-gray-300 leading-snug">{children}</div>
+                        </li>
+                      ),
+                      blockquote: ({ ...props }) => (
+                        <blockquote className="border-l-4 border-primary-500 bg-primary-50/30 dark:bg-primary-900/10 p-6 my-8 rounded-r-xl italic font-medium" {...props} />
+                      ),
+                      strong: ({ ...props }) => <strong className="font-bold text-gray-900 dark:text-white bg-primary-50 dark:bg-primary-900/20 px-1 rounded" {...props} />,
+                    }}
+                  >
+                    {post.content}
+                  </ReactMarkdown>
+                </div>
 
-          // --- FIXED TABLE (No longer hiding) ---
-          table: ({ ...props }) => (
-            <div className="my-8 w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm scrollbar-thin scrollbar-thumb-gray-300">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 table-auto" {...props} />
-            </div>
-          ),
-          thead: ({ ...props }) => <thead className="bg-gray-50 dark:bg-gray-800" {...props} />,
-          th: ({ ...props }) => <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider" {...props} />,
-          td: ({ ...props }) => <td className="px-4 py-3 text-sm border-t border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300" {...props} />,
+                <div className="mt-20 p-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl flex flex-col md:flex-row items-center md:items-start gap-8">
+                  <div className="relative">
+                    <img
+                      src={post.author.avatar}
+                      alt={post.author.name}
+                      className="w-28 h-28 rounded-2xl object-cover shadow-lg rotate-3 hover:rotate-0 transition-transform duration-300"
+                    />
+                    <div className="absolute -bottom-2 -right-2 bg-primary-600 text-white p-1.5 rounded-lg shadow-lg">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                    </div>
+                  </div>
+                  <div className="text-center md:text-left">
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                      {post.author.name}
+                    </h3>
+                    <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+                      Tech enthusiast sharing insights on modern web technologies, AI,
+                      and the future of digital experiences on <strong>Bigyann</strong>.
+                    </p>
+                  </div>
+                </div>
 
-          // --- POINTS / LISTS ---
-          ul: ({ ...props }) => <ul className="space-y-4 my-6 list-none pl-0" {...props} />,
-          li: ({ children }) => (
-            <li className="flex items-start gap-3 group">
-              <span className="mt-2 h-2 w-2 rounded-full bg-primary-500 group-hover:scale-125 transition-transform shrink-0" />
-              <div className="text-gray-700 dark:text-gray-300 leading-snug">{children}</div>
-            </li>
-          ),
+                <div id="comments-section" className="mt-16">
+                  <div className="flex items-center gap-4 mb-8">
+                    <h2 className="text-2xl font-bold">Comment, Discuss and post Your Reviews</h2>
+                    <div className="h-px flex-grow bg-gray-200 dark:bg-gray-700"></div>
+                  </div>
+                  {post.id && <ReviewSection postId={post.id} />}
+                </div>
+              </div>
+            </article>
 
-          // --- DECORATION ---
-          blockquote: ({ ...props }) => (
-            <blockquote className="border-l-4 border-primary-500 bg-primary-50/30 dark:bg-primary-900/10 p-6 my-8 rounded-r-xl italic font-medium" {...props} />
-          ),
-          strong: ({ ...props }) => <strong className="font-bold text-gray-900 dark:text-white bg-primary-50 dark:bg-primary-900/20 px-1 rounded" {...props} />,
-        }}
-      >
-        {post.content}
-      </ReactMarkdown>
-    </div>
-
-    {/* --- AUTHOR BOX --- */}
-    <div className="mt-20 p-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl flex flex-col md:flex-row items-center md:items-start gap-8">
-      <div className="relative">
-        <img
-          src={post.author.avatar}
-          alt={post.author.name}
-          className="w-28 h-28 rounded-2xl object-cover shadow-lg rotate-3 hover:rotate-0 transition-transform duration-300"
-        />
-        <div className="absolute -bottom-2 -right-2 bg-primary-600 text-white p-1.5 rounded-lg shadow-lg">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-        </div>
-      </div>
-      <div className="text-center md:text-left">
-        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">
-          {post.author.name}
-        </h3>
-        <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-          Tech enthusiast sharing insights on modern web technologies, AI,
-          and the future of digital experiences on <strong>Bigyann</strong>.
-        </p>
-      </div>
-    </div>
-
-    {/* --- COMMENTS --- */}
-    <div id="comments-section" className="mt-16">
-      <div className="flex items-center gap-4 mb-8">
-        <h2 className="text-2xl font-bold">Comment, Discuss and post Your Reviews</h2>
-        <div className="h-px flex-grow bg-gray-200 dark:bg-gray-700"></div>
-      </div>
-      {post.id && <ReviewSection postId={post.id} />}
-    </div>
-  </div>
-</article>
-
-            {/* Sidebar Right: Related Posts */}
-            <aside className="hidden lg:block lg:col-span-3">
-              <div className="sticky top-24">
+            {/* Sidebar Right: Related Posts - Responsive floating card logic applied */}
+            <aside className="hidden lg:block lg:col-span-3 relative">
+              <div 
+                className="sticky top-24 overflow-visible"
+                style={{ width: 'calc(18vw + 40px)' }}
+              >
                 <h3 className="text-xl font-bold mb-6 pb-3 border-b border-gray-300 dark:border-gray-700">
                   Related Posts
                 </h3>
@@ -428,7 +418,7 @@ export const BlogPostPage: React.FC = () => {
                       to={`/${rp.slug || rp.id}`}
                       className="block group transition-all hover:translate-x-1"
                     >
-                      <div className="aspect-video rounded-xl overflow-hidden mb-4 shadow-md">
+                      <div className="aspect-video rounded-xl overflow-hidden mb-4 shadow-md relative">
                         <img
                           src={rp.coverImage}
                           alt={rp.title}
