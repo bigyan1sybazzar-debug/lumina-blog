@@ -1,7 +1,7 @@
 // pages/LiveFootball.tsx
 import React, { useState, useEffect } from 'react';
 import { Loader2, RefreshCw, Trophy, Calendar, History } from 'lucide-react';
-import { Helmet, HelmetProvider } from 'react-helmet-async';
+import HelmetProvider, { Helmet } from 'react-helmet-async';
 import { footballApi } from '../api/football';
 
 type Tab = 'live' | 'upcoming' | 'recent';
@@ -72,12 +72,12 @@ const LiveFootball: React.FC = () => {
   }, [tab]);
 
   return (
-    <><HelmetProvider>
+    <>
       <Helmet>
         <title>Live Football Scores | Bigyann</title>
         <meta name="description" content="Real-time Premier League, La Liga, Champions League scores" />
       </Helmet>
-</HelmetProvider>
+
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-12 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">

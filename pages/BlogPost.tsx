@@ -15,8 +15,7 @@ import ReviewSection from '../components/ReviewSection';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { Helmet , HelmetProvider} from 'react-helmet-async';
-
+import HelmetProvider, { Helmet } from 'react-helmet-async';
 // ------------------------------------------------------------------
 // HtmlRenderer – Clean up old Blogger-style image separators
 // ------------------------------------------------------------------
@@ -162,10 +161,10 @@ export const BlogPostPage: React.FC = () => {
 
   if (!post || (post.status !== 'published' && user?.id !== post.author.id && user?.role !== 'admin')) {
     return (
-      <><HelmetProvider>
+      <>
         <Helmet>
           <title data-rh="true">Post Not Found | Bigyann</title>
-        </Helmet> </HelmetProvider>
+        </Helmet> 
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900 text-white">
           Post not found or unavailable.
         </div>
@@ -184,7 +183,7 @@ export const BlogPostPage: React.FC = () => {
   const isoUpdateDate = post.updatedAt ? new Date(post.updatedAt).toISOString() : isoPublishDate;
 
   return (
-    <> <HelmetProvider>
+    <> 
       <Helmet>
         <title data-rh="true">{post.title} | Price, Specs & News - Bigyann</title>
         <meta name="description" content={post.excerpt} data-rh="true" />
@@ -238,7 +237,7 @@ export const BlogPostPage: React.FC = () => {
           })}
         </script>
       </Helmet>
-</HelmetProvider>
+
       <div className="bg-white dark:bg-gray-900 min-h-screen pb-20">
         <div className="h-[50vh] w-full relative">
           <img

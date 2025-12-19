@@ -1,7 +1,7 @@
 import React from 'react';
 import { LogIn, Send, CheckCircle, Zap, Code, Lightbulb } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import HelmetProvider, { Helmet } from 'react-helmet-async';
 
 export const SubmissionGuidePage: React.FC = () => {
     // --- Helper Component for a Clean Step Card ---
