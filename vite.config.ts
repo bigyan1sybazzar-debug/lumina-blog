@@ -1,7 +1,5 @@
 import { defineConfig, loadEnv, type UserConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-
-// We extend the Vite UserConfig with SSG options to satisfy TypeScript
 import type { ViteReactSSGOptions } from 'vite-react-ssg'
 
 interface Config extends UserConfig {
@@ -14,16 +12,17 @@ export default defineConfig(({ mode }): Config => {
   return {
     plugins: [react()],
 
+    optimizeDeps: {
+      include: ['react-helmet-async'],  // ← Add this
+    },
+
     ssgOptions: {
       script: 'async',
     },
 
     ssr: {
-      // This forces Vite to bundle react-helmet-async during SSG prerendering
-      // instead of treating it as an external CommonJS module.
-      // Fixes the "Named export 'HelmetProvider' not found" error.
       noExternal: [
-        'react-helmet-async',  // ← Add this line
+        'react-helmet-async',  // Keep this (it's still needed)
         'react-syntax-highlighter',
         'react-router-dom',
         'lucide-react',
