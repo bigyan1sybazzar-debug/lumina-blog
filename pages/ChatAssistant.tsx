@@ -1,15 +1,12 @@
-// src/components/ChatAssistant.tsx
+// src/pages/ChatAssistant.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-// Note: Removed unused 'useNavigate' since routing was not in the original file
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-// Used a lighter, common theme for better contrast, but can be changed
+// FIXED: atomDark is fully supported in v16+ (coy was removed)
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism'; 
 import { sendChatMessage, startNewChat } from '../services/puterGrokChat';
-// Icons from lucide-react (assuming they are installed/available)
 import { Loader2, Send, Copy, Check, Bot, User, Sparkles, RefreshCw, Zap, Command, Search, X, StopCircle } from 'lucide-react';
-
 
 interface Message {
   id: string;
@@ -29,7 +26,7 @@ export default function ChatAssistant() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null); // For copy button feedback
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const abortController = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +38,6 @@ export default function ChatAssistant() {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Handler to copy content to clipboard
   const handleCopy = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -49,7 +45,7 @@ export default function ChatAssistant() {
   };
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading || isStreaming) return; // Prevent double send
+    if (!input.trim() || isLoading || isStreaming) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -64,13 +60,11 @@ export default function ChatAssistant() {
     setIsStreaming(true);
 
     const assistantId = (Date.now() + 1).toString();
-    // Add initial empty message for streaming
     setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
 
     abortController.current = new AbortController();
 
     try {
-      // NOTE: Using the original streaming function
       const stream = sendChatMessage(userInput, abortController.current.signal);
       for await (const chunk of stream) {
         if (abortController.current?.signal.aborted) break;
@@ -81,9 +75,7 @@ export default function ChatAssistant() {
               ? { ...msg, content: msg.content + chunk }
               : msg
           );
-          // Only scroll if the last message is the one being streamed
           if (newMessages[newMessages.length - 1].id === assistantId) {
-            // Use requestAnimationFrame for smoother scrolling during rapid updates
             requestAnimationFrame(scrollToBottom);
           }
           return newMessages;
@@ -115,31 +107,19 @@ export default function ChatAssistant() {
   const handleStop = () => {
     abortController.current?.abort();
     setIsStreaming(false);
-    setIsLoading(false); // Stop loading indicator too
+    setIsLoading(false);
   };
 
   const handleNewChat = () => {
     startNewChat();
-    setMessages([initialAssistantMessage]); // Reset to initial welcome message
+    setMessages([initialAssistantMessage]);
   };
 
-  const handleDebug = () => {
-    // NOTE: chatHistory is not defined in this scope, assuming it's available globally or via another import.
-    // If not, this line will cause an error.
-    // console.log('Current chatHistory:', (window as any).chatHistory);
-    console.log('Current Messages State:', messages);
-  };
-
-  const hasUserSentMessages = messages.filter(m => m.role === 'user').length > 0;
-
-  // Custom Markdown renderer components (adapted from previous request)
   const MarkdownComponents = {
-    // FIX: Use 'any' type for props to satisfy ReactMarkdown's ComponentType
     code({ inline, className, children, ...props }: any) {
       const match = /language-(\w+)/.exec(className || '');
       
       if (!inline && match) {
-        // Fix: Convert children array/element to string
         const textContent = React.Children.toArray(children).join('');
         const codeMsgId = messages.find(m => m.content.includes(textContent))?.id || Date.now().toString();
 
@@ -156,7 +136,7 @@ export default function ChatAssistant() {
               )}
             </button>
             <SyntaxHighlighter
-              style={atomDark} // Using a different dark theme
+              style={atomDark}
               language={match[1]}
               PreTag="div"
               customStyle={{
@@ -191,26 +171,24 @@ export default function ChatAssistant() {
     ),
   };
   
-  // Helper function to render message content
   const renderMessageContent = (msg: Message) => {
     if (!msg.content && msg.role === 'assistant' && (isLoading || isStreaming)) {
-        // Show initial loading dots before the stream starts
-        return (
-            <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-150"></div>
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce delay-300"></div>
-            </div>
-        );
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-150"></div>
+          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce delay-300"></div>
+        </div>
+      );
     }
     
     return (
-        <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={MarkdownComponents}
-        >
-            {msg.content}
-        </ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={MarkdownComponents}
+      >
+        {msg.content}
+      </ReactMarkdown>
     );
   };
 
