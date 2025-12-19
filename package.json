@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:sitemap && tsc && vite-ssg build",
+    "build": "npm run build:sitemap && tsc && vite-react-ssg build",
     "build:sitemap": "npx ts-node api/update-public-sitemap.ts",
     "preview": "vite preview",
     "start:api": "ts-node src/api-server/index.ts"
@@ -36,7 +36,7 @@
     "slick-carousel": "^1.8.1"
   },
   "devDependencies": {
-    "vite-ssg": "^0.24.4",
+    "vite-react-ssg": "^0.8.9",
     "@vitejs/plugin-react": "^4.3.1",
     "@types/node": "^24.10.2",
     "@types/react": "^18.3.3",
