@@ -78,18 +78,8 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ postId }) => {
   const totalReviews = reviews.length;
 
   return (
-    <div id="reviews-section" className="mt-12 pt-6 border-t border-gray-200 dark:border-gray-700">
-      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-        Reviews and Discussions ({totalReviews})
-        <span className="ml-4 flex items-center text-xl">
-            {averageRating !== 'N/A' && (
-                <>
-                    {averageRating}
-                    <StarRating rating={Math.round(parseFloat(averageRating))} />
-                </>
-            )}
-        </span>
-      </h3>
+    <div id="reviews-section" className="mt-5 pt-6 ">
+     
 
       {loading ? (
         <div className="flex justify-center py-8 dark:text-white"><Loader2 className="animate-spin mr-2"/> Loading Reviews...</div>

@@ -327,57 +327,93 @@ export const BlogPostPage: React.FC = () => {
 
             {/* Main Content Area */}
             <article className="lg:col-span-8">
-              <div className="prose prose-lg dark:prose-invert max-w-none">
-                <p className="lead text-xl italic text-gray-600 dark:text-gray-300 border-l-4 border-primary-500 pl-6 mb-10 font-serif">
-                  {post.excerpt}
-                </p>
+  <div className="prose prose-lg dark:prose-invert max-w-none">
+    {/* Lead/Excerpt Section */}
+    <p className="lead text-xl italic text-gray-600 dark:text-gray-300 border-l-4 border-primary-500 pl-6 mb-10 font-serif">
+      {post.excerpt}
+    </p>
 
-                <div className="font-serif text-lg leading-relaxed text-gray-800 dark:text-gray-200">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                    components={{
-                      html: ({ ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
-                      h2: ({ ...props }) => (
-                        <h2
-                          className="text-3xl font-extrabold mt-12 mb-6 pb-3 border-b border-gray-200 dark:border-gray-700"
-                          {...props}
-                        />
-                      ),
-                      h3: ({ ...props }) => (
-                        <h3
-                          className="text-2xl font-bold mt-10 mb-4 pt-6 border-t border-gray-200 dark:border-gray-700"
-                          {...props}
-                        />
-                      ),
-                    }}
-                  >
-                    {post.content}
-                  </ReactMarkdown>
-                </div>
+    <div className="font-sans text-lg leading-relaxed text-gray-800 dark:text-gray-200">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
+        components={{
+          html: ({ ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
+          
+          // --- HEADERS ---
+          h2: ({ ...props }) => (
+            <h2 className="text-3xl font-extrabold mt-12 mb-6 pb-3 border-b-2 border-primary-500 dark:border-primary-800 text-gray-900 dark:text-white uppercase tracking-tight" {...props} />
+          ),
+          h3: ({ ...props }) => (
+            <h3 className="text-2xl font-bold mt-10 mb-4 text-primary-600 dark:text-primary-400 flex items-center gap-2" {...props} />
+          ),
+          h4: ({ ...props }) => (
+            <h4 className="text-xl font-bold mt-8 mb-3 text-gray-800 dark:text-gray-100 italic" {...props} />
+          ),
 
-                <div className="mt-20 p-8 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl flex flex-col md:flex-row items-center md:items-start gap-6">
-                  <img
-                    src={post.author.avatar}
-                    alt={post.author.name}
-                    className="w-24 h-24 rounded-full object-cover shadow-lg"
-                  />
-                  <div className="text-center md:text-left">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                      About {post.author.name}
-                    </h3>
-                    <p className="mt-2 text-gray-600 dark:text-gray-400">
-                      Tech enthusiast sharing insights on modern web technologies, AI,
-                      and the future of digital experiences on Bigyann.
-                    </p>
-                  </div>
-                </div>
+          // --- FIXED TABLE (No longer hiding) ---
+          table: ({ ...props }) => (
+            <div className="my-8 w-full overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm scrollbar-thin scrollbar-thumb-gray-300">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 table-auto" {...props} />
+            </div>
+          ),
+          thead: ({ ...props }) => <thead className="bg-gray-50 dark:bg-gray-800" {...props} />,
+          th: ({ ...props }) => <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider" {...props} />,
+          td: ({ ...props }) => <td className="px-4 py-3 text-sm border-t border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300" {...props} />,
 
-                <div id="comments-section" className="mt-16">
-                  {post.id && <ReviewSection postId={post.id} />}
-                </div>
-              </div>
-            </article>
+          // --- POINTS / LISTS ---
+          ul: ({ ...props }) => <ul className="space-y-4 my-6 list-none pl-0" {...props} />,
+          li: ({ children }) => (
+            <li className="flex items-start gap-3 group">
+              <span className="mt-2 h-2 w-2 rounded-full bg-primary-500 group-hover:scale-125 transition-transform shrink-0" />
+              <div className="text-gray-700 dark:text-gray-300 leading-snug">{children}</div>
+            </li>
+          ),
+
+          // --- DECORATION ---
+          blockquote: ({ ...props }) => (
+            <blockquote className="border-l-4 border-primary-500 bg-primary-50/30 dark:bg-primary-900/10 p-6 my-8 rounded-r-xl italic font-medium" {...props} />
+          ),
+          strong: ({ ...props }) => <strong className="font-bold text-gray-900 dark:text-white bg-primary-50 dark:bg-primary-900/20 px-1 rounded" {...props} />,
+        }}
+      >
+        {post.content}
+      </ReactMarkdown>
+    </div>
+
+    {/* --- AUTHOR BOX --- */}
+    <div className="mt-20 p-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl flex flex-col md:flex-row items-center md:items-start gap-8">
+      <div className="relative">
+        <img
+          src={post.author.avatar}
+          alt={post.author.name}
+          className="w-28 h-28 rounded-2xl object-cover shadow-lg rotate-3 hover:rotate-0 transition-transform duration-300"
+        />
+        <div className="absolute -bottom-2 -right-2 bg-primary-600 text-white p-1.5 rounded-lg shadow-lg">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+        </div>
+      </div>
+      <div className="text-center md:text-left">
+        <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+          {post.author.name}
+        </h3>
+        <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+          Tech enthusiast sharing insights on modern web technologies, AI,
+          and the future of digital experiences on <strong>Bigyann</strong>.
+        </p>
+      </div>
+    </div>
+
+    {/* --- COMMENTS --- */}
+    <div id="comments-section" className="mt-16">
+      <div className="flex items-center gap-4 mb-8">
+        <h2 className="text-2xl font-bold">Comment, Discuss and post Your Reviews</h2>
+        <div className="h-px flex-grow bg-gray-200 dark:bg-gray-700"></div>
+      </div>
+      {post.id && <ReviewSection postId={post.id} />}
+    </div>
+  </div>
+</article>
 
             {/* Sidebar Right: Related Posts */}
             <aside className="hidden lg:block lg:col-span-3">

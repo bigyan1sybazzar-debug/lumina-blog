@@ -768,9 +768,23 @@ export const Admin: React.FC = () => {
                           <h4 className="font-semibold">{post.title}</h4>
                           <p className="text-sm text-gray-500">{post.category} • {post.date}</p>
                         </div>
-                        <button onClick={() => setFeaturedPosts(featuredPosts.filter(p => p.id !== post.slug))} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-lg">
-                          <Trash2 size={18} />
-                        </button>
+                        <button 
+  onClick={() => {
+    // 1. Find the post to remove
+    const postToRemove = featuredPosts.find(p => p.id === post.id);
+    
+    // 2. Remove it from featured
+    setFeaturedPosts(featuredPosts.filter(p => p.id !== post.id));
+    
+    // 3. Add it back to available so it can be picked again later
+    if (postToRemove) {
+      setAvailablePosts(prev => [...prev, postToRemove]);
+    }
+  }} 
+  className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-lg"
+>
+  <Trash2 size={18} />
+</button>
                       </div>
                     ))}
                   </div>
