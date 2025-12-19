@@ -146,31 +146,12 @@ export const BlogPostPage: React.FC = () => {
     document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSubmitComment = async () => {
-    if (!user || !post || !newComment.trim()) return;
-
-    const commentData: Omit<Comment, 'id'> = {
-      postId: post.id,
-      userId: user.id,
-      userName: user.name,
-      userAvatar: user.avatar,
-      content: newComment.trim(),
-      createdAt: new Date().toISOString(),
-    };
-
-    const tempComment = { ...commentData, id: `temp-${Date.now()}` } as Comment;
-    setComments([tempComment, ...comments]);
-    setNewComment('');
-
-    await addComment(commentData);
-  };
-
-  // 1. Loading State (FIXED: Removed noindex to satisfy Search Console)
+  // 1. Loading State (FIXED: Unique title but NO 'noindex' to satisfy Search Console)
   if (loading) {
     return (
       <>
         <Helmet>
-          <title>Bigyann - Exploring Tech & Science</title>
+          <title data-rh="true">Loading Content... | Bigyann</title>
         </Helmet>
         <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
           <Loader2 className="animate-spin mb-4" size={32} />
@@ -185,7 +166,7 @@ export const BlogPostPage: React.FC = () => {
     return (
       <>
         <Helmet>
-          <title>Content Unavailable | Bigyann</title>
+          <title data-rh="true">Post Not Found | Bigyann</title>
         </Helmet>
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900 text-white">
           Post not found or unavailable.
@@ -207,29 +188,29 @@ export const BlogPostPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        {/* Basic SEO */}
-        <title>{post.title} - Bigyann</title>
-        <meta name="description" content={post.excerpt} />
-        <link rel="canonical" href={canonicalUrl} />
-        <meta name="robots" content="index, follow, max-image-preview:large" />
+        {/* Basic SEO - Putting Post Title First for Google visibility */}
+        <title data-rh="true">{post.title} | Price, Specs & News - Bigyann</title>
+        <meta name="description" content={post.excerpt} data-rh="true" />
+        <link rel="canonical" href={canonicalUrl} data-rh="true" />
+        <meta name="robots" content="index, follow, max-image-preview:large" data-rh="true" />
 
-        {/* Open Graph */}
-        <meta property="og:title" content={`${post.title} - Bigyann`} />
-        <meta property="og:description" content={post.excerpt} />
-        <meta property="og:image" content={post.coverImage} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="article" />
-        <meta property="og:site_name" content="Bigyann" />
-        <meta property="article:published_time" content={isoPublishDate} />
-        <meta property="article:modified_time" content={isoUpdateDate} />
-        <meta property="article:author" content={post.author.name} />
-        <meta property="article:section" content={post.category} />
+        {/* Open Graph / Facebook */}
+        <meta property="og:title" content={`${post.title} - Bigyann`} data-rh="true" />
+        <meta property="og:description" content={post.excerpt} data-rh="true" />
+        <meta property="og:image" content={post.coverImage} data-rh="true" />
+        <meta property="og:url" content={canonicalUrl} data-rh="true" />
+        <meta property="og:type" content="article" data-rh="true" />
+        <meta property="og:site_name" content="Bigyann" data-rh="true" />
+        <meta property="article:published_time" content={isoPublishDate} data-rh="true" />
+        <meta property="article:modified_time" content={isoUpdateDate} data-rh="true" />
+        <meta property="article:author" content={post.author.name} data-rh="true" />
+        <meta property="article:section" content={post.category} data-rh="true" />
 
         {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={post.title} />
-        <meta name="twitter:description" content={post.excerpt} />
-        <meta name="twitter:image" content={post.coverImage} />
+        <meta name="twitter:card" content="summary_large_image" data-rh="true" />
+        <meta name="twitter:title" content={post.title} data-rh="true" />
+        <meta name="twitter:description" content={post.excerpt} data-rh="true" />
+        <meta name="twitter:image" content={post.coverImage} data-rh="true" />
 
         {/* JSON-LD Structured Data */}
         <script type="application/ld+json">
@@ -244,7 +225,7 @@ export const BlogPostPage: React.FC = () => {
             'author': {
               '@type': 'Person',
               'name': post.author.name,
-              'url': `${SITE_URL}/author/${post.author.id}`,
+              'url': `${SITE_URL}`,
             },
             'publisher': {
               '@type': 'Organization',
@@ -308,6 +289,7 @@ export const BlogPostPage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            {/* Sidebar Left: Actions */}
             <div className="hidden lg:block lg:col-span-1">
               <div className="sticky top-24 flex flex-col items-center space-y-6">
                 <button
@@ -343,6 +325,7 @@ export const BlogPostPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Main Content Area */}
             <article className="lg:col-span-8">
               <div className="prose prose-lg dark:prose-invert max-w-none">
                 <p className="lead text-xl italic text-gray-600 dark:text-gray-300 border-l-4 border-primary-500 pl-6 mb-10 font-serif">
@@ -396,6 +379,7 @@ export const BlogPostPage: React.FC = () => {
               </div>
             </article>
 
+            {/* Sidebar Right: Related Posts */}
             <aside className="hidden lg:block lg:col-span-3">
               <div className="sticky top-24">
                 <h3 className="text-xl font-bold mb-6 pb-3 border-b border-gray-300 dark:border-gray-700">
