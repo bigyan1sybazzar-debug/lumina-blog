@@ -16,12 +16,14 @@ export default defineConfig(({ mode }): Config => {
 
     ssgOptions: {
       script: 'async',
-      
     },
 
     ssr: {
-      // Fixed the "ERR_MODULE_NOT_FOUND" for react-syntax-highlighter
+      // This forces Vite to bundle react-helmet-async during SSG prerendering
+      // instead of treating it as an external CommonJS module.
+      // Fixes the "Named export 'HelmetProvider' not found" error.
       noExternal: [
+        'react-helmet-async',  // ← Add this line
         'react-syntax-highlighter',
         'react-router-dom',
         'lucide-react',
@@ -38,14 +40,12 @@ export default defineConfig(({ mode }): Config => {
     },
 
     define: {
-      // Using direct env object is safer for Vite's internal replacement engine
       'process.env': env,
       'global': 'globalThis',
     },
     
     resolve: {
       alias: {
-        // Direct fix for the specific broken ESM path in the syntax highlighter
         'react-syntax-highlighter/dist/esm/styles/prism/coy': 'react-syntax-highlighter/dist/cjs/styles/prism/coy.js',
       }
     }
