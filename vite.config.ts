@@ -12,23 +12,20 @@ export default defineConfig(({ mode }): Config => {
   return {
     plugins: [react()],
 
-    // Force Vite to handle these problematic CJS libraries during build
+    ssgOptions: {
+      script: 'async',
+
+    },
+
     ssr: {
+      // We removed react-helmet-async from here because you are using <Head />
       noExternal: [
-        'react-helmet-async',
         'react-syntax-highlighter',
         'react-router-dom',
         'lucide-react',
         'react-slick',
-        'slick-carousel',
-        // This catch-all helps with sub-modules inside these libraries
-        /react-helmet-async/,
+        'slick-carousel'
       ],
-    },
-
-    ssgOptions: {
-      script: 'async',
-  
     },
 
     preview: {
@@ -39,7 +36,6 @@ export default defineConfig(({ mode }): Config => {
     },
 
     define: {
-      // Direct replacement for environment variables
       'process.env': env,
       'global': 'globalThis',
     },
@@ -48,13 +44,11 @@ export default defineConfig(({ mode }): Config => {
       alias: {
         // Fix for syntax highlighter ESM bug
         'react-syntax-highlighter/dist/esm/styles/prism/coy': 'react-syntax-highlighter/dist/cjs/styles/prism/coy.js',
-        // IMPORTANT: If you keep getting the Helmet error, this alias forces the CJS version
-        'react-helmet-async': 'react-helmet-async/lib/index.js',
+        
+        // This line tells Vite: "If anything tries to import helmet, give it nothing."
+        // This stops the SyntaxError: Named export 'HelmetProvider' not found.
+        'react-helmet-async': 'identity-obj-proxy', 
       }
-    },
-
-    optimizeDeps: {
-      include: ['react-helmet-async', 'react-syntax-highlighter'],
     }
   }
 })
