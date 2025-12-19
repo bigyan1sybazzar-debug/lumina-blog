@@ -15,8 +15,7 @@ import ReviewSection from '../components/ReviewSection';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import HelmetProvider, { Helmet } from 'react-helmet-async';
-// ------------------------------------------------------------------
+import { Head } from 'vite-react-ssg';  // ← Import this// ------------------------------------------------------------------
 // HtmlRenderer – Clean up old Blogger-style image separators
 // ------------------------------------------------------------------
 interface HtmlRendererProps {
@@ -147,10 +146,10 @@ export const BlogPostPage: React.FC = () => {
 
   if (loading) {
     return (
-      <><HelmetProvider>
-        <Helmet>
+      <>
+        <head>
           <title data-rh="true">Loading Content... | Bigyann</title>
-        </Helmet></HelmetProvider>
+        </head>
         <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
           <Loader2 className="animate-spin mb-4" size={32} />
           <p>Illuminating content...</p>
@@ -162,9 +161,9 @@ export const BlogPostPage: React.FC = () => {
   if (!post || (post.status !== 'published' && user?.id !== post.author.id && user?.role !== 'admin')) {
     return (
       <>
-        <Helmet>
+        <head>
           <title data-rh="true">Post Not Found | Bigyann</title>
-        </Helmet> 
+        </head> 
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900 text-white">
           Post not found or unavailable.
         </div>
@@ -184,7 +183,7 @@ export const BlogPostPage: React.FC = () => {
 
   return (
     <> 
-      <Helmet>
+      <head>
         <title data-rh="true">{post.title} | Price, Specs & News - Bigyann</title>
         <meta name="description" content={post.excerpt} data-rh="true" />
         <link rel="canonical" href={canonicalUrl} data-rh="true" />
@@ -236,7 +235,7 @@ export const BlogPostPage: React.FC = () => {
             'keywords': post.tags?.join(', ') || post.category,
           })}
         </script>
-      </Helmet>
+      </head>
 
       <div className="bg-white dark:bg-gray-900 min-h-screen pb-20">
         <div className="h-[50vh] w-full relative">

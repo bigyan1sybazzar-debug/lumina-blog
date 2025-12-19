@@ -7,8 +7,7 @@ import { ArrowRight, Loader2, Sparkles, Send, ChevronLeft, ChevronRight, Hash, T
 import { Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import HelmetProvider, { Helmet } from 'react-helmet-async';
-import { Calculator, RefreshCw, LogIn, FileText, Edit } from 'lucide-react';
+import { Head } from 'vite-react-ssg';  // ← Import thisimport { Calculator, RefreshCw, LogIn, FileText, Edit } from 'lucide-react';
 
 // Import the hook but don't call it directly at top level
 import { useAuth } from '../context/AuthContext';
@@ -129,7 +128,7 @@ export const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
 
-      <Helmet>
+      <head>
         <title>AI Powered Tech and Science - Bigyann | Reviews & Discussions</title>
         <link rel="canonical" href="https://bigyann.com.np/" />
         <meta
@@ -140,7 +139,7 @@ export const Home: React.FC = () => {
         <meta property="og:url" content="https://bigyann.com.np/" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Bigyann" />
-      </Helmet>
+      </head>
   
       {/* Hero Section */}
       <section className="relative overflow-hidden px-4 pt-20 pb-10 md:pt-24 md:pb-16">
