@@ -14,11 +14,11 @@ export default defineConfig(({ mode }): Config => {
 
     ssgOptions: {
       script: 'async',
-      formatting: 'minify',
+      // Fixed: changed "minify" to "none" to match type definitions
+      formatting: 'none', 
     },
 
     ssr: {
-      // This forces the SSG engine to bundle these libraries correctly
       noExternal: [
         'react-helmet-async',
         'react-syntax-highlighter',
@@ -29,8 +29,12 @@ export default defineConfig(({ mode }): Config => {
       ],
     },
 
-    preview: { port: 5173 },
-    server: { port: 5173 },
+    preview: {
+      port: 5173,
+    },
+    server: {
+      port: 5173,
+    },
 
     define: {
       'process.env': env,
@@ -39,9 +43,7 @@ export default defineConfig(({ mode }): Config => {
     
     resolve: {
       alias: {
-        // Fixes the SyntaxHighlighter ESM issue
         'react-syntax-highlighter/dist/esm/styles/prism/coy': 'react-syntax-highlighter/dist/cjs/styles/prism/coy.js',
-        // Fixes the "Named Export" issue by pointing to the main file
         'react-helmet-async': 'react-helmet-async'
       }
     }
