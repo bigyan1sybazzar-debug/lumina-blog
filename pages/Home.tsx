@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { Head } from 'vite-react-ssg';  // ← Import thisimport { Calculator, RefreshCw, LogIn, FileText, Edit } from 'lucide-react';
-
+import { Calculator, RefreshCw, LogIn, FileText, Edit } from 'lucide-react';
 // Import the hook but don't call it directly at top level
 import { useAuth } from '../context/AuthContext';
 
