@@ -1,9 +1,14 @@
 {
   "version": 2,
+
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": null,
-  "devCommand": "npm run dev",
+
+  "functions": {
+    "api/ssr.ts": {
+      "runtime": "nodejs24.x"
+    }
+  },
 
   "redirects": [
     {
@@ -24,18 +29,14 @@
     }
   ],
 
-  "rewrites": [
+  "routes": [
     {
-      "source": "/sitemap.xml",
-      "destination": "/sitemap.xml"
+      "src": "^/(assets|favicon|robots.txt|sitemap.xml)(/.*)?$",
+      "dest": "/$1$2"
     },
     {
-      "source": "/robots.txt",
-      "destination": "/robots.txt"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "^/(.*)$",
+      "dest": "/api/ssr"
     }
   ],
 
@@ -63,15 +64,6 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=0, s-maxage=3600"
-        }
-      ]
-    },
-    {
-      "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
         }
       ]
     }

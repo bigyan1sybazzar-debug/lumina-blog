@@ -1,92 +1,65 @@
-import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import compression from 'compression';
-import helmet from 'helmet';
-import { getPostBySlug } from './services/db.js'; // Ensure tsx resolves this
+import type { IncomingMessage, ServerResponse } from 'http';
+import { getPostBySlug } from './services/db.js';
 
-// --- CONFIGURATION ---
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT: number = Number(process.env.PORT) || 3000;
-const distPath: string = path.resolve(__dirname, 'dist');
-const indexPath: string = path.resolve(distPath, 'index.html');
+const distPath = path.resolve(__dirname, 'dist');
+const indexPath = path.join(distPath, 'index.html');
 
-const app = express();
+export async function renderPage(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  const url = req.url || '/';
 
-// 1. SECURITY & PERFORMANCE MIDDLEWARE
-app.use(compression());
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
-  })
-);
-
-// 2. SERVE STATIC ASSETS
-app.use(express.static(distPath, { index: false }));
-
-// 3. DYNAMIC CONTENT ROUTE
-app.get('*', async (req, res) => {
-  const url: string = req.originalUrl;
-
-  // Skip static files and API routes
-  if (url.includes('.') || url.startsWith('/api')) {
-    return res.status(404).end();
+  if (!fs.existsSync(indexPath)) {
+    res.statusCode = 500;
+    res.end('Run "npm run build" first');
+    return;
   }
 
-  try {
-    // Default Metadata
-    let meta = {
-      title: 'Bigyann - Exploring Science, Tech & Innovation',
-      description: 'Bigyann is a premier platform for science, technology, and digital insights in Nepal.',
-      image: 'https://bigyann.com.np/default-og-image.jpg',
-      url: `https://bigyann.com.np${url}`
-    };
+  let meta = {
+    title: 'Bigyann - Exploring Science, Tech & Innovation',
+    description:
+      'Bigyann is a premier platform for science, technology, and digital insights in Nepal.',
+    image: 'https://bigyann.com.np/default-og-image.jpg',
+    url: `https://bigyann.com.np${url}`
+  };
 
-    // Extract slug from URL
-    const slug: string = url.split('?')[0].replace(/^\/+|\/+$/g, '');
+  const slug = url.replace(/^\/+|\/+$/g, '').split('?')[0];
 
-    if (slug) {
-      const post = await getPostBySlug(slug);
+  if (slug) {
+    const post = await getPostBySlug(slug);
 
-      if (post) {
-        meta.title = `${post.title} |- Bigyann`;
-        meta.description = post.excerpt || post.title;
-        meta.image = post.coverImage || meta.image;
-      } else {
-        const prettySlug: string = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        meta.title = `${prettySlug} | Latest News - Bigyann`;
-      }
+    if (post) {
+      meta.title = `${post.title} | Bigyann`;
+      meta.description = post.excerpt || post.title;
+      meta.image = post.coverImage || meta.image;
+    } else {
+      const pretty = slug
+        .replace(/-/g, ' ')
+        .replace(/\b\w/g, (l) => l.toUpperCase());
+
+      meta.title = `${pretty} | Latest News - Bigyann`;
     }
-
-    // Read the built index.html
-    if (!fs.existsSync(indexPath)) {
-      return res.status(500).send('Run "npm run build" first to generate dist/index.html');
-    }
-
-    let html: string = fs.readFileSync(indexPath, 'utf8');
-
-    // 4. INJECT METADATA
-    html = html
-      .replace(/<title[^>]*>[\s\S]*?<\/title>/, `<title>${escapeHtml(meta.title)}</title>`)
-      .replace(/<meta[^>]*name="description"[^>]*content="[^"]*"[^>]*>/i, `<meta name="description" content="${escapeHtml(meta.description)}">`)
-      .replace(/<meta[^>]*property="og:title"[^>]*content="[^"]*"[^>]*>/i, `<meta property="og:title" content="${escapeHtml(meta.title)}">`)
-      .replace(/<meta[^>]*property="og:description"[^>]*content="[^"]*"[^>]*>/i, `<meta property="og:description" content="${escapeHtml(meta.description)}">`)
-      .replace(/<meta[^>]*property="og:image"[^>]*content="[^"]*"[^>]*>/i, `<meta property="og:image" content="${escapeHtml(meta.image)}">`)
-      .replace(/<meta[^>]*property="og:url"[^>]*content="[^"]*"[^>]*>/i, `<meta property="og:url" content="${escapeHtml(meta.url)}">`)
-      .replace(/<link[^>]*rel="canonical"[^>]*href="[^"]*"[^>]*>/i, `<link rel="canonical" href="${escapeHtml(meta.url)}">`);
-
-    console.log(`[SEO] Injected meta for: ${url}`);
-    res.send(html);
-
-  } catch (error) {
-    console.error('[Server Error]', error);
-    res.sendFile(indexPath);
   }
-});
 
-// --- HELPER FUNCTIONS ---
+  let html = fs.readFileSync(indexPath, 'utf8');
+
+  html = html
+    .replace(/<title[^>]*>[\s\S]*?<\/title>/i, `<title>${escapeHtml(meta.title)}</title>`)
+    .replace(/<meta[^>]*name="description"[^>]*>/i,
+      `<meta name="description" content="${escapeHtml(meta.description)}">`
+    )
+    .replace(/<link[^>]*rel="canonical"[^>]*>/i,
+      `<link rel="canonical" href="${escapeHtml(meta.url)}">`
+    );
+
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.end(html);
+}
 
 function escapeHtml(str: string): string {
   const map: Record<string, string> = {
@@ -96,15 +69,5 @@ function escapeHtml(str: string): string {
     '"': '&quot;',
     "'": '&#039;'
   };
-  return str.replace(/[&<>"']/g, (m: string) => map[m]);
+  return str.replace(/[&<>"']/g, (m) => map[m]);
 }
-
-// --- START SERVER ---
-app.listen(PORT, () => {
-  console.log(`
-🚀 Bigyann Production Server
-----------------------------
-Local: http://localhost:${PORT}
-Mode:  Production
-`);
-});
