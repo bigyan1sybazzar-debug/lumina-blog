@@ -7,21 +7,16 @@
 
   "redirects": [
     {
-      "source": "/(.*)", 
+      "source": "/(.*)",
       "has": [
         {
           "type": "host",
           "value": "www.bigyann.com.np"
         }
       ],
-      "destination": "https://bigyann.com.np/$1", 
+      "destination": "https://bigyann.com.np/$1",
       "statusCode": 301
     },
-
-   
-
-
-    
     {
       "source": "/blog/fm3g9qgx4JGycFGkc3M3",
       "destination": "/blog/samsung-galaxy-a24-price-in-nepal",
@@ -33,6 +28,10 @@
     {
       "source": "/sitemap.xml",
       "destination": "/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/robots.txt"
     },
     {
       "source": "/(.*)",
@@ -60,6 +59,19 @@
         {
           "key": "Content-Type",
           "value": "text/plain"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=3600"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     }
