@@ -1,41 +1,47 @@
-import React from 'react'
-import { Outlet, Navigate, useLocation } from 'react-router-dom'
+import React, { useEffect, useState } from 'react';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 
-import HeadProviderWrapper from './src/providers/HeadProviderWrapper'
-import { ThemeProvider } from './context/ThemeContext'
-import { AuthProvider } from './context/AuthContext'
-import { Header } from './components/Header'
-import { Footer } from './components/Footer'
-import { ProtectedRoute } from './components/ProtectedRoute'
+import { HelmetProvider } from 'react-helmet-async';
+import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
+import { Header } from './components/Header';
+import { Footer } from './components/Footer';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Pages
-import { Home } from './pages/Home'
-import { BlogPostPage } from './pages/BlogPost'
-import { Categories } from './pages/Categories'
-import { Admin } from './pages/Admin'
-import { About } from './pages/About'
-import { Contact } from './pages/Contact'
-import { Login } from './pages/Login'
-import { Signup } from './pages/Signup'
-import ChatAssistant from './pages/ChatAssistant'
-import PrivacyPolicy from './pages/PrivacyPolicy'
-import TermsOfService from './pages/TermsOfService'
-import Disclaimer from './pages/Disclaimer'
-import LiveFootball from './pages/LiveFootball'
-import { MyPhonePrice } from './pages/My-phone-price'
-import { Emicalculator } from './pages/Emicalculator'
-import { ExchangeOffer } from './pages/ExchangeOffer'
-import { SubmissionGuidePage } from './pages/Submission-guide'
+import { Home } from './pages/Home';
+import { BlogPostPage } from './pages/BlogPost';
+import { Categories } from './pages/Categories';
+import { Admin } from './pages/Admin';
+import { About } from './pages/About';
+import { Contact } from './pages/Contact';
+import { Login } from './pages/Login';
+import { Signup } from './pages/Signup';
+import ChatAssistant from './pages/ChatAssistant';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import Disclaimer from './pages/Disclaimer';
+import LiveFootball from './pages/LiveFootball';
+import { MyPhonePrice } from './pages/My-phone-price';
+import { Emicalculator } from './pages/Emicalculator';
+import { ExchangeOffer } from './pages/ExchangeOffer';
+import { SubmissionGuidePage } from './pages/Submission-guide';
 
 // Slick Carousel CSS
-import 'slick-carousel/slick/slick.css'
-import 'slick-carousel/slick/slick-theme.css'
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
 
 /**
  * Layout Component
+ * Handles Header/Footer visibility and context providers
  */
 const Layout: React.FC = () => {
-  const location = useLocation()
+  const location = useLocation();
+  const [isBrowser, setIsBrowser] = useState(false);
+
+  useEffect(() => {
+    setIsBrowser(typeof window !== 'undefined'); // ensures code only runs in browser
+  }, []);
 
   const noLayoutPaths = [
     '/login',
@@ -43,11 +49,11 @@ const Layout: React.FC = () => {
     '/sitemap.xml',
     '/robots.txt',
     '/price/my-phone-price',
-  ]
+  ];
 
-  const cleanPath = location.pathname?.split('?')[0].split('#')[0] || '/'
-  const isAdmin = cleanPath.startsWith('/admin')
-  const shouldHideLayout = isAdmin || noLayoutPaths.includes(cleanPath)
+  const cleanPath = location.pathname?.split('?')[0].split('#')[0] || '/';
+  const isAdmin = cleanPath.startsWith('/admin');
+  const shouldHideLayout = isAdmin || noLayoutPaths.includes(cleanPath);
 
   return (
     <AuthProvider>
@@ -75,18 +81,19 @@ const Layout: React.FC = () => {
         </div>
       </ThemeProvider>
     </AuthProvider>
-  )
-}
+  );
+};
 
 /**
  * Root App Component
+ * Wrap everything with HelmetProvider (SSR compatible)
  */
 export default function App() {
   return (
-    <HeadProviderWrapper>
+    <HelmetProvider>
       <Layout />
-    </HeadProviderWrapper>
-  )
+    </HelmetProvider>
+  );
 }
 
 /**
@@ -141,4 +148,4 @@ export const routes: import('vite-react-ssg').RouteRecord[] = [
       },
     ],
   },
-]
+];
