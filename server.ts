@@ -4,37 +4,33 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import compression from 'compression';
 import helmet from 'helmet';
+import { getPostBySlug } from './services/db.js'; // Ensure tsx resolves this
 
 // --- CONFIGURATION ---
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const PORT = process.env.PORT || 3000;
-const distPath = path.resolve(__dirname, 'dist');
-const indexPath = path.resolve(distPath, 'index.html');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PORT: number = Number(process.env.PORT) || 3000;
+const distPath: string = path.resolve(__dirname, 'dist');
+const indexPath: string = path.resolve(distPath, 'index.html');
 
-// Import your Database logic
-// Ensure this file is plain JS or compiled from TS
-import { getPostBySlug } from './src/services/db.ts';
 const app = express();
 
 // 1. SECURITY & PERFORMANCE MIDDLEWARE
-app.use(compression()); // Gzip compression for faster loading
+app.use(compression());
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Set to false if you use external CDNs like Cloudflare/Google
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
   })
 );
 
-// 2. SERVE STATIC ASSETS (CSS, JS, Images)
-// We serve the /dist folder but EXCLUDE index.html from static serving 
-// so our custom route can handle it.
+// 2. SERVE STATIC ASSETS
 app.use(express.static(distPath, { index: false }));
 
 // 3. DYNAMIC CONTENT ROUTE
 app.get('*', async (req, res) => {
-  const url = req.originalUrl;
+  const url: string = req.originalUrl;
 
-  // Skip files (images, .js, .css) and API routes
+  // Skip static files and API routes
   if (url.includes('.') || url.startsWith('/api')) {
     return res.status(404).end();
   }
@@ -48,19 +44,18 @@ app.get('*', async (req, res) => {
       url: `https://bigyann.com.np${url}`
     };
 
-    // Extract slug (e.g., /my-post-link -> my-post-link)
-    const slug = url.split('?')[0].replace(/^\/+|\/+$/g, '');
+    // Extract slug from URL
+    const slug: string = url.split('?')[0].replace(/^\/+|\/+$/g, '');
 
     if (slug) {
       const post = await getPostBySlug(slug);
 
       if (post) {
-        meta.title = `${post.title} | Price & Specs - Bigyann`;
+        meta.title = `${post.title} |- Bigyann`;
         meta.description = post.excerpt || post.title;
         meta.image = post.coverImage || meta.image;
       } else {
-        // Fallback: Make a pretty title from the slug if post not found
-        const prettySlug = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const prettySlug: string = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         meta.title = `${prettySlug} | Latest News - Bigyann`;
       }
     }
@@ -69,10 +64,10 @@ app.get('*', async (req, res) => {
     if (!fs.existsSync(indexPath)) {
       return res.status(500).send('Run "npm run build" first to generate dist/index.html');
     }
-    let html = fs.readFileSync(indexPath, 'utf8');
 
-    // 4. INJECT METADATA (Advanced Regex)
-    // These regex patterns handle tags even if they have extra attributes like data-rh="true"
+    let html: string = fs.readFileSync(indexPath, 'utf8');
+
+    // 4. INJECT METADATA
     html = html
       .replace(/<title[^>]*>[\s\S]*?<\/title>/, `<title>${escapeHtml(meta.title)}</title>`)
       .replace(/<meta[^>]*name="description"[^>]*content="[^"]*"[^>]*>/i, `<meta name="description" content="${escapeHtml(meta.description)}">`)
@@ -87,23 +82,29 @@ app.get('*', async (req, res) => {
 
   } catch (error) {
     console.error('[Server Error]', error);
-    // On error, send the original file as a fallback
     res.sendFile(indexPath);
   }
 });
 
-// Helper to prevent XSS in meta tags
-function escapeHtml(str) {
-  return str.replace(/[&<>"']/g, (m) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-  })[m]);
+// --- HELPER FUNCTIONS ---
+
+function escapeHtml(str: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return str.replace(/[&<>"']/g, (m: string) => map[m]);
 }
 
+// --- START SERVER ---
 app.listen(PORT, () => {
   console.log(`
-  🚀 Bigyann Production Server
-  ----------------------------
-  Local: http://localhost:${PORT}
-  Mode:  Production
-  `);
+🚀 Bigyann Production Server
+----------------------------
+Local: http://localhost:${PORT}
+Mode:  Production
+`);
 });
