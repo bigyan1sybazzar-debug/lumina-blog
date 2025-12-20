@@ -33,7 +33,7 @@ import 'slick-carousel/slick/slick-theme.css'
 
 /**
  * Layout Component
- * Wrapped by HelmetProvider at App root (SSG + SSR safe)
+ * Provides Theme + Auth context and optionally shows Header/Footer
  */
 const Layout: React.FC = () => {
   const location = useLocation()
@@ -81,12 +81,12 @@ const Layout: React.FC = () => {
 
 /**
  * Root App Component
- * HelmetProvider MUST be here (Node 24 compatible)
+ * Wraps all content with HelmetProviderWrapper (CJS-safe)
  */
 export default function App() {
   return (
     <HelmetProviderWrapper>
-      <Outlet />
+      <Layout />
     </HelmetProviderWrapper>
   )
 }

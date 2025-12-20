@@ -12,41 +12,42 @@ export default defineConfig(({ mode }): Config => {
   return {
     plugins: [react()],
 
+    // SSG Options
     ssgOptions: {
       script: 'async',
-      formatting: 'none',
+      formatting: 'none'
+      // ❌ Removed `useHelmet` since it doesn't exist in current TS types
     },
 
     ssr: {
       noExternal: [
-        'react-helmet-async',
-        'react-syntax-highlighter',
+        'react-helmet-async', // important for CommonJS
         'react-router-dom',
+        'react-syntax-highlighter',
         'lucide-react',
         'react-slick',
-        'slick-carousel',
-      ],
-    },
-
-    server: {
-      port: 5173,
-    },
-
-    preview: {
-      port: 5173,
+        'slick-carousel'
+      ]
     },
 
     define: {
       'process.env': env,
-      global: 'globalThis',
+      global: 'globalThis'
+    },
+
+    server: {
+      port: 5173
+    },
+
+    preview: {
+      port: 5173
     },
 
     resolve: {
       alias: {
-        // Fix ESM/CJS issue with syntax highlighter
         'react-syntax-highlighter/dist/esm/styles/prism/coy':
-          'react-syntax-highlighter/dist/cjs/styles/prism/coy.js',
-      },
-    },
+          'react-syntax-highlighter/dist/cjs/styles/prism/coy.js'
+      }
+    }
   }
 })
