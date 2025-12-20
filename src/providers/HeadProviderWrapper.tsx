@@ -1,10 +1,13 @@
 import React from 'react'
-import { createHead, UnheadProvider } from '@unhead/react/client'
+import { Head } from 'vite-react-ssg'
 
-const head = createHead()
+interface HeadProviderWrapperProps {
+  children: React.ReactNode
+}
 
-const HeadProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <UnheadProvider head={head}>{children}</UnheadProvider>
+// Simple SSG-safe wrapper
+const HeadProviderWrapper: React.FC<HeadProviderWrapperProps> = ({ children }) => {
+  return <>{children}</>
 }
 
 export default HeadProviderWrapper
