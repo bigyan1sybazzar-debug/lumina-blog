@@ -1,7 +1,7 @@
 // pages/LiveFootball.tsx
 import React, { useState, useEffect } from 'react';
 import { Loader2, RefreshCw, Trophy, Calendar, History } from 'lucide-react';
-import { Head } from 'vite-react-ssg';  // ← Import this
+import { Head } from 'vite-react-ssg'; // SSR-safe head
 import { footballApi } from '../api/football';
 
 type Tab = 'live' | 'upcoming' | 'recent';
@@ -61,22 +61,24 @@ const LiveFootball: React.FC = () => {
   useEffect(() => {
     fetchMatches();
 
-    // Only set interval for live tab
-    if (tab === 'live') {
+    // Only run interval if in browser
+    if (typeof window !== 'undefined' && tab === 'live') {
       const interval = setInterval(fetchMatches, 30000);
-      return () => clearInterval(interval); // Correct cleanup
+      return () => clearInterval(interval);
     }
 
-    // No interval for upcoming/recent → return nothing
     return undefined;
   }, [tab]);
 
   return (
     <>
-      <head>
+      <Head>
         <title>Live Football Scores | Bigyann</title>
-        <meta name="description" content="Real-time Premier League, La Liga, Champions League scores" />
-      </head>
+        <meta
+          name="description"
+          content="Real-time Premier League, La Liga, Champions League scores"
+        />
+      </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-12 px-4">
         <div className="max-w-7xl mx-auto">
@@ -112,13 +114,15 @@ const LiveFootball: React.FC = () => {
               ))}
             </div>
 
-            <button
-              onClick={fetchMatches}
-              className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl shadow-lg transition-all"
-            >
-              {loading ? <Loader2 className="animate-spin" size={20} /> : <RefreshCw size={20} />}
-              Refresh
-            </button>
+            {typeof window !== 'undefined' && (
+              <button
+                onClick={fetchMatches}
+                className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl shadow-lg transition-all"
+              >
+                {loading ? <Loader2 className="animate-spin" size={20} /> : <RefreshCw size={20} />}
+                Refresh
+              </button>
+            )}
           </div>
 
           {loading && (
@@ -132,9 +136,7 @@ const LiveFootball: React.FC = () => {
             <div className="text-center py-24">
               <Trophy className="mx-auto text-gray-400" size={80} />
               <h2 className="text-3xl font-bold mt-6">No {tab} matches</h2>
-              <p className="text-xl text-gray-600 dark:text-gray-400 mt-4">
-                Check back soon!
-              </p>
+              <p className="text-xl text-gray-600 dark:text-gray-400 mt-4">Check back soon!</p>
             </div>
           )}
 
@@ -166,18 +168,14 @@ const LiveFootball: React.FC = () => {
                 <div className="p-6 space-y-6">
                   <div className="text-center">
                     <h4 className="font-bold text-2xl text-gray-900 dark:text-white">{m.home}</h4>
-                    <p className="text-5xl font-extrabold mt-3 text-primary-600">
-                      {m.homeScore ?? '-'}
-                    </p>
+                    <p className="text-5xl font-extrabold mt-3 text-primary-600">{m.homeScore ?? '-'}</p>
                   </div>
 
                   <div className="text-center text-4xl font-bold text-gray-400">VS</div>
 
                   <div className="text-center">
                     <h4 className="font-bold text-2xl text-gray-900 dark:text-white">{m.away}</h4>
-                    <p className="text-5xl font-extrabold mt-3 text-primary-600">
-                      {m.awayScore ?? '-'}
-                    </p>
+                    <p className="text-5xl font-extrabold mt-3 text-primary-600">{m.awayScore ?? '-'}</p>
                   </div>
 
                   <div className="pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
