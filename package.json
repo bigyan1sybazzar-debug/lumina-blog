@@ -11,9 +11,9 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:sitemap && tsc && vite-react-ssg build",
-    "build:sitemap": "npx ts-node api/update-public-sitemap.ts",
+    "build:sitemap": "tsx api/update-public-sitemap.ts",
     "preview": "vite preview",
-    "start:api": "ts-node src/api-server/index.ts"
+    "start:api": "tsx src/api-server/index.ts"
   },
 
   "dependencies": {
@@ -52,9 +52,9 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
-    "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vite": "^5.4.0",
-    "vite-react-ssg": "^0.8.9"
+    "vite-react-ssg": "^0.8.9",
+    "tsx": "^4.19.2"
   }
 }
