@@ -7,24 +7,24 @@
 
   "redirects": [
     {
-      "source": "/(.*)", 
+      "source": "/default",
+      "destination": "/",
+      "statusCode": 301
+    },
+    {
+      "source": "/blog/fm3g9qgx4JGycFGkc3M3",
+      "destination": "/blog/samsung-galaxy-a24-price-in-nepal",
+      "statusCode": 301
+    },
+    {
+      "source": "/(.*)",
       "has": [
         {
           "type": "host",
           "value": "www.bigyann.com.np"
         }
       ],
-      "destination": "https://bigyann.com.np/$1", 
-      "statusCode": 301
-    },
-
-   
-
-
-    
-    {
-      "source": "/blog/fm3g9qgx4JGycFGkc3M3",
-      "destination": "/blog/samsung-galaxy-a24-price-in-nepal",
+      "destination": "https://bigyann.com.np/$1",
       "statusCode": 301
     }
   ],
