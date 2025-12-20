@@ -4,27 +4,8 @@ import {
   Award, Trophy, Target, Code, Globe, TrendingUp,
   Laptop, Palette, Sparkles, CheckCircle
 } from "lucide-react";
-import { Head } from 'vite-react-ssg';  // ← Import this
+import { Helmet } from "react-helmet-async";
 
-// ...
-export const MyPage = () => {
-  return (
-    <>
-      <Head>
-        <title>My Page Title - Bigyann</title>
-        <meta name="description" content="Your page description" />
-        <link rel="canonical" href="https://bigyann.com.np/current-path" />
-        {/* Add any og:, twitter:, etc. meta tags here */}
-        <meta property="og:title" content="My Page Title" />
-        <meta property="og:description" content="Your description" />
-        <meta property="og:image" content="https://bigyann.com.np/og-image.jpg" />
-      </Head>
-
-      {/* Your page content */}
-      <div>...</div>
-    </>
-  );
-};
 // Define an interface for type safety (optional but good practice)
 interface Skill {
   name: string;
@@ -254,8 +235,7 @@ export const About: React.FC = () => {
 
   return (
     <>
-
-      <head>
+      <Helmet>
         <title>Bigyan Neupane SEO Expert in Nepal | Top SEO Freelancer Kathmandu</title>
         <meta name="description" content="Bigyan Neupane is a leading SEO expert in Nepal with 5+ years of experience. Ranked 4000+ keywords, built 50+ websites, and helped businesses grow online. Available for SEO, web development & digital marketing projects." />
         <link rel="canonical" href="https://bigyann.com.np/about" />
@@ -273,8 +253,8 @@ export const About: React.FC = () => {
 
         <script type="application/ld+json">{JSON.stringify(schemaPerson)}</script>
         <script type="application/ld+json">{JSON.stringify(schemaFAQ)}</script>
-      </head>
-   
+      </Helmet>
+
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 pt-24 pb-32">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 

@@ -1,7 +1,8 @@
 import React from 'react';
 import { LogIn, Send, CheckCircle, Zap, Code, Lightbulb } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Head } from 'vite-react-ssg';  // ← Import this
+import { Helmet } from 'react-helmet-async';
+
 export const SubmissionGuidePage: React.FC = () => {
     // --- Helper Component for a Clean Step Card ---
     const StepCard: React.FC<{ icon: React.ReactNode, title: string, description: string, linkTo: string, linkText: string, color: string }> = 
@@ -37,14 +38,14 @@ export const SubmissionGuidePage: React.FC = () => {
 
     return (
         <>
-            <head>
+            <Helmet>
                 <title>Content Submission Guide | Bigyann</title>
                 <meta 
                     name="description" 
                     content="Simplified guide to submitting tech, price analysis, and AI content to Bigyann. Quick steps to become an author." 
                 />
                 <link rel="canonical" href="https://bigyann.com.np/author-guide" />
-            </head>
+            </Helmet>
             
             <div className="bg-white dark:bg-gray-900 min-h-screen py-16 md:py-24">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -387,7 +387,6 @@ export const MyPhonePrice: React.FC = () => {
                                         <option key={model} value={model}>{model}</option>
                                     ))}
                                 </select>
-                                <h1>bigsg</h1>
                             </div>
 
                             {/* --- Screen Checks --- */}
@@ -416,7 +415,6 @@ export const MyPhonePrice: React.FC = () => {
                             </div>
 
                         </div>
-                    
                     )}
 
                     {/* --- STEP 2: LEGAL & INTERNAL DAMAGE --- */}

@@ -1,50 +1,25 @@
-import { defineConfig, loadEnv, type UserConfig } from 'vite'
+// vite.config.ts
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import type { ViteReactSSGOptions } from 'vite-react-ssg'
 
-interface Config extends UserConfig {
-  ssgOptions?: ViteReactSSGOptions
-}
-
-export default defineConfig(({ mode }): Config => {
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
     plugins: [react()],
 
-    ssgOptions: {
-      script: 'async',
-      formatting: 'none'
+    // THIS IS ALL YOU NEED
+    preview: {
+      port: 5173,
     },
-
-    ssr: {
-      noExternal: [
-        'react-router-dom',
-        'react-syntax-highlighter',
-        'lucide-react',
-        'react-slick',
-        'slick-carousel'
-      ]
+    server: {
+      port: 5173,
     },
 
     define: {
-      'process.env': env,
-      global: 'globalThis'
+      'process.env': Object.fromEntries(
+        Object.entries(env).map(([k, v]) => [k, JSON.stringify(v)])
+      ),
     },
-
-    server: {
-      port: 5173
-    },
-
-    preview: {
-      port: 5173
-    },
-
-    resolve: {
-      alias: {
-        'react-syntax-highlighter/dist/esm/styles/prism/coy':
-          'react-syntax-highlighter/dist/cjs/styles/prism/coy.js'
-      }
-    }
   }
 })
