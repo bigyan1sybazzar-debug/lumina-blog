@@ -8,7 +8,7 @@ import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
-// Pages
+// Pages...
 import { Home } from './pages/Home'
 import { BlogPostPage } from './pages/BlogPost'
 import { Categories } from './pages/Categories'
@@ -31,12 +31,8 @@ import { SubmissionGuidePage } from './pages/Submission-guide'
 import 'slick-carousel/slick/slick.css'
 import 'slick-carousel/slick/slick-theme.css'
 
-/**
- * Layout Component
- */
 const Layout: React.FC = () => {
   const location = useLocation()
-
   const noLayoutPaths = [
     '/login',
     '/signup',
@@ -44,7 +40,6 @@ const Layout: React.FC = () => {
     '/robots.txt',
     '/price/my-phone-price',
   ]
-
   const cleanPath = location.pathname?.split('?')[0].split('#')[0] || '/'
   const isAdmin = cleanPath.startsWith('/admin')
   const shouldHideLayout = isAdmin || noLayoutPaths.includes(cleanPath)
@@ -60,11 +55,9 @@ const Layout: React.FC = () => {
               </div>
             </header>
           )}
-
           <main className="flex-grow">
             <Outlet />
           </main>
-
           {!shouldHideLayout && (
             <footer className="bg-gray-900/95 text-white/90 border-t border-gray-800/50 mt-auto py-8">
               <div className="max-w-7xl mx-auto px-4">
@@ -78,9 +71,7 @@ const Layout: React.FC = () => {
   )
 }
 
-/**
- * Root App Component
- */
+// Root App
 export default function App() {
   return (
     <HeadProviderWrapper>
@@ -89,9 +80,6 @@ export default function App() {
   )
 }
 
-/**
- * Vite React SSG Routes
- */
 export const routes: import('vite-react-ssg').RouteRecord[] = [
   {
     path: '/',
@@ -113,8 +101,6 @@ export const routes: import('vite-react-ssg').RouteRecord[] = [
       { path: '/terms-of-service', Component: TermsOfService },
       { path: '/disclaimer', Component: Disclaimer },
       { path: '/:slug', Component: BlogPostPage },
-
-      // Legacy redirects
       {
         path: '/2025/11/Yono-tv-live.html',
         Component: () => <Navigate to="/yono-tv-npl-live-streaming" replace />,
@@ -123,8 +109,6 @@ export const routes: import('vite-react-ssg').RouteRecord[] = [
         path: '/blog/fm3g9qgx4JGycFGkc3M3',
         Component: () => <Navigate to="/samsung-galaxy-a24-price-in-nepal" replace />,
       },
-
-      // Admin (Protected)
       {
         path: '/admin/*',
         Component: () => (
@@ -133,8 +117,6 @@ export const routes: import('vite-react-ssg').RouteRecord[] = [
           </ProtectedRoute>
         ),
       },
-
-      // 404 fallback
       {
         path: '*',
         Component: () => <Navigate to="/" replace />,
