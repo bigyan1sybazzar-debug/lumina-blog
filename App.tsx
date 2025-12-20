@@ -1,7 +1,7 @@
 import React from 'react'
 import { Outlet, Navigate, useLocation } from 'react-router-dom'
 
-import HelmetProviderWrapper from './src/providers/HelmetProviderWrapper'
+import HeadProviderWrapper from './src/providers/HeadProviderWrapper'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
 import { Header } from './components/Header'
@@ -33,7 +33,6 @@ import 'slick-carousel/slick/slick-theme.css'
 
 /**
  * Layout Component
- * Provides Theme + Auth context and optionally shows Header/Footer
  */
 const Layout: React.FC = () => {
   const location = useLocation()
@@ -81,13 +80,12 @@ const Layout: React.FC = () => {
 
 /**
  * Root App Component
- * Wraps all content with HelmetProviderWrapper (CJS-safe)
  */
 export default function App() {
   return (
-    <HelmetProviderWrapper>
+    <HeadProviderWrapper>
       <Layout />
-    </HelmetProviderWrapper>
+    </HeadProviderWrapper>
   )
 }
 

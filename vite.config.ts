@@ -16,12 +16,11 @@ export default defineConfig(({ mode }): Config => {
     ssgOptions: {
       script: 'async',
       formatting: 'none'
-      // ❌ Removed `useHelmet` since it doesn't exist in current TS types
+      // ⚠ Removed useHelmet; now using @unhead/react
     },
 
     ssr: {
       noExternal: [
-        'react-helmet-async', // important for CommonJS
         'react-router-dom',
         'react-syntax-highlighter',
         'lucide-react',
@@ -45,6 +44,7 @@ export default defineConfig(({ mode }): Config => {
 
     resolve: {
       alias: {
+        // Ensure CJS styles work for SSR/SSG
         'react-syntax-highlighter/dist/esm/styles/prism/coy':
           'react-syntax-highlighter/dist/cjs/styles/prism/coy.js'
       }
