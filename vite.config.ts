@@ -14,8 +14,7 @@ export default defineConfig(({ mode }): Config => {
 
     ssgOptions: {
       script: 'async',
-      // Fixed: changed "minify" to "none" to match type definitions
-      formatting: 'none', 
+      formatting: 'none',
     },
 
     ssr: {
@@ -25,27 +24,29 @@ export default defineConfig(({ mode }): Config => {
         'react-router-dom',
         'lucide-react',
         'react-slick',
-        'slick-carousel'
+        'slick-carousel',
       ],
+    },
+
+    server: {
+      port: 5173,
     },
 
     preview: {
       port: 5173,
     },
-    server: {
-      port: 5173,
-    },
 
     define: {
       'process.env': env,
-      'global': 'globalThis',
+      global: 'globalThis',
     },
-    
+
     resolve: {
       alias: {
-        'react-syntax-highlighter/dist/esm/styles/prism/coy': 'react-syntax-highlighter/dist/cjs/styles/prism/coy.js',
-        'react-helmet-async': 'react-helmet-async'
-      }
-    }
+        // Fix ESM/CJS issue with syntax highlighter
+        'react-syntax-highlighter/dist/esm/styles/prism/coy':
+          'react-syntax-highlighter/dist/cjs/styles/prism/coy.js',
+      },
+    },
   }
 })
