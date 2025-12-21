@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cloudflare/playwright": "^1.0.0",
+    "@cloudflare/puppeteer": "^1.0.4",
     "@google/genai": "^1.31.0",
     "@google/generative-ai": "^0.21.0",
     "@splidejs/react-splide": "^0.7.12",
