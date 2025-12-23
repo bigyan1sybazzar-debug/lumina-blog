@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <script>
+      (function() {
+        const path = window.location.pathname;
+        if (path.toLowerCase().endsWith('/default')) {
+          const cleanPath = path.replace(/\/default$/i, '') || '/';
+          // Using window.location.replace prevents the "back" button from getting stuck
+          window.location.replace(window.location.origin + cleanPath);
+        }
+      })();
+    </script>
+
     <title data-rh="true">Bigyann - Exploring Science, Tech & Innovation</title> 
     
     <meta data-rh="true" name="description" content="Bigyann is a premier platform for science, technology, and digital insights in Nepal. Stay updated with the latest in tech, AI, and modern web experiences." />
@@ -54,7 +65,6 @@
       }
     }
     </script>
-    <script src="https://js.puter.com/v2/"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-200">
     <div id="root"></div>

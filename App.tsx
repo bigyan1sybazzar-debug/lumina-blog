@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Outlet, useLocation, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Outlet, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { Header } from './components/Header';
@@ -32,23 +32,30 @@ const SITE_URL = 'https://bigyann.com.np';
 // Main Layout – Applies to most pages (header, footer, base canonical)
 // ------------------------------------------------------------------
 const MainLayout: React.FC = () => {
-  const location = useLocation();
-  const pathname = location.pathname;
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
 
-  let canonicalUrl = SITE_URL + pathname;
+  // 1. HARD REDIRECT LOGIC
+  // This catches any URL ending in /default and moves it to the clean version
+  useEffect(() => {
+    if (pathname.toLowerCase().endsWith('/default')) {
+      // Remove '/default' from the end. If the result is empty, go to '/'
+      const cleanPath = pathname.replace(/\/default$/i, '') || '/';
+      
+      // Use replace: true so it doesn't mess up the browser history
+      navigate(cleanPath, { replace: true });
+    }
+  }, [pathname, navigate]);
 
-  // Special case: treat /default as homepage
-  if (pathname === '/default') {
-    canonicalUrl = SITE_URL + '/';
-  }
-
-  // Remove trailing slashes (except for root)
-  canonicalUrl = canonicalUrl.replace(/\/+$/, '') || SITE_URL + '/';
+  // 2. CANONICAL URL GENERATION
+  // We ensure the canonical is always the clean, non-www version
+  const cleanPathname = pathname.replace(/\/+$/, '') || '';
+  const canonicalUrl = `${SITE_URL}${cleanPathname}`;
 
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        <link rel="canonical" href={canonicalUrl} data-rh="true" />
+        <link rel="canonical" href={canonicalUrl} />
       </Helmet>
 
       <Header />
@@ -61,7 +68,7 @@ const MainLayout: React.FC = () => {
 };
 
 // ------------------------------------------------------------------
-// Minimal Layout – For auth pages, sitemap, robots.txt, etc. (no header/footer)
+// Minimal Layout – For auth pages (no header/footer)
 // ------------------------------------------------------------------
 const MinimalLayout: React.FC = () => {
   return <Outlet />;
@@ -112,7 +119,7 @@ export default function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
-                {/* Admin – protected but minimal layout (or you can make a separate AdminLayout if needed) */}
+                {/* Admin */}
                 <Route
                   path="/admin/*"
                   element={
@@ -122,10 +129,6 @@ export default function App() {
                   }
                 />
               </Route>
-
-              {/* Static files (optional – if served separately, remove these) */}
-              {/* <Route path="/sitemap.xml" element={<Sitemap />} /> */}
-              {/* <Route path="/robots.txt" element={<Robots />} /> */}
 
               {/* 404 Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
