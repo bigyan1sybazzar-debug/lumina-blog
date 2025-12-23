@@ -1,4 +1,4 @@
-// middleware.js
+import { NextResponse } from 'next/server';
 
 const BOT_USER_AGENTS = [
   'googlebot',
@@ -17,38 +17,41 @@ const BOT_USER_AGENTS = [
   'discordbot'
 ];
 
-const PRERENDER_TOKEN = 'FcJ1kiMI1PSv81rjC8z9';  // Your token here
+const PRERENDER_TOKEN = 'FcJ1kiMI1PSv81rjC8z9';
 
 export const config = {
-  matcher: '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
-  // ^ This skips middleware for static files, robots.txt, sitemap.xml, etc.
+  matcher: '/((?!_next/static|_next/image|favicon.ico).*)',
 };
 
 export default async function middleware(request) {
-  const url = new URL(request.url);
-  const pathname = url.pathname;
+  const { pathname, search } = new URL(request.url);
 
-  // Extra safety: skip if it's robots.txt or sitemap.xml
-  if (pathname === '/robots.txt' || pathname === '/sitemap.xml') {
-    return; // Let Vercel serve the static file directly
+  // ✅ HARD BYPASS — sitemap & robots
+  if (pathname === '/sitemap.xml' || pathname === '/robots.txt') {
+    return NextResponse.next();
   }
 
   const userAgent = request.headers.get('user-agent') || '';
-  const isBot = BOT_USER_AGENTS.some(bot => userAgent.toLowerCase().includes(bot));
+  const isBot = BOT_USER_AGENTS.some(bot =>
+    userAgent.toLowerCase().includes(bot)
+  );
 
   if (isBot) {
-    const prerenderUrl = `https://service.prerender.io/https://bigyann.com.np${pathname}${url.search}`;
+    try {
+      const prerenderUrl = `https://service.prerender.io/https://bigyann.com.np${pathname}${search}`;
 
-    const prerenderRequest = new Request(prerenderUrl, {
-      headers: {
-        'X-Prerender-Token': PRERENDER_TOKEN,
-        'User-Agent': userAgent,
-      },
-    });
-
-    return fetch(prerenderRequest);
+      return await fetch(prerenderUrl, {
+        headers: {
+          'X-Prerender-Token': PRERENDER_TOKEN,
+          'User-Agent': userAgent,
+        },
+      });
+    } catch (e) {
+      // ✅ If prerender fails, NEVER break crawl
+      return NextResponse.next();
+    }
   }
 
-  // Normal users: continue to your React SPA
-  return;
+  // ✅ Always explicitly continue
+  return NextResponse.next();
 }
