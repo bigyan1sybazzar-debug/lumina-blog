@@ -2,10 +2,14 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": null,
   "devCommand": "npm run dev",
-
   "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "www.bigyann.com.np" }],
+      "destination": "https://bigyann.com.np/$1",
+      "statusCode": 301
+    },
     {
       "source": "/default",
       "destination": "/",
@@ -15,53 +19,11 @@
       "source": "/blog/fm3g9qgx4JGycFGkc3M3",
       "destination": "/blog/samsung-galaxy-a24-price-in-nepal",
       "statusCode": 301
-    },
-    {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.bigyann.com.np"
-        }
-      ],
-      "destination": "https://bigyann.com.np/$1",
-      "statusCode": 301
     }
   ],
-
   "rewrites": [
-    {
-      "source": "/sitemap.xml",
-      "destination": "/sitemap.xml"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
-
-  "headers": [
-    {
-      "source": "/sitemap.xml",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/xml; charset=utf-8"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, s-maxage=3600, stale-while-revalidate=60"
-        }
-      ]
-    },
-    {
-      "source": "/robots.txt",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/plain"
-        }
-      ]
-    }
+    { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
+    { "source": "/robots.txt", "destination": "/robots.txt" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

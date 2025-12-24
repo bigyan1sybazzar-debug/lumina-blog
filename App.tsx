@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Outlet, useLocation, Navigate, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Outlet, useLocation, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { Header } from './components/Header';
@@ -28,28 +28,11 @@ import "slick-carousel/slick/slick-theme.css";
 
 const SITE_URL = 'https://bigyann.com.np';
 
-// ------------------------------------------------------------------
-// Main Layout – Applies to most pages (header, footer, base canonical)
-// ------------------------------------------------------------------
 const MainLayout: React.FC = () => {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
 
-  // 1. HARD REDIRECT LOGIC
-  // This catches any URL ending in /default and moves it to the clean version
-  useEffect(() => {
-    if (pathname.toLowerCase().endsWith('/default')) {
-      // Remove '/default' from the end. If the result is empty, go to '/'
-      const cleanPath = pathname.replace(/\/default$/i, '') || '/';
-      
-      // Use replace: true so it doesn't mess up the browser history
-      navigate(cleanPath, { replace: true });
-    }
-  }, [pathname, navigate]);
-
-  // 2. CANONICAL URL GENERATION
-  // We ensure the canonical is always the clean, non-www version
-  const cleanPathname = pathname.replace(/\/+$/, '') || '';
+  // Canonical logic: Force non-www and remove trailing slashes
+  const cleanPathname = pathname === "/" ? "" : pathname.replace(/\/+$/, '');
   const canonicalUrl = `${SITE_URL}${cleanPathname}`;
 
   return (
@@ -57,26 +40,15 @@ const MainLayout: React.FC = () => {
       <Helmet>
         <link rel="canonical" href={canonicalUrl} />
       </Helmet>
-
       <Header />
       <main className="flex-grow">
-        <Outlet />  {/* Renders the matched child route */}
+        <Outlet />
       </main>
       <Footer />
     </div>
   );
 };
 
-// ------------------------------------------------------------------
-// Minimal Layout – For auth pages (no header/footer)
-// ------------------------------------------------------------------
-const MinimalLayout: React.FC = () => {
-  return <Outlet />;
-};
-
-// ------------------------------------------------------------------
-// App Component
-// ------------------------------------------------------------------
 export default function App() {
   return (
     <AuthProvider>
@@ -84,7 +56,7 @@ export default function App() {
         <HelmetProvider>
           <BrowserRouter>
             <Routes>
-              {/* Pages with full layout (header + footer + base canonical) */}
+              {/* Main Site Routes */}
               <Route element={<MainLayout />}>
                 <Route path="/" element={<Home />} />
                 <Route path="/:slug" element={<BlogPostPage />} />
@@ -97,41 +69,25 @@ export default function App() {
                 <Route path="/tools/exchange-offer" element={<ExchangeOffer />} />
                 <Route path="/author-guide" element={<SubmissionGuidePage />} />
                 <Route path="/price/my-phone-price" element={<MyPhonePrice />} />
-
-                {/* Legal pages */}
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/disclaimer" element={<Disclaimer />} />
-
-                {/* Legacy redirects */}
-                <Route
-                  path="/2025/11/Yono-tv-live.html"
-                  element={<Navigate to="/blog/yono-tv-npl-live-streaming" replace />}
-                />
-                <Route
-                  path="/blog/fm3g9qgx4JGycFGkc3M3"
-                  element={<Navigate to="/blog/samsung-galaxy-a24-price-in-nepal" replace />}
-                />
               </Route>
 
-              {/* Pages with minimal/no layout */}
-              <Route element={<MinimalLayout />}>
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
+              {/* Auth Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/admin/*" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
 
-                {/* Admin */}
-                <Route
-                  path="/admin/*"
-                  element={
-                    <ProtectedRoute requireAdmin={false}>
-                      <Admin />
-                    </ProtectedRoute>
-                  }
-                />
-              </Route>
-
-              {/* 404 Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              {/* 404 Fallback: Instead of redirecting to '/', show a 404 message. 
+                  This stops Google from indexing random URLs as duplicates of the homepage. */}
+              <Route path="*" element={
+                <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
+                  <h1 className="text-4xl font-bold mb-4">404 - Page Not Found</h1>
+                  <p className="mb-8 text-gray-600">The page you're looking for doesn't exist.</p>
+                  <a href="/" className="bg-blue-600 text-white px-6 py-2 rounded-lg">Go Home</a>
+                </div>
+              } />
             </Routes>
           </BrowserRouter>
         </HelmetProvider>
