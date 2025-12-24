@@ -28,10 +28,18 @@ import "slick-carousel/slick/slick-theme.css";
 
 const SITE_URL = 'https://bigyann.com.np';
 
+// ------------------------------------------------------------------
+// Main Layout: Handles consistent Header, Footer, and Canonical Tags
+// ------------------------------------------------------------------
 const MainLayout: React.FC = () => {
   const { pathname } = useLocation();
 
-  // Canonical logic: Force non-www and remove trailing slashes
+  /**
+   * SEO Canonical Logic:
+   * 1. Forces the site to use the non-www version.
+   * 2. Removes trailing slashes (except for home) so Google doesn't see two versions of one page.
+   * 3. Prevents any path from being identified as '/default'.
+   */
   const cleanPathname = pathname === "/" ? "" : pathname.replace(/\/+$/, '');
   const canonicalUrl = `${SITE_URL}${cleanPathname}`;
 
@@ -49,6 +57,9 @@ const MainLayout: React.FC = () => {
   );
 };
 
+// ------------------------------------------------------------------
+// App Component: Central Routing
+// ------------------------------------------------------------------
 export default function App() {
   return (
     <AuthProvider>
@@ -56,7 +67,7 @@ export default function App() {
         <HelmetProvider>
           <BrowserRouter>
             <Routes>
-              {/* Main Site Routes */}
+              {/* Pages using the standard layout with dynamic canonicals */}
               <Route element={<MainLayout />}>
                 <Route path="/" element={<Home />} />
                 <Route path="/:slug" element={<BlogPostPage />} />
@@ -74,18 +85,36 @@ export default function App() {
                 <Route path="/disclaimer" element={<Disclaimer />} />
               </Route>
 
-              {/* Auth Routes */}
+              {/* Auth & Admin Routes (No Header/Footer usually required here) */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/admin/*" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+              <Route
+                path="/admin/*"
+                element={
+                  <ProtectedRoute>
+                    <Admin />
+                  </ProtectedRoute>
+                }
+              />
 
-              {/* 404 Fallback: Instead of redirecting to '/', show a 404 message. 
-                  This stops Google from indexing random URLs as duplicates of the homepage. */}
+              {/* IMPORTANT: Real 404 Handling.
+                Instead of redirecting to "/" (which causes Soft 404 errors),
+                we show a clear 404 message. This tells Google to stop trying
+                to index incorrect URLs like /default.
+              */}
               <Route path="*" element={
-                <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
-                  <h1 className="text-4xl font-bold mb-4">404 - Page Not Found</h1>
-                  <p className="mb-8 text-gray-600">The page you're looking for doesn't exist.</p>
-                  <a href="/" className="bg-blue-600 text-white px-6 py-2 rounded-lg">Go Home</a>
+                <div className="flex flex-col items-center justify-center min-h-screen text-center p-6 bg-gray-50 dark:bg-gray-900">
+                  <h1 className="text-6xl font-bold text-blue-600 mb-4">404</h1>
+                  <h2 className="text-2xl font-semibold mb-2">Page Not Found</h2>
+                  <p className="text-gray-600 dark:text-gray-400 mb-8">
+                    The link might be broken or the page has been moved.
+                  </p>
+                  <a 
+                    href="/" 
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 rounded-full transition-all"
+                  >
+                    Return Home
+                  </a>
                 </div>
               } />
             </Routes>
