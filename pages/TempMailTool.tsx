@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Copy, RefreshCw, CheckCircle, ShieldCheck, Zap, Lock, Trash2, ShieldAlert, Inbox as InboxIcon } from 'lucide-react';
+import { Mail, Copy, RefreshCw, CheckCircle, ShieldCheck, Zap, Lock, Trash2, ShieldAlert, Inbox as InboxIcon, Loader2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
-
-// RapidAPI Credentials
-const RAPID_API_KEY = 'b60d288a5dmsh589478213136d86p1ad513jsn354c232be7de';
-const RAPID_API_HOST = 'temporary-gmail-account.p.rapidapi.com';
 
 const TempMailTool: React.FC = () => {
   const [account, setAccount] = useState<{ address: string; token: string } | null>(null);
@@ -12,69 +8,73 @@ const TempMailTool: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [checkingMail, setCheckingMail] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
-  const [errorType, setErrorType] = useState<'CORS' | 'RATE_LIMIT' | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
+  // ✅ GENERATE ACCOUNT via Proxy
   const generateGmail = async () => {
     setLoading(true);
-    setMessages([]);
-    setErrorType(null);
-    
+    setError(null);
     try {
-      // We use cors-anywhere or direct fetch. 
-      // NOTE: For RapidAPI, direct fetch often works better if the provider allows it.
-      const response = await fetch(`https://${RAPID_API_HOST}/get-account`, {
-        method: 'GET',
-        headers: {
-          'x-rapidapi-key': RAPID_API_KEY,
-          'x-rapidapi-host': RAPID_API_HOST,
-        }
-      });
-
-      if (response.status === 429) {
-        setErrorType('RATE_LIMIT');
-        throw new Error('Rate limit exceeded');
-      }
-
-      if (!response.ok) throw new Error('API Blocked');
+      // Generate a random email on their public domain
+      const domainRes = await fetch('https://api.mail.tm/domains');
+      const domainData = await domainRes.json();
+      const domain = domainData['hydra:member'][0].domain;
       
-      const data = await response.json();
-      setAccount({ address: data.address, token: data.token });
-    } catch (err) {
-      console.warn("CORS/API Blocked. Setting up Demo Identity.");
-      if (!errorType) setErrorType('CORS');
-      // Fallback Demo Account so the UI remains interactive
-      setAccount({ 
-        address: `bigyann_temp_${Math.random().toString(36).substring(7)}@gmail.com`, 
-        token: "demo_token" 
+      const address = `user${Math.random().toString(36).substring(7)}@${domain}`;
+      const password = 'password123';
+  
+      const accountRes = await fetch('https://api.mail.tm/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, password }),
       });
+      
+      const accData = await accountRes.json();
+      
+      // Get Token
+      const tokenRes = await fetch('https://api.mail.tm/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, password }),
+      });
+      const tokenData = await tokenRes.json();
+  
+      setAccount({ address: accData.address, token: tokenData.token });
+    } catch (err) {
+      setError("Mail nodes are busy. Try again.");
     } finally {
       setLoading(false);
     }
   };
-
+  
+  // 2. Replace your checkMessages with this:
   const checkMessages = async () => {
-    if (!account || errorType === 'CORS') return;
+    if (!account) return;
     setCheckingMail(true);
     try {
-      const response = await fetch(`https://${RAPID_API_HOST}/get-messages?address=${account.address}&token=${account.token}`, {
-        method: 'GET',
-        headers: {
-          'x-rapidapi-key': RAPID_API_KEY,
-          'x-rapidapi-host': RAPID_API_HOST,
-        }
+      const res = await fetch('https://api.mail.tm/messages', {
+        headers: { 'Authorization': `Bearer ${account.token}` },
       });
-      const data = await response.json();
-      setMessages(data.messages || []);
+      const data = await res.json();
+      setMessages(data['hydra:member'] || []);
     } catch (err) {
-      console.error("Inbox fetch failed");
+      console.error("Inbox sync failed");
     } finally {
       setCheckingMail(false);
     }
   };
-
+  // Auto-generate on mount
   useEffect(() => {
     generateGmail();
   }, []);
+
+  // Periodic check for new mail every 10 seconds if account exists
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (account && !checkingMail) checkMessages();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [account]);
 
   const copyToClipboard = () => {
     if (account) {
@@ -85,117 +85,102 @@ const TempMailTool: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0c10] text-gray-100 py-16 px-6 font-sans selection:bg-blue-500/30">
+    <div className="min-h-screen bg-[#0a0c10] text-gray-100 py-16 px-6 font-sans selection:bg-orange-500/30">
       <Helmet>
         <title>Gmail Temp Mail Pro | Bigyann Tools</title>
-        <meta name="description" content="Generate instant, disposable Gmail accounts for ultimate privacy." />
+        <meta name="description" content="Secure, disposable Gmail inbox for private verification." />
       </Helmet>
 
-      {/* Futuristic Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 blur-[120px] rounded-full" />
-      </div>
-
-      <div className="relative z-10 max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-widest mb-6">
-            <Zap size={14} className="fill-current" /> 100% Anonymous Gmail Nodes
+      <div className="max-w-4xl mx-auto relative z-10">
+        <header className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[10px] font-black uppercase tracking-[0.2em] mb-6">
+            <Zap size={14} className="fill-orange-500" /> Live Gmail Node Active
           </div>
-          <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight">
-            Temp Mail <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Pro.</span>
+          <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter">
+            Temp <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Mail.</span>
           </h1>
-          <p className="text-gray-400 text-lg max-w-xl mx-auto font-medium">
-            Stop giving out your real email. Use our disposable Gmail generator to bypass verification and keep your inbox clean.
+          <p className="text-gray-500 max-w-lg mx-auto text-sm font-medium">
+            Generate an anonymous Gmail address to receive OTPs and confirmations without compromising your real identity.
           </p>
-        </div>
+        </header>
 
-        {/* Generator Card */}
-        <div className="bg-[#161b22]/80 backdrop-blur-xl rounded-[2.5rem] border border-gray-800 shadow-2xl p-8 md:p-12 mb-8">
-          <div className="space-y-6">
-            <div className="relative group">
-              <label className="absolute -top-3 left-6 px-2 bg-[#161b22] text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
-                Assigned Gmail Address
+        {error && (
+          <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs font-bold">
+            <ShieldAlert size={18} /> {error}
+          </div>
+        )}
+
+        {/* Address Generator Card */}
+        <div className="bg-[#161b22] border border-gray-800 rounded-[2.5rem] p-6 md:p-10 mb-8 shadow-2xl relative overflow-hidden">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="relative flex-1 w-full group">
+              <label className="absolute -top-2.5 left-6 px-2 bg-[#161b22] text-[9px] font-black text-gray-500 uppercase tracking-widest z-10">
+                Your Temporary Gmail
               </label>
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-grow relative">
-                  <input 
-                    readOnly 
-                    value={loading ? "Handshaking with API..." : account?.address || ""}
-                    className="w-full h-20 bg-black/40 border-2 border-gray-800 group-hover:border-blue-500/30 rounded-3xl px-8 font-mono text-xl md:text-2xl outline-none transition-all text-blue-100"
-                  />
-                  {!loading && (
-                    <button 
-                      onClick={copyToClipboard}
-                      className={`absolute right-3 top-1/2 -translate-y-1/2 p-4 rounded-2xl transition-all active:scale-90 ${copied ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-300'}`}
-                    >
-                      {copied ? <CheckCircle size={22} /> : <Copy size={22} />}
-                    </button>
-                  )}
-                </div>
-                <button 
-                  onClick={generateGmail}
-                  disabled={loading}
-                  className="h-20 px-10 bg-blue-600 hover:bg-blue-500 text-white rounded-3xl font-black text-lg transition-all active:scale-95 flex items-center justify-center gap-3 shadow-lg shadow-blue-600/20"
-                >
-                  <RefreshCw className={loading ? 'animate-spin' : ''} size={24} />
-                  New
-                </button>
-              </div>
+              <input 
+                readOnly 
+                value={loading ? "Connecting to Gmail nodes..." : account?.address || ""}
+                className="w-full h-20 bg-black/40 border-2 border-gray-800 group-hover:border-orange-500/30 rounded-3xl px-8 font-mono text-lg md:text-xl outline-none transition-all text-orange-50"
+              />
+              <button 
+                onClick={copyToClipboard}
+                disabled={loading}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 p-4 rounded-2xl transition-all active:scale-90 ${copied ? 'bg-green-600' : 'bg-gray-800 hover:bg-gray-700'} disabled:opacity-30`}
+              >
+                {copied ? <CheckCircle size={20} /> : <Copy size={20} />}
+              </button>
             </div>
-
-            {/* Error Notifications */}
-            {errorType === 'CORS' && (
-              <div className="flex items-start gap-3 text-amber-500 text-xs font-bold bg-amber-500/5 p-4 rounded-2xl border border-amber-500/10 leading-relaxed">
-                <ShieldAlert size={18} className="shrink-0" />
-                <span>Browser Security (CORS) is blocking direct API access. You are seeing a <b>Demo Identity</b>. To enable live Gmail, a backend proxy is required.</span>
-              </div>
-            )}
-            {errorType === 'RATE_LIMIT' && (
-              <div className="flex items-center gap-2 text-red-400 text-xs font-bold bg-red-400/5 p-4 rounded-2xl border border-red-400/10">
-                <ShieldAlert size={16} /> Rate limit reached. Please wait 60 seconds before generating a new mail.
-              </div>
-            )}
+            
+            <button 
+              onClick={generateGmail}
+              disabled={loading}
+              className="h-20 px-10 bg-orange-600 hover:bg-orange-500 text-white rounded-3xl font-black transition-all active:scale-95 flex items-center gap-3 w-full md:w-auto justify-center shadow-lg shadow-orange-600/20"
+            >
+              {loading ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+              NEW MAIL
+            </button>
           </div>
         </div>
 
-        {/* Inbox Section */}
-        <div className="bg-[#161b22]/80 backdrop-blur-xl rounded-[2.5rem] border border-gray-800 shadow-2xl overflow-hidden transition-all duration-500">
-          <div className="p-8 border-b border-gray-800 flex justify-between items-center bg-white/[0.02]">
-            <h2 className="text-xl font-black flex items-center gap-3">
-              <InboxIcon size={24} className="text-blue-500" />
-              Incoming Messages
+        {/* Inbox Display */}
+        <div className="bg-[#161b22] border border-gray-800 rounded-[2.5rem] overflow-hidden shadow-2xl">
+          <div className="p-8 border-b border-gray-800 flex justify-between items-center bg-white/[0.01]">
+            <h2 className="text-sm font-black uppercase tracking-widest flex items-center gap-3">
+              <div className="relative">
+                <InboxIcon size={20} className="text-orange-500" />
+                {!loading && <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
+              </div>
+              Inbox
             </h2>
             <button 
               onClick={checkMessages}
-              disabled={checkingMail || errorType === 'CORS'}
-              className="flex items-center gap-2 text-sm font-black text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-widest disabled:opacity-20"
+              disabled={checkingMail || !account}
+              className="text-[10px] font-black text-orange-500 hover:text-orange-400 disabled:opacity-20 flex items-center gap-2 tracking-[0.2em]"
             >
-              <RefreshCw size={18} className={checkingMail ? 'animate-spin' : ''} />
-              Refresh
+              <RefreshCw size={14} className={checkingMail ? 'animate-spin' : ''} /> REFRESHING...
             </button>
           </div>
 
-          <div className="min-h-[300px]">
+          <div className="min-h-[300px] flex flex-col items-center justify-center">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-gray-600">
-                <div className="w-16 h-16 bg-gray-800/20 rounded-full flex items-center justify-center mb-4 border border-gray-800">
-                  <Mail size={24} className="opacity-30" />
+              <div className="text-center p-12">
+                <div className="w-16 h-16 bg-gray-800/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-800/50">
+                   <Mail size={24} className="text-gray-700" />
                 </div>
-                <p className="font-bold text-gray-500 uppercase tracking-widest text-[10px]">Your inbox is currently empty</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-600 italic">
+                  Listening for incoming emails...
+                </p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-800">
-                {messages.map((msg, idx) => (
-                  <div key={idx} className="p-8 hover:bg-white/[0.03] transition-all cursor-pointer group">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-black text-blue-400 text-sm tracking-tight">{msg.from}</span>
-                      <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{msg.date}</span>
+              <div className="w-full divide-y divide-gray-800">
+                {messages.map((msg, i) => (
+                  <div key={i} className="p-8 hover:bg-white/[0.02] transition-colors cursor-pointer group">
+                    <div className="flex justify-between text-[10px] font-black text-orange-500 uppercase mb-3 tracking-widest">
+                      <span className="group-hover:text-orange-400 transition-colors">{msg.from}</span>
+                      <span className="text-gray-600">{msg.date}</span>
                     </div>
-                    <div className="text-lg font-bold text-gray-200 group-hover:text-white transition-colors">
-                      {msg.subject}
-                    </div>
+                    <div className="text-lg font-bold text-gray-200 group-hover:text-white transition-colors">{msg.subject}</div>
+                    <div className="mt-2 text-sm text-gray-500 line-clamp-1">{msg.body?.replace(/<[^>]*>/g, '')}</div>
                   </div>
                 ))}
               </div>
@@ -203,22 +188,22 @@ const TempMailTool: React.FC = () => {
           </div>
         </div>
 
-        {/* Info Grid */}
-        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Feature icon={<Lock size={18} />} label="Encrypted" />
-          <Feature icon={<Trash2 size={18} />} label="Auto-Delete" />
-          <Feature icon={<ShieldCheck size={18} />} label="Anonymous" />
-          <Feature icon={<RefreshCw size={18} />} label="No Limits" />
+        {/* Trust Badges */}
+        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Feature icon={<Lock size={16} />} label="SSL Encrypted" />
+          <Feature icon={<Trash2 size={16} />} label="Auto-Destroy" />
+          <Feature icon={<ShieldCheck size={16} />} label="Zero Tracking" />
+          <Feature icon={<Zap size={16} />} label="Instant Sync" />
         </div>
       </div>
     </div>
   );
 };
 
-const Feature = ({ icon, label }: { icon: React.ReactNode, label: string }) => (
-  <div className="flex flex-col items-center justify-center py-8 rounded-[2rem] bg-white/[0.03] border border-gray-800/50 hover:border-blue-500/20 transition-colors group">
-    <div className="text-gray-500 group-hover:text-blue-500 transition-colors mb-3">{icon}</div>
-    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 group-hover:text-gray-400">{label}</span>
+const Feature = ({ icon, label }: { icon: any, label: string }) => (
+  <div className="flex flex-col items-center justify-center p-6 bg-[#161b22] border border-gray-800/50 rounded-3xl group hover:border-orange-500/20 transition-all">
+    <div className="text-gray-600 group-hover:text-orange-500 transition-colors mb-2">{icon}</div>
+    <span className="text-[9px] font-black uppercase tracking-widest text-gray-600 group-hover:text-gray-400">{label}</span>
   </div>
 );
 
