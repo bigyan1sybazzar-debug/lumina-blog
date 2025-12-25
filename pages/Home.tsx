@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { getPosts } from '../services/db';
 import { BlogPost } from '../types';
 import { PostCard } from '../components/PostCard';
-import { ArrowRight, Loader2, Sparkles, Send, ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen } from 'lucide-react';
+import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail,ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
@@ -230,94 +230,110 @@ export const Home: React.FC = () => {
       {/* AI Tools Section (Reduced py- from py-24 to py-16) */}
       <section className="py-12 md:py-16 bg-gradient-to-br from-gray-100 to-white dark:from-gray-900 dark:to-gray-950">
   <div className="max-w-7xl mx-auto px-4">
-  <h2 className="text-3xl md:text-4xl font-extrabold text-left mb-8 text-gray-900 dark:text-white">
-  Explore Our AI Tools 💡
-</h2>
+    <div className="flex items-center justify-between mb-8">
+      <h2 className="text-3xl md:text-4xl font-extrabold text-left text-gray-900 dark:text-white">
+        Explore Our AI Tools 💡
+      </h2>
+    </div>
 
-    
-   {/* Main Grid Container */}
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-0">
+    {/* Grid: 2 columns on mobile, 3 columns on desktop for perfect symmetry */}
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
 
-{/* Tab 1: Old Phone Price */}
-<Link
-  to="/price/my-phone-price"
-  className="text-sm flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-gray-800 text-center 
-             transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-             group rounded-2xl lg:rounded-none lg:rounded-l-3xl lg:border-r border-gray-100 dark:border-gray-700/50 
-             transform hover:-translate-y-1 shadow-lg lg:shadow-2xl shadow-primary-500/10 dark:shadow-purple-500/10"
-  aria-label="Calculate your old phone price"
->
+      {/* Tab 1: Old Phone Price */}
+      <Link
+        to="/price/my-phone-price"
+        className="text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+      >
+        <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-primary-400 to-purple-500 
+                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+          <Send className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+        </div>
+        <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">Old Phone Price</h3>
+        <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Get best price for your phone</p>
+      </Link>
 
-  {/* Icon */}
-  <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-tr from-primary-400 to-purple-500 dark:from-primary-600 dark:to-purple-700
-                  flex items-center justify-center shadow-lg shadow-primary-500/30 group-hover:scale-105 transition-transform">
-    <Send className="w-6 h-6 text-white" />
-  </div>
+      {/* Tab 2: AI Translator */}
+      <Link
+        to="/tools/ai-translator"
+        className="text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+      >
+        <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-600 
+                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+          <Languages className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+        </div>
+        <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">AI Translator</h3>
+        <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Live multi-language translation</p>
+      </Link>
 
-  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-    Old Phone Price
-  </h3>
+      {/* Tab 3: ATS Resume Checker (New) */}
+      <Link
+        to="/tools/resume-checker"
+        className="relative text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+      >
+        <span className="absolute top-3 right-3 bg-pink-500 text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase">New</span>
+        <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600 
+                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+          <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+        </div>
+        <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">Resume Checker</h3>
+        <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Scan and optimize score</p>
+      </Link>
 
-  <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
-    Get best price for your old phone
-  </p>
-</Link>
+      {/* Tab 4: Temp Mail (New) */}
+      <Link
+        to="/tools/temp-mail"
+        className="relative text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+      >
+        <span className="absolute top-3 right-3 bg-orange-500 text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase">Secure</span>
+        <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-orange-400 to-red-600 
+                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+          <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+        </div>
+        <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">Temp Mail</h3>
+        <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Disposable inbox for privacy</p>
+      </Link>
 
-{/* Tab 2: Calculate EMI */}
-<a
-  href="https://bigyann.com.np/tools/emi-calculator"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="text-sm flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-gray-800 text-center 
-             transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-             group rounded-2xl lg:rounded-none lg:border-r border-gray-100 dark:border-gray-700/50 
-             transform hover:-translate-y-1 shadow-lg lg:shadow-2xl shadow-blue-500/10 dark:shadow-blue-500/10"
-  aria-label="Calculate EMI"
->
+      {/* Tab 5: Calculate EMI */}
+      <a
+        href="https://bigyann.com.np/tools/emi-calculator"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+      >
+        <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-blue-400 to-cyan-500 
+                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+          <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+        </div>
+        <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">EMI Calculator</h3>
+        <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Quick loan estimates</p>
+      </a>
 
-  {/* Icon */}
-  <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-tr from-blue-400 to-cyan-500 dark:from-blue-600 dark:to-cyan-700
-                  flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
-    <Calculator className="w-6 h-6 text-white" />
-  </div>
+      {/* Tab 6: Exchange Offer */}
+      <Link
+        to="/tools/exchange-offer"
+        className="text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+      >
+        <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-green-400 to-teal-500 
+                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+          <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+        </div>
+        <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">Exchange Offer</h3>
+        <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Check eligibility value</p>
+      </Link>
 
-  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-    Calculate EMI
-  </h3>
-
-  <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
-    Dedicated tool for quick EMI estimates.
-  </p>
-</a>
-
-{/* Tab 3: Exchange Offer */}
-<a
-  href="/tools/exchange-offer"
-  className="text-sm flex flex-col items-center justify-center p-6 sm:p-8 bg-white dark:bg-gray-800 text-center 
-             transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-             group rounded-2xl lg:rounded-none lg:rounded-r-3xl 
-             transform hover:-translate-y-1 shadow-lg lg:shadow-2xl shadow-green-500/10 dark:shadow-teal-500/10"
-  aria-label="Exchange Offer"
->
-
-  {/* Icon */}
-  <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-tr from-green-400 to-teal-500 dark:from-green-600 dark:to-teal-700
-                  flex items-center justify-center shadow-lg shadow-green-500/30 group-hover:scale-105 transition-transform">
-    <RefreshCw className="w-6 h-6 text-white" />
-  </div>
-
-  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-    Exchange Offer
-  </h3>
-
-  <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
-    Check eligibility and value here.
-  </p>
-</a>
-
-</div>
-
-
+    </div>
   </div>
 </section>
       {/* Category Filter Section (Removed py- from parent, added py- to inner div) */}

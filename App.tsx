@@ -25,7 +25,10 @@ import { ExchangeOffer } from './pages/ExchangeOffer';
 import { SubmissionGuidePage } from './pages/Submission-guide';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-
+import VideoDownloader from './pages/VideoDownloader';
+import TempMailTool from './pages/TempMailTool'; // Adjust path if you saved it elsewhere
+import AITranslator from'./pages/AITranslator';
+import ResumeChecker from './pages/ResumeChecker';
 const SITE_URL = 'https://bigyann.com.np';
 
 // ------------------------------------------------------------------
@@ -93,6 +96,11 @@ export default function App() {
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/disclaimer" element={<Disclaimer />} />
+                // Inside your Routes block in App.tsx
+                <Route path="/tools/temp-mail" element={<TempMailTool />} />
+                <Route path="/tools/video-downloader" element={<VideoDownloader />} />
+                <Route path="/tools/ai-translator" element={<AITranslator />} />
+                <Route path="/tools/resume-checker" element={<ResumeChecker />} />
               </Route>
 
               {/* Auth & Admin Routes */}

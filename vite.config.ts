@@ -3,8 +3,6 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all envs regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
@@ -13,7 +11,27 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       strictPort: true,
-      host: true, // Useful for testing on local network devices
+      host: true,
+      // PROXY CONFIGURATION START
+      proxy: {
+        '/api-video': {
+          target: 'https://social-media-video-downloder.p.rapidapi.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api-video/, ''),
+        },
+        '/api-gmail': {
+          target: 'https://temporary-gmail-account.p.rapidapi.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api-gmail/, ''),
+        },
+        // Inside vite.config.ts -> server -> proxy:
+'/api-google-translate': {
+  target: 'https://translate.googleapis.com',
+  changeOrigin: true,
+  rewrite: (path) => path.replace(/^\/api-google-translate/, ''),
+}
+      }
+      // PROXY CONFIGURATION END
     },
 
     preview: {
@@ -21,7 +39,6 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
     },
 
-    // This ensures your custom process.env variables are available in the app
     define: {
       'process.env': Object.fromEntries(
         Object.entries(env).map(([k, v]) => [k, JSON.stringify(v)])
@@ -31,7 +48,6 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: false,
-      // Helps with performance by chunking large libraries
       rollupOptions: {
         output: {
           manualChunks: {
