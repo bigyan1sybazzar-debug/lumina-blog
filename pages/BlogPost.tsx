@@ -165,7 +165,7 @@ export const BlogPostPage: React.FC = () => {
       <>
         <Helmet>
           <title>Post Not Found | Bigyann</title>
-          <meta name="robots" content="noindex" />
+          
         </Helmet>
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900 text-white">
           Post not found or unavailable.
@@ -181,7 +181,7 @@ export const BlogPostPage: React.FC = () => {
   });
 
   // FIXED: Explicitly defining the slug-based canonical URL to fix Bing "Alternate Version" error
-  const canonicalUrl = `${SITE_URL}/${post.slug}`;
+  const canonicalUrl = `http://bigyann.com.np/${post.slug}`;
   const isoPublishDate = new Date(post.date).toISOString();
   const isoUpdateDate = post.updatedAt ? new Date(post.updatedAt).toISOString() : isoPublishDate;
 
@@ -189,11 +189,11 @@ export const BlogPostPage: React.FC = () => {
     <>
       <Helmet>
         {/* Basic SEO */}
-        <title>{post.title} | Price, Specs & News - Bigyann</title>
+        <title>{post.title} |Bigyann</title>
         <meta name="description" content={post.excerpt} />
         
         {/* FIXED: Canonical must point to the specific blog page, not the homepage */}
-        <link rel="canonical" href={canonicalUrl} />
+        <link rel="canonical" href={`http://bigyann.com.np/${post.slug}`} />
         
         <meta name="robots" content="index, follow, max-image-preview:large" />
 
