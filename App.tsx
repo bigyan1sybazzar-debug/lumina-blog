@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Outlet, useLocation, Navigate, Link } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
@@ -26,29 +26,41 @@ import { SubmissionGuidePage } from './pages/Submission-guide';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import VideoDownloader from './pages/VideoDownloader';
-import TempMailTool from './pages/TempMailTool'; // Adjust path if you saved it elsewhere
+import TempMailTool from './pages/TempMailTool';
 import AITranslator from'./pages/AITranslator';
 import ResumeChecker from './pages/ResumeChecker';
+import { notifyIndexNow } from './services/indexingService';
+
 const SITE_URL = 'https://bigyann.com.np';
 
 // ------------------------------------------------------------------
-// Main Layout: Handles consistent Header, Footer, and Selective SEO
+// Main Layout: Handles Header, Footer, SEO, and IndexNow notifications
 // ------------------------------------------------------------------
 const MainLayout: React.FC = () => {
   const { pathname } = useLocation();
 
   /**
+   * IndexNow Integration:
+   * Whenever the route changes (including blogs), we notify search engines.
+   */
+  useEffect(() => {
+    // We send the notification for every page visit to prioritize crawling.
+    // This works for static tools and dynamic blog routes.
+    notifyIndexNow([pathname]);
+  }, [pathname]);
+
+  /**
    * SEO Canonical Logic:
-   * We define our static/known routes. For these pages, the Layout sets the canonical.
-   * For the dynamic "/:slug" (blog posts), we do NOT set a canonical here to 
-   * avoid conflicting with the one inside BlogPostPage.tsx.
+   * We define our static/known routes. 
+   * Dynamic blog posts usually handle their own canonicals inside BlogPostPage.tsx.
    */
   const cleanPathname = pathname === "/" ? "" : pathname.replace(/\/+$/, '');
   
   const staticRoutes = [
     '', '/categories', '/about', '/contact', '/chat', '/live-football',
     '/tools/emi-calculator', '/tools/exchange-offer', '/author-guide',
-    '/price/my-phone-price', '/privacy-policy', '/terms-of-service', '/disclaimer'
+    '/price/my-phone-price', '/privacy-policy', '/terms-of-service', '/disclaimer',
+    '/tools/temp-mail', '/tools/video-downloader', '/tools/ai-translator', '/tools/resume-checker'
   ];
 
   const isStaticRoute = staticRoutes.includes(cleanPathname);
@@ -57,10 +69,13 @@ const MainLayout: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        {/* Only apply this canonical if we are on a static page/home. 
-            Blog posts handle their own canonicals to avoid the "Alternate version" error. */}
+        {/* Set canonical for home and static tools */}
         {isStaticRoute && <link rel="canonical" href={canonicalUrl} />}
+        
+        {/* Universal indexing allowed tag - Ensures "noindex" bugs are cleared */}
+        <meta name="robots" content="index, follow" />
       </Helmet>
+      
       <Header />
       <main className="flex-grow">
         <Outlet />
@@ -96,7 +111,6 @@ export default function App() {
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/disclaimer" element={<Disclaimer />} />
-                // Inside your Routes block in App.tsx
                 <Route path="/tools/temp-mail" element={<TempMailTool />} />
                 <Route path="/tools/video-downloader" element={<VideoDownloader />} />
                 <Route path="/tools/ai-translator" element={<AITranslator />} />
