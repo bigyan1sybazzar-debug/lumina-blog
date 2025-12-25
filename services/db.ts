@@ -1,5 +1,5 @@
 // services/db.ts
-
+import { notifyIndexNow } from './indexingService'; // Ensure this is imported
 import firebase from 'firebase/compat/app';
 import { db } from './firebase';
 import { BlogPost, Category, User, Comment, Review } from '../types';
@@ -150,13 +150,10 @@ export const createPost = async (
   }
 ) => {
   try {
-    // 1. Generate base slug using the imported helper
     const baseSlug = slugify(post.title); 
-
     let slug = baseSlug;
     let counter = 1;
 
-    // 2. Ensure slug is unique
     while (await checkSlugExists(slug)) {
       counter++;
       slug = `${baseSlug}-${counter}`;
@@ -164,7 +161,7 @@ export const createPost = async (
 
     const newPost = {
       ...post,
-      slug, // <-- Now guaranteed unique
+      slug, 
       likes: [],
       views: 0,
       createdAt: new Date().toISOString(),
@@ -173,9 +170,10 @@ export const createPost = async (
 
     const docRef = await db.collection(POSTS_COLLECTION).add(newPost);
 
-    // Auto-update sitemap if published
+    // Auto-update sitemap and notify search engines if published
     if (post.status === 'published') {
       await generateAndUploadSitemap();
+      await notifyIndexNow([getFullUrl(slug)]); // Notification for new content
     }
 
     return docRef.id;
@@ -186,8 +184,7 @@ export const createPost = async (
 };
 
 /**
- * Updates an existing post. If the title is changed, it regenerates and checks
- * for a unique slug.
+ * Updates an existing post and regenerates slug if title changes.
  */
 export const updatePost = async (
     postId: string, 
@@ -199,34 +196,32 @@ export const updatePost = async (
         updatedAt: new Date().toISOString(),
       };
   
-      // If title changed, regenerate and check slug uniqueness
       if (postData.title) {
         const baseSlug = slugify(postData.title);
-
         let slug = baseSlug;
         let counter = 1;
 
-        // Check for uniqueness, ensuring we don't conflict with other posts
         while (await checkSlugExists(slug)) {
-          // Check if the existing post has this slug. If it does, we can keep it.
           const existingPost = await getPostBySlug(slug);
           if (existingPost && existingPost.id === postId) {
             break; 
           }
-          
           counter++;
           slug = `${baseSlug}-${counter}`;
         }
-  
         updateData.slug = slug;
       }
   
       await db.collection(POSTS_COLLECTION).doc(postId).update(updateData);
   
-      // Regenerate sitemap if post is published
       const status = postData.status as 'published' | 'pending' | 'draft' | undefined;
+      // If the post is published, notify search engines of the change
       if (status === 'published') {
         await generateAndUploadSitemap();
+        const currentPost = await getPostById(postId);
+        if (currentPost?.slug) {
+          await notifyIndexNow([getFullUrl(currentPost.slug)]); // Notification for modified content
+        }
       }
   
       console.log(`Post ${postId} updated successfully`);
@@ -236,41 +231,28 @@ export const updatePost = async (
     }
   };
 
-// Delete a post
+/**
+ * Deletes a post and notifies search engines to remove the URL.
+ */
 export const deletePost = async (postId: string): Promise<void> => {
   try {
-    // First, check if the post exists
     const post = await getPostById(postId);
     if (!post) {
       throw new Error('Post not found');
     }
 
-    // Delete the post
     await db.collection(POSTS_COLLECTION).doc(postId).delete();
 
-    // Delete associated comments
-    const commentsSnapshot = await db.collection(COMMENTS_COLLECTION)
-      .where('postId', '==', postId)
-      .get();
-    
-    const deleteCommentsPromises = commentsSnapshot.docs.map(doc => 
-      doc.ref.delete()
-    );
-
-    // Delete associated reviews
-    const reviewsSnapshot = await db.collection(REVIEWS_COLLECTION)
-      .where('postId', '==', postId)
-      .get();
-    
-    const deleteReviewsPromises = reviewsSnapshot.docs.map(doc => 
-      doc.ref.delete()
-    );
-
+    // ... (rest of your deletion logic for comments/reviews remains the same)
+    const commentsSnapshot = await db.collection(COMMENTS_COLLECTION).where('postId', '==', postId).get();
+    const deleteCommentsPromises = commentsSnapshot.docs.map(doc => doc.ref.delete());
+    const reviewsSnapshot = await db.collection(REVIEWS_COLLECTION).where('postId', '==', postId).get();
+    const deleteReviewsPromises = reviewsSnapshot.docs.map(doc => doc.ref.delete());
     await Promise.all([...deleteCommentsPromises, ...deleteReviewsPromises]);
 
-    // Regenerate sitemap if the deleted post was published
     if (post.status === 'published') {
       await generateAndUploadSitemap();
+      await notifyIndexNow([getFullUrl(post.slug)]); // Notification for deleted content
     }
 
     console.log(`Post ${postId} and associated data deleted successfully`);
@@ -279,7 +261,10 @@ export const deletePost = async (postId: string): Promise<void> => {
     throw error;
   }
 };
-
+const getFullUrl = (slug: string) => `https://yourdomain.com/blog/${slug}`;
+/**
+ * Updates post status and notifies IndexNow if changed to published.
+ */
 export const updatePostStatus = async (postId: string, status: 'published' | 'pending' | 'draft') => {
   await db.collection(POSTS_COLLECTION).doc(postId).update({
     status,
@@ -288,6 +273,10 @@ export const updatePostStatus = async (postId: string, status: 'published' | 'pe
 
   if (status === 'published') {
     await generateAndUploadSitemap();
+    const post = await getPostById(postId);
+    if (post?.slug) {
+      await notifyIndexNow([getFullUrl(post.slug)]); // Real-time indexing
+    }
   }
 };
 

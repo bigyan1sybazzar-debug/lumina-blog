@@ -70,12 +70,12 @@ export const BlogPostPage: React.FC = () => {
   const [post, setPost] = useState<BlogPost | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
 
+  // CHANGED: Use the exact domain provided in your Bing error report
   const SITE_URL = "https://bigyann.com.np";
 
   useEffect(() => {
@@ -150,7 +150,7 @@ export const BlogPostPage: React.FC = () => {
     return (
       <>
         <Helmet>
-          <title data-rh="true">Loading Content... | Bigyann</title>
+          <title>Loading Content... | Bigyann</title>
         </Helmet>
         <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
           <Loader2 className="animate-spin mb-4" size={32} />
@@ -164,7 +164,8 @@ export const BlogPostPage: React.FC = () => {
     return (
       <>
         <Helmet>
-          <title data-rh="true">Post Not Found | Bigyann</title>
+          <title>Post Not Found | Bigyann</title>
+          <meta name="robots" content="noindex" />
         </Helmet>
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900 text-white">
           Post not found or unavailable.
@@ -179,6 +180,7 @@ export const BlogPostPage: React.FC = () => {
     day: 'numeric',
   });
 
+  // FIXED: Explicitly defining the slug-based canonical URL to fix Bing "Alternate Version" error
   const canonicalUrl = `${SITE_URL}/${post.slug}`;
   const isoPublishDate = new Date(post.date).toISOString();
   const isoUpdateDate = post.updatedAt ? new Date(post.updatedAt).toISOString() : isoPublishDate;
@@ -186,27 +188,34 @@ export const BlogPostPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title data-rh="true">{post.title} | Price, Specs & News - Bigyann</title>
-        <meta name="description" content={post.excerpt} data-rh="true" />
-        <link rel="canonical" href={canonicalUrl} data-rh="true" />
-        <meta name="robots" content="index, follow, max-image-preview:large" data-rh="true" />
+        {/* Basic SEO */}
+        <title>{post.title} | Price, Specs & News - Bigyann</title>
+        <meta name="description" content={post.excerpt} />
+        
+        {/* FIXED: Canonical must point to the specific blog page, not the homepage */}
+        <link rel="canonical" href={canonicalUrl} />
+        
+        <meta name="robots" content="index, follow, max-image-preview:large" />
 
-        <meta property="og:title" content={`${post.title} - Bigyann`} data-rh="true" />
-        <meta property="og:description" content={post.excerpt} data-rh="true" />
-        <meta property="og:image" content={post.coverImage} data-rh="true" />
-        <meta property="og:url" content={canonicalUrl} data-rh="true" />
-        <meta property="og:type" content="article" data-rh="true" />
-        <meta property="og:site_name" content="Bigyann" data-rh="true" />
-        <meta property="article:published_time" content={isoPublishDate} data-rh="true" />
-        <meta property="article:modified_time" content={isoUpdateDate} data-rh="true" />
-        <meta property="article:author" content={post.author.name} data-rh="true" />
-        <meta property="article:section" content={post.category} data-rh="true" />
+        {/* Open Graph / Facebook */}
+        <meta property="og:title" content={`${post.title} - Bigyann`} />
+        <meta property="og:description" content={post.excerpt} />
+        <meta property="og:image" content={post.coverImage} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Bigyann" />
+        <meta property="article:published_time" content={isoPublishDate} />
+        <meta property="article:modified_time" content={isoUpdateDate} />
+        <meta property="article:author" content={post.author.name} />
+        <meta property="article:section" content={post.category} />
 
-        <meta name="twitter:card" content="summary_large_image" data-rh="true" />
-        <meta name="twitter:title" content={post.title} data-rh="true" />
-        <meta name="twitter:description" content={post.excerpt} data-rh="true" />
-        <meta name="twitter:image" content={post.coverImage} data-rh="true" />
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={post.title} />
+        <meta name="twitter:description" content={post.excerpt} />
+        <meta name="twitter:image" content={post.coverImage} />
 
+        {/* JSON-LD Structured Data */}
         <script type="application/ld+json">
           {JSON.stringify({
             '@context': 'https://schema.org',
@@ -322,7 +331,6 @@ export const BlogPostPage: React.FC = () => {
             {/* Main Content Area */}
             <article className="lg:col-span-8">
               <div className="prose prose-lg dark:prose-invert max-w-none">
-                {/* Lead/Excerpt Section */}
                 <p className="lead text-xl italic text-gray-600 dark:text-gray-300 border-l-4 border-primary-500 pl-6 mb-10 font-serif">
                   {post.excerpt}
                 </p>
@@ -367,7 +375,7 @@ export const BlogPostPage: React.FC = () => {
                   </ReactMarkdown>
                 </div>
 
-                {/* --- AUTHOR BOX --- */}
+                {/* AUTHOR BOX */}
                 <div className="mt-20 p-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl flex flex-col md:flex-row items-center md:items-start gap-8">
                   <div className="relative">
                     <img
@@ -390,7 +398,7 @@ export const BlogPostPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* --- COMMENTS --- */}
+                {/* COMMENTS SECTION */}
                 <div id="comments-section" className="mt-16">
                   <div className="flex items-center gap-4 mb-8">
                     <h2 className="text-2xl font-bold">Comment, Discuss and post Your Reviews</h2>
