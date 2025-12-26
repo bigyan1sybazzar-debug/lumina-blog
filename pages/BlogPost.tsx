@@ -75,7 +75,7 @@ export const BlogPostPage: React.FC = () => {
   const [likeCount, setLikeCount] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
 
-  // CHANGED: Use the exact domain provided in your Bing error report
+  // FIXED: Standardize to HTTPS to match search engine expectations
   const SITE_URL = "https://bigyann.com.np";
 
   useEffect(() => {
@@ -146,11 +146,14 @@ export const BlogPostPage: React.FC = () => {
     document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // FIXED: Added noindex and canonical to loading state to prevent "blank page" indexing
   if (loading) {
     return (
       <>
         <Helmet>
           <title>Loading Content... | Bigyann</title>
+          <meta name="robots" content="noindex, nofollow" />
+          <link rel="canonical" href={`${SITE_URL}/${slug}`} />
         </Helmet>
         <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
           <Loader2 className="animate-spin mb-4" size={32} />
@@ -165,7 +168,7 @@ export const BlogPostPage: React.FC = () => {
       <>
         <Helmet>
           <title>Post Not Found | Bigyann</title>
-          
+          <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900 text-white">
           Post not found or unavailable.
@@ -180,8 +183,8 @@ export const BlogPostPage: React.FC = () => {
     day: 'numeric',
   });
 
-  // FIXED: Explicitly defining the slug-based canonical URL to fix Bing "Alternate Version" error
-  const canonicalUrl = `http://bigyann.com.np/${post.slug}`;
+  // FIXED: Explicitly use HTTPS and the current post slug
+  const canonicalUrl = `${SITE_URL}/${post.slug}`;
   const isoPublishDate = new Date(post.date).toISOString();
   const isoUpdateDate = post.updatedAt ? new Date(post.updatedAt).toISOString() : isoPublishDate;
 
@@ -189,13 +192,14 @@ export const BlogPostPage: React.FC = () => {
     <>
       <Helmet>
         {/* Basic SEO */}
-        <title>{post.title} |Bigyann</title>
+        <title>{post.title} | Bigyann</title>
         <meta name="description" content={post.excerpt} />
         
-        {/* FIXED: Canonical must point to the specific blog page, not the homepage */}
-        <link rel="canonical" href={`http://bigyann.com.np/${post.slug}`} />
+        {/* THE CORE FIX: Uniform HTTPS Canonical Link */}
+        <link rel="canonical" href={canonicalUrl} />
         
-        <meta name="robots" content="index, follow, max-image-preview:large" />
+        {/* Enhanced Robots for Tech Content */}
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 
         {/* Open Graph / Facebook */}
         <meta property="og:title" content={`${post.title} - Bigyann`} />
@@ -215,11 +219,11 @@ export const BlogPostPage: React.FC = () => {
         <meta name="twitter:description" content={post.excerpt} />
         <meta name="twitter:image" content={post.coverImage} />
 
-        {/* JSON-LD Structured Data */}
+        {/* JSON-LD Structured Data - Changed to TechArticle for gadget news */}
         <script type="application/ld+json">
           {JSON.stringify({
             '@context': 'https://schema.org',
-            '@type': 'BlogPosting',
+            '@type': 'TechArticle',
             'headline': post.title,
             'description': post.excerpt,
             'image': post.coverImage,
@@ -228,7 +232,7 @@ export const BlogPostPage: React.FC = () => {
             'author': {
               '@type': 'Person',
               'name': post.author.name,
-              'url': `${SITE_URL}`,
+              'url': SITE_URL,
             },
             'publisher': {
               '@type': 'Organization',
