@@ -31,7 +31,7 @@ import AITranslator from'./pages/AITranslator';
 import ResumeChecker from './pages/ResumeChecker';
 import { notifyIndexNow } from './services/indexingService';
 
-const SITE_URL = 'http://bigyann.com.np';
+const SITE_URL = 'https://www.bigyann.com.np';
 
 // ------------------------------------------------------------------
 // Main Layout: Handles Header, Footer, SEO, and IndexNow notifications
