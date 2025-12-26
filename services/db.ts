@@ -145,7 +145,8 @@ export const getPostBySlug = async (slugOrId: string): Promise<BlogPost | null> 
  * If the generated slug already exists, a counter is appended (e.g., 'post-title-2').
  */
 export const createPost = async (
-  post: Omit<BlogPost, 'id' | 'likes' | 'views' | 'createdAt' | 'updatedAt'> & {
+  post: Omit<BlogPost, 'id' | 'likes' | 'views' | 'createdAt' | 'updatedAt' | 'slug'> & {
+    slug?: string;
     status: 'published' | 'pending' | 'draft';
   }
 ) => {
