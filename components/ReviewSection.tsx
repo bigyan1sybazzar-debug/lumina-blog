@@ -1,13 +1,13 @@
-// src/components/ReviewSection.tsx
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Star, Send, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 // NOTE: You must create these functions in your services/db.ts file
-import { getReviewsByPostId, addReview } from '../services/db'; 
+import { getReviewsByPostId, addReview } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 // NOTE: You must define the 'Review' type in your types.ts file
-import { Review } from '../types';   
+import { Review } from '../types';
 
 interface ReviewSectionProps {
   postId: string;
@@ -71,68 +71,67 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ postId }) => {
     setNewReviewRating(5);
   };
 
-  const averageRating = reviews.length > 0 
+  const averageRating = reviews.length > 0
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
     : 'N/A';
-  
+
   const totalReviews = reviews.length;
 
   return (
     <div id="reviews-section" className="mt-5 pt-6 ">
-     
+
 
       {loading ? (
-        <div className="flex justify-center py-8 dark:text-white"><Loader2 className="animate-spin mr-2"/> Loading Reviews...</div>
+        <div className="flex justify-center py-8 dark:text-white"><Loader2 className="animate-spin mr-2" /> Loading Reviews...</div>
       ) : (
         <>
           {/* Review Submission Form */}
           {user ? (
             <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <div className="flex items-center mb-3">
-                    <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full mr-3" />
-                    <span className="font-bold text-gray-900 dark:text-white">{user.name}</span>
-                </div>
-                
-                <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Your Rating:</label>
-                    <div className="flex space-x-1">
-                        {[1, 2, 3, 4, 5].map(star => (
-                            <Star
-                                key={star}
-                                size={24}
-                                className={`cursor-pointer transition-colors ${
-                                    star <= newReviewRating 
-                                        ? 'text-yellow-400 fill-yellow-400' 
-                                        : 'text-gray-300 dark:text-gray-600'
-                                }`}
-                                onClick={() => setNewReviewRating(star)}
-                            />
-                        ))}
-                    </div>
-                </div>
+              <div className="flex items-center mb-3">
+                <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full mr-3" />
+                <span className="font-bold text-gray-900 dark:text-white">{user.name}</span>
+              </div>
 
-                <textarea 
-                    className="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 outline-none dark:text-white"
-                    rows={4}
-                    placeholder="Share your experience and review this post..."
-                    value={newReviewText}
-                    onChange={(e) => setNewReviewText(e.target.value)}
-                ></textarea>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Your Rating:</label>
+                <div className="flex space-x-1">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <Star
+                      key={star}
+                      size={24}
+                      className={`cursor-pointer transition-colors ${star <= newReviewRating
+                        ? 'text-yellow-400 fill-yellow-400'
+                        : 'text-gray-300 dark:text-gray-600'
+                        }`}
+                      onClick={() => setNewReviewRating(star)}
+                    />
+                  ))}
+                </div>
+              </div>
 
-                <button 
-                    onClick={handleSubmitReview}
-                    disabled={!newReviewText.trim()}
-                    className="mt-3 px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 flex items-center"
-                >
-                    <Send size={16} className="mr-2" /> Submit Review
-                </button>
+              <textarea
+                className="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-primary-500 outline-none dark:text-white"
+                rows={4}
+                placeholder="Share your experience and review this post..."
+                value={newReviewText}
+                onChange={(e) => setNewReviewText(e.target.value)}
+              ></textarea>
+
+              <button
+                onClick={handleSubmitReview}
+                disabled={!newReviewText.trim()}
+                className="mt-3 px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 flex items-center"
+              >
+                <Send size={16} className="mr-2" /> Submit Review
+              </button>
             </div>
           ) : (
             <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl mb-8 text-center">
-                <p className="text-gray-600 dark:text-gray-300 mb-4">Log in to leave a review.</p>
-                <Link to="/login" state={{ from: window.location.pathname }} className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700">
-                    Log In
-                </Link>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">Log in to leave a review.</p>
+              <Link href="/login" className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700">
+                Log In
+              </Link>
             </div>
           )}
 
@@ -149,7 +148,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ postId }) => {
                   <div className="mb-2">
                     <StarRating rating={review.rating} />
                   </div>
-                  
+
                   <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{review.content}</p>
                 </div>
               </div>

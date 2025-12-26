@@ -1,13 +1,13 @@
 // pages/PrivacyPolicy.tsx
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-16 px-4">
       <div className="max-w-4xl mx-auto">
-        <Link to="/" className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:underline mb-8 text-sm font-medium">
+        <Link href="/" className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:underline mb-8 text-sm font-medium">
           <ArrowLeft size={16} className="mr-2" />
           Back to Home
         </Link>
@@ -22,7 +22,7 @@ const PrivacyPolicy = () => {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">1. Introduction</h2>
               <p>
-                Welcome to <strong>Bigyann</strong>. We respect your privacy and are committed to protecting your personal data. 
+                Welcome to <strong>Bigyann</strong>. We respect your privacy and are committed to protecting your personal data.
                 This privacy policy will inform you about how we look after your personal data when you visit our website and tell you about your privacy rights.
               </p>
             </section>
@@ -54,7 +54,7 @@ const PrivacyPolicy = () => {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">4. Data Security</h2>
               <p>
-                We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used or accessed in an unauthorized way. 
+                We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used or accessed in an unauthorized way.
                 We use HTTPS, secure authentication, and limit access to your data to authorized personnel only.
               </p>
             </section>
@@ -62,7 +62,7 @@ const PrivacyPolicy = () => {
             <section>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">5. Third-Party Services</h2>
               <p>
-                We use Firebase (Google) for authentication, hosting, and analytics. Your data is processed according to Google's Privacy Policy. 
+                We use Firebase (Google) for authentication, hosting, and analytics. Your data is processed according to Google's Privacy Policy.
                 We do not sell your personal data to third parties.
               </p>
             </section>

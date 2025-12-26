@@ -1,9 +1,10 @@
+'use client';
+
 import React, { useState } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
-
-const { Link, useNavigate, useLocation } = ReactRouterDOM;
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -11,17 +12,15 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false); // New state for Google button
   const { login, loginWithGoogle, isLoading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Use optional chaining for safety
-  const from = (location.state as any)?.from?.pathname || '/';
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const from = searchParams?.get('from') || '/';
 
   const handleSuccess = (emailAddr?: string) => {
     if (emailAddr === 'admin@lumina.blog') {
-      navigate('/admin');
+      router.push('/admin');
     } else {
-      navigate(from);
+      router.push(from);
     }
   };
 
@@ -32,7 +31,7 @@ export const Login: React.FC = () => {
       await login(email, password);
       handleSuccess(email);
     } catch (err: any) {
-      if(err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
         setError('Account not found. Please create an account first.');
       } else {
         setError('Failed to log in. Check your credentials.');
@@ -47,18 +46,18 @@ export const Login: React.FC = () => {
       // NOTE: Casting the result to 'any' here bypasses the TS error.
       // The assumption is that loginWithGoogle() handles the sign-in 
       // and updates the global user state via the AuthContext.
-      await loginWithGoogle() as any; 
-      
+      await loginWithGoogle() as any;
+
       // Navigate immediately since AuthContext handles state update
-      navigate(from);
-      
+      router.push(from);
+
     } catch (err: any) {
       setIsGoogleLoading(false);
 
-      console.error("Google Sign-in Error:", err); 
+      console.error("Google Sign-in Error:", err);
 
       let errorMessage = 'Google sign-in failed.';
-      
+
       if (err.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Sign-in window closed. Please try again.';
       } else if (err.code === 'auth/cancelled-popup-request') {
@@ -67,7 +66,7 @@ export const Login: React.FC = () => {
         // This captures errors like 'auth/unauthorized-domain'
         errorMessage = `Sign-in failed: ${err.message || err.code}. Check Firebase Console Authorized Domains.`;
       }
-      
+
       setError(errorMessage);
     } finally {
       setIsGoogleLoading(false);
@@ -79,7 +78,7 @@ export const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link to="/" className="flex justify-center text-3xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+        <Link href="/" className="flex justify-center text-3xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent mb-2">
           Bigyann
         </Link>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
@@ -87,7 +86,7 @@ export const Login: React.FC = () => {
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           Or{' '}
-          <Link to="/signup" className="font-medium text-primary-600 hover:text-primary-500">
+          <Link href="/signup" className="font-medium text-primary-600 hover:text-primary-500">
             create a new account
           </Link>
         </p>
@@ -101,7 +100,7 @@ export const Login: React.FC = () => {
               {error}
             </div>
           )}
-          
+
           <div className="space-y-4">
             <button
               onClick={handleGoogleLogin}
@@ -133,7 +132,7 @@ export const Login: React.FC = () => {
               )}
               Sign in with Google
             </button>
-            
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300 dark:border-gray-600" />

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Download, Youtube, Instagram, Twitter, Facebook, Play, CheckCircle, AlertCircle, Loader2, Link as LinkIcon, Smartphone } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
@@ -49,9 +51,9 @@ const VideoDownloader: React.FC = () => {
         if (response.status === 429) throw new Error("Too many requests. Wait a moment.");
         throw new Error("Failed to fetch video data.");
       }
-      
+
       const data = await response.json();
-      
+
       if (data.status === true || data.url || data.links) {
         setResult(data);
       } else {
@@ -107,10 +109,10 @@ const VideoDownloader: React.FC = () => {
           <div className="bg-[#161b22]/90 backdrop-blur-2xl rounded-[2.8rem] border border-gray-700/50 p-6 md:p-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
             <div className="flex flex-col md:flex-row gap-10 items-center">
               <div className="w-full md:w-2/5 aspect-video bg-black rounded-[2rem] overflow-hidden relative shadow-2xl">
-                 <img src={result.thumb || result.thumbnail || 'https://via.placeholder.com/400x225'} alt="Thumbnail" className="w-full h-full object-cover opacity-70" />
-                 <Play className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/80" size={56} />
+                <img src={result.thumb || result.thumbnail || 'https://via.placeholder.com/400x225'} alt="Thumbnail" className="w-full h-full object-cover opacity-70" />
+                <Play className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/80" size={56} />
               </div>
-              
+
               <div className="flex-grow text-center md:text-left space-y-6">
                 <h3 className="text-2xl font-black text-white line-clamp-2">{result.title || "Ready to Download"}</h3>
                 <a

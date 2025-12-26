@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import {
   getPostBySlug,
   getPosts,
@@ -63,9 +66,10 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({ children }) => {
 // MAIN COMPONENT – Fully SEO Optimized
 // ------------------------------------------------------------------
 export const BlogPostPage: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const params = useParams();
+  const slug = params?.slug as string;
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const [post, setPost] = useState<BlogPost | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
@@ -87,7 +91,7 @@ export const BlogPostPage: React.FC = () => {
 
       if (p) {
         if (p.slug && slug !== p.slug) {
-          navigate(`/${p.slug}`, { replace: true });
+          router.replace(`/${p.slug}`);
           return;
         }
 
@@ -108,7 +112,7 @@ export const BlogPostPage: React.FC = () => {
     };
 
     fetchData();
-  }, [slug, user, navigate]);
+  }, [slug, user, router]);
 
   useEffect(() => {
     if (isCopied) {
@@ -147,23 +151,23 @@ export const BlogPostPage: React.FC = () => {
   };
 
   // FIXED: Added noindex and canonical to loading state to prevent "blank page" indexing
-// 1. IMPROVED LOADING STATE (Removed noindex)
-if (loading) {
-  return (
-    <>
-      <Helmet>
-        <title>Bigyann | Loading...</title>
-        {/* We tell Google it's okay to index this, and point to the final URL */}
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={`${SITE_URL}/${slug}`} />
-      </Helmet>
-      <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
-        <Loader2 className="animate-spin mb-4" size={32} />
-        <p>Illuminating content...</p>
-      </div>
-    </>
-  );
-}
+  // 1. IMPROVED LOADING STATE (Removed noindex)
+  if (loading) {
+    return (
+      <>
+        <Helmet>
+          <title>Bigyann | Loading...</title>
+          {/* We tell Google it's okay to index this, and point to the final URL */}
+          <meta name="robots" content="index, follow" />
+          <link rel="canonical" href={`${SITE_URL}/${slug}`} />
+        </Helmet>
+        <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
+          <Loader2 className="animate-spin mb-4" size={32} />
+          <p>Illuminating content...</p>
+        </div>
+      </>
+    );
+  }
 
   if (!post || (post.status !== 'published' && user?.id !== post.author.id && user?.role !== 'admin')) {
     return (
@@ -196,10 +200,10 @@ if (loading) {
         {/* Basic SEO */}
         <title>{post.title} | Bigyann</title>
         <meta name="description" content={post.excerpt} />
-        
+
         {/* THE CORE FIX: Uniform HTTPS Canonical Link */}
         <link rel="canonical" href={canonicalUrl} />
-        
+
         {/* Enhanced Robots for Tech Content */}
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 
@@ -258,7 +262,7 @@ if (loading) {
         <div className="h-[50vh] w-full relative">
           <img
             src={post.coverImage}
-            alt={post.title}
+            alt={post.coverImageAlt || post.title}
             className="w-full h-full object-cover"
             onError={(e) => {
               e.currentTarget.onerror = null;
@@ -303,11 +307,10 @@ if (loading) {
               <div className="sticky top-24 flex flex-col items-center space-y-6">
                 <button
                   onClick={handleLike}
-                  className={`p-4 rounded-full transition-all ${
-                    isLiked
-                      ? 'bg-red-50 text-red-600 shadow-lg'
-                      : 'bg-gray-100 dark:bg-gray-800 hover:bg-red-50 hover:text-red-600'
-                  }`}
+                  className={`p-4 rounded-full transition-all ${isLiked
+                    ? 'bg-red-50 text-red-600 shadow-lg'
+                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-red-50 hover:text-red-600'
+                    }`}
                 >
                   <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
                   <span className="block text-xs font-bold mt-1">{likeCount}</span>
@@ -337,9 +340,16 @@ if (loading) {
             {/* Main Content Area */}
             <article className="lg:col-span-8">
               <div className="prose prose-lg dark:prose-invert max-w-none">
-                <p className="lead text-xl italic text-gray-600 dark:text-gray-300 border-l-4 border-primary-500 pl-6 mb-10 font-serif">
-                  {post.excerpt}
-                </p>
+                <div className="lead text-xl italic text-gray-600 dark:text-gray-300 border-l-4 border-primary-500 pl-6 mb-10 font-serif">
+                  <ReactMarkdown
+                    components={{
+                      a: ({ node, ...props }) => <a className="text-primary-600 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                      p: ({ node, ...props }) => <p className="mb-0" {...props} />
+                    }}
+                  >
+                    {post.excerpt}
+                  </ReactMarkdown>
+                </div>
 
                 <div className="font-sans text-lg leading-relaxed text-gray-800 dark:text-gray-200">
                   <ReactMarkdown
@@ -425,7 +435,7 @@ if (loading) {
                   {relatedPosts.map((rp) => (
                     <Link
                       key={rp.id}
-                      to={`/${rp.slug || rp.id}`}
+                      href={`/${rp.slug || rp.id}`}
                       className="block group transition-all hover:translate-x-1"
                     >
                       <div className="aspect-video rounded-xl overflow-hidden mb-4 shadow-md">

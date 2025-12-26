@@ -1,13 +1,13 @@
 // pages/TermsOfService.tsx
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 const TermsOfService = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-16 px-4">
       <div className="max-w-4xl mx-auto">
-        <Link to="/" className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:underline mb-8 text-sm font-medium">
+        <Link href="/" className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:underline mb-8 text-sm font-medium">
           <ArrowLeft size={16} className="mr-2" />
           Back to Home
         </Link>
@@ -19,7 +19,7 @@ const TermsOfService = () => {
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">Effective: December 2025</p>
 
           <div className="prose prose-lg dark:prose-invert max-w-none space-y-8 text-gray-700 dark:text-gray-300">
-            
+
             <section>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">1. Acceptance of Terms</h2>
               <p>By accessing or using **Bigyann**, you agree to be bound by these Terms of Service and our **Privacy Policy**. If you do not agree to these terms, please do not use the site.</p>
@@ -46,7 +46,7 @@ const TermsOfService = () => {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">4. Termination</h2>
               <p>We may suspend or terminate your access to the service immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you **breach these Terms**.</p>
             </section>
-            
+
             {/* --- Added Legal Sections for robustness --- */}
             <section>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">5. Disclaimers</h2>
@@ -66,7 +66,7 @@ const TermsOfService = () => {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">7. Governing Law</h2>
               <p>These Terms shall be governed and construed in accordance with the laws of **[Insert Your Jurisdiction/Country]**, without regard to its conflict of law provisions.</p>
             </section>
-            
+
             <section>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">8. Changes to Terms</h2>
               <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. We will try to provide at least 30 days' notice prior to any new terms taking effect. By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms.</p>

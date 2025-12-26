@@ -1,3 +1,5 @@
+'use client';
+
 // pages/LiveFootball.tsx
 import React, { useState, useEffect } from 'react';
 import { Loader2, RefreshCw, Trophy, Calendar, History } from 'lucide-react';
@@ -31,8 +33,8 @@ const LiveFootball: React.FC = () => {
       const data = await (tab === 'live'
         ? footballApi.liveMatches()
         : tab === 'upcoming'
-        ? footballApi.upcomingMatches()
-        : footballApi.recentMatches()
+          ? footballApi.upcomingMatches()
+          : footballApi.recentMatches()
       );
 
       const list = data.data || [];
@@ -100,11 +102,10 @@ const LiveFootball: React.FC = () => {
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id as Tab)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
-                    tab === t.id
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${tab === t.id
                       ? 'bg-primary-600 text-white shadow-lg'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
+                    }`}
                 >
                   <t.icon size={20} />
                   {t.label}
@@ -142,9 +143,8 @@ const LiveFootball: React.FC = () => {
             {matches.map((m) => (
               <div
                 key={m.id}
-                className={`bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all ${
-                  m.live ? 'ring-4 ring-green-500' : ''
-                }`}
+                className={`bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all ${m.live ? 'ring-4 ring-green-500' : ''
+                  }`}
               >
                 <div className="bg-gradient-to-r from-primary-600 to-indigo-600 p-4 text-white">
                   <div className="flex justify-between items-center">

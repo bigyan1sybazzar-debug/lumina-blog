@@ -1,32 +1,34 @@
+'use client';
+
 import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import * as pdfjsLib from 'pdfjs-dist';
-import { 
-  UploadCloud, Loader2, CheckCircle2, XCircle, 
-  Search, Award, RefreshCcw, AlertTriangle, FileWarning,
-  Download, Share2, Copy, BarChart3, Target, Clock,
-  Zap, Users, Building, GraduationCap, Briefcase,
-  Sparkles, ChevronRight, Star, TrendingUp
+import {
+    UploadCloud, Loader2, CheckCircle2, XCircle,
+    Search, Award, RefreshCcw, AlertTriangle, FileWarning,
+    Download, Share2, Copy, BarChart3, Target, Clock,
+    Zap, Users, Building, GraduationCap, Briefcase,
+    Sparkles, ChevronRight, Star, TrendingUp
 } from 'lucide-react';
 
 // ✅ PDF Worker Import
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+// Using CDN for Next.js compatibility
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const POWER_WORDS = [
-  'managed', 'developed', 'spearheaded', 'created', 'designed',
-  'increased', 'reduced', 'implemented', 'led', 'strategic',
-  'analyzed', 'executed', 'innovated', 'collaborated', 'optimized',
-  'transformed', 'accelerated', 'engineered', 'delivered', 'achieved'
+    'managed', 'developed', 'spearheaded', 'created', 'designed',
+    'increased', 'reduced', 'implemented', 'led', 'strategic',
+    'analyzed', 'executed', 'innovated', 'collaborated', 'optimized',
+    'transformed', 'accelerated', 'engineered', 'delivered', 'achieved'
 ];
 
 const SECTIONS = [
-  { id: 'experience', icon: Briefcase, weight: 20 },
-  { id: 'education', icon: GraduationCap, weight: 15 },
-  { id: 'skills', icon: Zap, weight: 20 },
-  { id: 'projects', icon: Building, weight: 15 },
-  { id: 'summary', icon: Users, weight: 15 },
-  { id: 'contact', icon: Award, weight: 15 }
+    { id: 'experience', icon: Briefcase, weight: 20 },
+    { id: 'education', icon: GraduationCap, weight: 15 },
+    { id: 'skills', icon: Zap, weight: 20 },
+    { id: 'projects', icon: Building, weight: 15 },
+    { id: 'summary', icon: Users, weight: 15 },
+    { id: 'contact', icon: Award, weight: 15 }
 ];
 
 const ResumeChecker: React.FC = () => {
@@ -41,56 +43,56 @@ const ResumeChecker: React.FC = () => {
         const lowercaseText = text.toLowerCase();
         const words = lowercaseText.match(/\b\w+\b/g) || [];
         const sentences = lowercaseText.split(/[.!?]+/).filter(s => s.trim().length > 0);
-        
+
         // Calculate readability (simple Flesch score approximation)
         const avgWordsPerSentence = words.length / Math.max(sentences.length, 1);
         const readabilityScore = Math.max(0, Math.min(100, 100 - (avgWordsPerSentence - 10) * 5));
 
         const checks = [
-            { 
-                label: "Email Address", 
-                status: /[\w.-]+@[\w.-]+\.\w+/.test(lowercaseText), 
+            {
+                label: "Email Address",
+                status: /[\w.-]+@[\w.-]+\.\w+/.test(lowercaseText),
                 weight: 10,
                 tip: "Add a professional email address"
             },
-            { 
-                label: "Phone Number", 
-                status: /\b\d{10,}\b/.test(lowercaseText), 
+            {
+                label: "Phone Number",
+                status: /\b\d{10,}\b/.test(lowercaseText),
                 weight: 10,
                 tip: "Include contact number"
             },
-            { 
-                label: "LinkedIn Profile", 
+            {
+                label: "LinkedIn Profile",
                 status: lowercaseText.includes('linkedin.com') || lowercaseText.includes('linked.in'),
                 weight: 10,
                 tip: "Add LinkedIn profile URL"
             },
-            { 
-                label: "Education Section", 
+            {
+                label: "Education Section",
                 status: lowercaseText.includes('education') || lowercaseText.includes('university') || lowercaseText.includes('degree'),
                 weight: 15,
                 tip: "Include education details"
             },
-            { 
-                label: "Work Experience", 
+            {
+                label: "Work Experience",
                 status: lowercaseText.includes('experience') || lowercaseText.includes('employment') || lowercaseText.includes('work'),
                 weight: 20,
                 tip: "Detail work experience"
             },
-            { 
-                label: "Word Count (400-800)", 
+            {
+                label: "Word Count (400-800)",
                 status: words.length >= 400 && words.length <= 800,
                 weight: 10,
                 tip: words.length < 400 ? "Add more content" : "Consider shortening"
             },
-            { 
-                label: "Action Verbs", 
+            {
+                label: "Action Verbs",
                 status: POWER_WORDS.filter(pw => lowercaseText.includes(pw)).length >= 5,
                 weight: 15,
                 tip: "Use more power verbs"
             },
-            { 
-                label: "Skills Section", 
+            {
+                label: "Skills Section",
                 status: lowercaseText.includes('skills') || lowercaseText.includes('technical') || lowercaseText.includes('proficient'),
                 weight: 10,
                 tip: "Add skills section"
@@ -99,10 +101,10 @@ const ResumeChecker: React.FC = () => {
 
         const foundPowerWords = POWER_WORDS.filter(pw => lowercaseText.includes(pw));
         const missingSections = SECTIONS.filter(s => !lowercaseText.includes(s.id));
-        
+
         const score = Math.round(checks.reduce((acc, curr) => curr.status ? acc + curr.weight : acc, 0));
         const powerWordScore = Math.min(100, (foundPowerWords.length / POWER_WORDS.length) * 100);
-        
+
         // Calculate section completeness
         const sectionScore = Math.round(((SECTIONS.length - missingSections.length) / SECTIONS.length) * 100);
 
@@ -171,10 +173,10 @@ const ResumeChecker: React.FC = () => {
 
             const analysis = analyzeText(fullText, file.name);
             setResults(analysis);
-            
+
             // Add to history
             setScanHistory(prev => [analysis, ...prev.slice(0, 4)]);
-            
+
         } catch (err: any) {
             console.error("PDF Scan Error:", err);
             if (err.message === "EMPTY_OR_SCANNED") {
@@ -189,7 +191,7 @@ const ResumeChecker: React.FC = () => {
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
-        accept: { 
+        accept: {
             'application/pdf': ['.pdf'],
             'application/msword': ['.doc', '.docx'],
             'text/plain': ['.txt']
@@ -204,7 +206,7 @@ const ResumeChecker: React.FC = () => {
 
     const downloadReport = () => {
         if (!results) return;
-        
+
         const report = `
 RESUME ANALYSIS REPORT
 =======================
@@ -260,7 +262,7 @@ ${results.checks.filter((c: any) => !c.status).map((c: any) => `• ${c.tip}`).j
                         </h1>
                     </div>
                     <p className="text-gray-400 text-lg">AI-powered ATS compatibility analyzer</p>
-                    
+
                     {/* Stats Bar */}
                     <div className="flex flex-wrap justify-center gap-6 mt-8">
                         <div className="text-center">
@@ -283,11 +285,11 @@ ${results.checks.filter((c: any) => !c.status).map((c: any) => `• ${c.tip}`).j
                     {/* Left Column - Upload & History */}
                     <div className="lg:col-span-1 space-y-6">
                         {!results && !loading && (
-                            <div 
-                                {...getRootProps()} 
+                            <div
+                                {...getRootProps()}
                                 className={`relative group border-3 border-dashed rounded-[2rem] p-12 text-center transition-all duration-300 
-                                    ${isDragActive 
-                                        ? 'border-blue-500 bg-blue-500/10 shadow-2xl shadow-blue-500/20' 
+                                    ${isDragActive
+                                        ? 'border-blue-500 bg-blue-500/10 shadow-2xl shadow-blue-500/20'
                                         : 'border-gray-800 bg-gray-900/50 hover:border-blue-400 hover:bg-gray-900/80'
                                     }`}
                             >
@@ -318,7 +320,7 @@ ${results.checks.filter((c: any) => !c.status).map((c: any) => `• ${c.tip}`).j
                                 </h3>
                                 <div className="space-y-3">
                                     {scanHistory.map((scan, idx) => (
-                                        <div 
+                                        <div
                                             key={idx}
                                             className="flex items-center justify-between p-3 bg-gray-800/30 rounded-xl hover:bg-gray-800/50 transition-colors cursor-pointer"
                                             onClick={() => setResults(scan)}
@@ -395,7 +397,7 @@ ${results.checks.filter((c: any) => !c.status).map((c: any) => `• ${c.tip}`).j
                                 {/* Score Card */}
                                 <div className="relative overflow-hidden bg-gradient-to-br from-gray-900 to-gray-950 rounded-3xl border border-gray-800 p-8">
                                     <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full -translate-y-32 translate-x-32" />
-                                    
+
                                     <div className="relative flex flex-col md:flex-row items-center gap-8">
                                         {/* Score Circle */}
                                         <div className="relative">
@@ -442,13 +444,13 @@ ${results.checks.filter((c: any) => !c.status).map((c: any) => `• ${c.tip}`).j
                                             </div>
 
                                             <div className="flex flex-wrap gap-3">
-                                                <button 
+                                                <button
                                                     onClick={resetScan}
                                                     className="px-5 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-bold flex items-center gap-2 transition-colors"
                                                 >
                                                     <RefreshCcw size={18} /> New Scan
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={downloadReport}
                                                     className="px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-xl font-bold flex items-center gap-2 transition-all"
                                                 >
@@ -500,7 +502,7 @@ ${results.checks.filter((c: any) => !c.status).map((c: any) => `• ${c.tip}`).j
                                             <Award size={16} />
                                             Optimization
                                         </h4>
-                                        
+
                                         {/* Missing Sections */}
                                         {results.missingSections.length > 0 && (
                                             <div className="mb-6">
@@ -512,7 +514,7 @@ ${results.checks.filter((c: any) => !c.status).map((c: any) => `• ${c.tip}`).j
                                                     {results.missingSections.map((s: any) => {
                                                         const Icon = s.icon;
                                                         return (
-                                                            <div 
+                                                            <div
                                                                 key={s.id}
                                                                 className="px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-2"
                                                             >
@@ -533,8 +535,8 @@ ${results.checks.filter((c: any) => !c.status).map((c: any) => `• ${c.tip}`).j
                                             </p>
                                             <div className="flex flex-wrap gap-2">
                                                 {results.foundPowerWords.map((w: string) => (
-                                                    <span 
-                                                        key={w} 
+                                                    <span
+                                                        key={w}
                                                         className="px-3 py-1.5 bg-gradient-to-r from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-lg text-sm font-bold text-blue-300"
                                                     >
                                                         {w}

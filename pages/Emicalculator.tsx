@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useMemo } from 'react';
 import { DollarSign, Percent, Clock } from 'lucide-react';
 
@@ -10,20 +12,20 @@ const calculateEMI = (principal: number, annualRate: number, years: number): num
 
     // Monthly Interest Rate (r): annualRate / 12 / 100
     const monthlyRate = annualRate / 12 / 100;
-    
+
     // Total Number of Payments (n): years * 12
     const totalPayments = years * 12;
 
     // EMI Formula: P * r * (1 + r)^n / ((1 + r)^n - 1)
     if (monthlyRate === 0) {
         // Simple case if interest rate is effectively 0
-        return principal / totalPayments; 
+        return principal / totalPayments;
     }
 
     const powerFactor = Math.pow(1 + monthlyRate, totalPayments);
 
     const emi = principal * monthlyRate * powerFactor / (powerFactor - 1);
-    
+
     return emi;
 };
 
@@ -126,7 +128,7 @@ export const Emicalculator: React.FC = () => {
                     <h2 className="text-xl font-bold text-primary-600 dark:text-primary-400 mb-4">
                         EMI Calculation Summary
                     </h2>
-                    
+
                     {/* Calculated EMI */}
                     <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
                         <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">
@@ -156,7 +158,7 @@ export const Emicalculator: React.FC = () => {
                             {(principal + totalInterest).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 })}
                         </span>
                     </div>
-                    
+
                     <div className="pt-4 text-center">
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                             Calculated for a loan of {principal.toLocaleString()} at an annual rate of {annualRate}% over {years} years.

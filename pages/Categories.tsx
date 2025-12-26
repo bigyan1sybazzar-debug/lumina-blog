@@ -1,3 +1,5 @@
+'use client';
+
 // src/pages/Categories.tsx
 import React, { useEffect, useState, useRef } from 'react';
 import { getCategories, getPosts } from '../services/db';
@@ -109,17 +111,15 @@ export const Categories: React.FC = () => {
               {/* Desktop Arrows - Big & Beautiful */}
               <button
                 onClick={scrollLeft}
-                className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 w-14 h-14 rounded-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg shadow-2xl border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-all hover:scale-110 hover:shadow-3xl hidden sm:flex ${
-                  showLeftArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                }`}
+                className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 w-14 h-14 rounded-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg shadow-2xl border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-all hover:scale-110 hover:shadow-3xl hidden sm:flex ${showLeftArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                  }`}
               >
                 <ChevronLeft size={32} className="text-gray-700 dark:text-gray-300" />
               </button>
               <button
                 onClick={scrollRight}
-                className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 w-14 h-14 rounded-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg shadow-2xl border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-all hover:scale-110 hover:shadow-3xl hidden sm:flex ${
-                  showRightArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                }`}
+                className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 w-14 h-14 rounded-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg shadow-2xl border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-all hover:scale-110 hover:shadow-3xl hidden sm:flex ${showRightArrow ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                  }`}
               >
                 <ChevronRight size={32} className="text-gray-700 dark:text-gray-300" />
               </button>
@@ -127,17 +127,15 @@ export const Categories: React.FC = () => {
               {/* Mobile Small Arrows */}
               <button
                 onClick={scrollLeft}
-                className={`absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur shadow-lg flex items-center justify-center sm:hidden transition-all ${
-                  showLeftArrow ? 'opacity-100' : 'opacity-0'
-                }`}
+                className={`absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur shadow-lg flex items-center justify-center sm:hidden transition-all ${showLeftArrow ? 'opacity-100' : 'opacity-0'
+                  }`}
               >
                 <ChevronLeft size={24} />
               </button>
               <button
                 onClick={scrollRight}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur shadow-lg flex items-center justify-center sm:hidden transition-all ${
-                  showRightArrow ? 'opacity-100' : 'opacity-0'
-                }`}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur shadow-lg flex items-center justify-center sm:hidden transition-all ${showRightArrow ? 'opacity-100' : 'opacity-0'
+                  }`}
               >
                 <ChevronRight size={24} />
               </button>
@@ -153,11 +151,10 @@ export const Categories: React.FC = () => {
                 {/* All */}
                 <button
                   onClick={() => setSelectedCategory(null)}
-                  className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold whitespace-nowrap flex-shrink-0 transition-all shadow-md hover:shadow-lg ${
-                    !selectedCategory
+                  className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold whitespace-nowrap flex-shrink-0 transition-all shadow-md hover:shadow-lg ${!selectedCategory
                       ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white scale-105 shadow-xl'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
+                    }`}
                 >
                   <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
                     {getIcon('Globe')}
@@ -171,11 +168,10 @@ export const Categories: React.FC = () => {
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat)}
-                      className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold whitespace-nowrap flex-shrink-0 transition-all shadow-md hover:shadow-lg ${
-                        active
+                      className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold whitespace-nowrap flex-shrink-0 transition-all shadow-md hover:shadow-lg ${active
                           ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white scale-105 shadow-xl'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      }`}
+                        }`}
                     >
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${active ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-700'}`}>
                         {getIcon(cat.icon || 'Hash')}
@@ -225,7 +221,7 @@ export const Categories: React.FC = () => {
       </div>
 
       {/* Hide scrollbar */}
-      
+
     </div>
   );
 };

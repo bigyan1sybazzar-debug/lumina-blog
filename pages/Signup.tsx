@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, User, Loader2, AlertCircle } from 'lucide-react';
 
@@ -10,7 +13,7 @@ export const Signup: React.FC = () => {
   const [error, setError] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false); // Separate state for Google loading
   const { signup, loginWithGoogle, isLoading } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // Combine loading states for general disability
   const isAnyLoading = isLoading || isGoogleLoading;
@@ -18,17 +21,17 @@ export const Signup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     // Simple client-side validation for password length
     if (password.length < 6) {
-        setError('Password must be at least 6 characters long.');
-        return;
+      setError('Password must be at least 6 characters long.');
+      return;
     }
 
     try {
       await signup(name, email, password);
       // Navigate on successful signup
-      navigate('/');
+      router.push('/');
     } catch (err: any) {
       console.error("Email Signup Error:", err);
       // Refined error message to guide the user on potential Firebase errors 
@@ -48,18 +51,18 @@ export const Signup: React.FC = () => {
     try {
       // NOTE: Casting the result to 'any' is used here to bypass the TS error, 
       // assuming AuthContext updates the user state correctly upon completion.
-      await loginWithGoogle() as any; 
-      
+      await loginWithGoogle() as any;
+
       // Navigate on successful Google signup
-      navigate('/');
-      
+      router.push('/');
+
     } catch (err: any) {
       setIsGoogleLoading(false); // Stop loading on error
 
-      console.error("Google Sign-in Error:", err); 
+      console.error("Google Sign-in Error:", err);
 
       let errorMessage = 'Google signup failed.';
-      
+
       if (err.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Sign-up window closed. Please try again.';
       } else if (err.code === 'auth/cancelled-popup-request') {
@@ -68,7 +71,7 @@ export const Signup: React.FC = () => {
         // This captures errors like 'auth/unauthorized-domain'
         errorMessage = `Sign-up failed: ${err.message || err.code}. Check Firebase Console Authorized Domains.`;
       }
-      
+
       setError(errorMessage);
     } finally {
       setIsGoogleLoading(false); // Ensure loading stops
@@ -78,7 +81,7 @@ export const Signup: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-[Inter]">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link to="/" className="flex justify-center text-3xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+        <Link href="/" className="flex justify-center text-3xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent mb-2">
           Bigyann
         </Link>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
@@ -86,7 +89,7 @@ export const Signup: React.FC = () => {
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-primary-600 hover:text-primary-500 transition-colors">
+          <Link href="/login" className="font-medium text-primary-600 hover:text-primary-500 transition-colors">
             Sign in
           </Link>
         </p>
@@ -94,11 +97,11 @@ export const Signup: React.FC = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow-xl sm:rounded-xl sm:px-10 border border-gray-200 dark:border-gray-700">
-          
+
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm flex items-center border border-red-200 dark:border-red-800">
-                <AlertCircle size={16} className="mr-2 flex-shrink-0" />
-                {error}
+              <AlertCircle size={16} className="mr-2 flex-shrink-0" />
+              {error}
             </div>
           )}
 
@@ -133,7 +136,7 @@ export const Signup: React.FC = () => {
               )}
               Sign up with Google
             </button>
-            
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300 dark:border-gray-600" />

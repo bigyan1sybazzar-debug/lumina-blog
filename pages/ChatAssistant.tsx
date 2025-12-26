@@ -1,3 +1,5 @@
+'use client';
+
 // src/components/ChatAssistant.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 // Note: Removed unused 'useNavigate' since routing was not in the original file
@@ -5,7 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // Used a lighter, common theme for better contrast, but can be changed
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism'; 
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { sendChatMessage, startNewChat } from '../services/puterGrokChat';
 // Icons from lucide-react (assuming they are installed/available)
 import { Loader2, Send, Copy, Check, Bot, User, Sparkles, RefreshCw, Zap, Command, Search, X, StopCircle } from 'lucide-react';
@@ -94,8 +96,8 @@ export default function ChatAssistant() {
         const errorMsg = error.message.includes('Empty response')
           ? 'No reply—try a simple prompt like "Hi!" or check console.'
           : error.message.includes('limit')
-          ? 'Rate limit—wait or sign up at puter.com.'
-          : `Chat error: ${error.message}. Check console!`;
+            ? 'Rate limit—wait or sign up at puter.com.'
+            : `Chat error: ${error.message}. Check console!`;
         setMessages(prev =>
           prev.map(msg =>
             msg.id === assistantId
@@ -137,7 +139,7 @@ export default function ChatAssistant() {
     // FIX: Use 'any' type for props to satisfy ReactMarkdown's ComponentType
     code({ inline, className, children, ...props }: any) {
       const match = /language-(\w+)/.exec(className || '');
-      
+
       if (!inline && match) {
         // Fix: Convert children array/element to string
         const textContent = React.Children.toArray(children).join('');
@@ -190,27 +192,27 @@ export default function ChatAssistant() {
       <h2 className="text-lg font-semibold mb-2 mt-3 first:mt-0">{children}</h2>
     ),
   };
-  
+
   // Helper function to render message content
   const renderMessageContent = (msg: Message) => {
     if (!msg.content && msg.role === 'assistant' && (isLoading || isStreaming)) {
-        // Show initial loading dots before the stream starts
-        return (
-            <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-150"></div>
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce delay-300"></div>
-            </div>
-        );
+      // Show initial loading dots before the stream starts
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-150"></div>
+          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce delay-300"></div>
+        </div>
+      );
     }
-    
+
     return (
-        <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={MarkdownComponents}
-        >
-            {msg.content}
-        </ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={MarkdownComponents}
+      >
+        {msg.content}
+      </ReactMarkdown>
     );
   };
 
@@ -238,7 +240,7 @@ export default function ChatAssistant() {
             </div>
 
             <div className="flex items-center gap-2">
-             
+
               <button
                 onClick={handleNewChat}
                 className="p-2.5 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl hover:shadow-lg transition-all hover:scale-105 active:scale-95"
@@ -250,11 +252,11 @@ export default function ChatAssistant() {
           </div>
         </div>
       </header>
-      
+
       {/* Main Content - Centered & Narrow */}
       <main className="flex-1 overflow-y-auto">
         <div className="h-full max-w-3xl mx-auto px-4">
-          
+
           {/* Welcome Section (Only show when *no* messages are present after reset) */}
           {messages.length === 0 ? (
             <div className="py-8 px-2 animate-fadeIn h-full flex flex-col justify-center">
@@ -276,7 +278,7 @@ export default function ChatAssistant() {
               {messages.map((msg) => {
                 const isUser = msg.role === 'user';
                 const isError = msg.isError;
-                
+
                 return (
                   <div
                     key={msg.id}
@@ -290,19 +292,18 @@ export default function ChatAssistant() {
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Message Bubble */}
                     <div
-                      className={`max-w-[85%] ${
-                        isUser
+                      className={`max-w-[85%] ${isUser
                           ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
                           : isError
                             ? 'bg-red-100 text-red-800 border border-red-300'
                             : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700'
-                      } rounded-2xl px-5 py-3 shadow-lg`}
+                        } rounded-2xl px-5 py-3 shadow-lg`}
                     >
                       {renderMessageContent(msg)}
-                      
+
                       {/* Copy Button for Assistant Message */}
                       {!isUser && msg.content && !isError && (
                         <button
@@ -323,7 +324,7 @@ export default function ChatAssistant() {
                         </button>
                       )}
                     </div>
-                    
+
                     {/* User Avatar */}
                     {isUser && (
                       <div className="flex-shrink-0">
@@ -355,7 +356,7 @@ export default function ChatAssistant() {
                 className="flex-1 px-4 py-3 bg-transparent focus:outline-none text-base placeholder-gray-400 dark:placeholder-gray-500"
                 disabled={isLoading || isStreaming}
               />
-              
+
               {isStreaming ? (
                 // Stop Button
                 <button
@@ -383,11 +384,11 @@ export default function ChatAssistant() {
                 </button>
               )}
             </div>
-            
+
             {/* Quick Tips */}
             <div className="flex justify-center mt-3">
               <p className="text-center text-xs text-gray-400">
-                Powered by Bigyann 
+                Powered by Bigyann
               </p>
             </div>
           </div>

@@ -13,11 +13,12 @@ export interface User {
 export interface BlogPost {
   id: string;                    // Firestore document ID
   slug: string;                  // REQUIRED (Guaranteed unique by db.ts)
-  
+
   title: string;
   excerpt: string;
   content: string;
   coverImage: string;
+  coverImageAlt?: string;
 
   author: {
     id: string;                   // Author user ID (REQUIRED)

@@ -145,12 +145,13 @@ export const getPostBySlug = async (slugOrId: string): Promise<BlogPost | null> 
  * If the generated slug already exists, a counter is appended (e.g., 'post-title-2').
  */
 export const createPost = async (
-  post: Omit<BlogPost, 'id' | 'slug' | 'likes' | 'views' | 'createdAt' | 'updatedAt'> & {
+  post: Omit<BlogPost, 'id' | 'likes' | 'views' | 'createdAt' | 'updatedAt'> & {
     status: 'published' | 'pending' | 'draft';
   }
 ) => {
   try {
-    const baseSlug = slugify(post.title); 
+    // Use provided slug or generate from title
+    const baseSlug = post.slug ? post.slug : slugify(post.title);
     let slug = baseSlug;
     let counter = 1;
 
@@ -161,7 +162,7 @@ export const createPost = async (
 
     const newPost = {
       ...post,
-      slug, 
+      slug,
       likes: [],
       views: 0,
       createdAt: new Date().toISOString(),
@@ -187,49 +188,50 @@ export const createPost = async (
  * Updates an existing post and regenerates slug if title changes.
  */
 export const updatePost = async (
-    postId: string, 
-    postData: Partial<Omit<BlogPost, 'id' | 'slug' | 'createdAt' | 'updatedAt'>>
-  ): Promise<void> => {
-    try {
-      const updateData: Record<string, any> = {
-        ...postData,
-        updatedAt: new Date().toISOString(),
-      };
-  
-      if (postData.title) {
-        const baseSlug = slugify(postData.title);
-        let slug = baseSlug;
-        let counter = 1;
+  postId: string,
+  postData: Partial<Omit<BlogPost, 'id' | 'createdAt' | 'updatedAt'>>
+): Promise<void> => {
+  try {
+    const updateData: Record<string, any> = {
+      ...postData,
+      updatedAt: new Date().toISOString(),
+    };
 
-        while (await checkSlugExists(slug)) {
-          const existingPost = await getPostBySlug(slug);
-          if (existingPost && existingPost.id === postId) {
-            break; 
-          }
-          counter++;
-          slug = `${baseSlug}-${counter}`;
+    if (postData.slug || postData.title) {
+      // Prioritize explicit slug, fallback to title if slug missing but title changed
+      const baseSlug = postData.slug ? postData.slug : slugify(postData.title!);
+      let slug = baseSlug;
+      let counter = 1;
+
+      while (await checkSlugExists(slug)) {
+        const existingPost = await getPostBySlug(slug);
+        if (existingPost && existingPost.id === postId) {
+          break;
         }
-        updateData.slug = slug;
+        counter++;
+        slug = `${baseSlug}-${counter}`;
       }
-  
-      await db.collection(POSTS_COLLECTION).doc(postId).update(updateData);
-  
-      const status = postData.status as 'published' | 'pending' | 'draft' | undefined;
-      // If the post is published, notify search engines of the change
-      if (status === 'published') {
-        await generateAndUploadSitemap();
-        const currentPost = await getPostById(postId);
-        if (currentPost?.slug) {
-          await notifyIndexNow([getFullUrl(currentPost.slug)]); // Notification for modified content
-        }
-      }
-  
-      console.log(`Post ${postId} updated successfully`);
-    } catch (error) {
-      console.error('Error updating post:', error);
-      throw error;
+      updateData.slug = slug;
     }
-  };
+
+    await db.collection(POSTS_COLLECTION).doc(postId).update(updateData);
+
+    const status = postData.status as 'published' | 'pending' | 'draft' | undefined;
+    // If the post is published, notify search engines of the change
+    if (status === 'published') {
+      await generateAndUploadSitemap();
+      const currentPost = await getPostById(postId);
+      if (currentPost?.slug) {
+        await notifyIndexNow([getFullUrl(currentPost.slug)]); // Notification for modified content
+      }
+    }
+
+    console.log(`Post ${postId} updated successfully`);
+  } catch (error) {
+    console.error('Error updating post:', error);
+    throw error;
+  }
+};
 
 /**
  * Deletes a post and notifies search engines to remove the URL.
@@ -337,14 +339,14 @@ export const deleteCategory = async (categoryId: string): Promise<void> => {
     if (!categoryDoc.exists) {
       throw new Error('Category not found');
     }
-    
+
     const categoryData = categoryDoc.data() as Category;
-    
+
     // Check if any posts use this category (by category name)
     const postsSnapshot = await db.collection(POSTS_COLLECTION)
       .where('category', '==', categoryData.name)
       .get();
-    
+
     if (!postsSnapshot.empty) {
       throw new Error('Cannot delete category: Some posts are still using it. Please reassign posts first.');
     }
@@ -436,7 +438,7 @@ export const generateAndUploadSitemap = async (): Promise<string | null> => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SITEMAP_SECRET}`, 
+        'Authorization': `Bearer ${SITEMAP_SECRET}`,
       },
     });
 
@@ -473,7 +475,7 @@ export const seedDatabase = async () => {
 
   const promises = MOCK_POSTS.map(post => {
     // Use slugify for consistent seeding
-    const slug = slugify(post.title); 
+    const slug = slugify(post.title);
     return db.collection(POSTS_COLLECTION).add({
       ...post,
       slug,

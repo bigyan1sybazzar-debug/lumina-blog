@@ -1,7 +1,9 @@
+'use client';
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
+import {
   Languages, Loader2, Copy, CheckCircle, ArrowRightLeft, Zap,
-  Volume2, Download, BookOpen, Globe, Sparkles, History, 
+  Volume2, Download, BookOpen, Globe, Sparkles, History,
   Star, Settings, Mic, MicOff, Target, Brain, Clock,
   ChevronDown, ThumbsUp, ThumbsDown, Share2, Maximize2
 } from 'lucide-react';
@@ -66,12 +68,12 @@ const AITranslator: React.FC = () => {
     try {
       const source = customSource || sourceLang;
       const target = customTarget || targetLang;
-      
+
       // ✅ Using the direct Google API endpoint (GTX version)
       const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${source}&tl=${target}&dt=t&q=${encodeURIComponent(query)}`;
-      
+
       const response = await fetch(url);
-      
+
       if (!response.ok) throw new Error("Translation Service Unavailable");
 
       const data = await response.json();
@@ -94,10 +96,10 @@ const AITranslator: React.FC = () => {
       };
 
       setTranslatedText(fullTranslation);
-      
+
       // Add to history
       setHistory(prev => [translation, ...prev.slice(0, 19)]);
-      
+
       // Update recent languages
       if (!recentLanguages.includes(target)) {
         setRecentLanguages(prev => [target, ...prev.slice(0, 3)]);
@@ -138,11 +140,11 @@ const AITranslator: React.FC = () => {
 
   const swapLanguages = () => {
     if (sourceLang === 'auto') return;
-    
+
     const temp = sourceLang;
     const sourceLangObj = languages.find(l => l.code === sourceLang);
     const targetLangObj = languages.find(l => l.code === targetLang);
-    
+
     // Update recent languages
     setRecentLanguages(prev => {
       const newRecents = [targetLang, ...prev.filter(l => l !== targetLang && l !== sourceLang)];
@@ -151,7 +153,7 @@ const AITranslator: React.FC = () => {
 
     setSourceLang(targetLang);
     setTargetLang(temp);
-    
+
     // Swap the text content
     if (translatedText) {
       setText(translatedText);
@@ -174,7 +176,7 @@ const AITranslator: React.FC = () => {
       utterance.lang = langCode;
       utterance.rate = 0.9;
       utterance.pitch = 1;
-      
+
       setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       speechSynthesis.speak(utterance);
@@ -204,7 +206,7 @@ const AITranslator: React.FC = () => {
       await navigator.clipboard.writeText(translatedText);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      
+
       // Mini confetti on copy
       confetti({
         particleCount: 15,
@@ -237,7 +239,7 @@ const AITranslator: React.FC = () => {
   const handleFeedback = (type: 'good' | 'bad') => {
     setFeedback(type);
     setTimeout(() => setFeedback(null), 3000);
-    
+
     if (type === 'good') {
       confetti({
         particleCount: 50,
@@ -278,9 +280,9 @@ const AITranslator: React.FC = () => {
                 </h1>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 onClick={() => setShowHistory(!showHistory)}
                 className="p-3 bg-gray-900/50 border border-gray-800 rounded-xl hover:bg-gray-800 transition-colors group relative"
                 title="Translation History"
@@ -292,14 +294,14 @@ const AITranslator: React.FC = () => {
                   </span>
                 )}
               </button>
-              <button 
+              <button
                 onClick={() => setAutoPlay(!autoPlay)}
                 className={`p-3 rounded-xl border transition-colors ${autoPlay ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-gray-900/50 border-gray-800 text-gray-400 hover:bg-gray-800'}`}
                 title={autoPlay ? "Auto-play enabled" : "Auto-play disabled"}
               >
                 <Volume2 size={18} />
               </button>
-              <button 
+              <button
                 onClick={() => setIsFullscreen(!isFullscreen)}
                 className="p-3 bg-gray-900/50 border border-gray-800 rounded-xl hover:bg-gray-800 transition-colors"
                 title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
@@ -341,11 +343,11 @@ const AITranslator: React.FC = () => {
                   <Target size={14} />
                   Translation Settings
                 </h3>
-                <button 
-                  onClick={() => setTranslationMode(prev => 
-                    prev === 'standard' ? 'formal' : 
-                    prev === 'formal' ? 'casual' : 
-                    prev === 'casual' ? 'technical' : 'standard'
+                <button
+                  onClick={() => setTranslationMode(prev =>
+                    prev === 'standard' ? 'formal' :
+                      prev === 'formal' ? 'casual' :
+                        prev === 'casual' ? 'technical' : 'standard'
                   )}
                   className="text-xs px-3 py-1 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
                 >
@@ -358,8 +360,8 @@ const AITranslator: React.FC = () => {
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Source Language</label>
                   <div className="relative">
-                    <select 
-                      value={sourceLang} 
+                    <select
+                      value={sourceLang}
                       onChange={(e) => setSourceLang(e.target.value)}
                       className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 pr-10 outline-none text-sm font-medium text-white cursor-pointer hover:border-blue-500/50 transition-colors appearance-none"
                     >
@@ -374,8 +376,8 @@ const AITranslator: React.FC = () => {
                 </div>
 
                 <div className="flex justify-center">
-                  <button 
-                    onClick={swapLanguages} 
+                  <button
+                    onClick={swapLanguages}
                     className="p-3 bg-gradient-to-r from-gray-800 to-gray-900 border border-gray-800 rounded-xl hover:from-blue-600 hover:to-purple-600 hover:border-blue-500 transition-all active:scale-95 shadow-lg group"
                     disabled={sourceLang === 'auto'}
                   >
@@ -386,8 +388,8 @@ const AITranslator: React.FC = () => {
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Target Language</label>
                   <div className="relative">
-                    <select 
-                      value={targetLang} 
+                    <select
+                      value={targetLang}
                       onChange={(e) => setTargetLang(e.target.value)}
                       className="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 pr-10 outline-none text-sm font-medium text-white cursor-pointer hover:border-purple-500/50 transition-colors appearance-none"
                     >
@@ -455,7 +457,7 @@ const AITranslator: React.FC = () => {
                     Recent Translations
                   </h3>
                   {history.length > 0 && (
-                    <button 
+                    <button
                       onClick={clearHistory}
                       className="text-xs text-red-400 hover:text-red-300 transition-colors"
                     >
@@ -463,7 +465,7 @@ const AITranslator: React.FC = () => {
                     </button>
                   )}
                 </div>
-                
+
                 {history.length === 0 ? (
                   <div className="text-center py-8 text-gray-600 text-sm">
                     <Clock size={24} className="mx-auto mb-2 opacity-50" />
@@ -517,7 +519,7 @@ const AITranslator: React.FC = () => {
                     <span className="text-xs text-gray-600">{charCount}/5000</span>
                   </div>
                 </div>
-                
+
                 <textarea
                   ref={sourceTextRef}
                   className="w-full h-64 bg-transparent text-lg md:text-xl font-medium resize-none outline-none placeholder:text-gray-700 text-white leading-relaxed custom-scrollbar"
@@ -526,9 +528,9 @@ const AITranslator: React.FC = () => {
                   onChange={(e) => setText(e.target.value)}
                   maxLength={5000}
                 />
-                
+
                 <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-800">
-                  <button 
+                  <button
                     onClick={() => setText('')}
                     className="text-xs px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
                     disabled={!text}
@@ -536,7 +538,7 @@ const AITranslator: React.FC = () => {
                     Clear
                   </button>
                   <div className="flex items-center gap-2">
-                    <button 
+                    <button
                       onClick={() => speakText(text, sourceLang === 'auto' ? 'en' : sourceLang)}
                       className="p-2 hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       disabled={!text || isSpeaking}
@@ -552,7 +554,7 @@ const AITranslator: React.FC = () => {
               <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-gray-800 rounded-2xl p-6 relative shadow-2xl overflow-hidden">
                 {/* Background Glow */}
                 <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/10 blur-[80px] rounded-full" />
-                
+
                 <div className="flex justify-between items-center mb-4 relative z-10">
                   <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-purple-500/20 rounded-lg">
@@ -567,8 +569,8 @@ const AITranslator: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
-                <div 
+
+                <div
                   ref={resultRef}
                   className="w-full h-64 text-lg md:text-xl font-medium overflow-y-auto text-white leading-relaxed custom-scrollbar relative z-10"
                 >
@@ -582,32 +584,31 @@ const AITranslator: React.FC = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Action Buttons */}
                 {translatedText && (
                   <div className="flex flex-wrap justify-between items-center mt-4 pt-4 border-t border-gray-800 relative z-10">
                     <div className="flex items-center gap-2">
-                      <button 
+                      <button
                         onClick={copyToClipboard}
-                        className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 text-sm font-bold ${
-                          copied 
-                            ? 'bg-green-600 text-white' 
+                        className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 text-sm font-bold ${copied
+                            ? 'bg-green-600 text-white'
                             : 'bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700'
-                        }`}
+                          }`}
                       >
                         {copied ? <CheckCircle size={16} /> : <Copy size={16} />}
                         {copied ? "Copied!" : "Copy"}
                       </button>
-                      
-                      <button 
+
+                      <button
                         onClick={() => speakText(translatedText, targetLang)}
                         className="p-2.5 hover:bg-gray-800 rounded-xl transition-colors"
                         title="Listen"
                       >
                         <Volume2 size={16} className="text-gray-400" />
                       </button>
-                      
-                      <button 
+
+                      <button
                         onClick={downloadTranslation}
                         className="p-2.5 hover:bg-gray-800 rounded-xl transition-colors"
                         title="Download"
@@ -615,16 +616,16 @@ const AITranslator: React.FC = () => {
                         <Download size={16} className="text-gray-400" />
                       </button>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
-                      <button 
+                      <button
                         onClick={() => handleFeedback('good')}
                         className={`p-2 rounded-lg transition-colors ${feedback === 'good' ? 'bg-green-500/20 text-green-400' : 'hover:bg-gray-800'}`}
                         title="Good translation"
                       >
                         <ThumbsUp size={16} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleFeedback('bad')}
                         className={`p-2 rounded-lg transition-colors ${feedback === 'bad' ? 'bg-red-500/20 text-red-400' : 'hover:bg-gray-800'}`}
                         title="Poor translation"
@@ -637,9 +638,8 @@ const AITranslator: React.FC = () => {
 
                 {/* Feedback Message */}
                 {feedback && (
-                  <div className={`absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-sm font-bold ${
-                    feedback === 'good' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                  }`}>
+                  <div className={`absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-sm font-bold ${feedback === 'good' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                    }`}>
                     {feedback === 'good' ? 'Thanks for the feedback! ✓' : 'We\'ll improve this! ✓'}
                   </div>
                 )}
@@ -657,7 +657,7 @@ const AITranslator: React.FC = () => {
                 </div>
                 <p className="text-xs text-gray-400">Perfect for students and language learners with accurate contextual translations.</p>
               </div>
-              
+
               <div className="bg-gradient-to-br from-purple-900/10 to-purple-900/5 border border-purple-800/20 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="p-1.5 bg-purple-500/20 rounded-lg">
@@ -667,7 +667,7 @@ const AITranslator: React.FC = () => {
                 </div>
                 <p className="text-xs text-gray-400">Formal, casual, and technical translation modes for different contexts.</p>
               </div>
-              
+
               <div className="bg-gradient-to-br from-emerald-900/10 to-emerald-900/5 border border-emerald-800/20 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="p-1.5 bg-emerald-500/20 rounded-lg">
@@ -693,7 +693,7 @@ const AITranslator: React.FC = () => {
         </footer>
       </div>
 
-     
+
     </div>
   );
 };

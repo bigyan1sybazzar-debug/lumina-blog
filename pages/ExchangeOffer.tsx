@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useMemo } from 'react';
 import { RefreshCw, Smartphone, TrendingUp, DollarSign } from 'lucide-react';
 
@@ -10,7 +12,7 @@ export const ExchangeOffer: React.FC = () => {
     const { totalExchangeValue, finalEffectivePrice } = useMemo(() => {
         const totalValue = oldPhoneResale + tradeInBonus;
         const finalPrice = Math.max(0, newPhonePrice - totalValue); // Ensure price doesn't go negative
-        
+
         return {
             totalExchangeValue: totalValue,
             finalEffectivePrice: finalPrice,
@@ -18,10 +20,10 @@ export const ExchangeOffer: React.FC = () => {
     }, [newPhonePrice, oldPhoneResale, tradeInBonus]);
 
     const formatCurrency = (amount: number) => {
-        return amount.toLocaleString('en-US', { 
-            style: 'currency', 
-            currency: 'USD', 
-            minimumFractionDigits: 0 
+        return amount.toLocaleString('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0
         });
     };
 
@@ -34,7 +36,7 @@ export const ExchangeOffer: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* 1. Input Form */}
                 <div className="space-y-6">
-                    
+
                     {/* New Phone Price Input */}
                     <div className="relative">
                         <label htmlFor="new-price" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -96,9 +98,9 @@ export const ExchangeOffer: React.FC = () => {
                 {/* 2. Results Section */}
                 <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 space-y-4 flex flex-col justify-center">
                     <h2 className="text-xl font-bold text-primary-600 dark:text-primary-400 mb-4 flex items-center">
-                        <RefreshCw size={20} className="mr-2"/> Exchange Summary
+                        <RefreshCw size={20} className="mr-2" /> Exchange Summary
                     </h2>
-                    
+
                     {/* Total Exchange Value */}
                     <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
                         <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">
@@ -118,7 +120,7 @@ export const ExchangeOffer: React.FC = () => {
                             {formatCurrency(finalEffectivePrice)}
                         </span>
                     </div>
-                    
+
                     <div className="pt-4 text-center">
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                             This is the price of the new phone after deducting the exchange value.

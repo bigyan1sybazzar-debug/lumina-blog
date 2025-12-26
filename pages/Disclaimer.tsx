@@ -1,13 +1,13 @@
 // pages/Disclaimer.tsx
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 const Disclaimer = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-16 px-4">
       <div className="max-w-4xl mx-auto">
-        <Link to="/" className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:underline mb-8 text-sm font-medium">
+        <Link href="/" className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:underline mb-8 text-sm font-medium">
           <ArrowLeft size={16} className="mr-2" />
           Back to Home
         </Link>
@@ -19,7 +19,7 @@ const Disclaimer = () => {
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">Last updated: December 2025</p>
 
           <div className="prose prose-lg dark:prose-invert max-w-none space-y-8 text-gray-700 dark:text-gray-300">
-            
+
             <section>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">1. No Professional Advice</h2>
               <p>Content on **Bigyann** is for **informational purposes only** and is not intended as a substitute for professional advice (e.g., financial, legal, medical, or technical). Always seek the advice of a qualified professional for any specific questions or concerns.</p>
@@ -29,7 +29,7 @@ const Disclaimer = () => {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">2. AI-Generated Content</h2>
               <p>Some articles or sections of content on this website may be partially or fully **AI-generated**. While we strive for accuracy and review content, errors or outdated information may occur. Always verify important information from primary sources.</p>
             </section>
-            
+
             <section>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">3. External Links</h2>
               <p>We provide links to third-party websites for convenience. These links do not imply endorsement, and we are **not responsible for the content, accuracy, or availability** of these external sites.</p>

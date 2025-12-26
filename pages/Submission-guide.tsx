@@ -1,55 +1,57 @@
+'use client';
+
 import React from 'react';
 import { LogIn, Send, CheckCircle, Zap, Code, Lightbulb } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Helmet } from 'react-helmet-async';
 
 export const SubmissionGuidePage: React.FC = () => {
     // --- Helper Component for a Clean Step Card ---
-    const StepCard: React.FC<{ icon: React.ReactNode, title: string, description: string, linkTo: string, linkText: string, color: string }> = 
+    const StepCard: React.FC<{ icon: React.ReactNode, title: string, description: string, linkTo: string, linkText: string, color: string }> =
         ({ icon, title, description, linkTo, linkText, color }) => (
-        <div className={`p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border-t-4 border-${color}-500 transition-shadow hover:shadow-xl`}>
-            <div className={`w-12 h-12 flex items-center justify-center rounded-full bg-${color}-100 dark:bg-${color}-900/50 text-${color}-600 dark:text-${color}-400 mb-4`}>
-                {icon}
+            <div className={`p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border-t-4 border-${color}-500 transition-shadow hover:shadow-xl`}>
+                <div className={`w-12 h-12 flex items-center justify-center rounded-full bg-${color}-100 dark:bg-${color}-900/50 text-${color}-600 dark:text-${color}-400 mb-4`}>
+                    {icon}
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">{description}</p>
+                <Link
+                    href={linkTo}
+                    className={`inline-flex items-center gap-2 font-semibold text-${color}-600 dark:text-${color}-400 hover:text-${color}-700 transition-colors`}
+                >
+                    {linkText}
+                    <Send className="w-4 h-4" />
+                </Link>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{title}</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">{description}</p>
-            <Link
-                to={linkTo}
-                className={`inline-flex items-center gap-2 font-semibold text-${color}-600 dark:text-${color}-400 hover:text-${color}-700 transition-colors`}
-            >
-                {linkText}
-                <Send className="w-4 h-4" />
-            </Link>
-        </div>
-    );
-    
+        );
+
     // --- Helper Component for a Clean Feature/Topic Card ---
-    const FeatureCard: React.FC<{ icon: React.ReactNode, title: string, description: string, color: string }> = 
+    const FeatureCard: React.FC<{ icon: React.ReactNode, title: string, description: string, color: string }> =
         ({ icon, title, description, color }) => (
-        <div className="p-5 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
-            <div className={`flex items-center text-${color}-500 mb-2`}>
-                {icon}
-                <h3 className="ml-2 font-semibold text-gray-900 dark:text-white">{title}</h3>
+            <div className="p-5 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm">
+                <div className={`flex items-center text-${color}-500 mb-2`}>
+                    {icon}
+                    <h3 className="ml-2 font-semibold text-gray-900 dark:text-white">{title}</h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
-        </div>
-    );
+        );
 
 
     return (
         <>
             <Helmet>
                 <title>Content Submission Guide | Bigyann</title>
-                <meta 
-                    name="description" 
-                    content="Simplified guide to submitting tech, price analysis, and AI content to Bigyann. Quick steps to become an author." 
+                <meta
+                    name="description"
+                    content="Simplified guide to submitting tech, price analysis, and AI content to Bigyann. Quick steps to become an author."
                 />
                 <link rel="canonical" href="https://bigyann.com.np/author-guide" />
             </Helmet>
-            
+
             <div className="bg-white dark:bg-gray-900 min-h-screen py-16 md:py-24">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-                    
+
                     {/* Header */}
                     <header className="text-center mb-16">
                         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-3">
@@ -65,11 +67,11 @@ export const SubmissionGuidePage: React.FC = () => {
                         <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-8 text-center">
                             Our Content Standards
                         </h2>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            
+
                             {/* Card 1: Originality */}
-                            <FeatureCard 
+                            <FeatureCard
                                 icon={<CheckCircle className="w-5 h-5" />}
                                 title="Be Original"
                                 description="Only submit content that is unique and has not been published on any other platform."
@@ -77,7 +79,7 @@ export const SubmissionGuidePage: React.FC = () => {
                             />
 
                             {/* Card 2: AI Policy */}
-                            <FeatureCard 
+                            <FeatureCard
                                 icon={<Zap className="w-5 h-5" />}
                                 title="AI is Welcome"
                                 description="Use tools like Gemini to draft, but you must manually fact-check and add unique Nepali context."
@@ -85,7 +87,7 @@ export const SubmissionGuidePage: React.FC = () => {
                             />
 
                             {/* Card 3: Formatting */}
-                            <FeatureCard 
+                            <FeatureCard
                                 icon={<Code className="w-5 h-5" />}
                                 title="Keep it Clean"
                                 description="Use H2/H3 headings, short paragraphs, and clear bullet points. Min 800 words recommended."
@@ -100,21 +102,21 @@ export const SubmissionGuidePage: React.FC = () => {
                         <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-8 text-center">
                             Topics We Love to Publish
                         </h2>
-                        
+
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <FeatureCard 
+                            <FeatureCard
                                 icon={<Lightbulb className="w-5 h-5" />}
                                 title="Tech Reviews"
                                 description="Smartphones, gadgets, software reviews, and how-to guides."
                                 color="yellow"
                             />
-                            <FeatureCard 
+                            <FeatureCard
                                 icon={<Zap className="w-5 h-5" />}
                                 title="Price Analysis"
                                 description="Accurate and current pricing trends for electronics in the Nepali market."
                                 color="red"
                             />
-                            <FeatureCard 
+                            <FeatureCard
                                 icon={<Code className="w-5 h-5" />}
                                 title="AI & Future Tech"
                                 description="Insights into new AI models (Gemini, ChatGPT) and ethical tech discussions."
@@ -131,7 +133,7 @@ export const SubmissionGuidePage: React.FC = () => {
                         </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            
+
                             {/* Step 1 */}
                             <StepCard
                                 icon={<LogIn className="w-6 h-6" />}
