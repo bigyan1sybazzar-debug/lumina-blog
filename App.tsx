@@ -31,7 +31,7 @@ import AITranslator from'./pages/AITranslator';
 import ResumeChecker from './pages/ResumeChecker';
 import { notifyIndexNow } from './services/indexingService';
 
-const SITE_URL = 'https://bigyann.com.np';
+const SITE_URL = 'http://bigyann.com.np';
 
 // ------------------------------------------------------------------
 // Main Layout: Handles Header, Footer, SEO, and IndexNow notifications
@@ -41,38 +41,27 @@ const MainLayout: React.FC = () => {
 
   /**
    * IndexNow Integration:
-   * Whenever the route changes (including blogs), we notify search engines.
+   * Notifies engines whenever a user (or crawler) lands on a page.
    */
   useEffect(() => {
-    // We send the notification for every page visit to prioritize crawling.
-    // This works for static tools and dynamic blog routes.
     notifyIndexNow([pathname]);
   }, [pathname]);
 
   /**
-   * SEO Canonical Logic:
-   * We define our static/known routes. 
-   * Dynamic blog posts usually handle their own canonicals inside BlogPostPage.tsx.
+   * SEO FIX: Universal Canonical URL Logic
+   * This ensures EVERY page (blog, tool, or home) has a <link rel="canonical" />
+   * It removes trailing slashes and combines with your SITE_URL.
    */
   const cleanPathname = pathname === "/" ? "" : pathname.replace(/\/+$/, '');
-  
-  const staticRoutes = [
-    '', '/categories', '/about', '/contact', '/chat', '/live-football',
-    '/tools/emi-calculator', '/tools/exchange-offer', '/author-guide',
-    '/price/my-phone-price', '/privacy-policy', '/terms-of-service', '/disclaimer',
-    '/tools/temp-mail', '/tools/video-downloader', '/tools/ai-translator', '/tools/resume-checker'
-  ];
-
-  const isStaticRoute = staticRoutes.includes(cleanPathname);
   const canonicalUrl = `${SITE_URL}${cleanPathname}`;
 
   return (
     <div className="flex flex-col min-h-screen">
       <Helmet>
-        {/* Set canonical for home and static tools */}
-        {isStaticRoute && <link rel="canonical" href={canonicalUrl} />}
+        {/* FIX: Always provide a canonical link to avoid "No canonical link tag found" errors */}
+        <link rel="canonical" href={canonicalUrl} />
         
-        {/* Universal indexing allowed tag - Ensures "noindex" bugs are cleared */}
+        {/* Universal indexing allowed tag */}
         <meta name="robots" content="index, follow" />
       </Helmet>
       
@@ -131,25 +120,24 @@ export default function App() {
 
               {/* 404 Handling with SEO No-Index */}
               <Route path="*" element={
-                <>
+                <div className="flex flex-col items-center justify-center min-h-screen text-center p-6 bg-gray-50 dark:bg-gray-900">
                   <Helmet>
                     <title>404 - Page Not Found | Bigyann</title>
                     <meta name="robots" content="noindex, nofollow" />
+                    {/* No canonical for 404 pages */}
                   </Helmet>
-                  <div className="flex flex-col items-center justify-center min-h-screen text-center p-6 bg-gray-50 dark:bg-gray-900">
-                    <h1 className="text-6xl font-bold text-blue-600 mb-4">404</h1>
-                    <h2 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">Page Not Found</h2>
-                    <p className="text-gray-600 dark:text-gray-400 mb-8">
-                      The link might be broken or the page has been moved.
-                    </p>
-                    <Link 
-                      to="/" 
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 rounded-full transition-all"
-                    >
-                      Return Home
-                    </Link>
-                  </div>
-                </>
+                  <h1 className="text-6xl font-bold text-blue-600 mb-4">404</h1>
+                  <h2 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">Page Not Found</h2>
+                  <p className="text-gray-600 dark:text-gray-400 mb-8">
+                    The link might be broken or the page has been moved.
+                  </p>
+                  <Link 
+                    to="/" 
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 rounded-full transition-all"
+                  >
+                    Return Home
+                  </Link>
+                </div>
               } />
             </Routes>
           </BrowserRouter>
