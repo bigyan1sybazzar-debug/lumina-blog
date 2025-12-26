@@ -125,10 +125,10 @@ export default function App() {
 // Extracted for cleanliness
 const NotFoundPage = () => (
   <div className="flex flex-col items-center justify-center min-h-screen text-center p-6 bg-gray-50 dark:bg-gray-900">
-    <Helmet>
-      <title>404 - Page Not Found | Bigyann</title>
-      <meta name="robots" content="noindex, nofollow" />
-    </Helmet>
+   <Helmet>
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://bigyann.com.np/" />
+</Helmet>
     <h1 className="text-6xl font-bold text-blue-600 mb-4">404</h1>
     <h2 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-white">Page Not Found</h2>
     <p className="text-gray-600 dark:text-gray-400 mb-8">
