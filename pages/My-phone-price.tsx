@@ -1,8 +1,6 @@
 // src/pages/My-phone-price.tsx (Updated with Header and Footer)
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Header } from '../components/Header'; // Imported Header
-import { Footer } from '../components/Footer'; // Imported Footer
 import { 
     ArrowRight, 
     Calculator, 
@@ -323,7 +321,7 @@ export const MyPhonePrice: React.FC = () => {
         // Wrap the entire component content in a React fragment or div
         <>
             {/* 1. RENDER HEADER HERE */}
-            <Header />
+      
 
             <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-16 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-4xl mx-auto bg-white dark:bg-gray-900 rounded-3xl shadow-2xl p-6 sm:p-10 md:p-12 border border-gray-100 dark:border-gray-800">
@@ -580,7 +578,6 @@ export const MyPhonePrice: React.FC = () => {
             </div>
             
             {/* 2. RENDER FOOTER HERE */}
-            <Footer />
         </>
     );
 };
