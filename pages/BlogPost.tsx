@@ -147,21 +147,23 @@ export const BlogPostPage: React.FC = () => {
   };
 
   // FIXED: Added noindex and canonical to loading state to prevent "blank page" indexing
-  if (loading) {
-    return (
-      <>
-        <Helmet>
-          <title>Loading Content... | Bigyann</title>
-          <meta name="robots" content="noindex, nofollow" />
-          <link rel="canonical" href={`${SITE_URL}/${slug}`} />
-        </Helmet>
-        <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
-          <Loader2 className="animate-spin mb-4" size={32} />
-          <p>Illuminating content...</p>
-        </div>
-      </>
-    );
-  }
+// 1. IMPROVED LOADING STATE (Removed noindex)
+if (loading) {
+  return (
+    <>
+      <Helmet>
+        <title>Bigyann | Loading...</title>
+        {/* We tell Google it's okay to index this, and point to the final URL */}
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={`${SITE_URL}/${slug}`} />
+      </Helmet>
+      <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
+        <Loader2 className="animate-spin mb-4" size={32} />
+        <p>Illuminating content...</p>
+      </div>
+    </>
+  );
+}
 
   if (!post || (post.status !== 'published' && user?.id !== post.author.id && user?.role !== 'admin')) {
     return (
