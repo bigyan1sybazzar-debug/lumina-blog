@@ -1,7 +1,7 @@
 // api/bing-submit.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const BING_API_KEY = process.env.BING_WEBMASTER_API_KEY || 'sampleapikeyEEDECC1EA4AE341CC57365E075EBC8B6';
+const BING_API_KEY = process.env.BING_WEBMASTER_API_KEY || '1f2da629fc224cdcb5dd4a6f821facc6';
 const SITE_URL = 'https://bigyann.com.np';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
