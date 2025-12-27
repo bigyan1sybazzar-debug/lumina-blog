@@ -10,7 +10,11 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { sendChatMessage, startNewChat } from '../services/puterGrokChat';
 // Icons from lucide-react (assuming they are installed/available)
-import { Loader2, Send, Copy, Check, Bot, User, Sparkles, RefreshCw, Zap, Command, Search, X, StopCircle } from 'lucide-react';
+import { Loader2, Send, Copy, Check, Bot, User, Sparkles, RefreshCw, Zap, Command, Search, X, StopCircle, Lock } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { saveChat } from '../services/chatService';
+import Link from 'next/link';
+import { ChatMessage } from '../types';
 
 
 interface Message {
@@ -18,6 +22,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   isError?: boolean;
+  timestamp?: string;
 }
 
 const initialAssistantMessage: Message = {
@@ -27,6 +32,7 @@ const initialAssistantMessage: Message = {
 };
 
 export default function ChatAssistant() {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([initialAssistantMessage]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +40,29 @@ export default function ChatAssistant() {
   const [copiedId, setCopiedId] = useState<string | null>(null); // For copy button feedback
   const abortController = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Guest Limit State
+  const [guestMsgCount, setGuestMsgCount] = useState(0);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
+  // Session State
+  const sessionIdRef = useRef<string>(Date.now().toString());
+
+  // Init Guest Count
+  useEffect(() => {
+    const saved = localStorage.getItem('guest_msg_count');
+    if (saved) setGuestMsgCount(parseInt(saved, 10));
+  }, []);
+
+  // Save Chat Effect (Debounced or on reliable changes)
+  useEffect(() => {
+    if (user && messages.length > 0 && !isStreaming && !isLoading) {
+      // Save only when stable (not streaming)
+      // Map local messages to shared type if needed, but they are identical structure mostly
+      saveChat(user.id, sessionIdRef.current, messages as ChatMessage[], { name: user.name, avatar: user.avatar });
+    }
+  }, [messages, isStreaming, isLoading, user]);
+
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -52,6 +81,17 @@ export default function ChatAssistant() {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading || isStreaming) return; // Prevent double send
+
+    // Check Guest Limit
+    if (!user) {
+      if (guestMsgCount >= 3) {
+        setShowLoginPrompt(true);
+        return;
+      }
+      const newCount = guestMsgCount + 1;
+      setGuestMsgCount(newCount);
+      localStorage.setItem('guest_msg_count', newCount.toString());
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -121,8 +161,13 @@ export default function ChatAssistant() {
   };
 
   const handleNewChat = () => {
+    if (!user && guestMsgCount >= 3) {
+      setShowLoginPrompt(true);
+      return;
+    }
     startNewChat();
     setMessages([initialAssistantMessage]); // Reset to initial welcome message
+    sessionIdRef.current = Date.now().toString(); // New Session ID
   };
 
   const handleDebug = () => {
@@ -296,10 +341,10 @@ export default function ChatAssistant() {
                     {/* Message Bubble */}
                     <div
                       className={`max-w-[85%] ${isUser
-                          ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
-                          : isError
-                            ? 'bg-red-100 text-red-800 border border-red-300'
-                            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700'
+                        ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
+                        : isError
+                          ? 'bg-red-100 text-red-800 border border-red-300'
+                          : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700'
                         } rounded-2xl px-5 py-3 shadow-lg`}
                     >
                       {renderMessageContent(msg)}
@@ -394,6 +439,43 @@ export default function ChatAssistant() {
           </div>
         </div>
       </div>
+
+      {/* Login Limit Modal */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-gray-200 dark:border-gray-700 text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-purple-500/20 to-transparent pointer-events-none"></div>
+
+            <div className="relative">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg rotate-3 hover:rotate-6 transition-transform">
+                <Lock className="w-8 h-8 text-white" />
+              </div>
+
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                Free Chat Limit Reached
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+                You've reached the limit of 3 free chats as a guest. Log in to continue chatting with unlimited access and save your history!
+              </p>
+
+              <div className="space-y-3">
+                <Link
+                  href="/login"
+                  className="block w-full py-3.5 px-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all transform"
+                >
+                  Log In / Sign Up
+                </Link>
+                <button
+                  onClick={() => setShowLoginPrompt(false)}
+                  className="block w-full py-3.5 px-6 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-colors"
+                >
+                  Maybe Later
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

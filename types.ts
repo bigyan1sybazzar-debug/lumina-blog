@@ -1,5 +1,3 @@
-// src/types.ts
-
 export type UserRole = 'admin' | 'moderator' | 'user';
 
 export interface User {
@@ -11,8 +9,8 @@ export interface User {
 }
 
 export interface BlogPost {
-  id: string;                    // Firestore document ID
-  slug: string;                  // REQUIRED (Guaranteed unique by db.ts)
+  id: string;                  // Firestore document ID
+  slug: string;                  // REQUIRED (Guaranteed unique by db.ts)
 
   title: string;
   excerpt: string;
@@ -21,22 +19,22 @@ export interface BlogPost {
   coverImageAlt?: string;
 
   author: {
-    id: string;                   // Author user ID (REQUIRED)
+    id: string;                  // Author user ID (REQUIRED)
     name: string;
     avatar: string;
   };
 
-  date: string;                  // e.g. "November 28, 2025"
-  readTime: string;              // e.g. "8 min read"
+  date: string;                  // e.g. "November 28, 2025"
+  readTime: string;              // e.g. "8 min read"
   category: string;
   tags?: string[];
 
-  views: number;                  // REQUIRED (Defaulted to 0 in db.ts)
+  views: number;                  // REQUIRED (Defaulted to 0 in db.ts)
   status: 'published' | 'pending' | 'draft';
-  likes: string[];               // REQUIRED (Defaulted to [] in db.ts)
+  likes: string[];               // REQUIRED (Defaulted to [] in db.ts)
 
-  createdAt: string;             // ISO string (REQUIRED)
-  updatedAt: string;             // ISO string (REQUIRED)
+  createdAt: string;             // ISO string (REQUIRED)
+  updatedAt: string;             // ISO string (REQUIRED)
 }
 
 export interface Category {
@@ -50,26 +48,56 @@ export interface Category {
 export interface Comment {
   id: string;
   postId: string;
+  postTitle?: string;            // For admin view
   userId: string;
   userName: string;
   userAvatar: string;
   content: string;
-  createdAt: string;             // ISO string
+  createdAt: string;             // ISO string
+  adminReply?: {
+    content: string;
+    adminName: string;
+    repliedAt: string;
+  };
 }
 
 export interface Review {
   id: string;
   postId: string;
+  postTitle?: string;            // For admin view
   userId: string;
   userName: string;
   userAvatar: string;
-  rating: number;                // 1–5
+  rating: number;                // 1–5
   content: string;
-  createdAt: string;             // ISO string
+  createdAt: string;             // ISO string
+  adminReply?: {
+    content: string;
+    adminName: string;
+    repliedAt: string;
+  };
 }
 
 export interface AnalyticsData {
   name: string;
   views: number;
   visitors: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  isError?: boolean;
+  timestamp?: string;
+}
+
+export interface ChatSession {
+  id: string;
+  userId: string;
+  userName?: string;
+  userAvatar?: string;
+  messages: ChatMessage[];
+  createdAt: string;
+  updatedAt: string;
 }

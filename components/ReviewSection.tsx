@@ -150,6 +150,19 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ postId }) => {
                   </div>
 
                   <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{review.content}</p>
+
+                  {/* Admin Reply */}
+                  {review.adminReply && (
+                    <div className="mt-4 ml-4 pl-4 border-l-2 border-primary-500 bg-primary-50 dark:bg-primary-900/20 p-3 rounded-r-lg">
+                      <p className="text-sm font-semibold text-primary-900 dark:text-primary-300 mb-1">
+                        Reply from {review.adminReply.adminName}
+                      </p>
+                      <p className="text-gray-700 dark:text-gray-300 text-sm">{review.adminReply.content}</p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {new Date(review.adminReply.repliedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

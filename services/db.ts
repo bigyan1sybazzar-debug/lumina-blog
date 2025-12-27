@@ -429,6 +429,115 @@ export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
   }
 };
 
+// --- ADMIN: COMMENTS & REVIEWS MANAGEMENT ---
+
+export const getAllComments = async (): Promise<Comment[]> => {
+  try {
+    const snapshot = await db.collection(COMMENTS_COLLECTION).get();
+    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+
+    // Fetch post titles for each comment
+    const commentsWithTitles = await Promise.all(
+      comments.map(async (comment) => {
+        const post = await getPostById(comment.postId);
+        return {
+          ...comment,
+          postTitle: post?.title || 'Unknown Post'
+        };
+      })
+    );
+
+    return commentsWithTitles.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error) {
+    console.error('Error fetching all comments:', error);
+    return [];
+  }
+};
+
+export const getAllReviews = async (): Promise<Review[]> => {
+  try {
+    const snapshot = await db.collection(REVIEWS_COLLECTION).get();
+    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
+
+    // Fetch post titles for each review
+    const reviewsWithTitles = await Promise.all(
+      reviews.map(async (review) => {
+        const post = await getPostById(review.postId);
+        return {
+          ...review,
+          postTitle: post?.title || 'Unknown Post'
+        };
+      })
+    );
+
+    return reviewsWithTitles.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error) {
+    console.error('Error fetching all reviews:', error);
+    return [];
+  }
+};
+
+export const deleteComment = async (commentId: string): Promise<void> => {
+  try {
+    await db.collection(COMMENTS_COLLECTION).doc(commentId).delete();
+    console.log(`Comment ${commentId} deleted successfully`);
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    throw error;
+  }
+};
+
+export const deleteReview = async (reviewId: string): Promise<void> => {
+  try {
+    await db.collection(REVIEWS_COLLECTION).doc(reviewId).delete();
+    console.log(`Review ${reviewId} deleted successfully`);
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    throw error;
+  }
+};
+
+export const replyToComment = async (
+  commentId: string,
+  adminName: string,
+  replyContent: string
+): Promise<void> => {
+  try {
+    await db.collection(COMMENTS_COLLECTION).doc(commentId).update({
+      adminReply: {
+        content: replyContent,
+        adminName: adminName,
+        repliedAt: new Date().toISOString(),
+      }
+    });
+    console.log(`Reply added to comment ${commentId}`);
+  } catch (error) {
+    console.error('Error replying to comment:', error);
+    throw error;
+  }
+};
+
+export const replyToReview = async (
+  reviewId: string,
+  adminName: string,
+  replyContent: string
+): Promise<void> => {
+  try {
+    await db.collection(REVIEWS_COLLECTION).doc(reviewId).update({
+      adminReply: {
+        content: replyContent,
+        adminName: adminName,
+        repliedAt: new Date().toISOString(),
+      }
+    });
+    console.log(`Reply added to review ${reviewId}`);
+  } catch (error) {
+    console.error('Error replying to review:', error);
+    throw error;
+  }
+};
+
+
 // --- SITEMAP ---
 
 export const generateAndUploadSitemap = async (): Promise<string | null> => {
