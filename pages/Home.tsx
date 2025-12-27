@@ -218,77 +218,77 @@ export const Home: React.FC = () => {
           </div>
         </section>
       )}
-      {/* AI Tools Section (Reduced py- from py-24 to py-16) */}
-      <section className="py-12 md:py-16 bg-gradient-to-br from-gray-100 to-white dark:from-gray-900 dark:to-gray-950">
+      {/* AI Tools Section */}
+      <section className="py-8 md:py-10 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-left text-gray-900 dark:text-white">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-2xl md:text-3xl font-bold text-left text-gray-900 dark:text-white">
               Explore Our AI Tools 💡
             </h2>
           </div>
 
           {/* Grid: 2 columns on mobile, 3 columns on desktop for perfect symmetry */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
 
             {/* Tab 1: Old Phone Price */}
             <Link
               href="/price/my-phone-price"
-              className="text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+              className="text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
-              <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-primary-400 to-purple-500 
-                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <Send className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-primary-400 to-purple-500 
+                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <Send className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">Old Phone Price</h3>
+              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">Old Phone Price</h3>
               <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Get best price for your phone</p>
             </Link>
 
             {/* Tab 2: AI Translator */}
             <Link
               href="/tools/ai-translator"
-              className="text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+              className="text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
-              <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-600 
-                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <Languages className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-600 
+                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <Languages className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">AI Translator</h3>
+              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">AI Translator</h3>
               <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Live multi-language translation</p>
             </Link>
 
             {/* Tab 3: ATS Resume Checker (New) */}
             <Link
               href="/tools/resume-checker"
-              className="relative text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+              className="relative text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
-              <span className="absolute top-3 right-3 bg-pink-500 text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase">New</span>
-              <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600 
-                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <span className="absolute top-2 right-2 bg-pink-500 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full uppercase">New</span>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600 
+                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">Resume Checker</h3>
+              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">Resume Checker</h3>
               <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Scan and optimize score</p>
             </Link>
 
             {/* Tab 4: Temp Mail (New) */}
             <Link
               href="/tools/temp-mail"
-              className="relative text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+              className="relative text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
-              <span className="absolute top-3 right-3 bg-orange-500 text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase">Secure</span>
-              <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-orange-400 to-red-600 
-                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <span className="absolute top-2 right-2 bg-orange-500 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full uppercase">Secure</span>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-orange-400 to-red-600 
+                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">Temp Mail</h3>
+              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">Temp Mail</h3>
               <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Disposable inbox for privacy</p>
             </Link>
 
@@ -297,30 +297,30 @@ export const Home: React.FC = () => {
               href="https://bigyann.com.np/tools/emi-calculator"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+              className="text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
-              <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-blue-400 to-cyan-500 
-                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-blue-400 to-cyan-500 
+                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">EMI Calculator</h3>
+              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">EMI Calculator</h3>
               <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Quick loan estimates</p>
             </a>
 
             {/* Tab 6: Exchange Offer */}
             <Link
               href="/tools/exchange-offer"
-              className="text-sm flex flex-col items-center justify-center p-5 sm:p-8 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-300 hover:shadow-2xl hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-3xl border border-gray-100 dark:border-gray-700/50 transform hover:-translate-y-1"
+              className="text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
-              <div className="w-12 h-12 sm:w-14 sm:h-14 mb-3 rounded-full bg-gradient-to-tr from-green-400 to-teal-500 
-                        flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-green-400 to-teal-500 
+                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-1">Exchange Offer</h3>
+              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">Exchange Offer</h3>
               <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Check eligibility value</p>
             </Link>
 

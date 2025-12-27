@@ -29,6 +29,7 @@ export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isToolsDropdownOpen, setIsToolsDropdownOpen] = useState(false); // State for the new Tools dropdown
+  const [searchQuery, setSearchQuery] = useState(''); // Search state
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const pathname = usePathname();
@@ -49,6 +50,21 @@ export const Header: React.FC = () => {
   const handleLogout = () => {
     logout();
     router.push('/');
+  };
+
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/categories?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+      setIsMenuOpen(false);
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   return (
@@ -133,9 +149,15 @@ export const Header: React.FC = () => {
               <input
                 type="text"
                 placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 className="pl-9 pr-4 py-1.5 text-sm rounded-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 border-none w-36 focus:w-60 transition-all duration-300"
               />
-              <Search className="absolute left-3 top-2 h-4 w-4 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+              <Search
+                className="absolute left-3 top-2 h-4 w-4 text-gray-400 group-focus-within:text-primary-500 transition-colors cursor-pointer"
+                onClick={handleSearch}
+              />
             </div>
 
             <button
@@ -218,9 +240,15 @@ export const Header: React.FC = () => {
               <input
                 type="text"
                 placeholder="Search articles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 className="w-full pl-10 pr-4 py-2.5 text-base rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
-              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Search
+                className="absolute left-3 top-3 h-5 w-5 text-gray-400 cursor-pointer"
+                onClick={handleSearch}
+              />
             </div>
 
             {/* Use the combined mobileLinks for the mobile menu */}

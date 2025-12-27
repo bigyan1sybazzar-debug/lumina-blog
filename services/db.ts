@@ -271,7 +271,7 @@ const getFullUrl = (slug: string) => `https://yourdomain.com/blog/${slug}`;
 /**
  * Updates post status and notifies IndexNow if changed to published.
  */
-export const updatePostStatus = async (postId: string, status: 'published' | 'pending' | 'draft') => {
+export const updatePostStatus = async (postId: string, status: 'published' | 'pending' | 'draft' | 'hidden') => {
   await db.collection(POSTS_COLLECTION).doc(postId).update({
     status,
     updatedAt: new Date().toISOString(),

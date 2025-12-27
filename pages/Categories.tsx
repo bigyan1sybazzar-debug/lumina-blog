@@ -2,6 +2,7 @@
 
 // src/pages/Categories.tsx
 import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { getCategories, getPosts } from '../services/db';
 import { Category, BlogPost } from '../types';
 import * as Icons from 'lucide-react';
@@ -9,6 +10,9 @@ import { PostCard } from '../components/PostCard';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const Categories: React.FC = () => {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams?.get('search') || '';
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [displayedPosts, setDisplayedPosts] = useState<BlogPost[]>([]);
@@ -75,12 +79,25 @@ export const Categories: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedCategory) {
-      setDisplayedPosts(allPosts);
-    } else {
-      setDisplayedPosts(allPosts.filter(p => p.category === selectedCategory.name));
+    let filtered = allPosts;
+
+    // Apply category filter
+    if (selectedCategory) {
+      filtered = filtered.filter(p => p.category === selectedCategory.name);
     }
-  }, [selectedCategory, allPosts]);
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.title.toLowerCase().includes(query) ||
+        p.excerpt?.toLowerCase().includes(query) ||
+        p.content?.toLowerCase().includes(query)
+      );
+    }
+
+    setDisplayedPosts(filtered);
+  }, [selectedCategory, allPosts, searchQuery]);
 
   const getIcon = (iconName: string) => {
     const Icon = (Icons as any)[iconName] || Icons.Hash;
@@ -152,8 +169,8 @@ export const Categories: React.FC = () => {
                 <button
                   onClick={() => setSelectedCategory(null)}
                   className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold whitespace-nowrap flex-shrink-0 transition-all shadow-md hover:shadow-lg ${!selectedCategory
-                      ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white scale-105 shadow-xl'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white scale-105 shadow-xl'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
                 >
                   <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
@@ -169,8 +186,8 @@ export const Categories: React.FC = () => {
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat)}
                       className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-semibold whitespace-nowrap flex-shrink-0 transition-all shadow-md hover:shadow-lg ${active
-                          ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white scale-105 shadow-xl'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                        ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white scale-105 shadow-xl'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                     >
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${active ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-700'}`}>
@@ -191,11 +208,15 @@ export const Categories: React.FC = () => {
           <div className="flex items-center gap-6">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent dark:via-gray-700"></div>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {selectedCategory ? selectedCategory.name : 'All Posts'}
+              {searchQuery
+                ? `Search: "${searchQuery}"`
+                : selectedCategory
+                  ? selectedCategory.name
+                  : 'All Posts'}
             </h2>
             <div className="flex-1 h-px bg-gradient-to-l from-transparent via-gray-300 to-transparent dark:via-gray-700"></div>
           </div>
-          {selectedCategory && (
+          {(selectedCategory || searchQuery) && (
             <p className="text-center mt-4 text-lg text-gray-600 dark:text-gray-400">
               {displayedPosts.length} article{displayedPosts.length !== 1 ? 's' : ''}
             </p>

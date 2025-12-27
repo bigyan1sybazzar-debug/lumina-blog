@@ -457,6 +457,30 @@ export const Admin: React.FC = () => {
     }
   };
 
+  const handleHidePost = async (postId: string) => {
+    if (confirm('Are you sure you want to hide this post? It will not be visible to the public.')) {
+      try {
+        await updatePostStatus(postId, 'hidden');
+        alert('Post hidden successfully!');
+        refreshData();
+      } catch (error) {
+        alert('Failed to hide post.');
+        console.error(error);
+      }
+    }
+  };
+
+  const handleUnhidePost = async (postId: string) => {
+    try {
+      await updatePostStatus(postId, 'published');
+      alert('Post unhidden and published!');
+      refreshData();
+    } catch (error) {
+      alert('Failed to unhide post.');
+      console.error(error);
+    }
+  };
+
   const handleChangeRole = async (userId: string, newRole: string) => {
     try {
       // Type assertion
@@ -1445,7 +1469,7 @@ export const Admin: React.FC = () => {
                       </thead>
                       <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {filteredPosts.map(post => (
-                          <tr key={post.slug} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <img
@@ -1475,7 +1499,8 @@ export const Admin: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${post.status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
                                 post.status === 'pending' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
-                                  'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                  post.status === 'hidden' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
+                                    'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                                 }`}>
                                 {post.status}
                               </span>
@@ -1503,13 +1528,32 @@ export const Admin: React.FC = () => {
                                   <Eye size={16} />
                                 </button>
                                 {isAdmin && (
-                                  <button
-                                    onClick={() => handleDeletePost(post.id)}
-                                    className="text-red-600 hover:text-red-800 dark:text-red-400 p-1"
-                                    title="Delete"
-                                  >
-                                    <Trash2 size={16} />
-                                  </button>
+                                  <>
+                                    {post.status === 'hidden' ? (
+                                      <button
+                                        onClick={() => handleUnhidePost(post.id)}
+                                        className="text-purple-600 hover:text-purple-800 dark:text-purple-400 p-1"
+                                        title="Unhide"
+                                      >
+                                        <Eye size={16} />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleHidePost(post.id)}
+                                        className="text-purple-600 hover:text-purple-800 dark:text-purple-400 p-1"
+                                        title="Hide"
+                                      >
+                                        <Eye size={16} className="opacity-50" />
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => handleDeletePost(post.id)}
+                                      className="text-red-600 hover:text-red-800 dark:text-red-400 p-1"
+                                      title="Delete"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             </td>

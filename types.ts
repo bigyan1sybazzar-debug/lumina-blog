@@ -30,7 +30,7 @@ export interface BlogPost {
   tags?: string[];
 
   views: number;                  // REQUIRED (Defaulted to 0 in db.ts)
-  status: 'published' | 'pending' | 'draft';
+  status: 'published' | 'pending' | 'draft' | 'hidden';
   likes: string[];               // REQUIRED (Defaulted to [] in db.ts)
 
   createdAt: string;             // ISO string (REQUIRED)
