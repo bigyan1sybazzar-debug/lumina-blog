@@ -13,7 +13,7 @@ import {
 
 // ✅ PDF Worker Import
 // Using CDN for Next.js compatibility
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 const POWER_WORDS = [
     'managed', 'developed', 'spearheaded', 'created', 'designed',

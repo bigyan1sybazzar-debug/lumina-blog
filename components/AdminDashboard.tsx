@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { BlogPost, User, Category } from '../types';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
 import {
@@ -91,9 +91,7 @@ export const Admin: React.FC = () => {
   // Automation State
   const [isAutoPilotOn, setIsAutoPilotOn] = useState(false);
   const [autoLogs, setAutoLogs] = useState<AutoLog[]>([]);
-  const [nextRunTime, setNextRunTime] = useState<number | null>(null);
-  const [autoIntervalId, setAutoIntervalId] = useState<any>(null);
-  const [postsGeneratedToday, setPostsGeneratedToday] = useState(0);
+  // Removed local interval states
 
   // Featured Posts Manager State
   const [featuredPosts, setFeaturedPosts] = useState<BlogPost[]>([]);
@@ -226,96 +224,49 @@ export const Admin: React.FC = () => {
     }
   }, [autoLogs]);
 
-  // --- AUTOMATION LOGIC ---
+  // --- AUTOMATION LOGIC (SERVER-SIDE) ---
 
-  const addLog = (message: string, type: 'info' | 'success' | 'error' | 'warning' = 'info') => {
-    setAutoLogs(prev => [...prev, {
-      id: Date.now().toString(),
-      timestamp: new Date().toLocaleTimeString(),
-      message,
-      type
-    }]);
-  };
+  // Listen to Firestore config
+  useEffect(() => {
+    // Only listen if we are admin
+    if (!isAdmin) return;
 
-  const runAutomationCycle = async () => {
-    if (categories.length === 0) {
-      addLog('No categories found. Cannot run automation.', 'error');
-      return;
-    }
+    const unsub = onSnapshot(doc(db, 'config', 'autopilot'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setIsAutoPilotOn(!!data.isEnabled);
+          const logs = data.logs || [];
+          setAutoLogs([...logs].reverse());
+        }
+      },
+      (error) => {
+        console.error("Firestore listener error:", error);
+        // If permission denied, likely rules issue
+        if (error.code === 'permission-denied') {
+          console.error("Error: Permission denied. Check Firestore Rules.");
+          // alert("Error: Permission denied. Check Firestore Rules."); 
+        }
+      }
+    );
 
-    addLog('Starting automation cycle...', 'info');
+    return () => unsub();
+  }, [isAdmin]);
 
+  const toggleAutoPilot = async () => {
     try {
-      // 1. Pick a random category
-      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-      addLog(`Selected category: ${randomCategory.name}`, 'info');
-      addLog(`Fetching trending news and generating article via Gemini...`, 'info');
-
-      // 2. Generate Content via Gemini (Search + Writing)
-      const { title: aiTitle, content: aiContent, sources } = await generateNewsPost(randomCategory.name);
-      addLog(`Content generated: "${aiTitle}"`, 'success');
-
-      // 3. Generate Image
-      addLog(`Generating AI header image for: "${aiTitle}"...`, 'info');
-      const aiImage = await generateBlogImage(aiTitle);
-      addLog('Image generated successfully.', 'success');
-
-      // 4. Create Post Object
-      const postData = {
-        title: aiTitle,
-        content: aiContent,
-        excerpt: aiContent.substring(0, 150).replace(/[#*`]/g, '') + '...',
-        author: { name: 'Bigyann AI', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=bigyann', id: 'ai-bot' },
-        readTime: `${Math.ceil(aiContent.split(' ').length / 200)} min read`,
-        category: randomCategory.name,
-        tags: [randomCategory.name, 'News', 'AI Generated'],
-        coverImage: aiImage,
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        status: 'published' as const,
+      const newState = !isAutoPilotOn;
+      await setDoc(doc(db, 'config', 'autopilot'), {
+        isEnabled: newState,
+        // Initialize logs if not present
         updatedAt: new Date().toISOString()
-      };
+      }, { merge: true });
 
-      // 5. Save to DB
-      await createPost(postData);
-      addLog('Post published successfully!', 'success');
-      setPostsGeneratedToday(prev => prev + 1);
-
-      // Refresh list
-      refreshData();
-
-    } catch (error: any) {
-      addLog(`Automation failed: ${error.message}`, 'error');
-    }
-  };
-
-  const toggleAutoPilot = () => {
-    if (isAutoPilotOn) {
-      // Turn Off
-      if (autoIntervalId) clearInterval(autoIntervalId);
-      setIsAutoPilotOn(false);
-      setNextRunTime(null);
-      addLog('Auto-Pilot stopped.', 'warning');
-    } else {
-      // Turn On
-      setIsAutoPilotOn(true);
-      addLog('Auto-Pilot activated. Scheduling 4 posts per day.', 'success');
-
-      // Calculate interval for 4 times a day (approx every 6 hours)
-      // For demo purposes, we can set it faster, but let's do a logic check
-      const postsPerDay = 4;
-      const msPerDay = 24 * 60 * 60 * 1000;
-      const interval = msPerDay / postsPerDay;
-
-      // Run one immediately? No, let's schedule.
-      const run = () => {
-        runAutomationCycle();
-        setNextRunTime(Date.now() + interval);
-      };
-
-      run(); // Run first one now
-      const id = setInterval(run, interval); // Then every 6 hours
-      setAutoIntervalId(id);
-      setNextRunTime(Date.now() + interval);
+      // Optimistic updat is not needed due to listener, but feedback is good
+      alert(newState ? 'Auto-Pilot Enabled (Server-Side)' : 'Auto-Pilot Disabled');
+    } catch (error) {
+      console.error('Failed to toggle autopilot:', error);
+      alert('Error updating configuration');
     }
   };
 
@@ -1104,8 +1055,10 @@ export const Admin: React.FC = () => {
 
                 <div className="flex items-center gap-4">
                   <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg text-sm">
-                    <span className="text-gray-500 mr-2">Posts Today:</span>
-                    <span className="font-bold text-gray-900 dark:text-white">{postsGeneratedToday}/4</span>
+                    <span className="text-gray-500 mr-2">Status:</span>
+                    <span className={`font-bold ${isAutoPilotOn ? 'text-green-500' : 'text-gray-500'}`}>
+                      {isAutoPilotOn ? 'Active (Server)' : 'Inactive'}
+                    </span>
                   </div>
 
                   <button
@@ -1143,13 +1096,13 @@ export const Admin: React.FC = () => {
                   <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Next Scheduled Run</h3>
                   <div className="flex items-center gap-2 mt-2">
                     <Clock size={24} className="text-blue-500" />
-                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {nextRunTime ? new Date(nextRunTime).toLocaleTimeString() : '--:--'}
+                    <span className="text-xl font-bold text-gray-900 dark:text-white">
+                      Every 6 Hours
                     </span>
                   </div>
-                  <p className="text-xs text-orange-500 mt-2 flex items-center gap-1">
-                    <AlertTriangle size={12} />
-                    Keep this tab open for automation to work
+                  <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
+                    <CheckCircle size={12} />
+                    Server-side automation active
                   </p>
                 </div>
 
