@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getPosts } from '../../services/db';
 import { BlogPost } from '../../types';
 
-const BASE_URL = 'https://bigyann.com';
+const BASE_URL = 'https://bigyann.com.np';
 
 export async function GET() {
   // 1. Fetch dynamic data
