@@ -466,3 +466,5 @@ export const BlogPostPage: React.FC = () => {
     </>
   );
 };
+
+export default BlogPostPage;
