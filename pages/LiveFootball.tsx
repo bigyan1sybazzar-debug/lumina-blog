@@ -3,7 +3,7 @@
 // pages/LiveFootball.tsx
 import React, { useState, useEffect } from 'react';
 import { Loader2, RefreshCw, Trophy, Calendar, History } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+
 import { footballApi } from '../api/football';
 
 type Tab = 'live' | 'upcoming' | 'recent';
@@ -75,10 +75,7 @@ const LiveFootball: React.FC = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Live Football Scores | Bigyann</title>
-        <meta name="description" content="Real-time Premier League, La Liga, Champions League scores" />
-      </Helmet>
+
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-12 px-4">
         <div className="max-w-7xl mx-auto">
@@ -103,8 +100,8 @@ const LiveFootball: React.FC = () => {
                   key={t.id}
                   onClick={() => setTab(t.id as Tab)}
                   className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${tab === t.id
-                      ? 'bg-primary-600 text-white shadow-lg'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    ? 'bg-primary-600 text-white shadow-lg'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
                 >
                   <t.icon size={20} />

@@ -1,4 +1,4 @@
-import { AITranslator } from '../../../pages/AITranslator';
+import AITranslator from '../../../pages/AITranslator';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

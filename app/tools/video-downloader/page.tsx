@@ -1,4 +1,5 @@
-import { VideoDownloader } from '../../../pages/VideoDownloader';
+// Removed the curly braces because of the default export change
+import VideoDownloader from '../../../pages/VideoDownloader';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -6,4 +7,6 @@ export const metadata: Metadata = {
     description: 'Download videos from Facebook, Instagram, Twitter, and TikTok for free. Fast and easy video downloader.',
 };
 
-export default function Page() { return <VideoDownloader />; }
+export default function Page() { 
+    return <VideoDownloader />; 
+}

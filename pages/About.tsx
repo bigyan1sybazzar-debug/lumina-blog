@@ -6,7 +6,7 @@ import {
   Award, Trophy, Target, Code, Globe, TrendingUp,
   Laptop, Palette, Sparkles, CheckCircle
 } from "lucide-react";
-import { Helmet } from "react-helmet-async";
+
 
 // Define an interface for type safety (optional but good practice)
 interface Skill {
@@ -237,25 +237,7 @@ export const About: React.FC = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Bigyan Neupane SEO Expert in Nepal | Top SEO Freelancer Kathmandu</title>
-        <meta name="description" content="Bigyan Neupane is a leading SEO expert in Nepal with 5+ years of experience. Ranked 4000+ keywords, built 50+ websites, and helped businesses grow online. Available for SEO, web development & digital marketing projects." />
-        <link rel="canonical" href="https://bigyann.com.np/about" />
 
-        <meta property="og:title" content="Bigyan Neupane - Best SEO Expert in Nepal | Kathmandu Freelancer" />
-        <meta property="og:description" content="Top-rated SEO expert in Nepal helping businesses rank #1 on Google. Expert in technical SEO, WordPress, Google Ads & web performance." />
-        <meta property="og:image" content="https://appflicks.com/wp-content/uploads/2025/08/FB_IMG_16036454436998781.jpg" />
-        <meta property="og:url" content="https://bigyann.com.np/about" />
-        <meta property="og:type" content="profile" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Bigyan Neupane - SEO Expert in Nepal" />
-        <meta name="twitter:description" content="4000+ keywords ranked | 50+ websites built | 200%+ traffic growth" />
-        <meta name="twitter:image" content="https://appflicks.com/wp-content/uploads/2025/08/FB_IMG_16036454436998781.jpg" />
-
-        <script type="application/ld+json">{JSON.stringify(schemaPerson)}</script>
-        <script type="application/ld+json">{JSON.stringify(schemaFAQ)}</script>
-      </Helmet>
 
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 pt-24 pb-32">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">

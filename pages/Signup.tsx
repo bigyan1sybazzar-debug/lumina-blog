@@ -236,3 +236,5 @@ export const Signup: React.FC = () => {
     </div>
   );
 };
+
+export default Signup;

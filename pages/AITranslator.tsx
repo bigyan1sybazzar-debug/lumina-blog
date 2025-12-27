@@ -7,7 +7,7 @@ import {
   Star, Settings, Mic, MicOff, Target, Brain, Clock,
   ChevronDown, ThumbsUp, ThumbsDown, Share2, Maximize2
 } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+
 import confetti from 'canvas-confetti';
 
 const languages = [
@@ -251,10 +251,7 @@ const AITranslator: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-950 text-gray-100 py-8 md:py-12 px-4 md:px-6 relative font-sans transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
-      <Helmet>
-        <title>Bigyann Translate | AI-Powered Neural Translation</title>
-        <meta name="description" content="Real-time AI translation with voice support, history, and advanced features. Translate between 100+ languages instantly." />
-      </Helmet>
+
 
       {/* Decorative background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -592,8 +589,8 @@ const AITranslator: React.FC = () => {
                       <button
                         onClick={copyToClipboard}
                         className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 text-sm font-bold ${copied
-                            ? 'bg-green-600 text-white'
-                            : 'bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700'
                           }`}
                       >
                         {copied ? <CheckCircle size={16} /> : <Copy size={16} />}

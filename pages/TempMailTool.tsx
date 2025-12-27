@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Mail, Copy, RefreshCw, CheckCircle, ShieldCheck, Zap, Lock, Trash2, ShieldAlert, Inbox as InboxIcon, Loader2, X } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+
 
 const TempMailTool: React.FC = () => {
   const [account, setAccount] = useState<{ address: string; token: string } | null>(null);
@@ -96,9 +96,7 @@ const TempMailTool: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0c10] text-gray-100 py-16 px-6 font-sans">
-      <Helmet>
-        <title>Gmail Temp Mail Pro | Bigyann Tools</title>
-      </Helmet>
+
 
       <div className="max-w-4xl mx-auto relative z-10">
         {/* Header and Generator Card (same as before) */}

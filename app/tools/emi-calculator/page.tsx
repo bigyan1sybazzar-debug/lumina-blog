@@ -1,4 +1,5 @@
-import { Emicalculator } from '../../../pages/Emicalculator';
+// 1. Notice we removed the { } and changed the name to match your file
+import Emicalculator from '../../../pages/Emicalculator';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -6,4 +7,7 @@ export const metadata: Metadata = {
     description: 'Calculate your monthly EMI for home loans, car loans, and personal loans easily with our accurate EMI calculator.',
 };
 
-export default function Page() { return <Emicalculator />; }
+// 2. Use the default import here
+export default function Page() { 
+    return <Emicalculator />; 
+}

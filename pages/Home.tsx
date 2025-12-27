@@ -8,7 +8,7 @@ import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail, ChevronLeft, Chev
 import Link from 'next/link';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import { Helmet } from 'react-helmet-async';
+
 import { Calculator, RefreshCw } from 'lucide-react';
 import { LogIn, FileText, Edit } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -112,18 +112,7 @@ export const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
-      <Helmet>
-        <title>AI Powered Tech and Science - Bigyann | Reviews & Discussions</title>
-        <link rel="canonical" href="https://bigyann.com.np/" />
-        <meta
-          name="description"
-          content="AI powered Articles, Reviews & Discussions on latest tech, design, and AI technology. Explore Articles."
-        />
-        <meta property="og:title" content="AI Powered Tech and Science - Bigyann" />
-        <meta property="og:url" content="https://bigyann.com.np/" />
-        <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Bigyann" />
-      </Helmet>
+
 
       {/* Hero Section - Admin Chosen Posts (Reduced pb- from pb-20 to pb-10) */}
       <section className="relative overflow-hidden px-4 pt-20 pb-10 md:pt-24 md:pb-16">

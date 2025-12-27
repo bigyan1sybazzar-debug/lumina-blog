@@ -1,4 +1,5 @@
-import { TempMailTool } from '../../../pages/TempMailTool';
+// Removed { } because TempMailTool is now a default export
+import TempMailTool from '../../../pages/TempMailTool';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -6,4 +7,6 @@ export const metadata: Metadata = {
     description: 'Get a free temporary email address instantly. Protect your privacy and avoid spam with our disposable mail service.',
 };
 
-export default function Page() { return <TempMailTool />; }
+export default function Page() { 
+    return <TempMailTool />; 
+}

@@ -17,7 +17,7 @@ declare global {
   }
 }
 
-if (!window.puter) {
+if (typeof window !== 'undefined' && !window.puter) {
   console.warn('Puter.js not loaded—add <script src="https://js.puter.com/v2/"></script> to index.html');
 }
 
@@ -66,7 +66,7 @@ export const sendChatMessage = async function* (userMessage: string, signal?: Ab
       stream: false, // Full response (as per existing implementation)
       temperature: 0.8,
       maxTokens: 1024,
-      signal: signal 
+      signal: signal
     });
 
     console.log('Full Puter response:', result);
@@ -80,11 +80,11 @@ export const sendChatMessage = async function* (userMessage: string, signal?: Ab
 
     // "Fake" streaming: Yield word-by-word, checking the signal in the loop
     // Splits by whitespace but keeps the whitespace for accurate content rendering
-    const chunks = fullResponse.split(/(\s+)/); 
+    const chunks = fullResponse.split(/(\s+)/);
     for (const chunk of chunks) {
       if (signal?.aborted) {
         // Stop yielding chunks if the request was aborted (Stop button clicked)
-        break; 
+        break;
       }
       yield chunk; // Yield the word or the space
     }
@@ -92,10 +92,10 @@ export const sendChatMessage = async function* (userMessage: string, signal?: Ab
   } catch (error: any) {
     // Handle the AbortError from the component gracefully
     if (signal?.aborted) {
-        console.log('Chat stream aborted by user (fake streaming stop).');
-        return; 
+      console.log('Chat stream aborted by user (fake streaming stop).');
+      return;
     }
-    
+
     console.error('Puter error:', error);
     throw new Error(`Chat failed: ${error.message}. Try a shorter message or model 'gpt-4o-mini'.`);
   }

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Download, Youtube, Instagram, Twitter, Facebook, Play, CheckCircle, AlertCircle, Loader2, Link as LinkIcon, Smartphone } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+
 
 const RAPID_API_KEY = 'b60d288a5dmsh589478213136d86p1ad513jsn354c232be7de';
 const RAPID_API_HOST = 'social-media-video-downloder.p.rapidapi.com';
@@ -69,9 +69,7 @@ const VideoDownloader: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0c10] text-gray-100 py-16 px-6 relative overflow-hidden">
-      <Helmet>
-        <title>Video Downloader | Bigyann</title>
-      </Helmet>
+
 
       <div className="absolute top-[-5%] right-[-5%] w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full" />
 

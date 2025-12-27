@@ -1,4 +1,4 @@
-import { MyPhonePrice } from '../../../pages/My-phone-price';
+import MyPhonePrice from '../../../pages/My-phone-price';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

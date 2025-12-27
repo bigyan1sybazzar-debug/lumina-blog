@@ -1,4 +1,5 @@
-import { ResumeChecker } from '../../../pages/ResumeChecker';
+// 1. Removed the { } curly braces for the default import
+import ResumeChecker from '../../../pages/ResumeChecker';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -6,4 +7,7 @@ export const metadata: Metadata = {
     description: 'Analyze your resume with AI. Get ATS capability scores and actionable feedback to improve your CV.',
 };
 
-export default function Page() { return <ResumeChecker />; }
+// 2. This will now work correctly with the default export
+export default function Page() { 
+    return <ResumeChecker />; 
+}
