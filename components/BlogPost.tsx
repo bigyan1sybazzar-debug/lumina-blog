@@ -18,7 +18,7 @@ import ReviewSection from '../components/ReviewSection';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { Helmet } from 'react-helmet-async';
+
 
 // ------------------------------------------------------------------
 // HtmlRenderer – Clean up old Blogger-style image separators
@@ -155,12 +155,7 @@ export const BlogPostPage: React.FC = () => {
   if (loading) {
     return (
       <>
-        <Helmet>
-          <title>Bigyann | Loading...</title>
-          {/* We tell Google it's okay to index this, and point to the final URL */}
-          <meta name="robots" content="index, follow" />
-          <link rel="canonical" href={`${SITE_URL}/${slug}`} />
-        </Helmet>
+
         <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
           <Loader2 className="animate-spin mb-4" size={32} />
           <p>Illuminating content...</p>
@@ -172,10 +167,7 @@ export const BlogPostPage: React.FC = () => {
   if (!post || (post.status !== 'published' && user?.id !== post.author.id && user?.role !== 'admin')) {
     return (
       <>
-        <Helmet>
-          <title>Post Not Found | Bigyann</title>
-          <meta name="robots" content="noindex, nofollow" />
-        </Helmet>
+
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900 text-white">
           Post not found or unavailable.
         </div>
@@ -196,67 +188,7 @@ export const BlogPostPage: React.FC = () => {
 
   return (
     <>
-      <Helmet>
-        {/* Basic SEO */}
-        <title>{post.title} | Bigyann</title>
-        <meta name="description" content={post.excerpt} />
 
-        {/* THE CORE FIX: Uniform HTTPS Canonical Link */}
-        <link rel="canonical" href={canonicalUrl} />
-
-        {/* Enhanced Robots for Tech Content */}
-        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
-
-        {/* Open Graph / Facebook */}
-        <meta property="og:title" content={`${post.title} - Bigyann`} />
-        <meta property="og:description" content={post.excerpt} />
-        <meta property="og:image" content={post.coverImage} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="article" />
-        <meta property="og:site_name" content="Bigyann" />
-        <meta property="article:published_time" content={isoPublishDate} />
-        <meta property="article:modified_time" content={isoUpdateDate} />
-        <meta property="article:author" content={post.author.name} />
-        <meta property="article:section" content={post.category} />
-
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={post.title} />
-        <meta name="twitter:description" content={post.excerpt} />
-        <meta name="twitter:image" content={post.coverImage} />
-
-        {/* JSON-LD Structured Data - Changed to TechArticle for gadget news */}
-        <script type="application/ld+json">
-          {JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'TechArticle',
-            'headline': post.title,
-            'description': post.excerpt,
-            'image': post.coverImage,
-            'datePublished': isoPublishDate,
-            'dateModified': isoUpdateDate,
-            'author': {
-              '@type': 'Person',
-              'name': post.author.name,
-              'url': SITE_URL,
-            },
-            'publisher': {
-              '@type': 'Organization',
-              'name': 'Bigyann',
-              'logo': {
-                '@type': 'ImageObject',
-                'url': `${SITE_URL}/logo.png`,
-              },
-            },
-            'mainEntityOfPage': {
-              '@type': 'WebPage',
-              '@id': canonicalUrl,
-            },
-            'wordCount': post.content.split(/\s+/).length,
-            'keywords': post.tags?.join(', ') || post.category,
-          })}
-        </script>
-      </Helmet>
 
       <div className="bg-white dark:bg-gray-900 min-h-screen pb-20">
         <div className="h-[50vh] w-full relative">
