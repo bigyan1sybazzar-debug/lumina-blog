@@ -376,7 +376,6 @@ export const Admin: React.FC = () => {
         author: { name: user.name, avatar: user.avatar, id: user.id },
         readTime: `${Math.ceil(fullContent.split(' ').length / 200)} min read`,
         category,
-        category,
         tags,
         coverImage,
         coverImageAlt,
@@ -2187,3 +2186,5 @@ export const Admin: React.FC = () => {
     </div>
   );
 };
+
+export default Admin;
