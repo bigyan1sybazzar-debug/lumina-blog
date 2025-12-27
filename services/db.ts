@@ -1,5 +1,5 @@
 // services/db.ts
-import { notifyIndexNow } from './indexingService'; // Ensure this is imported
+import { notifyIndexNow, notifyBingWebmaster } from './indexingService'; // Ensure this is imported
 import firebase from 'firebase/compat/app';
 import { db } from './firebase';
 import { BlogPost, Category, User, Comment, Review } from '../types';
@@ -176,6 +176,7 @@ export const createPost = async (
     if (post.status === 'published') {
       await generateAndUploadSitemap();
       await notifyIndexNow([getFullUrl(slug)]); // Notification for new content
+      await notifyBingWebmaster([getFullUrl(slug)]); // Bing Webmaster notification
     }
 
     return docRef.id;
@@ -224,6 +225,7 @@ export const updatePost = async (
       const currentPost = await getPostById(postId);
       if (currentPost?.slug) {
         await notifyIndexNow([getFullUrl(currentPost.slug)]); // Notification for modified content
+        await notifyBingWebmaster([getFullUrl(currentPost.slug)]); // Bing Webmaster notification
       }
     }
 
@@ -256,6 +258,7 @@ export const deletePost = async (postId: string): Promise<void> => {
     if (post.status === 'published') {
       await generateAndUploadSitemap();
       await notifyIndexNow([getFullUrl(post.slug)]); // Notification for deleted content
+      await notifyBingWebmaster([getFullUrl(post.slug)]); // Bing Webmaster notification
     }
 
     console.log(`Post ${postId} and associated data deleted successfully`);
@@ -279,6 +282,7 @@ export const updatePostStatus = async (postId: string, status: 'published' | 'pe
     const post = await getPostById(postId);
     if (post?.slug) {
       await notifyIndexNow([getFullUrl(post.slug)]); // Real-time indexing
+      await notifyBingWebmaster([getFullUrl(post.slug)]); // Bing Webmaster notification
     }
   }
 };
