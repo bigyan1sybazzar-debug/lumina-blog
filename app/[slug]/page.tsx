@@ -3,11 +3,12 @@ import { Metadata } from 'next';
 import { getPostBySlug } from '../../services/db';
 
 type Props = {
-    params: { slug: string }
+    params: Promise<{ slug: string }>
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const post = await getPostBySlug(params.slug);
+    const { slug } = await params;
+    const post = await getPostBySlug(slug);
 
     if (!post) {
         return {
@@ -58,6 +59,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-export default function Page({ params }: Props) {
+export default async function Page({ params }: Props) {
     return <BlogPostPage />;
 }
