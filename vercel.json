@@ -1,10 +1,7 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
   "devCommand": "npm run dev",
-  "framework": null,
-  
   "redirects": [
     {
       "source": "/default",
@@ -27,7 +24,6 @@
       "statusCode": 301
     }
   ],
-  
   "rewrites": [
     {
       "source": "/sitemap.xml",
@@ -40,31 +36,38 @@
     {
       "source": "/697e5283984a4b3f85621c84e6be1cab.txt",
       "destination": "/697e5283984a4b3f85621c84e6be1cab.txt"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
     }
   ],
-  
   "headers": [
     {
       "source": "/sitemap.xml",
       "headers": [
-        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=0, s-maxage=3600" }
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=3600"
+        }
       ]
     },
     {
       "source": "/robots.txt",
       "headers": [
-        { "key": "Content-Type", "value": "text/plain" }
+        {
+          "key": "Content-Type",
+          "value": "text/plain"
+        }
       ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Robots-Tag", "value": "index, follow" }
+        {
+          "key": "X-Robots-Tag",
+          "value": "index, follow"
+        }
       ]
     }
   ]
