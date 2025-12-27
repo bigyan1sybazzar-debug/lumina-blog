@@ -131,3 +131,5 @@ export const ExchangeOffer: React.FC = () => {
         </div>
     );
 };
+
+export default ExchangeOffer;
