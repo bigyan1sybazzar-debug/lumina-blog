@@ -270,6 +270,11 @@ export const Admin: React.FC = () => {
     }
   };
 
+  const runAutomationCycle = async () => {
+    // TODO: Implement secure manual trigger via new API route
+    alert("Manual trigger is currently disabled for server-side automation. Please check back later.");
+  };
+
   // --- EDITOR HANDLERS ---
 
   const handleGenerateOutline = async () => {
@@ -1088,7 +1093,7 @@ export const Admin: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 mt-2">
-                    {isAutoPilotOn ? 'Scheduled to run 4 times/day' : 'Click start to begin'}
+                    {isAutoPilotOn ? 'Scheduled to run once/day' : 'Click start to begin'}
                   </p>
                 </div>
 
@@ -1097,7 +1102,7 @@ export const Admin: React.FC = () => {
                   <div className="flex items-center gap-2 mt-2">
                     <Clock size={24} className="text-blue-500" />
                     <span className="text-xl font-bold text-gray-900 dark:text-white">
-                      Every 6 Hours
+                      Every 24 Hours
                     </span>
                   </div>
                   <p className="text-xs text-green-500 mt-2 flex items-center gap-1">

@@ -88,13 +88,86 @@ export const generateFullPost = async (title: string, outline: string): Promise<
       ${outline}
       
       Requirements (Strict Article Format):
-      - 900–1400 words
+      - 120–1800 words
       - Natural, conversational **English** tone.
       - Focus on global availability, specs, and trends.
       - **COMPULSORY: Use ### for main sections and #### for subsections.** Use bullet points, bold highlights, and emojis where natural.
       - Include real-world examples, global specs, and **USD/EUR pricing** when relevant.
       - Add 1–2 comparison tables if reviewing products.
       - End with FAQs section and CTA.
+      - make sure to make 2 -3 internal backlinks from (https://bigyann.com.np/lg-ultrafine-evo-32u990a-s-review
+https://bigyann.com.np/ipad-pro-m4-price-in-nepal
+https://bigyann.com.np/trifold-durability-questioned
+https://bigyann.com.np/poco-x7-pro-price-in-nepal
+https://bigyann.com.np/ios-26-nepal-release-date
+https://bigyann.com.np/galaxy-tab-s11-nepal-whats-next
+https://bigyann.com.np/ps5-nepal-price-what-to-know
+https://bigyann.com.np/vivo-x300-pro-nepal-price
+https://bigyann.com.np/oneplus-pad-go-2-whats-next
+https://bigyann.com.np/apples-foldable-iphone-future
+https://bigyann.com.np/s26-ultra-strategic-launch-shift
+https://bigyann.com.np/xiaomi-pad-8-simple-global-power
+https://bigyann.com.np/second-hand-iphone-in-nepal
+https://bigyann.com.np/yono-tv-npl-live-streaming
+https://bigyann.com.np/samsung-s24-ultra-price-in-nepal-things-you-should-know-before-purchasing
+https://bigyann.com.np/yono-tv-npl-live-stream
+https://bigyann.com.np/future-mobile-tech-whats-next
+https://bigyann.com.np/samsung-galaxy-s23-vs-s23-ultra
+https://bigyann.com.np/price-of-samsung-m17-5g-in-nepal
+https://bigyann.com.np/openai-acquires-neptune-ai-a-strategic-move-to-turbocharge-frontier-ai-research
+https://bigyann.com.np/ncell-number-owner-name-find-your-s
+https://bigyann.com.np/global-ai-race-ignites-chip
+https://bigyann.com.np/asteroid-unlocks-life-s-sweet-secret
+https://bigyann.com.np/nepal-s-tech-innovators-take-on-asia-a-leap-towards-global-recognition-at-apicta-awards-2025
+https://bigyann.com.np/peering-deeper-into-the-cosmos-new-optics-breakthrough-supercharges-gravitational-wave-astronomy
+https://bigyann.com.np/nepals-biometric-tech-explained
+https://bigyann.com.np/oneplus-12-nepal-price-revealed
+https://bigyann.com.np/cosmic-web-giant-spin-revealed
+https://bigyann.com.np/iphone-15-pro-max-price-in-nepal-can-we-afford-it
+https://bigyann.com.np/quantum-leap-at-room-temperature-scientists-unlock-a-new-era-for-tech
+https://bigyann.com.np/samsung-a55-price-in-nepal
+https://bigyann.com.np/nepal-s-digital-crossroads-a-wake-up-call-for-ai-security-and-infrastructure
+https://bigyann.com.np/samsung-galaxy-a24-price-in-nepal
+https://bigyann.com.np/redmi-note-14-pro-price-in-nepal-unveiling-the-anticipated-costs-ultimate-value
+https://bigyann.com.np/gemini-levels-up-unpacking-the-latest-breakthroughs
+https://bigyann.com.np/npl-live-watch-every-updates
+https://bigyann.com.np/redmi-note-14-pro-price-in-canada
+https://bigyann.com.np/find-affordable-washing-machine-prices-in-nepal-2024
+https://bigyann.com.np/oneplus-15r-gen-5-arrives
+https://bigyann.com.np/how-to-monetize-facebook-in-nepal
+https://bigyann.com.np/eu-probes-meta-s-ai-dominance
+https://bigyann.com.np/yosintv-live-watch-online-streams
+https://bigyann.com.np/dream11-s-global-app-pivot
+https://bigyann.com.np/demystifying-data-science-in-nepal
+https://bigyann.com.np/the-unseen-thirst-why-ai-s-future-is-fueling-a-nuclear-renaissance
+https://bigyann.com.np/samsung-galaxy-z-trifold
+https://bigyann.com.np/samsung-a35-nepal-price
+https://bigyann.com.np/the-ultimate-nepali-tech-dream-iphone-17-pro-max-price-predictions
+https://bigyann.com.np/motorola-edge-70-first-look
+https://bigyann.com.np/nepal-s-digital-leap-new-policies-unveiled
+https://bigyann.com.np/nepal-s-tech-innovators-take-center-stage-three-nepali-companies-vying-for-apicta-awards-2025-glory-
+https://bigyann.com.np/foldable-future-samsung-s-trifold-arrives
+https://bigyann.com.np/unpacking-npls-in-nepal
+https://bigyann.com.np/xiaomi-15-ultra-nepal-price-outlook
+https://bigyann.com.np/how-to-buy-chatgpt-plus-in-nepal
+https://bigyann.com.np/smartphone-prices-about-to-rise
+https://bigyann.com.np/nepal-shines-on-the-global-tech-stage-three-nepali-innovators-head-to-apicta-awards-2025
+https://bigyann.com.np/3i-atlas-unveiling-the-universe-s-secrets
+https://bigyann.com.np/openai-bolsters-ai-research-arsenal-with-strategic-neptune-ai-acquisition-what-it-means-for-the-futu
+https://bigyann.com.np/instagram-control-deactivate-delete-disappear
+https://bigyann.com.np/google-s-gemini-ai-images-saree-go-viral-in-nepal
+https://bigyann.com.np/china-s-first-reusable-rocket-explodes-a-fiery-lesson-in-the-new-space-race
+https://bigyann.com.np/how-to-make-ai-monkey-videos
+https://bigyann.com.np/bridging-the-ai-divide-new-research-reveals-generational-and-geographic-gaps-in-adoption-and-well-be
+https://bigyann.com.np/the-looming-shadow-how-satellite-megaconstellations-threaten-our-view-of-the-cosmos
+https://bigyann.com.np/nepal-s-5g-era-dawns-kathmandu-pokhara-first
+https://bigyann.com.np/vivo-v40-pro-nepal-price-specs
+https://bigyann.com.np/samsung-tri-fold-unfolding-the-future
+https://bigyann.com.np/does-amazon-ship-to-nepal
+https://bigyann.com.np/quantum-leap-for-laptops
+https://bigyann.com.np/galaxy-tab-a11-nepal-price
+https://bigyann.com.np/m5-mac-mini-value-king
+)
       - **STRICTLY use proper, well-structured Markdown to format the output like a professional article, with clear separation (e.g., using horizontal lines if desired, or just strong headers/whitespace).** The entire post MUST be in English.`,
 
             config: getConfig({ temperature: 0.7 }),
@@ -130,8 +203,80 @@ export const generateNewsPost = async (category: string = "latest global mobile 
     - Use tables for specs/pricing if applicable (in USD/EUR)
     - Include a FAQ section (using ###) at the end
     - No "Sources" section — weave credibility naturally
-
-    Tone: Excited, trustworthy, youth-friendly. **The entire post MUST be in English and formatted like a highly structured article.**`;
+ - make sure to make 2 -3 internal backlinks from (https://bigyann.com.np/lg-ultrafine-evo-32u990a-s-review
+https://bigyann.com.np/ipad-pro-m4-price-in-nepal
+https://bigyann.com.np/trifold-durability-questioned
+https://bigyann.com.np/poco-x7-pro-price-in-nepal
+https://bigyann.com.np/ios-26-nepal-release-date
+https://bigyann.com.np/galaxy-tab-s11-nepal-whats-next
+https://bigyann.com.np/ps5-nepal-price-what-to-know
+https://bigyann.com.np/vivo-x300-pro-nepal-price
+https://bigyann.com.np/oneplus-pad-go-2-whats-next
+https://bigyann.com.np/apples-foldable-iphone-future
+https://bigyann.com.np/s26-ultra-strategic-launch-shift
+https://bigyann.com.np/xiaomi-pad-8-simple-global-power
+https://bigyann.com.np/second-hand-iphone-in-nepal
+https://bigyann.com.np/yono-tv-npl-live-streaming
+https://bigyann.com.np/samsung-s24-ultra-price-in-nepal-things-you-should-know-before-purchasing
+https://bigyann.com.np/yono-tv-npl-live-stream
+https://bigyann.com.np/future-mobile-tech-whats-next
+https://bigyann.com.np/samsung-galaxy-s23-vs-s23-ultra
+https://bigyann.com.np/price-of-samsung-m17-5g-in-nepal
+https://bigyann.com.np/openai-acquires-neptune-ai-a-strategic-move-to-turbocharge-frontier-ai-research
+https://bigyann.com.np/ncell-number-owner-name-find-your-s
+https://bigyann.com.np/global-ai-race-ignites-chip
+https://bigyann.com.np/asteroid-unlocks-life-s-sweet-secret
+https://bigyann.com.np/nepal-s-tech-innovators-take-on-asia-a-leap-towards-global-recognition-at-apicta-awards-2025
+https://bigyann.com.np/peering-deeper-into-the-cosmos-new-optics-breakthrough-supercharges-gravitational-wave-astronomy
+https://bigyann.com.np/nepals-biometric-tech-explained
+https://bigyann.com.np/oneplus-12-nepal-price-revealed
+https://bigyann.com.np/cosmic-web-giant-spin-revealed
+https://bigyann.com.np/iphone-15-pro-max-price-in-nepal-can-we-afford-it
+https://bigyann.com.np/quantum-leap-at-room-temperature-scientists-unlock-a-new-era-for-tech
+https://bigyann.com.np/samsung-a55-price-in-nepal
+https://bigyann.com.np/nepal-s-digital-crossroads-a-wake-up-call-for-ai-security-and-infrastructure
+https://bigyann.com.np/samsung-galaxy-a24-price-in-nepal
+https://bigyann.com.np/redmi-note-14-pro-price-in-nepal-unveiling-the-anticipated-costs-ultimate-value
+https://bigyann.com.np/gemini-levels-up-unpacking-the-latest-breakthroughs
+https://bigyann.com.np/npl-live-watch-every-updates
+https://bigyann.com.np/redmi-note-14-pro-price-in-canada
+https://bigyann.com.np/find-affordable-washing-machine-prices-in-nepal-2024
+https://bigyann.com.np/oneplus-15r-gen-5-arrives
+https://bigyann.com.np/how-to-monetize-facebook-in-nepal
+https://bigyann.com.np/eu-probes-meta-s-ai-dominance
+https://bigyann.com.np/yosintv-live-watch-online-streams
+https://bigyann.com.np/dream11-s-global-app-pivot
+https://bigyann.com.np/demystifying-data-science-in-nepal
+https://bigyann.com.np/the-unseen-thirst-why-ai-s-future-is-fueling-a-nuclear-renaissance
+https://bigyann.com.np/samsung-galaxy-z-trifold
+https://bigyann.com.np/samsung-a35-nepal-price
+https://bigyann.com.np/the-ultimate-nepali-tech-dream-iphone-17-pro-max-price-predictions
+https://bigyann.com.np/motorola-edge-70-first-look
+https://bigyann.com.np/nepal-s-digital-leap-new-policies-unveiled
+https://bigyann.com.np/nepal-s-tech-innovators-take-center-stage-three-nepali-companies-vying-for-apicta-awards-2025-glory-
+https://bigyann.com.np/foldable-future-samsung-s-trifold-arrives
+https://bigyann.com.np/unpacking-npls-in-nepal
+https://bigyann.com.np/xiaomi-15-ultra-nepal-price-outlook
+https://bigyann.com.np/how-to-buy-chatgpt-plus-in-nepal
+https://bigyann.com.np/smartphone-prices-about-to-rise
+https://bigyann.com.np/nepal-shines-on-the-global-tech-stage-three-nepali-innovators-head-to-apicta-awards-2025
+https://bigyann.com.np/3i-atlas-unveiling-the-universe-s-secrets
+https://bigyann.com.np/openai-bolsters-ai-research-arsenal-with-strategic-neptune-ai-acquisition-what-it-means-for-the-futu
+https://bigyann.com.np/instagram-control-deactivate-delete-disappear
+https://bigyann.com.np/google-s-gemini-ai-images-saree-go-viral-in-nepal
+https://bigyann.com.np/china-s-first-reusable-rocket-explodes-a-fiery-lesson-in-the-new-space-race
+https://bigyann.com.np/how-to-make-ai-monkey-videos
+https://bigyann.com.np/bridging-the-ai-divide-new-research-reveals-generational-and-geographic-gaps-in-adoption-and-well-be
+https://bigyann.com.np/the-looming-shadow-how-satellite-megaconstellations-threaten-our-view-of-the-cosmos
+https://bigyann.com.np/nepal-s-5g-era-dawns-kathmandu-pokhara-first
+https://bigyann.com.np/vivo-v40-pro-nepal-price-specs
+https://bigyann.com.np/samsung-tri-fold-unfolding-the-future
+https://bigyann.com.np/does-amazon-ship-to-nepal
+https://bigyann.com.np/quantum-leap-for-laptops
+https://bigyann.com.np/galaxy-tab-a11-nepal-price
+https://bigyann.com.np/m5-mac-mini-value-king
+)
+    Tone: Excited, trustworthy, youth-friendly. **The entire post MUST be in English and formatted like a highly structured article and should be understand by 13 years old also.**`;
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
