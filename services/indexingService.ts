@@ -40,7 +40,8 @@ export const notifyIndexNow = async (urls: string[]) => {
 
     for (const host of DIRECT_ENGINES) {
       try {
-        const pingUrl = `https://${host}/indexnow?url=${encodeURIComponent(url)}&key=${API_KEY}`;
+        const keyLocation = `https://${DOMAIN}/${API_KEY}.txt`;
+        const pingUrl = `https://${host}/indexnow?url=${encodeURIComponent(url)}&key=${API_KEY}&keyLocation=${encodeURIComponent(keyLocation)}`;
 
         await fetch(pingUrl, {
           mode: 'no-cors',
