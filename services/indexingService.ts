@@ -14,9 +14,16 @@ const DIRECT_ENGINES = [
 export const notifyIndexNow = async (urls: string[]) => {
   if (!urls || !urls.length) return;
 
+  // Skip indexing for local development
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    console.log(`📡 IndexNow: Skipping ping on localhost`);
+    return;
+  }
+
   // Filter out URLs that have already been pinged in this browser session
   // This prevents spamming engines when a user refreshes or navigates back/forth
   const urlsToPing = urls.filter(url => {
+    if (typeof window === 'undefined') return true; // Server-side, always submit
     const storageKey = `indexed_${url}`;
     if (sessionStorage.getItem(storageKey)) return false;
     return true;
@@ -24,38 +31,32 @@ export const notifyIndexNow = async (urls: string[]) => {
 
   if (urlsToPing.length === 0) return;
 
-  const cleanUrls = urlsToPing.map(url => {
-    if (url === '/' || url === '') return `https://${DOMAIN}/`;
-    if (url.startsWith('http')) return url;
-    const path = url.startsWith('/') ? url : `/${url}`;
-    return `https://${DOMAIN}${path}`;
-  });
+  try {
+    // Use server-side API route to avoid CORS issues
+    const response = await fetch('/api/indexnow', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ urls: urlsToPing }),
+    });
 
-  for (const url of cleanUrls) {
-    // Skip indexing for local development
-    if (window.location.hostname === 'localhost') {
-      console.log(`📡 IndexNow: Skipping ping on localhost for ${url}`);
-      continue;
-    }
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`📡 IndexNow: Successfully submitted ${urlsToPing.length} URL(s)`, data);
 
-    for (const host of DIRECT_ENGINES) {
-      try {
-        const keyLocation = `https://${DOMAIN}/${API_KEY}.txt`;
-        const pingUrl = `https://${host}/indexnow?url=${encodeURIComponent(url)}&key=${API_KEY}&keyLocation=${encodeURIComponent(keyLocation)}`;
-
-        await fetch(pingUrl, {
-          mode: 'no-cors',
-          cache: 'no-cache',
-          referrerPolicy: 'no-referrer-when-downgrade'
+      // Mark as pinged so we don't do it again this session
+      if (typeof window !== 'undefined') {
+        urlsToPing.forEach(url => {
+          sessionStorage.setItem(`indexed_${url}`, 'true');
         });
-
-        // Mark as pinged so we don't do it again this session
-        sessionStorage.setItem(`indexed_${url}`, 'true');
-        console.log(`📡 IndexNow: Success to ${host} for ${url}`);
-      } catch (err) {
-        console.warn(`IndexNow: Failed to ping ${host}`, err);
       }
+    } else {
+      const error = await response.json();
+      console.warn(`⚠️ IndexNow: Failed to submit URLs`, error);
     }
+  } catch (err) {
+    console.warn(`⚠️ IndexNow: Error submitting URLs`, err);
   }
 };
 

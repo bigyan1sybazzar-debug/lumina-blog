@@ -267,7 +267,7 @@ export const deletePost = async (postId: string): Promise<void> => {
     throw error;
   }
 };
-const getFullUrl = (slug: string) => `https://yourdomain.com/blog/${slug}`;
+const getFullUrl = (slug: string) => `https://bigyann.com.np/${slug}`;
 /**
  * Updates post status and notifies IndexNow if changed to published.
  */
