@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const API_KEY = '697e5283984a4b3f85621c84e6be1cab';
+const API_KEY = 'e35d69cc7c89486cba626398fe444e70';
 const DOMAIN = 'bigyann.com.np';
 
 const INDEXNOW_ENDPOINTS = [
