@@ -401,7 +401,7 @@ export const Home: React.FC = () => {
 
           {filteredPosts.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 min-[480px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {filteredPosts.slice(0, 16).map((post) => (
                   <PostCard
                     key={post.id}
@@ -418,7 +418,7 @@ export const Home: React.FC = () => {
               {/* Show the rest of posts in hidden state initially */}
               {filteredPosts.length > 16 && (
                 <div id="more-posts" className="hidden">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
+                  <div className="grid grid-cols-2 min-[480px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-6">
                     {filteredPosts.slice(16).map((post) => (
                       <PostCard
                         key={post.id}

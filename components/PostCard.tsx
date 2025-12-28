@@ -99,9 +99,14 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
       </Link>
 
-      <div className="flex-1 p-5 flex flex-col">
-        {/* Date & Read Time */}
-        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3 space-x-3">
+      <div className="flex-1 p-3 min-[480px]:p-5 flex flex-col">
+        {/* Date - Show first on mobile, hide on desktop */}
+        <div className="min-[480px]:hidden text-xs text-gray-500 dark:text-gray-400 mb-1.5 text-left">
+          <span>{post.date}</span>
+        </div>
+
+        {/* Date & Read Time - Desktop only (original position) */}
+        <div className="hidden min-[480px]:flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3 space-x-3">
           <span>{post.date}</span>
           <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
           <div className="flex items-center gap-1">
@@ -111,21 +116,27 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
 
         {/* Title */}
-        <Link href={postUrl} className="block mb-3">
+        <Link href={postUrl} className="block mb-2 min-[480px]:mb-3">
           <h3
-            className={`font-bold text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors mb-2 ${textSizeClass}`}
+            className={`font-bold text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors mb-1 min-[480px]:mb-2 ${textSizeClass}`}
           >
             {displayTitle}
           </h3>
         </Link>
 
         {/* Excerpt */}
-        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-4 flex-grow">
+        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-2 min-[480px]:mb-4 flex-grow">
           {post.excerpt}
         </p>
 
+        {/* Time to Read - Mobile only (after excerpt) */}
+        <div className="min-[480px]:hidden flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
+          <Clock className="w-3 h-3" />
+          {post.readTime}
+        </div>
+
         {/* Author & Read More */}
-        <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between pt-2 min-[480px]:pt-4 mt-auto border-t border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <img
               src={post.author.avatar}
