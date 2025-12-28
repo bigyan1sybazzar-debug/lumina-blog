@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
@@ -163,7 +163,7 @@ export const Admin: React.FC = () => {
   const refreshData = async () => {
     try {
       if (isAdmin) {
-        const allPostsData = await getPosts();
+        const allPostsData = await getAllPostsAdmin();
         const totalViews = allPostsData.reduce((acc, curr) => acc + (curr.views || 0), 0);
         setAllPosts(allPostsData);
         setStats({
@@ -1447,6 +1447,7 @@ export const Admin: React.FC = () => {
                         <option value="published">Published</option>
                         <option value="pending">Pending</option>
                         <option value="draft">Draft</option>
+                        <option value="hidden">Hidden</option>
                       </select>
                     </div>
                   </div>

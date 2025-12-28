@@ -283,12 +283,13 @@ export const BlogPostPage: React.FC = () => {
                   </ReactMarkdown>
                 </div>
 
-                <div className="font-sans text-lg leading-relaxed text-gray-800 dark:text-gray-200">
+                <div className="font-sans text-lg leading-relaxed text-gray-800 dark:text-gray-200 text-justify">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeRaw]}
                     components={{
                       html: ({ ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
+                      p: ({ ...props }) => <p className="mb-6 text-justify leading-relaxed hyphens-auto" {...props} />,
                       h2: ({ ...props }) => (
                         <h2 className="text-3xl font-extrabold mt-12 mb-6 pb-3 border-b-2 border-primary-500 dark:border-primary-800 text-gray-900 dark:text-white uppercase tracking-tight" {...props} />
                       ),

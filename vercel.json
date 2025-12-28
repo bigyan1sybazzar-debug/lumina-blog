@@ -27,6 +27,11 @@
       "source": "/blog/fm3g9qgx4JGycFGkc3M3",
       "destination": "/samsung-galaxy-a24-price-in-nepal",
       "statusCode": 301
+    },
+    {
+      "source": "/2025/11/Yono-tv-live.html",
+      "destination": "/watch-yono-tv-online-free",
+      "statusCode": 301
     }
   ],
   "rewrites": [

@@ -88,10 +88,11 @@ export const generateFullPost = async (title: string, outline: string): Promise<
       ${outline}
       
       Requirements (Strict Article Format):
-      - 120–1800 words
+      - 1200–2500 words
       - Natural, conversational **English** tone.
       - Focus on global availability, specs, and trends.
       - **COMPULSORY: Use ### for main sections and #### for subsections.** Use bullet points, bold highlights, and emojis where natural.
+      - **COMPULSORY: Write FULL, DETAILED paragraphs (minimum 4-5 sentences per paragraph). Avoid short summaries.**
       - Include real-world examples, global specs, and **USD/EUR pricing** when relevant.
       - Add 1–2 comparison tables if reviewing products.
       - End with FAQs section and CTA.
@@ -198,6 +199,7 @@ export const generateNewsPost = async (category: string = "latest global mobile 
     [Full article in Markdown]
     - Engaging intro setting global context
     - **COMPULSORY: Use ### for main sections and #### for subsections.**
+    - **COMPULSORY: Write FULL, DETAILED paragraphs (minimum 4-5 sentences). Avoid short or skimpy text.**
     - Key details, quotes, implications
     - Why this matters to global tech consumers
     - Use tables for specs/pricing if applicable (in USD/EUR)
