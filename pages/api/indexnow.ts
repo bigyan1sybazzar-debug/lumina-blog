@@ -67,45 +67,26 @@ export default async function handler(
             try {
                 const keyLocation = `https://${DOMAIN}/${API_KEY}.txt`;
 
-                // For single URL, use GET method
-                if (cleanUrls.length === 1) {
-                    const pingUrl = `${endpoint}?url=${encodeURIComponent(cleanUrls[0])}&key=${API_KEY}&keyLocation=${encodeURIComponent(keyLocation)}`;
+                // Always use POST method with JSON body (more reliable for Bing)
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8',
+                        'User-Agent': 'Mozilla/5.0 (compatible; IndexNow-Client/1.0)',
+                    },
+                    body: JSON.stringify({
+                        host: DOMAIN,
+                        key: API_KEY,
+                        keyLocation: keyLocation,
+                        urlList: cleanUrls
+                    })
+                });
 
-                    const response = await fetch(pingUrl, {
-                        method: 'GET',
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (compatible; IndexNow-Client/1.0)',
-                        },
-                    });
-
-                    results.push({
-                        engine: endpoint,
-                        status: response.status,
-                        success: response.ok || response.status === 202
-                    });
-                }
-                // For multiple URLs, use POST method with JSON body
-                else {
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json; charset=utf-8',
-                            'User-Agent': 'Mozilla/5.0 (compatible; IndexNow-Client/1.0)',
-                        },
-                        body: JSON.stringify({
-                            host: DOMAIN,
-                            key: API_KEY,
-                            keyLocation: keyLocation,
-                            urlList: cleanUrls
-                        })
-                    });
-
-                    results.push({
-                        engine: endpoint,
-                        status: response.status,
-                        success: response.ok || response.status === 202
-                    });
-                }
+                results.push({
+                    engine: endpoint,
+                    status: response.status,
+                    success: response.ok || response.status === 202
+                });
             } catch (error) {
                 console.error(`Failed to submit to ${endpoint}:`, error);
                 results.push({
