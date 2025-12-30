@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter, Merriweather } from 'next/font/google';
 import './globals.css';
 import { Providers } from '../components/Providers';
 import { Header } from '../components/Header';
@@ -66,6 +67,14 @@ export const metadata: Metadata = {
     }
 };
 
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+const merriweather = Merriweather({
+    weight: ['300', '400', '700', '900'],
+    subsets: ['latin'],
+    variable: '--font-merriweather',
+    display: 'swap'
+});
+
 export default function RootLayout({
     children,
 }: {
@@ -84,7 +93,7 @@ export default function RootLayout({
     };
 
     return (
-        <html lang="en">
+        <html lang="en" className={`${inter.variable} ${merriweather.variable}`}>
             <body className="flex flex-col min-h-screen">
                 <Providers>
                     <Header />
@@ -94,6 +103,11 @@ export default function RootLayout({
                         id="json-ld"
                         type="application/ld+json"
                         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                    />
+                    <Script
+                        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8714969386201280"
+                        crossOrigin="anonymous"
+                        strategy="lazyOnload"
                     />
                     <main className="flex-grow">
                         {children}

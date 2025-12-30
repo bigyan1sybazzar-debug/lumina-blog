@@ -45,7 +45,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     return (
       <Link
         href={postUrl}
-        className="group flex flex-col md:flex-row gap-6 p-4 bg-white dark:bg-gray-800 rounded-2xl hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-500"
+        className="group flex flex-col md:flex-row gap-6 p-4 bg-white dark:bg-gray-800 rounded-2xl hover:shadow-xl transition duration-300 border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-500"
       >
         <div className="relative md:w-2/5 aspect-video rounded-xl overflow-hidden shadow-md">
           <Image
@@ -100,7 +100,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   // Vertical variant (Default)
   return (
-    <article className="group flex flex-col h-full bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-500">
+    <article className="group flex flex-col h-full bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300 border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-500">
       <Link href={postUrl} className="relative aspect-[16/9] overflow-hidden block">
         <Image
           src={coverImage}

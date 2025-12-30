@@ -14,7 +14,18 @@ import {
 import { BlogPost, Comment } from '../types';
 import { Calendar, Clock, Share2, MessageSquare, Heart, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import ReviewSection from '../components/ReviewSection';
+import dynamic from 'next/dynamic';
+
+const ReviewSection = dynamic(() => import('../components/ReviewSection'), {
+  loading: () => <div className="h-48 flex items-center justify-center"><Loader2 className="animate-spin text-primary-500" /></div>,
+  ssr: false
+});
+
+const RelatedPosts = dynamic(() => import('../components/RelatedPosts'), {
+  ssr: false,
+  loading: () => <div className="h-96 bg-gray-50 dark:bg-gray-800 rounded-xl animate-pulse" />
+});
+
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -358,41 +369,9 @@ export const BlogPostPage: React.FC = () => {
               </div>
             </article>
 
+
             {/* Sidebar Right: Related Posts */}
-            <aside className="hidden lg:block lg:col-span-3">
-              <div className="sticky top-24">
-                <h3 className="text-xl font-bold mb-6 pb-3 border-b border-gray-300 dark:border-gray-700">
-                  Related Posts
-                </h3>
-                <div className="space-y-8">
-                  {relatedPosts.map((rp) => (
-                    <Link
-                      key={rp.id}
-                      href={`/${rp.slug || rp.id}`}
-                      className="block group transition-all hover:translate-x-1"
-                    >
-                      <div className="aspect-video rounded-xl overflow-hidden mb-4 shadow-md">
-                        <img
-                          src={rp.coverImage}
-                          alt={rp.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                      </div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 line-clamp-2">
-                        {rp.title}
-                      </h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                        {new Date(rp.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </aside>
+            <RelatedPosts posts={relatedPosts} />
           </div>
         </div>
       </div>
