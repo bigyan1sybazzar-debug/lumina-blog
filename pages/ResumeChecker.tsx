@@ -2,7 +2,6 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
-import * as pdfjsLib from 'pdfjs-dist';
 import {
     UploadCloud, Loader2, CheckCircle2, XCircle,
     Search, Award, RefreshCcw, AlertTriangle, FileWarning,
@@ -10,10 +9,6 @@ import {
     Zap, Users, Building, GraduationCap, Briefcase,
     Sparkles, ChevronRight, Star, TrendingUp
 } from 'lucide-react';
-
-// ✅ PDF Worker Import
-// Using CDN for Next.js compatibility
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 const POWER_WORDS = [
     'managed', 'developed', 'spearheaded', 'created', 'designed',
@@ -149,6 +144,11 @@ const ResumeChecker: React.FC = () => {
 
         try {
             const arrayBuffer = await file.arrayBuffer();
+
+            // Dynamic import for performance
+            const pdfjsLib = await import('pdfjs-dist');
+            pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+
             const loadingTask = pdfjsLib.getDocument({
                 data: arrayBuffer,
                 disableFontFace: true,

@@ -4,7 +4,6 @@ import { analyzeAndHumanize } from '../services/geminiService';
 import { PlagiarismAnalysisResult, HumanizerMode } from '../services/geminiService';
 import Head from 'next/head';
 import { useDropzone } from 'react-dropzone';
-import mammoth from 'mammoth';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 
@@ -41,6 +40,8 @@ export default function AIHumanizer() {
             reader.onload = async (e) => {
                 try {
                     const arrayBuffer = e.target?.result as ArrayBuffer;
+                    // Dynamic import for performance
+                    const mammoth = await import('mammoth');
                     const result = await mammoth.extractRawText({ arrayBuffer });
                     updateInput(result.value);
                 } catch (err) {
