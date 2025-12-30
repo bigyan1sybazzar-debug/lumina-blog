@@ -227,101 +227,117 @@ export const Home: React.FC = () => {
             </h2>
           </div>
 
-          {/* Grid: 2 columns on mobile, 3 columns on desktop for perfect symmetry */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* Grid: 2 cols on mobile, 3 cols on desktop. Last item full width. */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+
+            {/* Tab 0: AI Humanizer */}
+            <Link
+              href="/ai-humanizer"
+              className="relative text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+            >
+              <span className="absolute top-2 right-2 bg-purple-600 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full uppercase">Hot</span>
+              <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-purple-500 to-blue-600 
+                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">AI Humanizer</h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Bypass AI Detection (0%)</p>
+            </Link>
 
             {/* Tab 1: Old Phone Price */}
             <Link
               href="/price/my-phone-price"
-              className="text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+              className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
                    transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
                    group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-primary-400 to-purple-500 
+              <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-primary-400 to-purple-500 
                         flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <Send className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <Send className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">Old Phone Price</h3>
-              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Get best price for your phone</p>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Old Phone Price</h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Get best price</p>
             </Link>
 
             {/* Tab 2: AI Translator */}
             <Link
               href="/tools/ai-translator"
-              className="text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+              className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
                    transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
                    group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-600 
+              <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-600 
                         flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <Languages className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <Languages className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">AI Translator</h3>
-              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Live multi-language translation</p>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">AI Translator</h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Live translation</p>
             </Link>
 
-            {/* Tab 3: ATS Resume Checker (New) */}
+            {/* Tab 3: Resume Checker */}
             <Link
               href="/tools/resume-checker"
-              className="relative text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+              className="relative text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
                    transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
                    group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
               <span className="absolute top-2 right-2 bg-pink-500 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full uppercase">New</span>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600 
+              <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600 
                         flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <FileText className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">Resume Checker</h3>
-              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Scan and optimize score</p>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Resume Checker</h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">ATS Optimization</p>
             </Link>
 
-            {/* Tab 4: Temp Mail (New) */}
+            {/* Tab 4: Temp Mail */}
             <Link
               href="/tools/temp-mail"
-              className="relative text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+              className="relative text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
                    transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
                    group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
               <span className="absolute top-2 right-2 bg-orange-500 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full uppercase">Secure</span>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-orange-400 to-red-600 
+              <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-orange-400 to-red-600 
                         flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <Mail className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">Temp Mail</h3>
-              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Disposable inbox for privacy</p>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Temp Mail</h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Disposable Inbox</p>
             </Link>
 
-            {/* Tab 5: Calculate EMI */}
+            {/* Tab 5: EMI Calculator */}
             <a
               href="https://bigyann.com.np/tools/emi-calculator"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+              className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
                    transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
                    group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-blue-400 to-cyan-500 
+              <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-blue-400 to-cyan-500 
                         flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <Calculator className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">EMI Calculator</h3>
-              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Quick loan estimates</p>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">EMI Calculator</h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Loan Estimates</p>
             </a>
 
-            {/* Tab 6: Exchange Offer */}
+            {/* Tab 6: Exchange Offer (Full Width on Mobile & Desktop) */}
             <Link
               href="/tools/exchange-offer"
-              className="text-sm flex flex-col items-center justify-center p-4 sm:p-6 bg-white dark:bg-gray-800 text-center 
+              className="col-span-2 lg:col-span-3 text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
                    transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
                    group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
-              <div className="w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-gradient-to-tr from-green-400 to-teal-500 
+              <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-green-400 to-teal-500 
                         flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <RefreshCw className="w-5 h-5 text-white" />
               </div>
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white mb-0.5">Exchange Offer</h3>
-              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">Check eligibility value</p>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Exchange Offer</h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Check Value</p>
             </Link>
 
           </div>

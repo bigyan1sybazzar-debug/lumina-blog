@@ -4,7 +4,7 @@ import { GoogleGenAI, GenerateContentConfig, Modality } from "@google/genai";
 // ————————————————————————————————————————
 // INITIALIZATION
 // ————————————————————————————————————————
-const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || (typeof Object !== 'undefined' && process.env.API_KEY);
+const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.AI_GATEWAY_API_KEY || (typeof Object !== 'undefined' && process.env.API_KEY) || process.env.GOOGLE_API_KEY;
 
 if (!API_KEY) {
     console.error("❌ Gemini API Key missing! Set NEXT_PUBLIC_GEMINI_API_KEY in .env");
@@ -317,6 +317,10 @@ https://bigyann.com.np/m5-mac-mini-value-king
 // ————————————————————————————————————————
 // 4. Generate Blog Header Image (16:9, Photorealistic)
 // ————————————————————————————————————————
+
+// ————————————————————————————————————————
+// 4. Generate Blog Header Image (16:9, Photorealistic)
+// ————————————————————————————————————————
 export const generateBlogImage = async (prompt: string): Promise<string> => {
     if (!ai) {
         console.warn("API key missing → using placeholder image");
@@ -354,9 +358,128 @@ export const generateBlogImage = async (prompt: string): Promise<string> => {
     }
 };
 
+// ————————————————————————————————————————
+// 5. AI Humanizer & Plagiarism Checking (Gemini-Based)
+// ————————————————————————————————————————
+
+export interface PlagiarismAnalysisResult {
+    score: number;
+    explanation: string;
+    flagged_sentences: string[];
+    humanized_text: string;
+}
+
+
+export type HumanizerMode = 'Standard' | 'Academic' | 'Blog' | 'Professional' | 'Creative';
+
+export const analyzeAndHumanize = async (text: string, mode: HumanizerMode = 'Standard'): Promise<PlagiarismAnalysisResult> => {
+    if (!ai) throw new Error("Gemini API key missing");
+
+    try {
+        let systemRole = "GHOSTWRITER & ELITE EDITOR";
+        let styleInstructions = "";
+
+        switch (mode) {
+            case 'Academic':
+                systemRole = "ACADEMIC RESEARCHER & JOURNAL EDITOR";
+                styleInstructions = `
+                - **Tone**: Formal, objective, authoritative, and nuanced.
+                - **Structure**: Logical flow, clear argumentation, academic vocabulary (without sounding robotic).
+                - **Check**: Avoid contractions (don't, can't) and colloquialisms. Use passive voice only where appropriate for objectivity.
+                - **Focus**: Rigour, clarity, and depth.
+                `;
+                break;
+            case 'Blog':
+                systemRole = "EXPERT BLOGGER & SEO SPECIALIST";
+                styleInstructions = `
+                - **Tone**: Conversational, engaging, punchy, and opinionated.
+                - **Structure**: Short paragraphs, use of "I" or "You", rhetorical questions.
+                - **Check**: High burstiness, use idioms, contractions, and active voice.
+                - **Focus**: Reader engagement, skimmability, and "hooking" the reader.
+                `;
+                break;
+            case 'Professional':
+                systemRole = "CORPORATE COMMUNICATIONS DIRECTOR";
+                styleInstructions = `
+                - **Tone**: Polished, concise, respectful, and clear.
+                - **Structure**: Direct and action-oriented.
+                - **Check**: Avoid jargon where possible, ensure professional courtesy.
+                `;
+                break;
+            case 'Creative':
+                systemRole = "BESTSELLING NOVELIST";
+                styleInstructions = `
+                - **Tone**: Narrative, descriptive, evocative.
+                - **Structure**: Show don't tell, varied sentence rhythm, sensory details.
+                `;
+                break;
+            default: // Standard
+                systemRole = "VETERAN INDUSTRY EXPERT";
+                styleInstructions = `
+                - **Tone**: Natural, confident, and authenticated.
+                - **Structure**: Varied sentence lengths, mix of simple and complex ideas.
+                `;
+                break;
+        }
+
+        const prompt = `
+        SYSTEM ROLE: ${systemRole}
+        
+        You are a world-class ghostwriter and anti-detection specialist. Your SINGLE GOAL is to rewrite the input text to be **indistinguishable from human writing**, achieving a **0% AI probability score**.
+
+        Input Text:
+        "${text}"
+
+        🔹 TASK:
+        1. Rewrite (Humanize) the text completely matching the **${mode}** style.
+        2. **STRATEGIC EVASION (CRITICAL)**:
+           - ❌ **NO PREDICTABLE PATTERNS**: Do NOT use the standard "Intro -> Point -> Conclusion" paragraph structure. Start sentences in the middle of the action.
+           - ❌ **BANNNED WORDS**: "Moreover", "Furthermore", "In conclusion", "It is important to note", "In the modern era", "Delve into", "Landscape of", "realm of", "tapestry", "symphony".
+           - ✅ **EXTREME BURSTINESS**: Mix 2-word sentences with 40-word sentences. Be erratic.
+           - ✅ **IMPERFECTIONS**: If the mode allows (Blog/Standard), use sentence fragments or conversational fillers to break robotic syntax.
+           - ✅ **Apply Specific Style Rules**:
+             ${styleInstructions}
+
+        3. Provide an estimate AI score and explain your "humanization" choices.
+
+        🔹 OUTPUT FORMAT (MANDATORY JSON):
+        You MUST return the result in the following JSON format ONLY (no markdown code blocks, just raw JSON):
+        {
+            "score": number, // Estimated AI probability (0-100)
+            "flagged_sentences": ["sentence 1", "sentence 2"],
+            "humanized_text": "THE FULL REWRITTEN HUMAN-LIKE TEXT GOES HERE...",
+            "explanation": "Brief explanation of what was changed to lower AI detection."
+        }
+        `;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                // EXTREME Temperature for maximum variance.
+                // 1.35 introduces significant randomness to break AI watermarks.
+                temperature: 1.35,
+                topP: 0.99,
+                topK: 60,
+            },
+        });
+
+
+        const resultText = response.text?.trim() || "{}";
+        const result = JSON.parse(resultText) as PlagiarismAnalysisResult;
+
+        return result;
+    } catch (error: any) {
+        console.error("Gemini API Error (Humanizer):", error.message);
+        throw new Error("Failed to analyze text: " + error.message);
+    }
+};
+
 export default {
     generateBlogOutline,
     generateFullPost,
     generateNewsPost,
     generateBlogImage,
+    analyzeAndHumanize,
 };

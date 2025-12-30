@@ -22,7 +22,8 @@ const STANDARD_LINKS = [
 const TOOL_LINKS = [
   { name: 'My Phone Price', path: '/price/my-phone-price' },
   { name: 'EMI Calculator', path: '/tools/emi-calculator' },
-  { name: 'Exchange Offer', path: '/tools/exchange-offer' }, // NEW LINK ADDED
+  { name: 'Exchange Offer', path: '/tools/exchange-offer' },
+  { name: 'AI Humanizer', path: '/ai-humanizer' }, // NEW LINK ADDED
 ];
 
 export const Header: React.FC = () => {
