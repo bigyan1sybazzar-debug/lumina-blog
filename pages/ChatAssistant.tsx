@@ -28,7 +28,7 @@ interface Message {
 const initialAssistantMessage: Message = {
   id: '1',
   role: 'assistant',
-  content: "Hello! I'm **Bigyann AI**, Ask me anything about Mobile, Science technology, AI, or the latest news!",
+  content: "Hello! I'm **BIGGS**, Ask me anything about Mobile, Science technology, AI, or the latest news!",
 };
 
 export default function ChatAssistant() {
@@ -271,14 +271,14 @@ export default function ChatAssistant() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Sparkles className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                  <img src="/images/biggs-avatar.png" alt="BIGGS" className="w-full h-full object-cover" />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl blur-sm opacity-30 animate-pulse"></div>
               </div>
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                  Bigyann AI Assistant
+                  BIGGS
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Ask me Anything</p>
               </div>
@@ -332,8 +332,8 @@ export default function ChatAssistant() {
                     {/* Assistant Avatar */}
                     {!isUser && (
                       <div className="flex-shrink-0">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow ${isError ? 'bg-red-500' : 'bg-gradient-to-br from-purple-500 to-blue-500'}`}>
-                          <Bot className="w-4 h-4 text-white" />
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow overflow-hidden ${isError ? 'bg-red-500' : 'bg-gradient-to-br from-purple-500 to-blue-500'}`}>
+                          {isError ? <Bot className="w-4 h-4 text-white" /> : <img src="/images/biggs-avatar.png" alt="BIGGS" className="w-full h-full object-cover" />}
                         </div>
                       </div>
                     )}
@@ -433,7 +433,7 @@ export default function ChatAssistant() {
             {/* Quick Tips */}
             <div className="flex justify-center mt-3">
               <p className="text-center text-xs text-gray-400">
-                Powered by Bigyann
+                Powered by BIGGS
               </p>
             </div>
           </div>

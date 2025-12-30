@@ -265,7 +265,7 @@ export const Admin: React.FC = () => {
         title: aiTitle,
         content: aiContent,
         excerpt: aiContent.substring(0, 150).replace(/[#*`]/g, '') + '...',
-        author: { name: 'Bigyann AI', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=bigyann', id: 'ai-bot' },
+        author: { name: 'BIGGS', avatar: '/images/biggs-avatar.png', id: 'ai-bot' },
         readTime: `${Math.ceil(aiContent.split(' ').length / 200)} min read`,
         category: randomCategory.name,
         tags: [randomCategory.name, 'News', 'AI Generated'],
@@ -990,7 +990,7 @@ export const Admin: React.FC = () => {
                   className="p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 flex flex-col items-start group"
                 >
                   <Wand2 size={32} className="mb-4 text-purple-500 bg-purple-50 dark:bg-purple-900/20 p-1.5 rounded-lg" />
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-purple-600 transition-colors">AI Assistant</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-purple-600 transition-colors">BIGGS</h3>
                   <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Generate outlines and full articles using Gemini AI.</p>
                 </button>
               </div>
@@ -1662,7 +1662,7 @@ export const Admin: React.FC = () => {
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                     {editorMode === 'ai' ? <Sparkles className="text-primary-500" /> : <PenTool className="text-green-500" />}
-                    {editorMode === 'ai' ? 'AI Assistant' : 'Post Editor'}
+                    {editorMode === 'ai' ? 'BIGGS' : 'Post Editor'}
                     {editingPostId && <span className="text-sm font-normal text-gray-500">(Editing)</span>}
                   </h1>
                   <p className="text-gray-500 dark:text-gray-400 mt-1">

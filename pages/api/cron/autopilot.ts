@@ -68,8 +68,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             content: aiContent,
             excerpt: aiContent.substring(0, 150).replace(/[#*`]/g, '') + '...',
             author: {
-                name: 'Bigyann AI',
-                avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=bigyann',
+                name: 'BIGGS',
+                avatar: '/images/biggs-avatar.png',
                 id: 'ai-bot'
             },
             readTime: `${Math.ceil(aiContent.split(' ').length / 200)} min read`,

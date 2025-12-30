@@ -189,7 +189,7 @@ const AITranslator: React.FC = () => {
   };
 
   const downloadTranslation = () => {
-    const content = `Original (${languages.find(l => l.code === sourceLang)?.name}):\n${text}\n\nTranslated (${languages.find(l => l.code === targetLang)?.name}):\n${translatedText}\n\nTranslated via Bigyann Translate`;
+    const content = `Original (${languages.find(l => l.code === sourceLang)?.name}):\n${text}\n\nTranslated (${languages.find(l => l.code === targetLang)?.name}):\n${translatedText}\n\nTranslated via BIGGS Translate`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -273,7 +273,7 @@ const AITranslator: React.FC = () => {
                   <Sparkles size={10} /> Neural Engine v3.1
                 </div>
                 <h1 className="text-3xl md:text-5xl font-black tracking-tighter">
-                  Bigyann <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">Translate</span>
+                  BIGGS <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">Translate</span>
                 </h1>
               </div>
             </div>
@@ -680,7 +680,7 @@ const AITranslator: React.FC = () => {
 
         {/* Footer */}
         <footer className="mt-8 pt-6 border-t border-gray-800 text-center text-sm text-gray-600">
-          <p className="mb-2">Bigyann Translate uses advanced neural networks for accurate translations. For professional use only.</p>
+          <p className="mb-2">BIGGS Translate uses advanced neural networks for accurate translations. For professional use only.</p>
           <div className="flex flex-wrap justify-center gap-6">
             <button className="hover:text-gray-400 transition-colors text-xs">Privacy Policy</button>
             <button className="hover:text-gray-400 transition-colors text-xs">Terms of Service</button>
