@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, Send, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 // NOTE: You must create these functions in your services/db.ts file
 import { getReviewsByPostId, addReview } from '../services/db';
 import { useAuth } from '../context/AuthContext';
@@ -89,7 +90,13 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ postId }) => {
           {user ? (
             <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-800 rounded-xl">
               <div className="flex items-center mb-3">
-                <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full mr-3" />
+                <Image
+                  src={user.avatar}
+                  alt={user.name}
+                  width={40}
+                  height={40}
+                  className="rounded-full mr-3 object-cover"
+                />
                 <span className="font-bold text-gray-900 dark:text-white">{user.name}</span>
               </div>
 
@@ -97,15 +104,21 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ postId }) => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Your Rating:</label>
                 <div className="flex space-x-1">
                   {[1, 2, 3, 4, 5].map(star => (
-                    <Star
+                    <button
                       key={star}
-                      size={24}
-                      className={`cursor-pointer transition-colors ${star <= newReviewRating
-                        ? 'text-yellow-400 fill-yellow-400'
-                        : 'text-gray-300 dark:text-gray-600'
-                        }`}
+                      type="button"
                       onClick={() => setNewReviewRating(star)}
-                    />
+                      aria-label={`Rate ${star} stars`}
+                      className="focus:outline-none focus:scale-110 transition-transform"
+                    >
+                      <Star
+                        size={24}
+                        className={`transition-colors ${star <= newReviewRating
+                          ? 'text-yellow-400 fill-yellow-400'
+                          : 'text-gray-300 dark:text-gray-600'
+                          }`}
+                      />
+                    </button>
                   ))}
                 </div>
               </div>
@@ -139,7 +152,13 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ postId }) => {
           <div className="space-y-6">
             {reviews.map((review) => (
               <div key={review.id} className="flex gap-4 animate-in fade-in slide-in-from-bottom-2 border-b border-gray-100 dark:border-gray-800 pb-6 last:border-b-0">
-                <img src={review.userAvatar} alt={review.userName} className="w-10 h-10 rounded-full" />
+                <Image
+                  src={review.userAvatar}
+                  alt={review.userName}
+                  width={40}
+                  height={40}
+                  className="rounded-full object-cover"
+                />
                 <div className='flex-1'>
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-bold text-gray-900 dark:text-white">{review.userName}</span>
