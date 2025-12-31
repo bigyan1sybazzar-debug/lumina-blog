@@ -78,11 +78,16 @@ export const PostCard: React.FC<PostCardProps> = ({
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <Image
-                src={post.author.avatar}
+                src={post.author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&background=random`}
                 alt={post.author.name}
                 width={32}
                 height={32}
+                unoptimized
                 className="rounded-full border-2 border-white dark:border-gray-700"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&background=random`;
+                }}
               />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {post.author.name}
@@ -157,11 +162,16 @@ export const PostCard: React.FC<PostCardProps> = ({
         <div className="flex items-center justify-between pt-2 min-[480px]:pt-4 mt-auto border-t border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <Image
-              src={post.author.avatar}
+              src={post.author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&background=random`}
               alt={post.author.name}
               width={32}
               height={32}
+              unoptimized
               className="rounded-full border-2 border-white dark:border-gray-700"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&background=random`;
+              }}
             />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {post.author.name}

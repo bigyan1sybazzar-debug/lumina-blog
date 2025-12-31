@@ -266,6 +266,10 @@ export const About: React.FC = () => {
                   alt="Bigyan Neupane - SEO Expert in Nepal"
                   className="relative w-36 h-36 md:w-40 md:h-40 rounded-full border-8 border-white dark:border-gray-800 shadow-2xl object-cover ring-4 ring-primary-500/20"
                   loading="eager"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "https://ui-avatars.com/api/?name=Bigyan+Neupane&background=random";
+                  }}
                 />
                 {/* Online Indicator */}
                 <div className="absolute bottom-2 right-2 w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-500 border-4 border-white dark:border-gray-800 shadow-lg animate-pulse"></div>
