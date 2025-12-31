@@ -30,6 +30,15 @@ const checkSlugExists = async (slug: string): Promise<boolean> => {
   return !snapshot.empty;
 };
 
+// Helper: Check if a poll slug already exists
+const checkPollSlugExists = async (slug: string): Promise<boolean> => {
+  const snapshot = await db.collection(POLLS_COLLECTION)
+    .where('slug', '==', slug)
+    .limit(1)
+    .get();
+  return !snapshot.empty;
+};
+
 // --- POSTS ---
 
 export const getPosts = async (): Promise<BlogPost[]> => {
@@ -270,6 +279,7 @@ export const deletePost = async (postId: string): Promise<void> => {
   }
 };
 const getFullUrl = (slug: string) => `https://bigyann.com.np/${slug}`;
+const getVotingUrl = (slug: string) => `https://bigyann.com.np/voting/${slug}`;
 /**
  * Updates post status and notifies IndexNow if changed to published.
  */
@@ -380,6 +390,10 @@ export const getAllUsers = async (): Promise<User[]> => {
 
 export const updateUserRole = async (userId: string, role: 'user' | 'moderator' | 'admin') => {
   await db.collection(USERS_COLLECTION).doc(userId).update({ role });
+};
+
+export const updateUserStatus = async (userId: string, status: 'approved' | 'pending' | 'rejected') => {
+  await db.collection(USERS_COLLECTION).doc(userId).update({ status });
 };
 
 // --- COMMENTS ---
@@ -614,9 +628,15 @@ export const seedDatabase = async () => {
 
 // --- POLLS ---
 
-export const getPolls = async (category?: string): Promise<Poll[]> => {
+export const getPolls = async (category?: string, status: Poll['status'] = 'approved'): Promise<Poll[]> => {
   try {
     let query: firebase.firestore.Query = db.collection(POLLS_COLLECTION);
+
+    // Admin can see everything, but for UI we might want to filter
+    if (status) {
+      query = query.where('status', '==', status);
+    }
+
     if (category && category !== 'all') {
       query = query.where('category', '==', category);
     }
@@ -626,6 +646,56 @@ export const getPolls = async (category?: string): Promise<Poll[]> => {
   } catch (error) {
     console.error('Error fetching polls:', error);
     return [];
+  }
+};
+
+export const getAllPollsAdmin = async (): Promise<Poll[]> => {
+  try {
+    const snapshot = await db.collection(POLLS_COLLECTION).get();
+    const polls = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
+    return polls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error) {
+    console.error('Error fetching all polls (admin):', error);
+    return [];
+  }
+};
+
+export const getPollById = async (id: string): Promise<Poll | null> => {
+  try {
+    const doc = await db.collection(POLLS_COLLECTION).doc(id).get();
+    if (doc.exists) {
+      return { id: doc.id, ...doc.data() } as Poll;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching poll by ID:', error);
+    return null;
+  }
+};
+
+export const getPollBySlug = async (slugOrId: string): Promise<Poll | null> => {
+  try {
+    // 1. Try by slug
+    const bySlug = await db.collection(POLLS_COLLECTION)
+      .where('slug', '==', slugOrId)
+      .limit(1)
+      .get();
+
+    if (!bySlug.empty) {
+      const doc = bySlug.docs[0];
+      return { id: doc.id, ...doc.data() } as Poll;
+    }
+
+    // 2. Fallback to document ID
+    const byId = await db.collection(POLLS_COLLECTION).doc(slugOrId).get();
+    if (byId.exists) {
+      return { id: byId.id, ...byId.data() } as Poll;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching poll by slug/ID:', error);
+    return null;
   }
 };
 
@@ -664,10 +734,21 @@ export const voteInPoll = async (pollId: string, optionId: string, userId: strin
   }
 };
 
-export const createPoll = async (poll: Omit<Poll, 'id' | 'createdAt' | 'totalVotes' | 'votedUserIds'>) => {
+export const createPoll = async (poll: Omit<Poll, 'id' | 'createdAt' | 'totalVotes' | 'votedUserIds' | 'slug' | 'status'>) => {
   try {
+    const baseSlug = slugify(poll.question);
+    let slug = baseSlug;
+    let counter = 1;
+
+    while (await checkPollSlugExists(slug)) {
+      counter++;
+      slug = `${baseSlug}-${counter}`;
+    }
+
     const newPoll = {
       ...poll,
+      slug,
+      status: 'pending',
       totalVotes: 0,
       votedUserIds: [],
       createdAt: new Date().toISOString(),
@@ -676,6 +757,58 @@ export const createPoll = async (poll: Omit<Poll, 'id' | 'createdAt' | 'totalVot
     return docRef.id;
   } catch (error) {
     console.error('Error creating poll:', error);
+    throw error;
+  }
+};
+
+export const updatePollStatus = async (pollId: string, status: Poll['status']): Promise<void> => {
+  try {
+    await db.collection(POLLS_COLLECTION).doc(pollId).update({
+      status,
+      updatedAt: new Date().toISOString(),
+    });
+
+    if (status === 'approved') {
+      await generateAndUploadSitemap();
+      const poll = await getPollById(pollId);
+      if (poll?.slug) {
+        await notifyIndexNow([getVotingUrl(poll.slug)]); // Real-time indexing
+        await notifyBingWebmaster([getVotingUrl(poll.slug)]); // Bing Webmaster notification
+      }
+    }
+  } catch (error) {
+    console.error('Error updating poll status:', error);
+    throw error;
+  }
+};
+
+export const updatePoll = async (pollId: string, data: Partial<Omit<Poll, 'id'>>): Promise<void> => {
+  try {
+    const updateData = {
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+    await db.collection(POLLS_COLLECTION).doc(pollId).update(updateData);
+
+    const poll = await getPollById(pollId);
+    if (poll?.status === 'approved' && (data.question || data.slug)) {
+      await generateAndUploadSitemap();
+      if (poll.slug) {
+        await notifyIndexNow([getVotingUrl(poll.slug)]);
+        await notifyBingWebmaster([getVotingUrl(poll.slug)]);
+      }
+    }
+  } catch (error) {
+    console.error('Error updating poll:', error);
+    throw error;
+  }
+};
+
+export const deletePoll = async (pollId: string): Promise<void> => {
+  try {
+    await db.collection(POLLS_COLLECTION).doc(pollId).delete();
+  } catch (error) {
+    console.error('Error deleting poll:', error);
     throw error;
   }
 };

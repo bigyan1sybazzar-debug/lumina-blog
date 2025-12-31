@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { Image, Plus, Trash2, Loader2, Send, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Image, Plus, Trash2, Loader2, Send, CheckCircle2, Link as LinkIcon } from 'lucide-react';
 import { createPoll } from '../services/db';
 import { PollOption } from '../types';
 
@@ -17,19 +17,9 @@ const PollCreationForm: React.FC<PollCreationFormProps> = ({ onSuccess }) => {
         { id: '1', text: '', votes: 0 },
         { id: '2', text: '', votes: 0 }
     ]);
-    const [questionImage, setQuestionImage] = useState<string | null>(null);
+    const [questionImage, setQuestionImage] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-
-    const handleUpload = async (file: File) => {
-        const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
-            method: 'POST',
-            body: file,
-        });
-        if (!response.ok) throw new Error('Upload failed');
-        const blob = await response.json();
-        return blob.url;
-    };
 
     const addOption = () => {
         setOptions([...options, { id: Date.now().toString(), text: '', votes: 0 }]);
@@ -46,24 +36,10 @@ const PollCreationForm: React.FC<PollCreationFormProps> = ({ onSuccess }) => {
         setOptions(newOptions);
     };
 
-    const handleOptionImageUpload = async (index: number, file: File) => {
-        try {
-            const url = await handleUpload(file);
-            const newOptions = [...options];
-            newOptions[index].image = url;
-            setOptions(newOptions);
-        } catch (err) {
-            alert('Failed to upload image');
-        }
-    };
-
-    const handleQuestionImageUpload = async (file: File) => {
-        try {
-            const url = await handleUpload(file);
-            setQuestionImage(url);
-        } catch (err) {
-            alert('Failed to upload question image');
-        }
+    const handleOptionImageUrlChange = (index: number, url: string) => {
+        const newOptions = [...options];
+        newOptions[index].image = url;
+        setOptions(newOptions);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -87,7 +63,7 @@ const PollCreationForm: React.FC<PollCreationFormProps> = ({ onSuccess }) => {
                 setSuccess(false);
                 setQuestion('');
                 setDescription('');
-                setQuestionImage(null);
+                setQuestionImage('');
                 setOptions([{ id: '1', text: '', votes: 0 }, { id: '2', text: '', votes: 0 }]);
                 if (onSuccess) onSuccess();
             }, 2000);
@@ -100,155 +76,151 @@ const PollCreationForm: React.FC<PollCreationFormProps> = ({ onSuccess }) => {
     };
 
     return (
-        <div className="bg-[#161b22] border border-gray-800 rounded-[2.5rem] p-8 md:p-10 shadow-2xl mb-12 border-orange-500/20">
-            <div className="flex items-center gap-3 mb-8">
-                <div className="p-3 bg-orange-500/10 rounded-2xl text-orange-500">
-                    <Plus size={24} />
-                </div>
-                <h2 className="text-3xl font-black text-white tracking-tight">Create a New Poll</h2>
+        <div className="bg-white dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700 rounded-[2.5rem] md:rounded-[4rem] p-8 md:p-16 shadow-xl mb-24 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-12 text-primary-500/5 pointer-events-none">
+                <Plus size={200} strokeWidth={4} />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Question *</label>
-                    <input
-                        type="text"
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        className="w-full bg-black/40 border-2 border-gray-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500 transition-all font-bold placeholder-gray-700"
-                        placeholder="What would you like to ask?"
-                        required
-                    />
+            <div className="relative z-10">
+                <div className="flex flex-col md:flex-row md:items-center gap-6 mb-12">
+                    <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-600 rounded-3xl flex items-center justify-center text-white shadow-lg">
+                        <Plus className="w-10 h-10 md:w-12 md:h-12" strokeWidth={4} />
+                    </div>
+                    <h2 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white tracking-tight">Launch a <span className="text-primary-600 italic">Poll</span></h2>
                 </div>
 
-                <div>
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Description (Optional)</label>
-                    <textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="w-full bg-black/40 border-2 border-gray-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500 transition-all font-medium placeholder-gray-700 resize-none h-24"
-                        placeholder="Add some context..."
-                    />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Category *</label>
-                        <select
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value as any)}
-                            className="w-full bg-black/40 border-2 border-gray-800 rounded-2xl px-6 py-4 text-white outline-none focus:border-orange-500 transition-all font-bold appearance-none"
-                        >
-                            <option value="other">Other</option>
-                            <option value="election">Election</option>
-                            <option value="movies">Movies</option>
-                            <option value="gadgets">Gadgets</option>
-                        </select>
+                <form onSubmit={handleSubmit} className="space-y-8 md:space-y-12">
+                    <div className="group/field">
+                        <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-primary-500/60 mb-4 group-focus-within/field:text-primary-500 transition-colors">The Main Question</label>
+                        <input
+                            type="text"
+                            value={question}
+                            onChange={(e) => setQuestion(e.target.value)}
+                            className="w-full bg-transparent border-b-4 border-gray-100 dark:border-gray-700 focus:border-primary-500 text-3xl md:text-5xl text-gray-900 dark:text-white outline-none transition-all font-black tracking-tight placeholder:text-gray-300 dark:placeholder:text-gray-600 pb-4"
+                            placeholder="WHAT'S ON YOUR MIND?"
+                            required
+                        />
                     </div>
 
-                    <div>
-                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Question Header Image</label>
-                        <div className="flex items-center gap-4">
-                            <label className="flex-1 cursor-pointer group">
+                    <div className="group/field">
+                        <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-primary-500/60 mb-4">Add Context</label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 focus:border-primary-500/50 rounded-2xl p-6 text-gray-900 dark:text-white outline-none transition-all font-medium text-lg placeholder:text-gray-400 h-32"
+                            placeholder="Share some details..."
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="group/field">
+                            <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-primary-500/60 mb-4">Category</label>
+                            <select
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value as any)}
+                                className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 focus:border-primary-500/50 rounded-2xl p-4 text-gray-900 dark:text-white outline-none transition-all font-bold text-lg appearance-none cursor-pointer"
+                            >
+                                <option value="other">OTHER</option>
+                                <option value="election">POLITICS</option>
+                                <option value="movies">CINEMA</option>
+                                <option value="gadgets">TECH</option>
+                            </select>
+                        </div>
+
+                        <div className="group/field">
+                            <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-primary-500/60 mb-4">Cover Image URL</label>
+                            <div className="relative">
                                 <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => e.target.files?.[0] && handleQuestionImageUpload(e.target.files[0])}
-                                    className="hidden"
+                                    type="text"
+                                    value={questionImage}
+                                    onChange={(e) => setQuestionImage(e.target.value)}
+                                    className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 focus:border-primary-500/50 rounded-2xl pl-12 pr-12 py-4 text-gray-900 dark:text-white outline-none transition-all font-medium text-lg placeholder:text-gray-400"
+                                    placeholder="Paste image URL..."
                                 />
-                                <div className="flex items-center justify-center gap-2 bg-gray-800/50 border-2 border-dashed border-gray-800 rounded-2xl px-6 py-4 text-gray-400 group-hover:border-orange-500/50 group-hover:text-orange-400 transition-all">
-                                    <Image size={18} />
-                                    <span className="text-xs font-bold uppercase tracking-widest truncate max-w-[150px]">
-                                        {questionImage ? 'Change Image' : 'Upload Image'}
-                                    </span>
-                                </div>
-                            </label>
-                            {questionImage && (
-                                <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-800 shadow-xl">
-                                    <img src={questionImage} alt="Preview" className="w-full h-full object-cover" />
-                                </div>
-                            )}
+                                <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-500" size={20} />
+                                {questionImage && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl overflow-hidden border border-primary-500/30">
+                                        <img src={questionImage} alt="Preview" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="space-y-4">
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Poll Options *</label>
-                    <div className="grid grid-cols-1 gap-4">
-                        {options.map((opt, index) => (
-                            <div key={opt.id} className="flex gap-4 items-start">
-                                <div className="flex-1 space-y-2">
-                                    <input
-                                        type="text"
-                                        value={opt.text}
-                                        onChange={(e) => handleOptionChange(index, e.target.value)}
-                                        className="w-full bg-black/40 border-2 border-gray-800 rounded-2xl px-6 py-3 text-white outline-none focus:border-orange-500 transition-all font-bold placeholder-gray-700"
-                                        placeholder={`Option ${index + 1}`}
-                                        required
-                                    />
-                                    <div className="flex items-center gap-3">
-                                        <label className="cursor-pointer group">
+                    <div className="space-y-6">
+                        <label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-primary-500/60">Poll Choices</label>
+                        <div className="grid grid-cols-1 gap-4">
+                            {options.map((opt, index) => (
+                                <div key={opt.id} className="flex flex-col md:flex-row gap-4 items-stretch md:items-center bg-gray-50 dark:bg-gray-900/50 p-4 md:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 hover:border-primary-500/20 transition-all">
+                                    <div className="flex-1 space-y-3">
+                                        <input
+                                            type="text"
+                                            value={opt.text}
+                                            onChange={(e) => handleOptionChange(index, e.target.value)}
+                                            className="w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-700 focus:border-primary-500 text-xl font-bold text-gray-900 dark:text-white outline-none transition-all placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                                            placeholder={`Option ${index + 1}`}
+                                            required
+                                        />
+                                        <div className="relative">
                                             <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(e) => e.target.files?.[0] && handleOptionImageUpload(index, e.target.files[0])}
-                                                className="hidden"
+                                                type="text"
+                                                value={opt.image || ''}
+                                                onChange={(e) => handleOptionImageUrlChange(index, e.target.value)}
+                                                className="w-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 focus:border-primary-500/30 rounded-xl pl-10 pr-10 py-2.5 text-xs text-gray-500 outline-none transition-all"
+                                                placeholder="Choice Image URL (Optional)"
                                             />
-                                            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-gray-500 group-hover:text-orange-400 transition-colors">
-                                                <Image size={14} />
-                                                {opt.image ? 'Replace Image' : 'Add Image'}
-                                            </div>
-                                        </label>
-                                        {opt.image && (
-                                            <div className="w-6 h-6 rounded-md overflow-hidden border border-gray-800">
-                                                <img src={opt.image} alt="Preview" className="w-full h-full object-cover" />
-                                            </div>
-                                        )}
+                                            <LinkIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-500/40" size={14} />
+                                            {opt.image && (
+                                                <div className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg overflow-hidden border border-primary-500/20">
+                                                    <img src={opt.image} alt="Preview" className="w-full h-full object-cover" />
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeOption(index)}
+                                        className="p-4 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all self-center md:self-stretch flex items-center justify-center"
+                                        disabled={options.length <= 2}
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => removeOption(index)}
-                                    className="p-4 rounded-2xl bg-gray-800/50 text-gray-500 hover:text-red-500 transition-all"
-                                    disabled={options.length <= 2}
-                                >
-                                    <Trash2 size={20} />
-                                </button>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={addOption}
+                            className="w-full md:w-auto px-8 py-3.5 rounded-xl bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-bold uppercase tracking-widest text-[10px] hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-all flex items-center justify-center gap-3 group/add"
+                        >
+                            <Plus size={16} className="group-hover/add:rotate-90 transition-transform" /> Add Choice
+                        </button>
                     </div>
-                    <button
-                        type="button"
-                        onClick={addOption}
-                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-orange-500 hover:text-orange-400 transition-colors py-2"
-                    >
-                        <Plus size={16} /> Add Another Option
-                    </button>
-                </div>
 
-                <div className="pt-6 border-t border-gray-800/50">
-                    <button
-                        type="submit"
-                        disabled={loading || success}
-                        className={`w-full h-16 rounded-3xl font-black text-sm uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4 ${success
-                                ? 'bg-green-600 text-white'
-                                : 'bg-orange-600 text-white hover:bg-orange-500 shadow-xl shadow-orange-900/20 active:scale-[0.98]'
-                            }`}
-                    >
-                        {loading ? (
-                            <Loader2 className="animate-spin" />
-                        ) : success ? (
-                            <>
-                                <CheckCircle2 /> Poll Created!
-                            </>
-                        ) : (
-                            <>
-                                <Send size={20} /> Launch Poll
-                            </>
-                        )}
-                    </button>
-                </div>
-            </form>
+                    <div className="pt-12">
+                        <button
+                            type="submit"
+                            disabled={loading || success}
+                            className={`w-full h-20 md:h-24 rounded-2xl md:rounded-3xl font-black text-xl md:text-3xl uppercase tracking-widest transition-all flex items-center justify-center gap-6 shadow-lg ${success
+                                ? 'bg-green-500 text-white'
+                                : 'bg-primary-600 text-white hover:bg-primary-700 hover:-translate-y-1 active:scale-[0.98] shadow-primary-500/30'
+                                }`}
+                        >
+                            {loading ? (
+                                <Loader2 className="animate-spin w-8 h-8 md:w-12 md:h-12" strokeWidth={4} />
+                            ) : success ? (
+                                <>
+                                    <CheckCircle2 size={32} strokeWidth={4} /> LIVE!
+                                </>
+                            ) : (
+                                <>
+                                    <Send className="w-6 h-6 md:w-8 md:h-8" strokeWidth={4} /> LAUNCH POLL
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };

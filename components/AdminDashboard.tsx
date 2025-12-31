@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { BlogPost, User, Category, Comment, Review } from '../types';
+import { BlogPost, User, Category, Comment, Review, Poll } from '../types';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAllChats } from '../services/chatService';
@@ -18,7 +18,7 @@ import {
   PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw,
   Users, CheckCircle, Clock, Shield, Tag, Globe, ExternalLink, Trash2, Eye,
   Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter,
-  Bot, Zap, Play, Pause, AlertTriangle, Terminal, GripVertical
+  Bot, Zap, Play, Pause, AlertTriangle, Terminal, GripVertical, Vote
 } from 'lucide-react';
 
 import { ANALYTICS_DATA } from '../constants';
@@ -37,7 +37,7 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -55,6 +55,7 @@ export const Admin: React.FC = () => {
   const [myPosts, setMyPosts] = useState<BlogPost[]>([]);
   const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [allPolls, setAllPolls] = useState<Poll[]>([]);
   const [sitemapUrl, setSitemapUrl] = useState<string | null>(null);
   const [isGeneratingSitemap, setIsGeneratingSitemap] = useState(false);
 
@@ -108,6 +109,10 @@ export const Admin: React.FC = () => {
   const [autoLogs, setAutoLogs] = useState<AutoLog[]>([]);
   // Removed local interval states
 
+  // Poll Editing State
+  const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
+  const [pollForm, setPollForm] = useState<Partial<Poll>>({});
+
   // Featured Posts Manager State
   const [featuredPosts, setFeaturedPosts] = useState<BlogPost[]>([]);
   const [availablePosts, setAvailablePosts] = useState<BlogPost[]>([]);
@@ -116,6 +121,26 @@ export const Admin: React.FC = () => {
   const logsEndRef = useRef<HTMLDivElement>(null);
   const isAdmin = user?.role === 'admin';
   const isModerator = user?.role === 'moderator' || isAdmin;
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
+
+  const resetEditor = () => {
+    setTitle('');
+    setSlug('');
+    setFullContent('');
+    setCategory('');
+    setTagsInput('');
+    setCoverImage(`https://picsum.photos/800/400?random=${Date.now()}`);
+    setCoverImageAlt('');
+    setExcerpt('');
+    setTopic('');
+    setOutline('');
+    setEditingPostId(null);
+    setStep(1);
+  };
 
   // === Load & Save Featured Posts ===
   const loadFeaturedPosts = async () => {
@@ -178,6 +203,9 @@ export const Admin: React.FC = () => {
         setPendingPosts(pPending);
         const allUsers = await getAllUsers();
         setUsersList(allUsers);
+
+        const polls = await getAllPollsAdmin();
+        setAllPolls(polls);
       }
 
       if (user) {
@@ -495,6 +523,30 @@ export const Admin: React.FC = () => {
     }
   };
 
+  const handleApproveUser = async (userId: string) => {
+    try {
+      await updateUserStatus(userId, 'approved');
+      alert('User approved successfully!');
+      refreshData();
+    } catch (error) {
+      alert('Failed to approve user.');
+      console.error(error);
+    }
+  };
+
+  const handleRejectUser = async (userId: string) => {
+    if (confirm('Are you sure you want to reject this user?')) {
+      try {
+        await updateUserStatus(userId, 'rejected');
+        alert('User rejected.');
+        refreshData();
+      } catch (error) {
+        alert('Failed to reject user.');
+        console.error(error);
+      }
+    }
+  };
+
   const handleCreateCategory = async () => {
     if (!newCatName.trim()) {
       alert('Please enter a category name.');
@@ -556,24 +608,61 @@ export const Admin: React.FC = () => {
       setIsGeneratingSitemap(false);
     }
   };
-  const handleLogout = () => {
-    logout();
-    router.push('/');
+
+  const handleApprovePoll = async (pollId: string) => {
+    try {
+      await updatePollStatus(pollId, 'approved');
+      alert('Poll approved!');
+      refreshData();
+    } catch (error) {
+      alert('Failed to approve poll.');
+      console.error(error);
+    }
   };
 
-  const resetEditor = () => {
-    setTitle('');
-    setSlug('');
-    setFullContent('');
-    setCategory('');
-    setTagsInput('');
-    setCoverImage(`https://picsum.photos/800/400?random=${Date.now()}`);
-    setCoverImageAlt('');
-    setExcerpt('');
-    setTopic('');
-    setOutline('');
-    setEditingPostId(null);
-    setStep(1);
+  const handleRejectPoll = async (pollId: string) => {
+    if (window.confirm('Are you sure you want to reject this poll?')) {
+      try {
+        await updatePollStatus(pollId, 'rejected');
+        alert('Poll rejected.');
+        refreshData();
+      } catch (error) {
+        alert('Failed to reject poll.');
+        console.error(error);
+      }
+    }
+  };
+
+  const handleDeletePoll = async (pollId: string) => {
+    if (!window.confirm('Are you sure you want to delete this poll permanently?')) return;
+    try {
+      await deletePoll(pollId);
+      await refreshData();
+      alert('Poll deleted successfully!');
+    } catch (err) {
+      alert('Failed to delete poll');
+    }
+  };
+
+  const handleEditPoll = (poll: Poll) => {
+    setEditingPoll(poll);
+    setPollForm({ ...poll });
+  };
+
+  const handleSavePollEdit = async () => {
+    if (!editingPoll) return;
+    try {
+      setIsSaving(true);
+      await updatePoll(editingPoll.id, pollForm);
+      await refreshData();
+      setEditingPoll(null);
+      alert('Poll updated successfully!');
+    } catch (error) {
+      console.error('Error updating poll:', error);
+      alert('Failed to update poll');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Reviews & Comments Handlers
@@ -807,6 +896,16 @@ export const Admin: React.FC = () => {
                   >
                     <MessageSquare size={18} className="mr-3" /> Reviews & Comments
                   </button>
+
+                  <button
+                    onClick={() => { setActiveTab('polls'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'polls'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <Vote size={18} className="mr-3" /> Manage Polls
+                  </button>
                 </>
               )}
             </nav>
@@ -833,12 +932,12 @@ export const Admin: React.FC = () => {
             </button>
           </div>
         </div>
-      </aside >
+      </aside>
 
       {/* Main Content Area */}
-      < main className="flex-1 flex flex-col overflow-hidden relative w-full" >
+      <main className="flex-1 flex flex-col overflow-hidden relative w-full">
         {/* Mobile Header */}
-        < header className="md:hidden flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" >
+        <header className="md:hidden flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center">
             <button onClick={toggleSidebar} className="mr-3 text-gray-600 dark:text-gray-300">
               <Menu size={24} />
@@ -848,10 +947,10 @@ export const Admin: React.FC = () => {
           <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200">
             <img src={user?.avatar} alt="User" />
           </div>
-        </header >
+        </header>
 
         {/* Scrollable Content */}
-        < div className="flex-1 overflow-y-auto p-4 md:p-8" >
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
           {/* === FEATURED POSTS TAB === */}
           {
             activeTab === 'featured' && isAdmin && (
@@ -1670,7 +1769,7 @@ export const Admin: React.FC = () => {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posts</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -1700,19 +1799,47 @@ export const Admin: React.FC = () => {
                                 </span>
                               </td>
 
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${u.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                                  u.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                  }`}>
+                                  {u.status || 'pending'}
+                                </span>
+                              </td>
+
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                 {userPosts.length}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <select
-                                  value={u.role}
-                                  onChange={(e) => handleChangeRole(u.id, e.target.value)}
-                                  className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:text-white"
-                                >
-                                  <option value="user">User</option>
-                                  <option value="moderator">Moderator</option>
-                                  <option value="admin">Admin</option>
-                                </select>
+                                <div className="flex flex-col gap-2">
+                                  <select
+                                    value={u.role}
+                                    onChange={(e) => handleChangeRole(u.id, e.target.value)}
+                                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:text-white mb-2"
+                                  >
+                                    <option value="user">User</option>
+                                    <option value="moderator">Moderator</option>
+                                    <option value="admin">Admin</option>
+                                  </select>
+
+                                  {u.status !== 'approved' && (
+                                    <button
+                                      onClick={() => handleApproveUser(u.id)}
+                                      className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
+                                    >
+                                      Approve
+                                    </button>
+                                  )}
+                                  {u.status === 'pending' && (
+                                    <button
+                                      onClick={() => handleRejectUser(u.id)}
+                                      className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors"
+                                    >
+                                      Reject
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           );
@@ -2449,8 +2576,7 @@ export const Admin: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Reviews Tab */}
-                    {reviewsTab === 'reviews' && (
+                    {reviewsTab === 'reviews' ? (
                       <>
                         {allReviews.length === 0 ? (
                           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
@@ -2460,7 +2586,6 @@ export const Admin: React.FC = () => {
                         ) : (
                           allReviews.map((review) => (
                             <div key={review.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-                              {/* Review Header */}
                               <div className="flex items-start justify-between">
                                 <div className="flex items-center gap-4">
                                   <img src={review.userAvatar} alt={review.userName} className="w-12 h-12 rounded-full" />
@@ -2487,7 +2612,6 @@ export const Admin: React.FC = () => {
                                 </button>
                               </div>
 
-                              {/* Post Link */}
                               <div className="text-sm">
                                 <span className="text-gray-500">On post: </span>
                                 <Link href={`/blog/${review.postId}`} className="text-primary-600 hover:underline">
@@ -2495,10 +2619,8 @@ export const Admin: React.FC = () => {
                                 </Link>
                               </div>
 
-                              {/* Review Content */}
                               <p className="text-gray-700 dark:text-gray-300">{review.content}</p>
 
-                              {/* Admin Reply Section */}
                               {review.adminReply ? (
                                 <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded">
                                   <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-1">
@@ -2549,10 +2671,7 @@ export const Admin: React.FC = () => {
                           ))
                         )}
                       </>
-                    )}
-
-                    {/* Comments Tab */}
-                    {reviewsTab === 'comments' && (
+                    ) : (
                       <>
                         {allComments.length === 0 ? (
                           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
@@ -2562,7 +2681,6 @@ export const Admin: React.FC = () => {
                         ) : (
                           allComments.map((comment) => (
                             <div key={comment.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
-                              {/* Comment Header */}
                               <div className="flex items-start justify-between">
                                 <div className="flex items-center gap-4">
                                   <img src={comment.userAvatar} alt={comment.userName} className="w-12 h-12 rounded-full" />
@@ -2582,7 +2700,6 @@ export const Admin: React.FC = () => {
                                 </button>
                               </div>
 
-                              {/* Post Link */}
                               <div className="text-sm">
                                 <span className="text-gray-500">On post: </span>
                                 <Link href={`/blog/${comment.postId}`} className="text-primary-600 hover:underline">
@@ -2590,10 +2707,8 @@ export const Admin: React.FC = () => {
                                 </Link>
                               </div>
 
-                              {/* Comment Content */}
                               <p className="text-gray-700 dark:text-gray-300">{comment.content}</p>
 
-                              {/* Admin Reply Section */}
                               {comment.adminReply ? (
                                 <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded">
                                   <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-1">
@@ -2650,9 +2765,289 @@ export const Admin: React.FC = () => {
               </div>
             )
           }
-        </div >
-      </main >
-    </div >
+
+          {/* === POLLS TAB === */}
+          {
+            activeTab === 'polls' && isAdmin && (
+              <div className="max-w-7xl mx-auto space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                      <Vote className="text-primary-600" />
+                      Polls Management
+                    </h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">Approve, reject, or delete user-submitted polls</p>
+                  </div>
+                </div>
+
+                {/* Edit Poll Modal Overlay */}
+                {editingPoll && (
+                  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-gray-800 rounded-[2rem] w-full max-w-5xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 transform animate-in zoom-in duration-300">
+                      <div className="p-8 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-primary-600 flex items-center justify-center text-white shadow-lg shadow-primary-600/20">
+                            <PenTool size={24} />
+                          </div>
+                          <div>
+                            <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Edit Poll Context</h2>
+                            <p className="text-gray-500 text-xs font-medium uppercase tracking-widest">Updating: {editingPoll.question.substring(0, 30)}...</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setEditingPoll(null)}
+                          className="p-3 bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-600 hover:text-red-500 transition-all hover:rotate-90"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+
+                      <div className="p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                          {/* Left Column: Basic Info */}
+                          <div className="space-y-8">
+                            <div className="space-y-4">
+                              <label className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary-600">
+                                <FileText size={14} /> Poll Question
+                              </label>
+                              <div className="space-y-2">
+                                <input
+                                  type="text"
+                                  value={pollForm.question || ''}
+                                  onChange={(e) => {
+                                    const newQuestion = e.target.value;
+                                    const newSlug = newQuestion.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                                    // If slug was empty or matched the old slugified question, update it
+                                    const currentSlug = pollForm.slug || '';
+                                    const oldSlug = (pollForm.question || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+                                    if (!currentSlug || currentSlug === oldSlug) {
+                                      setPollForm({ ...pollForm, question: newQuestion, slug: newSlug });
+                                    } else {
+                                      setPollForm({ ...pollForm, question: newQuestion });
+                                    }
+                                  }}
+                                  className="w-full p-5 bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent focus:border-primary-600 dark:focus:border-primary-500 rounded-3xl outline-none dark:text-white text-lg font-bold transition-all"
+                                  placeholder="What's the question?"
+                                />
+                                <div className="flex items-center gap-2 group">
+                                  <Globe size={12} className="text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+                                  <input
+                                    type="text"
+                                    value={pollForm.slug || ''}
+                                    onChange={(e) => setPollForm({ ...pollForm, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '') })}
+                                    className="flex-1 bg-transparent text-[10px] font-mono text-gray-400 outline-none p-1 border-b border-transparent focus:border-primary-500/30"
+                                    placeholder="poll-url-slug"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              <label className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary-600">
+                                <MessageSquare size={14} /> Description / Context
+                              </label>
+                              <textarea
+                                value={pollForm.description || ''}
+                                onChange={(e) => setPollForm({ ...pollForm, description: e.target.value })}
+                                className="w-full p-5 bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent focus:border-primary-600 dark:focus:border-primary-500 rounded-3xl outline-none dark:text-white min-h-[140px] font-medium leading-relaxed transition-all"
+                                placeholder="Explain the context of this poll..."
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-6">
+                              <div className="space-y-4">
+                                <label className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary-600">
+                                  <Tag size={14} /> Category
+                                </label>
+                                <select
+                                  value={pollForm.category || ''}
+                                  onChange={(e) => setPollForm({ ...pollForm, category: e.target.value as any })}
+                                  className="w-full p-4 bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent focus:border-primary-600 dark:focus:border-primary-500 rounded-[1.5rem] outline-none dark:text-white font-bold"
+                                >
+                                  <option value="election">Elections</option>
+                                  <option value="movies">Movies</option>
+                                  <option value="gadgets">Gadgets</option>
+                                  <option value="other">Others</option>
+                                </select>
+                              </div>
+                              <div className="space-y-4">
+                                <label className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary-600">
+                                  <ImageIcon size={14} /> Hero Image URL
+                                </label>
+                                <input
+                                  type="text"
+                                  value={pollForm.questionImage || ''}
+                                  onChange={(e) => setPollForm({ ...pollForm, questionImage: e.target.value })}
+                                  className="w-full p-4 bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent focus:border-primary-600 dark:focus:border-primary-500 rounded-[1.5rem] outline-none dark:text-white font-mono text-xs"
+                                  placeholder="https://..."
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right Column: Options */}
+                          <div className="space-y-6">
+                            <label className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary-600">
+                              <Users size={14} /> Option Configurations
+                            </label>
+                            <div className="space-y-4">
+                              {pollForm.options?.map((opt, idx) => (
+                                <div key={opt.id} className="p-6 border border-gray-100 dark:border-gray-700 rounded-[2rem] bg-gray-50/50 dark:bg-gray-900/30 flex gap-6 hover:shadow-lg hover:shadow-primary-600/5 transition-all group/opt">
+                                  <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-200 dark:bg-gray-800 flex-shrink-0 border border-gray-100 dark:border-gray-700 shadow-sm relative">
+                                    {opt.image ? (
+                                      <img src={opt.image} alt={opt.text} className="w-full h-full object-cover group-hover/opt:scale-110 transition-transform duration-500" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                        <ImageIcon size={24} />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 space-y-3">
+                                    <input
+                                      type="text"
+                                      value={opt.text}
+                                      onChange={(e) => {
+                                        const newOptions = [...pollForm.options!];
+                                        newOptions[idx] = { ...opt, text: e.target.value };
+                                        setPollForm({ ...pollForm, options: newOptions });
+                                      }}
+                                      className="w-full bg-transparent border-b-2 border-gray-200 dark:border-gray-700 focus:border-primary-600 dark:focus:border-primary-500 outline-none dark:text-white font-bold text-lg p-1 transition-all"
+                                      placeholder={`Option ${idx + 1}`}
+                                    />
+                                    <input
+                                      type="text"
+                                      value={opt.image || ''}
+                                      onChange={(e) => {
+                                        const newOptions = [...pollForm.options!];
+                                        newOptions[idx] = { ...opt, image: e.target.value };
+                                        setPollForm({ ...pollForm, options: newOptions });
+                                      }}
+                                      className="w-full p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none dark:text-white text-[10px] font-mono"
+                                      placeholder="Option Image URL"
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-8 border-t border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-900/10 flex justify-end gap-4">
+                        <button
+                          onClick={() => setEditingPoll(null)}
+                          className="px-8 py-4 rounded-2xl text-sm font-bold text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
+                        >
+                          Cancel Editing
+                        </button>
+                        <button
+                          onClick={handleSavePollEdit}
+                          disabled={isSaving}
+                          className="px-10 py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all flex items-center gap-3 shadow-xl shadow-primary-500/20 active:scale-95 disabled:opacity-50"
+                        >
+                          {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                          Commit Changes
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-gray-50 dark:bg-gray-700/50">
+                        <tr>
+                          <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Poll Question</th>
+                          <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                          <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Votes</th>
+                          <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {allPolls.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-12 text-center text-gray-500">No polls found</td>
+                          </tr>
+                        ) : (
+                          allPolls.map(poll => (
+                            <tr key={poll.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                              <td className="px-6 py-4">
+                                <p className="font-medium text-gray-900 dark:text-white">{poll.question}</p>
+                                <p className="text-xs text-gray-500">{poll.slug}</p>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 capitalize">
+                                  {poll.category}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${poll.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                                  poll.status === 'pending' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
+                                    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                  }`}>
+                                  {poll.status}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-500">
+                                {poll.totalVotes}
+                              </td>
+                              <td className="px-6 py-4 text-right space-x-2">
+                                {poll.status !== 'approved' && (
+                                  <button
+                                    onClick={() => handleApprovePoll(poll.id)}
+                                    className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                                    title="Approve"
+                                  >
+                                    <CheckCircle size={18} />
+                                  </button>
+                                )}
+                                {poll.status === 'pending' && (
+                                  <button
+                                    onClick={() => handleRejectPoll(poll.id)}
+                                    className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
+                                    title="Reject"
+                                  >
+                                    <X size={18} />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleEditPoll(poll)}
+                                  className="p-2 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit3 size={18} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeletePoll(poll.id)}
+                                  className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                                <Link
+                                  href={`/voting/${poll.slug}`}
+                                  target="_blank"
+                                  className="p-2 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/30 rounded-lg transition-colors inline-block"
+                                >
+                                  <ExternalLink size={18} />
+                                </Link>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+        </div>
+      </main>
+    </div>
   );
 };
 export default Admin;

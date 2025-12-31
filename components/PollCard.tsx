@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Poll, PollOption } from '../types';
 import { voteInPoll } from '../services/db';
 import { CheckCircle2, Circle, TrendingUp, Users, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 interface PollCardProps {
     poll: Poll;
@@ -40,128 +41,68 @@ const PollCard: React.FC<PollCardProps> = ({ poll, userId }) => {
     };
 
     const calculatePercentage = (votes: number) => {
-        if (localPoll.totalVotes === 0) return 0;
-        return Math.round((votes / localPoll.totalVotes) * 100);
+        if (poll.totalVotes === 0) return 0;
+        return Math.round((votes / poll.totalVotes) * 100);
     };
 
     return (
-        <div className="bg-[#161b22] border border-gray-800 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all hover:border-orange-500/30 flex flex-col group">
+        <Link
+            href={`/voting/${poll.slug || poll.id}`}
+            className="bg-white dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col group relative h-full"
+        >
             {/* Question Image */}
-            {localPoll.questionImage && (
+            {poll.questionImage && (
                 <div className="w-full h-48 relative overflow-hidden">
                     <img
-                        src={localPoll.questionImage}
-                        alt={localPoll.question}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        src={poll.questionImage}
+                        alt={poll.question}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2000ms]"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#161b22] to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 </div>
             )}
 
-            <div className="p-8 flex flex-col flex-grow">
-                <div className="flex items-center gap-2 mb-4">
-                    <span className="px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[10px] font-black uppercase tracking-widest">
-                        {localPoll.category}
+            <div className="p-6 flex flex-col flex-grow relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                    <span className="px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-[9px] font-bold uppercase tracking-wider">
+                        {poll.category}
                     </span>
+                    <TrendingUp size={14} className="text-primary-500/50" />
                 </div>
 
-                <h3 className="text-2xl md:text-3xl font-black text-white mb-3 tracking-tight leading-tight">
-                    {localPoll.question}
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight leading-snug line-clamp-2 group-hover:text-primary-600 transition-colors">
+                    {poll.question}
                 </h3>
 
-                {localPoll.description && (
-                    <p className="text-gray-500 font-medium text-sm mb-8 leading-relaxed">
-                        {localPoll.description}
-                    </p>
-                )}
-
-                <div className={`grid gap-4 mb-8 ${localPoll.options.some(o => o.image) ? 'grid-cols-1' : 'grid-cols-1'}`}>
-                    {localPoll.options.map((option) => (
+                <div className="flex-grow space-y-2 mb-6">
+                    {poll.options.slice(0, 3).map((option) => (
                         <div
                             key={option.id}
-                            onClick={() => !hasVoted && setSelectedOption(option.id)}
-                            className={`relative overflow-hidden rounded-[1.5rem] border-2 transition-all cursor-pointer ${hasVoted
-                                ? 'border-gray-800/50 cursor-default'
-                                : selectedOption === option.id
-                                    ? 'border-orange-500 bg-orange-500/5 shadow-lg shadow-orange-900/10'
-                                    : 'border-gray-800/50 hover:border-gray-700 bg-black/20'
-                                }`}
+                            className="relative overflow-hidden rounded-xl border border-gray-50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-900/50 p-3 flex items-center justify-between gap-3"
                         >
-                            {/* Progress Bar Background */}
-                            {hasVoted && (
-                                <div
-                                    className="absolute inset-0 bg-orange-500/10 transition-all duration-1000 ease-out"
-                                    style={{ width: `${calculatePercentage(option.votes)}%` }}
-                                />
-                            )}
-
-                            <div className="relative p-5 flex items-center gap-4 z-10">
-                                {/* Option Image if available */}
-                                {option.image && (
-                                    <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-gray-800 shadow-md">
-                                        <img src={option.image} alt={option.text} className="w-full h-full object-cover" />
-                                    </div>
-                                )}
-
-                                <div className="flex-1 flex justify-between items-center">
-                                    <div className="flex items-center gap-3">
-                                        {!hasVoted && (
-                                            selectedOption === option.id
-                                                ? <CheckCircle2 size={24} className="text-orange-500 flex-shrink-0" />
-                                                : <Circle size={24} className="text-gray-800 flex-shrink-0" />
-                                        )}
-                                        <span className={`font-bold text-lg md:text-xl ${hasVoted ? 'text-white' : 'text-gray-300'}`}>
-                                            {option.text}
-                                        </span>
-                                    </div>
-
-                                    {hasVoted && (
-                                        <div className="flex flex-col items-end">
-                                            <span className="text-orange-400 text-2xl font-black italic">
-                                                {calculatePercentage(option.votes)}%
-                                            </span>
-                                            <span className="text-gray-600 text-[10px] font-black uppercase tracking-tighter">
-                                                {option.votes} Votes
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">
+                                {option.text}
+                            </span>
+                            <div className="w-4 min-w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600" />
                         </div>
                     ))}
-                </div>
-
-                <div className="flex items-center justify-between mt-auto pt-6 border-t border-gray-800/50">
-                    <div className="flex items-center gap-6 text-gray-600 text-[10px] font-black uppercase tracking-[0.2em]">
-                        <span className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                            {localPoll.totalVotes} Total Votes
-                        </span>
-                    </div>
-
-                    {!hasVoted ? (
-                        <button
-                            onClick={handleVote}
-                            disabled={!selectedOption || loading}
-                            className={`px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all transform active:scale-95 ${!selectedOption || loading
-                                ? 'bg-gray-800/50 text-gray-700 cursor-not-allowed border border-gray-800'
-                                : 'bg-orange-600 text-white hover:bg-orange-500 shadow-2xl shadow-orange-900/30'
-                                }`}
-                        >
-                            {loading ? (
-                                <div className="flex items-center gap-2">
-                                    <Loader2 size={16} className="animate-spin" /> Verifying...
-                                </div>
-                            ) : 'Cast Your Vote'}
-                        </button>
-                    ) : (
-                        <div className="flex items-center gap-2 text-green-500 text-[10px] font-black uppercase tracking-widest">
-                            <CheckCircle2 size={16} /> Vote Secured
-                        </div>
+                    {poll.options.length > 3 && (
+                        <p className="text-[10px] font-bold text-gray-400 text-center uppercase tracking-widest">+ {poll.options.length - 3} more options</p>
                     )}
                 </div>
+
+                <div className="mt-auto pt-5 border-t border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest">
+                        <span className="flex items-center gap-2 text-gray-400">
+                            <Users size={12} /> {poll.totalVotes} Votes
+                        </span>
+                        <span className="text-primary-600 group-hover:translate-x-1 transition-transform">
+                            Vote Now &rarr;
+                        </span>
+                    </div>
+                </div>
             </div>
-        </div>
+        </Link>
     );
 };
 

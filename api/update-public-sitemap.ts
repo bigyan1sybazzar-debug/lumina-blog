@@ -95,9 +95,25 @@ async function generateSitemap() {
         smStream.write({
             url: `${post.slug}`,
             changefreq: 'daily',
-            priority: 0.9,
+            priority: 0.8,
             lastmod: toISODate(post.updatedAt),
         } as any);
+    });
+
+    // Add approved polls
+    const pollsSnapshot = await db.collection('polls').where('status', '==', 'approved').get();
+    console.log(`Found ${pollsSnapshot.size} polls to index`);
+
+    pollsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.slug) {
+            smStream.write({
+                url: `voting/${data.slug}`,
+                changefreq: 'daily',
+                priority: 0.7,
+                lastmod: toISODate(data.updatedAt || data.createdAt),
+            } as any);
+        }
     });
 
     smStream.end();

@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: UserRole;
   avatar: string;
+  status: 'approved' | 'pending' | 'rejected';
 }
 
 export interface BlogPost {
@@ -111,6 +112,7 @@ export interface PollOption {
 
 export interface Poll {
   id: string;
+  slug: string;
   question: string;
   description?: string;
   questionImage?: string;
@@ -121,4 +123,5 @@ export interface Poll {
   expiresAt?: string; // ISO string
   createdAt: string; // ISO string
   votedUserIds?: string[]; // To prevent duplicate voting
+  status: 'pending' | 'approved' | 'rejected';
 }

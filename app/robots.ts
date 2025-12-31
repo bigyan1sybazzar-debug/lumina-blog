@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
         rules: {
             userAgent: '*',
             allow: '/',
-            disallow: ['/admin/', '/login', '/signup', '/api/'],
+            disallow: ['/admin/', '/admin', '/login', '/signup', '/api/'],
         },
         sitemap: 'https://bigyann.com.np/sitemap.xml',
     };

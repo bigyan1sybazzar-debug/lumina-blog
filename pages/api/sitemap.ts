@@ -33,8 +33,18 @@ export default async function handler(req: any, res: any) {
 
     // Fetch published posts
     const snapshot = await db.collection('posts').where('status', '==', 'published').get();
-
     const posts = snapshot.docs.map(doc => {
+      const d = doc.data();
+      const date = d.updatedAt?.toDate?.() || d.createdAt?.toDate?.() || new Date();
+      return {
+        slug: (d.slug as string) || doc.id,
+        updatedAt: date.toISOString(),
+      };
+    });
+
+    // Fetch approved polls
+    const pollsSnapshot = await db.collection('polls').where('status', '==', 'approved').get();
+    const polls = pollsSnapshot.docs.map(doc => {
       const d = doc.data();
       const date = d.updatedAt?.toDate?.() || d.createdAt?.toDate?.() || new Date();
       return {
@@ -47,9 +57,16 @@ export default async function handler(req: any, res: any) {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${BASE_URL}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>${BASE_URL}/voting</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
   ${posts.map(p => `
   <url>
     <loc>${BASE_URL}/${p.slug}</loc>
+    <lastmod>${p.updatedAt.split('T')[0]}</lastmod>
+    <changefreq>weekly</changefreq><priority>0.8</priority>
+  </url>`).join('')}
+  ${polls.map(p => `
+  <url>
+    <loc>${BASE_URL}/voting/${p.slug}</loc>
     <lastmod>${p.updatedAt.split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq><priority>0.7</priority>
   </url>`).join('')}

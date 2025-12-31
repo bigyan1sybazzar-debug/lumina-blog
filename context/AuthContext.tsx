@@ -35,7 +35,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   id: firebaseUser.uid,
                   name: firebaseUser.displayName || 'User',
                   email: firebaseUser.email || '',
-                  role: 'user', // Default role
+                  role: 'user',
+                  status: firebaseUser.email === 'admin@lumina.blog' ? 'approved' : 'pending',
                   avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${firebaseUser.email}&background=random`
                 };
                 // Save to DB
@@ -69,27 +70,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithGoogle = async () => {
-        setIsLoading(true);
-        try {
-            // 👇 FIX: Check if googleProvider is null
-            if (!googleProvider) {
-                // This case should ideally only happen during server-side rendering (SSR), 
-                // but is a good safeguard.
-                throw new Error("Google Provider failed to initialize.");
-            }
-            
-            // TypeScript now knows googleProvider is a non-null AuthProvider
-            await auth.signInWithPopup(googleProvider); 
-            
-        } catch (error: any) {
-          setIsLoading(false);
-          console.error("Google Sign In Error:", error);
-          if (error.code === 'auth/operation-not-supported-in-this-environment') {
-            throw new Error('Google Sign-In is not supported in this environment (e.g. HTTP without localhost). Please use Email/Password.');
-          }
-          throw error;
-        }
-      };
+    setIsLoading(true);
+    try {
+      // 👇 FIX: Check if googleProvider is null
+      if (!googleProvider) {
+        // This case should ideally only happen during server-side rendering (SSR), 
+        // but is a good safeguard.
+        throw new Error("Google Provider failed to initialize.");
+      }
+
+      // TypeScript now knows googleProvider is a non-null AuthProvider
+      await auth.signInWithPopup(googleProvider);
+
+    } catch (error: any) {
+      setIsLoading(false);
+      console.error("Google Sign In Error:", error);
+      if (error.code === 'auth/operation-not-supported-in-this-environment') {
+        throw new Error('Google Sign-In is not supported in this environment (e.g. HTTP without localhost). Please use Email/Password.');
+      }
+      throw error;
+    }
+  };
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -99,12 +100,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!firebaseUser) return;
 
       const role = email === 'admin@lumina.blog' ? 'admin' : 'user';
-      
+
       const newUserProfile: User = {
         id: firebaseUser.uid,
         name,
         email,
         role,
+        status: role === 'admin' ? 'approved' : 'pending',
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       };
 
