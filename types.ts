@@ -101,3 +101,24 @@ export interface ChatSession {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface PollOption {
+  id: string;
+  text: string;
+  votes: number;
+  image?: string;
+}
+
+export interface Poll {
+  id: string;
+  question: string;
+  description?: string;
+  questionImage?: string;
+  category: 'election' | 'movies' | 'gadgets' | 'other';
+  options: PollOption[];
+  totalVotes: number;
+  allowMultiple?: boolean;
+  expiresAt?: string; // ISO string
+  createdAt: string; // ISO string
+  votedUserIds?: string[]; // To prevent duplicate voting
+}

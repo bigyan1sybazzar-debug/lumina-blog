@@ -2,7 +2,7 @@
 import { notifyIndexNow, notifyBingWebmaster } from './indexingService'; // Ensure this is imported
 import firebase from 'firebase/compat/app';
 import { db } from './firebase';
-import { BlogPost, Category, User, Comment, Review } from '../types';
+import { BlogPost, Category, User, Comment, Review, Poll, PollOption } from '../types';
 import { MOCK_POSTS, CATEGORIES } from '../constants';
 import { slugify } from '../lib/slugify'; // <-- NEW IMPORT
 
@@ -11,6 +11,8 @@ const USERS_COLLECTION = 'users';
 const CATEGORIES_COLLECTION = 'categories';
 const COMMENTS_COLLECTION = 'comments';
 const REVIEWS_COLLECTION = 'reviews';
+const POLLS_COLLECTION = 'polls';
+
 
 // Helper: client-side sort (avoids Firestore composite index requirement)
 const sortByDateDesc = (a: any, b: any) => {
@@ -608,4 +610,72 @@ export const seedDatabase = async () => {
   await Promise.all(promises);
   await generateAndUploadSitemap();
   console.log('Database seeded + sitemap generated');
+};
+
+// --- POLLS ---
+
+export const getPolls = async (category?: string): Promise<Poll[]> => {
+  try {
+    let query: firebase.firestore.Query = db.collection(POLLS_COLLECTION);
+    if (category && category !== 'all') {
+      query = query.where('category', '==', category);
+    }
+    const snapshot = await query.get();
+    const polls = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
+    return polls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error) {
+    console.error('Error fetching polls:', error);
+    return [];
+  }
+};
+
+export const voteInPoll = async (pollId: string, optionId: string, userId: string): Promise<boolean> => {
+  try {
+    const pollRef = db.collection(POLLS_COLLECTION).doc(pollId);
+    const doc = await pollRef.get();
+
+    if (!doc.exists) return false;
+
+    const poll = doc.data() as Poll;
+    const votedUserIds = poll.votedUserIds || [];
+
+    if (votedUserIds.includes(userId)) {
+      console.warn('User already voted in this poll');
+      return false;
+    }
+
+    const updatedOptions = poll.options.map(opt => {
+      if (opt.id === optionId) {
+        return { ...opt, votes: opt.votes + 1 };
+      }
+      return opt;
+    });
+
+    await pollRef.update({
+      options: updatedOptions,
+      totalVotes: firebase.firestore.FieldValue.increment(1),
+      votedUserIds: firebase.firestore.FieldValue.arrayUnion(userId)
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error voting in poll:', error);
+    return false;
+  }
+};
+
+export const createPoll = async (poll: Omit<Poll, 'id' | 'createdAt' | 'totalVotes' | 'votedUserIds'>) => {
+  try {
+    const newPoll = {
+      ...poll,
+      totalVotes: 0,
+      votedUserIds: [],
+      createdAt: new Date().toISOString(),
+    };
+    const docRef = await db.collection(POLLS_COLLECTION).add(newPoll);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating poll:', error);
+    throw error;
+  }
 };

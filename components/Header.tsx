@@ -15,6 +15,7 @@ const STANDARD_LINKS = [
   { name: 'Articles', path: '/categories' },
   { name: 'AI Chat', path: '/chat' },
   { name: 'About', path: '/about' },
+  { name: 'Voting', path: '/voting' },
   { name: 'Contact', path: '/contact' },
 ];
 
@@ -23,7 +24,8 @@ const TOOL_LINKS = [
   { name: 'My Phone Price', path: '/price/my-phone-price' },
   { name: 'EMI Calculator', path: '/tools/emi-calculator' },
   { name: 'Exchange Offer', path: '/tools/exchange-offer' },
-  { name: 'AI Humanizer', path: '/ai-humanizer' }, // NEW LINK ADDED
+  { name: 'AI Humanizer', path: '/ai-humanizer' },
+  { name: 'Electronic Voting', path: '/voting' },
 ];
 
 export const Header: React.FC = () => {
