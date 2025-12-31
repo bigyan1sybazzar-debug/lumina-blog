@@ -107,14 +107,22 @@ const VotingPage: React.FC = () => {
     );
 };
 
-const Feature = ({ icon, title, desc }: { icon: any, title: string, desc: string }) => (
-    <div className="p-8 bg-[#161b22] border border-gray-800 rounded-[2.5rem] hover:border-orange-500/30 transition-all group">
-        <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center text-orange-500 mb-6 group-hover:scale-110 transition-transform">
-            {icon}
+const Feature = ({ icon, title, desc, color }: { icon: any, title: string, desc: string, color: 'orange' | 'blue' | 'purple' }) => {
+    const colors = {
+        orange: 'from-orange-500 to-red-600',
+        blue: 'from-blue-500 to-indigo-600',
+        purple: 'from-purple-500 to-pink-600'
+    };
+
+    return (
+        <div className="p-10 bg-white dark:bg-[#161b22] border border-gray-100 dark:border-gray-800 rounded-[3rem] hover:border-orange-500/30 transition-all group shadow-xl hover:shadow-orange-900/5">
+            <div className={`w-16 h-16 bg-gradient-to-tr ${colors[color]} rounded-[1.5rem] flex items-center justify-center text-white mb-8 group-hover:scale-110 transition-transform shadow-lg`}>
+                {icon}
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-4 tracking-tight leading-tight">{title}</h3>
+            <p className="text-gray-500 dark:text-gray-400 font-medium leading-relaxed">{desc}</p>
         </div>
-        <h3 className="text-xl font-black text-white mb-3 tracking-tight">{title}</h3>
-        <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
-    </div>
-);
+    );
+};
 
 export default VotingPage;
