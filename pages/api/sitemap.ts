@@ -14,7 +14,8 @@ export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Only POST allowed' });
 
   const auth = req.headers.authorization || '';
-  if (auth !== `Bearer ${process.env.SITEMAP_SECRET}`) {
+  const SITEMAP_SECRET = process.env.SITEMAP_SECRET || 'bigyann-2025-super-secret-987654321';
+  if (auth !== `Bearer ${SITEMAP_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

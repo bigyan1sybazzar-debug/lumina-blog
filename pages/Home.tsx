@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { getPosts } from '../services/db';
-import { BlogPost } from '../types';
+import { getPosts, getPolls } from '../services/db';
+import { BlogPost, Poll } from '../types';
 import { PostCard } from '../components/PostCard';
-import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail, ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen } from 'lucide-react';
+import PollCard from '../components/PollCard';
+import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail, ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen, Vote } from 'lucide-react';
 import Link from 'next/link';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
@@ -16,10 +17,12 @@ export const Home: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [heroFeatured, setHeroFeatured] = useState<BlogPost[]>([]);
   const [editorPicks, setEditorPicks] = useState<BlogPost[]>([]);
+  const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const pollSliderRef = useRef<HTMLDivElement>(null);
 
   // REPLACE your fake isLoggedIn with real auth
   const { user, isLoading: authLoading } = useAuth();
@@ -73,6 +76,14 @@ export const Home: React.FC = () => {
       } catch (err) {
         console.error('Failed to load hero posts:', err);
         setHeroFeatured(sorted.slice(0, 3));
+      }
+
+      // Load Polls
+      try {
+        const pollsData = await getPolls(undefined, 'approved');
+        setPolls(pollsData.slice(0, 8)); // Latest 8 polls for slider
+      } catch (err) {
+        console.error('Failed to load polls:', err);
       }
 
       setLoading(false);
@@ -218,6 +229,8 @@ export const Home: React.FC = () => {
           </div>
         </section>
       )}
+
+
       {/* AI Tools Section */}
       <section className="py-8 md:py-10 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
         <div className="max-w-7xl mx-auto px-4">
@@ -343,6 +356,74 @@ export const Home: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Community Polls Section - Repositioned below AI Tools */}
+      {polls.length > 0 && (
+        <section className="py-12 md:py-16 px-4 bg-gray-50/50 dark:bg-gray-900/30">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-2 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-sm font-medium">
+                  <Vote className="w-4 h-4" />
+                  Voice Your Vision
+                </div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                  Community Polls
+                </h2>
+              </div>
+              <Link
+                href="/voting"
+                className="hidden md:flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors"
+              >
+                Launch Center
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (pollSliderRef.current) {
+                    pollSliderRef.current.scrollLeft -= pollSliderRef.current.clientWidth * 0.8;
+                  }
+                }}
+                className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-10 w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition-all"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() => {
+                  if (pollSliderRef.current) {
+                    pollSliderRef.current.scrollLeft += pollSliderRef.current.clientWidth * 0.8;
+                  }
+                }}
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-10 w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition-all"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+
+              <div
+                ref={pollSliderRef}
+                className="flex overflow-x-auto scrollbar-hide gap-6 pb-6 scroll-smooth"
+              >
+                {polls.map((poll) => (
+                  <div
+                    key={poll.id}
+                    className="flex-shrink-0 w-[calc(50%-1rem)] lg:w-[calc(25%-1.25rem)]"
+                  >
+                    <PollCard poll={poll} userId={user?.id} variant="minimal" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="md:hidden text-center mt-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-widest uppercase">← Swipe to Explore →</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Category Filter Section (Removed py- from parent, added py- to inner div) */}
       <section className="sticky top-16 md:top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 py-4">

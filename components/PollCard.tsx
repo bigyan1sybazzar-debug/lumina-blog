@@ -3,15 +3,16 @@
 import React, { useState } from 'react';
 import { Poll, PollOption } from '../types';
 import { voteInPoll } from '../services/db';
-import { CheckCircle2, Circle, TrendingUp, Users, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, TrendingUp, Users, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 interface PollCardProps {
     poll: Poll;
     userId?: string;
+    variant?: 'full' | 'minimal';
 }
 
-const PollCard: React.FC<PollCardProps> = ({ poll, userId }) => {
+const PollCard: React.FC<PollCardProps> = ({ poll, userId, variant = 'full' }) => {
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [hasVoted, setHasVoted] = useState<boolean>(poll.votedUserIds?.includes(userId || '') || false);
     const [loading, setLoading] = useState<boolean>(false);
@@ -44,6 +45,48 @@ const PollCard: React.FC<PollCardProps> = ({ poll, userId }) => {
         if (poll.totalVotes === 0) return 0;
         return Math.round((votes / poll.totalVotes) * 100);
     };
+
+    if (variant === 'minimal') {
+        const pollUrl = `/voting/${poll.slug || poll.id}`;
+        return (
+            <Link
+                href={pollUrl}
+                className="group flex flex-col h-full bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300 border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-500"
+            >
+                <div className="relative aspect-[16/9] overflow-hidden block">
+                    {poll.questionImage ? (
+                        <img
+                            src={poll.questionImage}
+                            alt={poll.question}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-900/10 flex items-center justify-center">
+                            <TrendingUp size={40} className="text-primary-500/20" />
+                        </div>
+                    )}
+                    {/* Category Tag */}
+                    <div className="absolute top-3 left-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold text-gray-900 dark:text-gray-100 shadow-md uppercase tracking-wider">
+                        {poll.category}
+                    </div>
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+
+                <div className="flex-1 p-4 flex flex-col">
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors line-clamp-2 text-lg">
+                        {poll.question}
+                    </h3>
+                    <div className="mt-auto pt-4 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
+                        <span className="flex items-center gap-1.5">
+                            <Users size={12} /> {poll.totalVotes} Votes
+                        </span>
+                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform text-primary-500" />
+                    </div>
+                </div>
+            </Link>
+        );
+    }
 
     return (
         <Link

@@ -840,9 +840,9 @@ export const Admin: React.FC = () => {
                       }`}
                   >
                     <CheckCircle size={18} className="mr-3" />
-                    Approvals {pendingPosts.length > 0 && (
+                    Approvals {(pendingPosts.length + allPolls.filter(p => p.status === 'pending').length) > 0 && (
                       <span className="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">
-                        {pendingPosts.length}
+                        {pendingPosts.length + allPolls.filter(p => p.status === 'pending').length}
                       </span>
                     )}
                   </button>
@@ -1682,75 +1682,127 @@ export const Admin: React.FC = () => {
               <div className="max-w-7xl mx-auto space-y-6">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pending Approvals</h1>
 
-                {pendingPosts.length > 0 ? (
-                  <div className="space-y-4">
-                    {pendingPosts.map(post => (
-                      <div key={post.slug} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                        <div className="flex flex-col md:flex-row justify-between gap-6">
-                          <div className="flex-1">
-                            <div className="flex items-start gap-4">
-                              <img
-                                src={post.coverImage}
-                                alt={post.title}
-                                className="w-24 h-24 rounded-lg object-cover"
-                              />
-                              <div>
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{post.title}</h3>
-                                <div className="flex items-center gap-3 mb-3">
-                                  <div className="flex items-center">
-                                    <img src={post.author.avatar} alt={post.author.name} className="w-5 h-5 rounded-full mr-2" />
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">{post.author.name}</span>
+                {/* --- PENDING POSTS SECTION --- */}
+                <div className="space-y-4">
+                  <h2 className="text-sm font-black uppercase tracking-widest text-primary-600 flex items-center gap-2">
+                    <FileText size={16} /> Pending Blog Posts ({pendingPosts.length})
+                  </h2>
+                  {pendingPosts.length > 0 ? (
+                    <div className="space-y-4">
+                      {pendingPosts.map(post => (
+                        <div key={post.slug} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                          <div className="flex flex-col md:flex-row justify-between gap-6">
+                            <div className="flex-1">
+                              <div className="flex items-start gap-4">
+                                <img
+                                  src={post.coverImage}
+                                  alt={post.title}
+                                  className="w-24 h-24 rounded-lg object-cover"
+                                />
+                                <div>
+                                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{post.title}</h3>
+                                  <div className="flex items-center gap-3 mb-3">
+                                    <div className="flex items-center">
+                                      <img src={post.author.avatar} alt={post.author.name} className="w-5 h-5 rounded-full mr-2" />
+                                      <span className="text-sm text-gray-600 dark:text-gray-400">{post.author.name}</span>
+                                    </div>
+                                    <span className="text-sm text-gray-500">•</span>
+                                    <span className="text-sm text-gray-500">{post.date}</span>
+                                    <span className="text-sm text-gray-500">•</span>
+                                    <span className="text-sm font-medium text-gray-900 dark:text-white">{post.category}</span>
                                   </div>
-                                  <span className="text-sm text-gray-500">•</span>
-                                  <span className="text-sm text-gray-500">{post.date}</span>
-                                  <span className="text-sm text-gray-500">•</span>
-                                  <span className="text-sm font-medium text-gray-900 dark:text-white">{post.category}</span>
-                                </div>
-                                <p className="text-gray-600 dark:text-gray-300 mb-3">{post.excerpt}</p>
-                                <div className="flex flex-wrap gap-2">
-                                  {post.tags?.map(tag => (
-                                    <span key={tag} className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
-                                      #{tag}
-                                    </span>
-                                  ))}
+                                  <p className="text-gray-600 dark:text-gray-300 mb-3">{post.excerpt}</p>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="flex flex-col gap-2 md:w-48">
-                            <button
-                              onClick={() => window.open(`/${post.slug}`, '_blank')}
-                              className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-                            >
-                              <Eye size={16} />
-                              Preview
-                            </button>
-                            <button
-                              onClick={() => handleApprovePost(post.id)}
-                              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                            >
-                              <CheckCircle size={16} />
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleRejectPost(post.id)}
-                              className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
-                            >
-                              <X size={16} />
-                              Reject
-                            </button>
+                            <div className="flex flex-col gap-2 md:w-48">
+                              <button
+                                onClick={() => window.open(`/${post.slug}`, '_blank')}
+                                className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 text-sm"
+                              >
+                                <Eye size={16} />
+                                Preview
+                              </button>
+                              <button
+                                onClick={() => handleApprovePost(post.id)}
+                                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                              >
+                                <CheckCircle size={16} />
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleRejectPost(post.id)}
+                                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                              >
+                                <X size={16} />
+                                Reject
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No pending approvals</h3>
-                    <p className="text-gray-500 dark:text-gray-400">All posts have been reviewed and approved.</p>
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-gray-500 italic text-sm">
+                      No pending posts.
+                    </div>
+                  )}
+                </div>
+
+                <hr className="border-gray-200 dark:border-gray-700 my-8" />
+
+                {/* --- PENDING POLLS SECTION --- */}
+                <div className="space-y-4">
+                  <h2 className="text-sm font-black uppercase tracking-widest text-primary-600 flex items-center gap-2">
+                    <Vote size={16} /> Pending Polls ({allPolls.filter(p => p.status === 'pending').length})
+                  </h2>
+                  {allPolls.filter(p => p.status === 'pending').length > 0 ? (
+                    <div className="space-y-4">
+                      {allPolls.filter(p => p.status === 'pending').map(poll => (
+                        <div key={poll.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                          <div className="flex flex-col md:flex-row justify-between gap-6">
+                            <div className="flex-1">
+                              <div className="flex items-start gap-4">
+                                <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-xl">
+                                  <Vote className="text-primary-600" size={32} />
+                                </div>
+                                <div>
+                                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{poll.question}</h3>
+                                  <div className="flex items-center gap-3 mb-3">
+                                    <span className="text-sm font-medium text-gray-900 dark:text-white capitalize bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">{poll.category}</span>
+                                    <span className="text-sm text-gray-500">•</span>
+                                    <span className="text-sm text-gray-500 font-mono">/{poll.slug}</span>
+                                  </div>
+                                  <p className="text-gray-600 dark:text-gray-300 mb-3">{poll.description}</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-2 md:w-48">
+                              <button
+                                onClick={() => handleApprovePoll(poll.id)}
+                                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                              >
+                                <CheckCircle size={16} />
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleRejectPoll(poll.id)}
+                                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                              >
+                                <X size={16} />
+                                Reject
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-gray-500 italic text-sm">
+                      No pending polls.
+                    </div>
+                  )}
+                </div>
               </div>
             )
           }
