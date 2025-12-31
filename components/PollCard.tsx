@@ -48,6 +48,16 @@ const PollCard: React.FC<PollCardProps> = ({ poll, userId, variant = 'full' }) =
 
     if (variant === 'minimal') {
         const pollUrl = `/voting/${poll.slug || poll.id}`;
+
+        // Find leading option
+        const leadingOption = [...poll.options].sort((a, b) => b.votes - a.votes)[0];
+        const leadingPercentage = poll.totalVotes > 0 ? Math.round((leadingOption.votes / poll.totalVotes) * 100) : 0;
+
+        // Truncate description to ~20 words
+        const truncatedDescription = poll.description
+            ? poll.description.split(' ').slice(0, 20).join(' ') + (poll.description.split(' ').length > 20 ? '...' : '')
+            : '';
+
         return (
             <Link
                 href={pollUrl}
@@ -69,19 +79,41 @@ const PollCard: React.FC<PollCardProps> = ({ poll, userId, variant = 'full' }) =
                     <div className="absolute top-3 left-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold text-gray-900 dark:text-gray-100 shadow-md uppercase tracking-wider">
                         {poll.category}
                     </div>
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
 
-                <div className="flex-1 p-4 flex flex-col">
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors line-clamp-2 text-lg">
+                <div className="flex-1 p-5 flex flex-col">
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors line-clamp-2 text-lg mb-2">
                         {poll.question}
                     </h3>
-                    <div className="mt-auto pt-4 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
-                        <span className="flex items-center gap-1.5">
-                            <Users size={12} /> {poll.totalVotes} Votes
-                        </span>
-                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform text-primary-500" />
+
+                    {truncatedDescription && (
+                        <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-4">
+                            {truncatedDescription}
+                        </p>
+                    )}
+
+                    {/* Leading Result Indicator */}
+                    <div className="mt-auto">
+                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 border border-gray-100 dark:border-gray-700/50">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Leading Result</span>
+                                <span className="text-primary-600 dark:text-primary-400 font-bold text-xs">{leadingPercentage}%</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate flex-1">{leadingOption.text}</span>
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            <span className="flex items-center gap-1.5">
+                                <Users size={12} /> {poll.totalVotes} Votes
+                            </span>
+                            <div className="flex items-center gap-1 text-primary-500 group-hover:gap-2 transition-all">
+                                <span>Vote Now</span>
+                                <ArrowRight size={14} />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </Link>
