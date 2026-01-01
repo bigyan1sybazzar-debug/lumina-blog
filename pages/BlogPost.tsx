@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import {
   getPostBySlug,
@@ -47,12 +48,13 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({ children }) => {
         >
           {h2Text}
         </h3>
-        <div className="text-center">
-          <img
+        <div className="text-center relative aspect-video my-6">
+          <Image
             src={imgSrc}
             alt={altText}
-            className="max-w-full h-auto rounded-xl shadow-xl mx-auto transition-transform duration-300 hover:scale-[1.01] border border-gray-100 dark:border-gray-800"
-            loading="lazy"
+            fill
+            className="object-contain rounded-xl shadow-xl transition-transform duration-300 hover:scale-[1.01] border border-gray-100 dark:border-gray-800"
+            sizes="(max-width: 768px) 100vw, 80vw"
           />
         </div>
       </div>
@@ -192,14 +194,13 @@ export const BlogPostPage: React.FC = () => {
 
       <div className="bg-white dark:bg-gray-900 min-h-screen pb-20">
         <div className="h-[50vh] w-full relative">
-          <img
+          <Image
             src={post.coverImage}
             alt={post.coverImageAlt || post.title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = `https://placehold.co/1200x600/1F2937/F3F4F6?text=${encodeURIComponent(post.title)}`;
-            }}
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent" />
           <div className="absolute bottom-0 w-full p-6 md:p-12">
@@ -212,11 +213,14 @@ export const BlogPostPage: React.FC = () => {
               </h1>
               <div className="flex flex-wrap items-center gap-6 text-gray-200 text-sm">
                 <div className="flex items-center gap-3">
-                  <img
-                    src={post.author.avatar}
-                    alt={post.author.name}
-                    className="w-10 h-10 rounded-full border-2 border-white/30 object-cover"
-                  />
+                  <div className="relative w-10 h-10">
+                    <Image
+                      src={post.author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&background=random`}
+                      alt={post.author.name}
+                      fill
+                      className="rounded-full border-2 border-white/30 object-cover"
+                    />
+                  </div>
                   <span className="font-medium">{post.author.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -325,13 +329,14 @@ export const BlogPostPage: React.FC = () => {
 
                 {/* AUTHOR BOX */}
                 <div className="mt-20 p-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl flex flex-col md:flex-row items-center md:items-start gap-8">
-                  <div className="relative">
-                    <img
-                      src={post.author.avatar}
+                  <div className="relative w-28 h-28 shrink-0">
+                    <Image
+                      src={post.author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&background=random`}
                       alt={post.author.name}
-                      className="w-28 h-28 rounded-2xl object-cover shadow-lg rotate-3 hover:rotate-0 transition-transform duration-300"
+                      fill
+                      className="rounded-2xl object-cover shadow-lg rotate-3 hover:rotate-0 transition-transform duration-300"
                     />
-                    <div className="absolute -bottom-2 -right-2 bg-primary-600 text-white p-1.5 rounded-lg shadow-lg">
+                    <div className="absolute -bottom-2 -right-2 bg-primary-600 text-white p-1.5 rounded-lg shadow-lg z-10">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                     </div>
                   </div>
@@ -345,15 +350,15 @@ export const BlogPostPage: React.FC = () => {
                     </p>
                   </div>
                 </div>
+              </div>
 
-                {/* COMMENTS SECTION */}
-                <div id="comments-section" className="mt-16">
-                  <div className="flex items-center gap-4 mb-8">
-                    <h2 className="text-2xl font-bold">Comment, Discuss and post Your Reviews</h2>
-                    <div className="h-px flex-grow bg-gray-200 dark:bg-gray-700"></div>
-                  </div>
-                  {post.id && <ReviewSection postId={post.id} />}
+              {/* COMMENTS SECTION */}
+              <div id="comments-section" className="mt-16">
+                <div className="flex items-center gap-4 mb-8">
+                  <h2 className="text-2xl font-bold">Comment, Discuss and post Your Reviews</h2>
+                  <div className="h-px flex-grow bg-gray-200 dark:bg-gray-700"></div>
                 </div>
+                {post.id && <ReviewSection postId={post.id} />}
               </div>
             </article>
 
@@ -370,11 +375,13 @@ export const BlogPostPage: React.FC = () => {
                       href={`/${rp.slug || rp.id}`}
                       className="block group transition-all hover:translate-x-1"
                     >
-                      <div className="aspect-video rounded-xl overflow-hidden mb-4 shadow-md">
-                        <img
+                      <div className="aspect-video relative rounded-xl overflow-hidden mb-4 shadow-md">
+                        <Image
                           src={rp.coverImage}
                           alt={rp.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-500"
+                          sizes="(max-width: 768px) 100vw, 25vw"
                         />
                       </div>
                       <h4 className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 line-clamp-2">

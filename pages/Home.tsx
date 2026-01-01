@@ -7,6 +7,7 @@ import { PostCard } from '../components/PostCard';
 import PollCard from '../components/PollCard';
 import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail, ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen, Vote } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 // Removed modular firestore imports for consistency with services/firebase.ts
 import { db } from '../services/firebase';
 
@@ -169,22 +170,31 @@ export const Home: React.FC = () => {
 
             <div className="relative">
               <div className="grid grid-cols-2 gap-4">
-                {heroFeatured.map((post, index) => (
-                  <div key={post.id} className={`relative rounded-2xl overflow-hidden group ${index === 0 ? 'col-span-2 aspect-[16/9]' : 'aspect-square'}`}>
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent z-10"></div>
-                    <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20">
-                      <span className="inline-block px-3 py-1 mb-2 rounded-full bg-white/20 backdrop-blur text-xs font-medium text-white">
-                        {post.category}
-                      </span>
-                      <h3 className="text-white font-bold text-sm md:text-base line-clamp-2">
-                        <Link href={`${post.slug ?? post.id}`} className="hover:text-primary-200 transition-colors">
-                          {post.title}
-                        </Link>
-                      </h3>
+                {heroFeatured.map((post, index) => {
+                  return (
+                    <div key={post.id} className={`relative rounded-2xl overflow-hidden group ${index === 0 ? 'col-span-2 aspect-[16/9]' : 'aspect-square'}`}>
+                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent z-10"></div>
+                      <Image
+                        src={post.coverImage}
+                        alt={post.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes={index === 0 ? "100vw" : "(max-width: 768px) 50vw, 33vw"}
+                        priority={index === 0}
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20">
+                        <span className="inline-block px-3 py-1 mb-2 rounded-full bg-white/20 backdrop-blur text-xs font-medium text-white">
+                          {post.category}
+                        </span>
+                        <h3 className="text-white font-bold text-sm md:text-base line-clamp-2">
+                          <Link href={`${post.slug ?? post.id}`} className="hover:text-primary-200 transition-colors">
+                            {post.title}
+                          </Link>
+                        </h3>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

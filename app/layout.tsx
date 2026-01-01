@@ -69,7 +69,14 @@ export const metadata: Metadata = {
     },
     alternates: {
         canonical: 'https://bigyann.com.np',
-    }
+    },
+    verification: {
+        google: 'your-google-verification-code', // Placeholder if needed
+        other: {
+            'msvalidate.01': '79CB5F780A824FA1F4111194F951AFB0',
+            'google-adsense-account': 'ca-pub-8714969386201280',
+        },
+    },
 };
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
