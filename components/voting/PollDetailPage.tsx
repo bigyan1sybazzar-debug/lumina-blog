@@ -8,8 +8,6 @@ import { Poll } from '../../types';
 import { auth } from '../../services/firebase';
 import { ChevronLeft, Loader2, Users, TrendingUp, CheckCircle2, Share2, Calendar, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { Header } from '../Header';
-import { Footer } from '../Footer';
 
 const PollDetailPage = () => {
     const params = useParams();
@@ -101,11 +99,6 @@ const PollDetailPage = () => {
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors">
-            {/* Note: In App Router, metadata is handled in the page.tsx file, 
-                but keeping Head here temporarily as a fallback until the wrapper is ready.
-                Actually, Head is ignored in app router, so I'll remove it. */}
-
-            <Header />
 
             <main className="flex-grow pb-20">
                 {/* Hero Section - Article Style aligned with Homepage */}
@@ -271,8 +264,6 @@ const PollDetailPage = () => {
                     </div>
                 </div>
             </main>
-
-            <Footer />
         </div>
     );
 };
