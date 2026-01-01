@@ -41,22 +41,53 @@ const checkPollSlugExists = async (slug: string): Promise<boolean> => {
 
 // --- POSTS ---
 
-export const getPosts = async (): Promise<BlogPost[]> => {
+export const getPosts = async (limitCount?: number): Promise<BlogPost[]> => {
   try {
-    const snapshot = await db.collection(POSTS_COLLECTION)
+    let query = db.collection(POSTS_COLLECTION)
       .where('status', '==', 'published')
-      .get();
+      .orderBy('createdAt', 'desc');
 
-    const posts = snapshot.docs.map(doc => ({
+    if (limitCount) {
+      query = query.limit(limitCount);
+    }
+
+    const snapshot = await query.get();
+
+    return snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as BlogPost));
+  } catch (error: any) {
+    // Check for "The query requires an index" error
+    if (error.code === 'failed-precondition' || (error.message && error.message.includes('requires an index'))) {
+      console.warn('Firestore index missing for optimized query. Falling back to client-side sort. Please create the index using the link in the console/Lighthouse report.');
 
-    return posts.sort(sortByDateDesc);
-  } catch (error) {
+      // Fallback: Fetch without sorting/limiting and sort client-side
+      try {
+        const snapshot = await db.collection(POSTS_COLLECTION)
+          .where('status', '==', 'published')
+          .get();
+
+        const posts = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as BlogPost));
+
+        const sorted = posts.sort(sortByDateDesc);
+        return limitCount ? sorted.slice(0, limitCount) : sorted;
+      } catch (fallbackError) {
+        console.error('Fallback fetch also failed:', fallbackError);
+        return [];
+      }
+    }
+
     console.error('Error fetching published posts:', error);
     return [];
   }
+};
+
+export const getLatestPosts = async (count: number = 10): Promise<BlogPost[]> => {
+  return getPosts(count);
 };
 
 export const getPendingPosts = async (): Promise<BlogPost[]> => {
@@ -644,6 +675,11 @@ export const getPolls = async (category?: string, status: Poll['status'] = 'appr
     if (isFeatured !== undefined) {
       query = query.where('isFeatured', '==', isFeatured);
     }
+
+    // Apply sorting in Firestore where possible (requires index)
+    // Falling back to manual sort for complex filters if index isn't present
+    // But for performance, it's better to limit the results
+    query = query.limit(40);
 
     const snapshot = await query.get();
     const polls = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));

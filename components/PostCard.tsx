@@ -82,7 +82,6 @@ export const PostCard: React.FC<PostCardProps> = ({
                 alt={post.author.name}
                 width={32}
                 height={32}
-                unoptimized
                 className="rounded-full border-2 border-white dark:border-gray-700"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
@@ -166,7 +165,6 @@ export const PostCard: React.FC<PostCardProps> = ({
               alt={post.author.name}
               width={32}
               height={32}
-              unoptimized
               className="rounded-full border-2 border-white dark:border-gray-700"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;

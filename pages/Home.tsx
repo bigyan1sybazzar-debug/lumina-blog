@@ -28,13 +28,14 @@ export const Home: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
 
   const fetchPosts = async (): Promise<BlogPost[]> => {
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 3; i++) {
       try {
-        const result = await getPosts();
+        // Only fetch the latest 24 posts for initial render instead of all
+        const result = await getPosts(24);
         return Array.isArray(result) ? result : [];
       } catch (err) {
-        if (i === 3) {
-          console.error('Failed to fetch posts after 4 attempts');
+        if (i === 2) {
+          console.error('Failed to fetch posts after 3 attempts');
           return [];
         }
         await new Promise(r => setTimeout(r, 1000 * (i + 1)));
@@ -60,7 +61,7 @@ export const Home: React.FC = () => {
           const ids: string[] = configDoc.data().postIds || [];
           const ordered: BlogPost[] = [];
           ids.forEach(id => {
-            const post = sorted.find(p => p.id === id);
+            const post = data.find(p => p.id === id);
             if (post) ordered.push(post);
           });
 
