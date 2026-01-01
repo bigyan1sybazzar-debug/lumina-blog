@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
-import PollList from '../components/PollList';
-import PollCreationForm from '../components/PollCreationForm';
+import PollList from '../PollList';
+import PollCreationForm from '../PollCreationForm';
 import { Vote, Zap, ShieldCheck, Sparkles, Plus, Send } from 'lucide-react';
-import { db, auth } from '../services/firebase';
+import { db, auth } from '../../services/firebase';
 import firebase from 'firebase/compat/app';
-import { Header } from '../components/Header';
-import { Footer } from '../components/Footer';
-import { useAuth } from '../context/AuthContext';
+import { Header } from '../Header';
+import { Footer } from '../Footer';
+import { useAuth } from '../../context/AuthContext';
 
 const VotingPage: React.FC = () => {
     const [user, setUser] = useState<firebase.User | null>(null);
@@ -30,51 +30,50 @@ const VotingPage: React.FC = () => {
 
     return (
         <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 transition-colors duration-500">
-            <Head>
-                <title>Bigyann Vote | Community Decisions & Trends</title>
-                <meta name="description" content="Vote on various categories like elections, movies, and gadgets on Bigyann. Share your opinion and watch real-time results." />
-            </Head>
-
             <Header />
 
-            <main className="flex-grow py-20 px-4">
-                <div className="max-w-7xl mx-auto relative z-10 px-6">
-                    {/* Hero Section */}
-                    {/* ... (rest of the content) */}
-                    <header className="text-center py-20 flex flex-col items-center relative overflow-hidden">
-                        {/* Background Glow */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary-600/10 blur-[120px] rounded-full pointer-events-none" />
+            <main className="flex-grow">
+                {/* Hero Section - Centered Layout with Homepage Fonts */}
+                <header className="text-center py-20 md:py-32 flex flex-col items-center relative overflow-hidden px-6">
+                    {/* Background Glow */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary-600/5 blur-[120px] rounded-full pointer-events-none" />
 
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-[10px] font-bold uppercase tracking-[0.4em] mb-8 shadow-sm">
-                            <Sparkles size={14} className="text-primary-600" /> COMMUNITY PULSE
-                        </div>
-                        <h1 className="text-5xl md:text-8xl font-black mb-8 tracking-tighter text-gray-900 dark:text-white leading-[0.9]">
-                            VOICE YOUR <br />
-                            <span className="bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent italic">
-                                VISION.
-                            </span>
-                        </h1>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-medium mb-8 shadow-sm relative z-10">
+                        <Sparkles size={16} className="text-primary-600" /> COMMUNITY PULSE
+                    </div>
 
-                        <div className="flex flex-wrap justify-center gap-6">
-                            <button
-                                onClick={() => user ? setShowCreateForm(!showCreateForm) : window.location.href = '/login'}
-                                className="px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm uppercase tracking-widest rounded-xl transition-all hover:shadow-xl hover:-translate-y-1 active:scale-95 flex items-center gap-3"
-                            >
-                                {showCreateForm ? 'Back to Feed' : 'Launch a Poll'}
-                                <Plus size={18} />
-                            </button>
-                        </div>
-                    </header>
+                    <h1 className="text-5xl md:text-8xl font-bold mb-8 tracking-tight text-gray-900 dark:text-white leading-[0.9] relative z-10">
+                        VOICE YOUR <br />
+                        <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent italic">
+                            VISION.
+                        </span>
+                    </h1>
 
+                    <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed mb-10 relative z-10">
+                        Join the community debate. Share your opinion on the latest tech, trends, and global topics. Your voice shapes the future.
+                    </p>
+
+                    <div className="flex flex-wrap justify-center gap-4 relative z-10">
+                        <button
+                            onClick={() => user ? setShowCreateForm(!showCreateForm) : window.location.href = '/login'}
+                            className="px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-95 flex items-center gap-3 shadow-xl shadow-primary-500/20"
+                        >
+                            {showCreateForm ? 'Back to Feed' : 'Launch a Poll'}
+                            <Plus size={18} />
+                        </button>
+                    </div>
+                </header>
+
+                <div className="max-w-7xl mx-auto relative z-10 px-6 mt-12">
                     {/* 1. Polls Explorer Section */}
                     {!showCreateForm && (
                         <section className="relative mb-32 transition-all duration-700">
                             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8">
                                 <div className="group">
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-[10px] font-bold uppercase tracking-widest mb-3">
-                                        <Vote size={12} /> LIVE FEED
+                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 text-xs font-bold uppercase tracking-wider mb-3">
+                                        <Vote size={14} /> ACTIVE DEBATES
                                     </div>
-                                    <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight">Active Polls</h2>
+                                    <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight">Participate Now</h2>
                                 </div>
                             </div>
 

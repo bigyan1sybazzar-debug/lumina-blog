@@ -80,8 +80,8 @@ export const Home: React.FC = () => {
 
       // Load Polls
       try {
-        const pollsData = await getPolls(undefined, 'approved');
-        setPolls(pollsData.slice(0, 8)); // Latest 8 polls for slider
+        const pollsData = await getPolls(undefined, 'approved', true);
+        setPolls(pollsData.slice(0, 8)); // Latest 8 featured polls for slider
       } catch (err) {
         console.error('Failed to load polls:', err);
       }
@@ -368,14 +368,14 @@ export const Home: React.FC = () => {
                   Voice Your Vision
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                  Community Polls
+                  Featured Community Polls
                 </h2>
               </div>
               <Link
                 href="/voting"
                 className="hidden md:flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors"
               >
-                Launch Center
+                View More
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -404,12 +404,12 @@ export const Home: React.FC = () => {
 
               <div
                 ref={pollSliderRef}
-                className="flex overflow-x-auto scrollbar-hide gap-6 pb-6 scroll-smooth"
+                className="flex overflow-x-auto scrollbar-hide gap-4 sm:gap-6 pb-6 scroll-smooth"
               >
                 {polls.map((poll) => (
                   <div
                     key={poll.id}
-                    className="flex-shrink-0 w-[calc(50%-1rem)] lg:w-[calc(25%-1.25rem)]"
+                    className="flex-shrink-0 w-[calc(46%-0.5rem)] md:w-[calc(50%-1rem)] lg:w-[calc(25%-1.25rem)]"
                   >
                     <PollCard poll={poll} userId={user?.id} variant="minimal" />
                   </div>

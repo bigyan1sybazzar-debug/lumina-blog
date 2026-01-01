@@ -76,13 +76,13 @@ const PollCard: React.FC<PollCardProps> = ({ poll, userId, variant = 'full' }) =
                         </div>
                     )}
                     {/* Category Tag */}
-                    <div className="absolute top-3 left-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-bold text-gray-900 dark:text-gray-100 shadow-md uppercase tracking-wider">
+                    <div className="absolute top-3 left-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold text-gray-900 dark:text-gray-100 shadow-md">
                         {poll.category}
                     </div>
                 </div>
 
-                <div className="flex-1 p-5 flex flex-col">
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100 leading-tight group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors line-clamp-2 text-lg mb-2">
+                <div className="flex-1 p-3 sm:p-5 flex flex-col">
+                    <h3 className="font-bold text-gray-900 dark:text-white leading-tight group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors line-clamp-2 text-sm sm:text-lg mb-2 min-h-[2.5rem] sm:min-h-[3.5rem]">
                         {poll.question}
                     </h3>
 
@@ -94,24 +94,24 @@ const PollCard: React.FC<PollCardProps> = ({ poll, userId, variant = 'full' }) =
 
                     {/* Leading Result Indicator */}
                     <div className="mt-auto">
-                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-3 border border-gray-100 dark:border-gray-700/50">
-                            <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Leading Result</span>
-                                <span className="text-primary-600 dark:text-primary-400 font-bold text-xs">{leadingPercentage}%</span>
+                        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 sm:p-4 border border-gray-100 dark:border-gray-700/50">
+                            <div className="flex items-center justify-between gap-2 mb-1.5 sm:mb-2">
+                                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-nowrap">Leader</span>
+                                <span className="text-primary-600 dark:text-primary-400 font-bold text-xs sm:text-sm whitespace-nowrap">{leadingPercentage}%</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-gray-900 dark:text-gray-100 truncate flex-1">{leadingOption.text}</span>
-                                <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                                <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate flex-1 min-w-0">{leadingOption.text}</span>
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] flex-shrink-0"></div>
                             </div>
                         </div>
 
-                        <div className="mt-4 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
-                            <span className="flex items-center gap-1.5">
-                                <Users size={12} /> {poll.totalVotes} Votes
+                        <div className="mt-4 flex items-center justify-between text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400">
+                            <span className="flex items-center gap-1.5 whitespace-nowrap">
+                                <Users size={12} className="sm:w-3.5 sm:h-3.5" /> {poll.totalVotes}
                             </span>
-                            <div className="flex items-center gap-1 text-primary-500 group-hover:gap-2 transition-all">
-                                <span>Vote Now</span>
-                                <ArrowRight size={14} />
+                            <div className="flex items-center gap-1 text-primary-500 group-hover:gap-2 transition-all whitespace-nowrap">
+                                <span className="font-bold">Vote</span>
+                                <ArrowRight size={14} className="sm:w-4 sm:h-4" />
                             </div>
                         </div>
                     </div>
@@ -139,7 +139,7 @@ const PollCard: React.FC<PollCardProps> = ({ poll, userId, variant = 'full' }) =
 
             <div className="p-6 flex flex-col flex-grow relative z-10">
                 <div className="flex items-center justify-between mb-4">
-                    <span className="px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-[9px] font-bold uppercase tracking-wider">
+                    <span className="px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-xs font-bold uppercase tracking-wider">
                         {poll.category}
                     </span>
                     <TrendingUp size={14} className="text-primary-500/50" />
@@ -162,14 +162,14 @@ const PollCard: React.FC<PollCardProps> = ({ poll, userId, variant = 'full' }) =
                         </div>
                     ))}
                     {poll.options.length > 3 && (
-                        <p className="text-[10px] font-bold text-gray-400 text-center uppercase tracking-widest">+ {poll.options.length - 3} more options</p>
+                        <p className="text-xs font-bold text-gray-400 text-center uppercase tracking-wider items-center flex justify-center gap-1.5">+ {poll.options.length - 3} more options</p>
                     )}
                 </div>
 
                 <div className="mt-auto pt-5 border-t border-gray-100 dark:border-gray-700">
-                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest">
+                    <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
                         <span className="flex items-center gap-2 text-gray-400">
-                            <Users size={12} /> {poll.totalVotes} Votes
+                            <Users size={12} /> {poll.totalVotes.toLocaleString()} Votes
                         </span>
                         <span className="text-primary-600 group-hover:translate-x-1 transition-transform">
                             Vote Now &rarr;

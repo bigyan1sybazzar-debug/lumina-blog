@@ -124,4 +124,6 @@ export interface Poll {
   createdAt: string; // ISO string
   votedUserIds?: string[]; // To prevent duplicate voting
   status: 'pending' | 'approved' | 'rejected';
+  isFeatured?: boolean;
+  featuredOrder?: number;
 }

@@ -665,6 +665,17 @@ export const Admin: React.FC = () => {
     }
   };
 
+  const handleToggleFeaturedPoll = async (pollId: string, currentStatus: boolean) => {
+    try {
+      await updatePoll(pollId, { isFeatured: !currentStatus });
+      alert(`Poll ${!currentStatus ? 'marked as featured' : 'removed from featured'}!`);
+      refreshData();
+    } catch (error) {
+      alert('Failed to update featured status.');
+      console.error(error);
+    }
+  };
+
   // Reviews & Comments Handlers
   const handleDeleteComment = async (commentId: string) => {
     if (confirm('Are you sure you want to delete this comment?')) {
@@ -2936,6 +2947,35 @@ export const Admin: React.FC = () => {
                                 />
                               </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-6">
+                              <div className="space-y-4">
+                                <label className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary-600">
+                                  <Sparkles size={14} /> Featured Status
+                                </label>
+                                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-[1.5rem]">
+                                  <button
+                                    onClick={() => setPollForm({ ...pollForm, isFeatured: !pollForm.isFeatured })}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${pollForm.isFeatured ? 'bg-yellow-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'}`}
+                                  >
+                                    {pollForm.isFeatured ? 'Featured' : 'Not Featured'}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="space-y-4">
+                                <label className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary-600">
+                                  <TrendingUp size={14} /> Featured Order
+                                </label>
+                                <input
+                                  type="number"
+                                  value={pollForm.featuredOrder || ''}
+                                  onChange={(e) => setPollForm({ ...pollForm, featuredOrder: parseInt(e.target.value) || 0 })}
+                                  className="w-full p-4 bg-gray-50 dark:bg-gray-900/50 border-2 border-transparent focus:border-primary-600 dark:focus:border-primary-500 rounded-[1.5rem] outline-none dark:text-white font-bold"
+                                  placeholder="e.g. 1"
+                                  disabled={!pollForm.isFeatured}
+                                />
+                              </div>
+                            </div>
                           </div>
 
                           {/* Right Column: Options */}
@@ -3014,6 +3054,7 @@ export const Admin: React.FC = () => {
                           <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Poll Question</th>
                           <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
                           <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Featured / Order</th>
                           <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Votes</th>
                           <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                         </tr>
@@ -3045,6 +3086,22 @@ export const Admin: React.FC = () => {
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-500">
                                 {poll.totalVotes}
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleToggleFeaturedPoll(poll.id, !!poll.isFeatured)}
+                                    className={`p-1 rounded-lg transition-colors ${poll.isFeatured ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                                    title={poll.isFeatured ? "Unfeature" : "Feature"}
+                                  >
+                                    <Sparkles size={18} fill={poll.isFeatured ? "currentColor" : "none"} />
+                                  </button>
+                                  {poll.isFeatured && (
+                                    <span className="text-xs font-bold text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                                      #{poll.featuredOrder || 0}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-6 py-4 text-right space-x-2">
                                 {poll.status !== 'approved' && (

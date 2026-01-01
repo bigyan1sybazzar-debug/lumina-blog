@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Merriweather } from 'next/font/google';
 import './globals.css';
 import { Providers } from '../components/Providers';
-import { Header } from '../components/Header';
-import { Footer } from '../components/Footer';
+
 import { Analytics } from '../components/Analytics';
 import Script from 'next/script';
 
@@ -96,7 +95,7 @@ export default function RootLayout({
         <html lang="en" className={`${inter.variable} ${merriweather.variable}`}>
             <body className="flex flex-col min-h-screen">
                 <Providers>
-                    <Header />
+
                     <Analytics />
                     <Script src="https://js.puter.com/v2/" strategy="lazyOnload" />
                     <Script
@@ -112,7 +111,7 @@ export default function RootLayout({
                     <main className="flex-grow">
                         {children}
                     </main>
-                    <Footer />
+
                 </Providers>
             </body>
         </html>

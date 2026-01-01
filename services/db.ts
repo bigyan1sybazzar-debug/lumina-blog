@@ -628,7 +628,7 @@ export const seedDatabase = async () => {
 
 // --- POLLS ---
 
-export const getPolls = async (category?: string, status: Poll['status'] = 'approved'): Promise<Poll[]> => {
+export const getPolls = async (category?: string, status: Poll['status'] = 'approved', isFeatured?: boolean): Promise<Poll[]> => {
   try {
     let query: firebase.firestore.Query = db.collection(POLLS_COLLECTION);
 
@@ -640,9 +640,23 @@ export const getPolls = async (category?: string, status: Poll['status'] = 'appr
     if (category && category !== 'all') {
       query = query.where('category', '==', category);
     }
+
+    if (isFeatured !== undefined) {
+      query = query.where('isFeatured', '==', isFeatured);
+    }
+
     const snapshot = await query.get();
     const polls = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
-    return polls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // Sort logic
+    return polls.sort((a, b) => {
+      if (isFeatured) {
+        const orderA = a.featuredOrder ?? 999;
+        const orderB = b.featuredOrder ?? 999;
+        if (orderA !== orderB) return orderA - orderB;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
   } catch (error) {
     console.error('Error fetching polls:', error);
     return [];
