@@ -45,8 +45,10 @@ export const Header: React.FC = () => {
     setIsToolsDropdownOpen(false); // Close tools dropdown on route change
   }, [pathname]);
 
-  // Combined links for mobile menu
-  const mobileLinks = [...STANDARD_LINKS, ...TOOL_LINKS];
+  // Combined links for mobile menu (filtered to remove duplicate paths)
+  const mobileLinks = [...STANDARD_LINKS, ...TOOL_LINKS].filter((link, index, self) =>
+    index === self.findIndex((l) => l.path === link.path)
+  );
 
   const isActive = (path: string) => pathname === path;
 

@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { BlogPost, User, Category, Comment, Review, Poll } from '../types';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+// Removed modular firestore imports for consistency with services/firebase.ts
 import { db } from '../services/firebase';
 import { getAllChats } from '../services/chatService';
 import { ChatSession } from '../types';
@@ -145,9 +145,9 @@ export const Admin: React.FC = () => {
   // === Load & Save Featured Posts ===
   const loadFeaturedPosts = async () => {
     try {
-      const configDoc = await getDoc(doc(db, 'config', 'featured'));
-      if (configDoc.exists()) {
-        const ids: string[] = configDoc.data().postIds || [];
+      const configDoc = await db.collection('config').doc('featured').get();
+      if (configDoc.exists) {
+        const ids: string[] = configDoc.data()?.postIds || [];
         const ordered: BlogPost[] = [];
         ids.forEach(id => {
           const post = allPosts.find(p => p.id === id);
@@ -167,7 +167,7 @@ export const Admin: React.FC = () => {
   const saveFeaturedOrder = async () => {
     setIsSavingFeatured(true);
     try {
-      await setDoc(doc(db, 'config', 'featured'), {
+      await db.collection('config').doc('featured').set({
         postIds: featuredPosts.map(p => p.id),
         updatedAt: new Date().toISOString()
       });
@@ -295,21 +295,21 @@ export const Admin: React.FC = () => {
     // Only listen if we are admin
     if (!isAdmin) return;
 
-    const unsub = onSnapshot(doc(db, 'config', 'autopilot'),
+    const unsub = db.collection('config').doc('autopilot').onSnapshot(
       (docSnap) => {
-        if (docSnap.exists()) {
+        if (docSnap.exists) {
           const data = docSnap.data();
-          setIsAutoPilotOn(!!data.isEnabled);
-          const logs = data.logs || [];
-          setAutoLogs([...logs].reverse());
+          if (data) {
+            setIsAutoPilotOn(!!data.isEnabled);
+            const logs = data.logs || [];
+            setAutoLogs([...logs].reverse());
+          }
         }
       },
       (error) => {
         console.error("Firestore listener error:", error);
-        // If permission denied, likely rules issue
         if (error.code === 'permission-denied') {
           console.error("Error: Permission denied. Check Firestore Rules.");
-          // alert("Error: Permission denied. Check Firestore Rules."); 
         }
       }
     );
@@ -320,7 +320,7 @@ export const Admin: React.FC = () => {
   const toggleAutoPilot = async () => {
     try {
       const newState = !isAutoPilotOn;
-      await setDoc(doc(db, 'config', 'autopilot'), {
+      await db.collection('config').doc('autopilot').set({
         isEnabled: newState,
         // Initialize logs if not present
         updatedAt: new Date().toISOString()
@@ -994,7 +994,7 @@ export const Admin: React.FC = () => {
                       <div className="space-y-4">
                         {featuredPosts.map((post, index) => (
                           <div
-                            key={post.slug}
+                            key={post.id}
                             draggable
                             onDragStart={(e) => (e.dataTransfer as any).setData('index', index)}
                             onDragOver={(e) => e.preventDefault()}
@@ -1044,7 +1044,7 @@ export const Admin: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
                       {availablePosts.map(post => (
                         <div
-                          key={post.slug}
+                          key={post.id}
                           className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer group"
                           onClick={() => {
                             if (featuredPosts.length >= 3) {
@@ -1053,6 +1053,8 @@ export const Admin: React.FC = () => {
                             }
                             // 1. Add to featured
                             setFeaturedPosts([...featuredPosts, post]);
+                            // 2. Remove from available
+                            setAvailablePosts(availablePosts.filter(p => p.id !== post.id));
                           }}
                         >
                           <Plus className="text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -1316,7 +1318,7 @@ export const Admin: React.FC = () => {
                       </thead>
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                         {myPosts.slice(0, 5).map(post => (
-                          <tr key={post.slug} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                             <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white max-w-xs truncate">{post.title}</td>
                             <td className="py-3 px-4 text-sm text-gray-500">{post.date}</td>
                             <td className="py-3 px-4">
@@ -1701,7 +1703,7 @@ export const Admin: React.FC = () => {
                   {pendingPosts.length > 0 ? (
                     <div className="space-y-4">
                       {pendingPosts.map(post => (
-                        <div key={post.slug} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
                           <div className="flex flex-col md:flex-row justify-between gap-6">
                             <div className="flex-1">
                               <div className="flex items-start gap-4">

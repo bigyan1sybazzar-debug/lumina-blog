@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { getPosts, getPolls } from '../services/db';
+import { getPosts, getPolls, getPostById } from '../services/db';
 import { BlogPost, Poll } from '../types';
 import { PostCard } from '../components/PostCard';
 import PollCard from '../components/PollCard';
 import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail, ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen, Vote } from 'lucide-react';
 import Link from 'next/link';
-import { doc, getDoc } from 'firebase/firestore';
+// Removed modular firestore imports for consistency with services/firebase.ts
 import { db } from '../services/firebase';
 
 import { Calculator, RefreshCw } from 'lucide-react';
@@ -56,20 +56,31 @@ export const Home: React.FC = () => {
 
       // Load Admin-selected Hero Posts
       try {
-        const configDoc = await getDoc(doc(db, 'config', 'featured'));
-        if (configDoc.exists()) {
-          const ids: string[] = configDoc.data().postIds || [];
+        const configDoc = await db.collection('config').doc('featured').get();
+        if (configDoc.exists) {
+          const ids: string[] = configDoc.data()?.postIds || [];
           const ordered: BlogPost[] = [];
-          ids.forEach(id => {
-            const post = data.find(p => p.id === id);
-            if (post) ordered.push(post);
-          });
 
-          if (ordered.length >= 3) {
-            setHeroFeatured(ordered.slice(0, 3));
+          // Fetch each featured post specifically if not already in 'data'
+          await Promise.all(ids.map(async (id) => {
+            let post: BlogPost | null | undefined = data.find(p => p.id === id);
+            if (!post) {
+              // Fetch individually if older than the recent 24
+              post = await getPostById(id);
+            }
+            if (post) ordered.push(post);
+          }));
+
+          // Re-sort 'ordered' to match the specific 'ids' order (since Promise.all might finish out of order)
+          const finalOrdered = ids
+            .map(id => ordered.find(p => p.id === id))
+            .filter((p): p is BlogPost => p !== undefined && p !== null);
+
+          if (finalOrdered.length >= 3) {
+            setHeroFeatured(finalOrdered.slice(0, 3));
           } else {
-            const remaining = sorted.filter(p => !ids.includes(p.id)).slice(0, 3 - ordered.length);
-            setHeroFeatured([...ordered, ...remaining]);
+            const remaining = sorted.filter(p => !ids.includes(p.id)).slice(0, 3 - finalOrdered.length);
+            setHeroFeatured([...finalOrdered, ...remaining]);
           }
         } else {
           setHeroFeatured(sorted.slice(0, 3));

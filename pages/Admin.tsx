@@ -790,7 +790,7 @@ export const Admin: React.FC = () => {
                     <div className="space-y-4">
                       {featuredPosts.map((post, index) => (
                         <div
-                          key={post.slug}
+                          key={post.id}
                           draggable
                           onDragStart={(e) => (e.dataTransfer as any).setData('index', index)}
                           onDragOver={(e) => e.preventDefault()}
@@ -840,11 +840,11 @@ export const Admin: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
                     {availablePosts.map(post => (
                       <div
-                        key={post.slug}
+                        key={post.id}
                         onClick={() => {
                           if (featuredPosts.length < 3) {
                             setFeaturedPosts([...featuredPosts, post]);
-                            setAvailablePosts(availablePosts.filter(p => p.id !== post.slug));
+                            setAvailablePosts(availablePosts.filter(p => p.id !== post.id));
                           } else {
                             alert('Maximum 3 featured posts allowed');
                           }
@@ -1019,7 +1019,7 @@ export const Admin: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {myPosts.slice(0, 5).map(post => (
-                        <tr key={post.slug} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                           <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white max-w-xs truncate">{post.title}</td>
                           <td className="py-3 px-4 text-sm text-gray-500">{post.date}</td>
                           <td className="py-3 px-4">
@@ -1278,7 +1278,7 @@ export const Admin: React.FC = () => {
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredPosts.map(post => (
-                        <tr key={post.slug} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <img
@@ -1370,7 +1370,7 @@ export const Admin: React.FC = () => {
               {pendingPosts.length > 0 ? (
                 <div className="space-y-4">
                   {pendingPosts.map(post => (
-                    <div key={post.slug} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
                       <div className="flex flex-col md:flex-row justify-between gap-6">
                         <div className="flex-1">
                           <div className="flex items-start gap-4">
