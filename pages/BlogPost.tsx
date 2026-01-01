@@ -158,7 +158,7 @@ export const BlogPostPage: React.FC = () => {
 
         <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
           <Loader2 className="animate-spin mb-4" size={32} />
-          <p>Illuminating content...</p>
+          <p>Loading content...</p>
         </div>
       </>
     );
