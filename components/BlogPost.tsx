@@ -12,8 +12,8 @@ import {
   addComment,
   toggleLikePost,
 } from '../services/db';
-import { BlogPost, Comment } from '../types';
-import { Calendar, Clock, Share2, MessageSquare, Heart, Loader2 } from 'lucide-react';
+import { BlogPost, BlogPostComment } from '../types';
+import { Calendar, Clock, Share2, MessageSquare, Heart, Loader2, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import dynamic from 'next/dynamic';
 
@@ -86,7 +86,7 @@ export const BlogPostPage: React.FC = () => {
 
   const [post, setPost] = useState<BlogPost | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<BlogPostComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -223,17 +223,17 @@ export const BlogPostPage: React.FC = () => {
                 {post.title}
               </h1>
               <div className="flex flex-wrap items-center gap-6 text-gray-200 text-sm">
-                <div className="flex items-center gap-3">
+                <Link href={`/u/${post.author.id}`} className="flex items-center gap-3 hover:text-primary-400 transition-colors group">
                   <div className="relative w-10 h-10">
                     <Image
                       src={post.author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&background=random`}
                       alt={post.author.name}
                       fill
-                      className="rounded-full border-2 border-white/30 object-cover"
+                      className="rounded-full border-2 border-white/30 object-cover group-hover:border-primary-500 transition-colors"
                     />
                   </div>
                   <span className="font-medium">{post.author.name}</span>
-                </div>
+                </Link>
                 <div className="flex items-center gap-2">
                   <Calendar size={16} />
                   {formattedDate}
@@ -341,25 +341,32 @@ export const BlogPostPage: React.FC = () => {
 
                 {/* AUTHOR BOX */}
                 <div className="mt-20 p-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl flex flex-col md:flex-row items-center md:items-start gap-8">
-                  <div className="relative w-28 h-28 shrink-0">
+                  <Link href={`/u/${post.author.id}`} className="relative w-28 h-28 shrink-0 group">
                     <Image
                       src={post.author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&background=random`}
                       alt={post.author.name}
                       fill
-                      className="rounded-2xl object-cover shadow-lg rotate-3 hover:rotate-0 transition-transform duration-300"
+                      className="rounded-2xl object-cover shadow-lg rotate-3 group-hover:rotate-0 transition-all duration-300 border-2 border-transparent group-hover:border-primary-500"
                     />
-                    <div className="absolute -bottom-2 -right-2 bg-primary-600 text-white p-1.5 rounded-lg shadow-lg z-10">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                    <div className="absolute -bottom-2 -right-2 bg-primary-600 text-white p-1.5 rounded-lg shadow-lg z-10 scale-0 group-hover:scale-110 transition-transform">
+                      <UserPlus size={16} />
                     </div>
-                  </div>
-                  <div className="text-center md:text-left">
-                    <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">
-                      {post.author.name}
-                    </h3>
+                  </Link>
+                  <div className="text-center md:text-left flex-1">
+                    <Link href={`/u/${post.author.id}`} className="hover:text-primary-600 transition-colors">
+                      <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2 underline decoration-primary-500/30">
+                        {post.author.name}
+                      </h3>
+                    </Link>
                     <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-                      Tech enthusiast sharing insights on modern web technologies, AI,
-                      and the future of digital experiences on <strong>Bigyann</strong>.
+                      Tech enthusiast sharing insights on Bigyann. View full profile to connect and chat!
                     </p>
+                    <Link
+                      href={`/u/${post.author.id}`}
+                      className="inline-flex items-center text-primary-600 font-bold hover:gap-2 transition-all"
+                    >
+                      View Profile <Clock size={16} className="ml-1 rotate-90" />
+                    </Link>
                   </div>
                 </div>
 

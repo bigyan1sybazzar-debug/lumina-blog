@@ -7,7 +7,7 @@ import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogIm
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { BlogPost, User, Category } from '../types';
+import { BlogPost, User, Category, BlogPostComment, BlogPostReview } from '../types';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 

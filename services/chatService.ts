@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { ChatMessage, ChatSession } from '../types';
+import { ChatMessage, ChatSession, DirectMessage, FriendRequest, User, Friend } from '../types';
 import firebase from 'firebase/compat/app';
 
 const COLLECTION_NAME = 'chats';
@@ -119,3 +119,108 @@ export const getAllChats = async (): Promise<ChatSession[]> => {
         return [];
     }
 }
+
+// --- DIRECT MESSAGING ---
+
+export const sendDirectMessage = async (senderId: string, receiverId: string, content: string) => {
+    try {
+        const chatId = [senderId, receiverId].sort().join('_');
+        const messageData: Partial<DirectMessage> = {
+            senderId,
+            receiverId,
+            content,
+            timestamp: new Date().toISOString(),
+            read: false,
+            chatId,
+            participants: [senderId, receiverId],
+        };
+        await db.collection('direct_messages').add(messageData);
+    } catch (error) {
+        console.error("Error sending direct message:", error);
+        throw error;
+    }
+};
+
+export const listenToDirectMessages = (userId1: string, userId2: string, callback: (messages: DirectMessage[]) => void) => {
+    // Firestore query for messages between two users (either A->B or B->A)
+    // We filter locally or use a combined key for simplicity
+    const chatId = [userId1, userId2].sort().join('_');
+    const myId = userId1; // Assuming userId1 is the local user usually
+
+    return db.collection('direct_messages')
+        .where('chatId', '==', chatId) // We'll add this field for easier querying
+        .where('participants', 'array-contains', myId)
+        .orderBy('timestamp', 'asc')
+        .onSnapshot(snapshot => {
+            const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DirectMessage));
+            callback(messages);
+        }, error => {
+            console.error("Firestore Snapshot Error (direct_messages):", error);
+        });
+};
+
+// --- FRIEND MANAGEMENT ---
+
+export const sendFriendRequest = async (sender: User, toId: string) => {
+    try {
+        // Check if already friends or request pending
+        const existing = await db.collection('friendRequests')
+            .where('fromId', 'in', [sender.id, toId])
+            .where('toId', 'in', [sender.id, toId])
+            .get();
+
+        if (!existing.empty) {
+            throw new Error("Friend request already exists or you are already friends");
+        }
+
+        const request: Partial<FriendRequest> = {
+            fromId: sender.id,
+            senderName: sender.name,
+            senderAvatar: sender.avatar,
+            toId: toId,
+            status: 'pending',
+            timestamp: new Date().toISOString(),
+        };
+        await db.collection('friendRequests').add(request);
+    } catch (error) {
+        console.error("Error sending friend request:", error);
+        throw error;
+    }
+};
+
+export const acceptFriendRequest = async (requestId: string) => {
+    try {
+        await db.collection('friendRequests').doc(requestId).update({ status: 'accepted' });
+    } catch (error) {
+        console.error("Error accepting friend request:", error);
+        throw error;
+    }
+};
+
+export const rejectFriendRequest = async (requestId: string) => {
+    try {
+        await db.collection('friendRequests').doc(requestId).delete();
+    } catch (error) {
+        console.error("Error rejecting friend request:", error);
+        throw error;
+    }
+};
+
+export const getUserProfile = async (userId: string): Promise<User | null> => {
+    try {
+        const doc = await db.collection('users').doc(userId).get();
+        return doc.exists ? (doc.data() as User) : null;
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
+        return null;
+    }
+};
+
+export const updateUserProfile = async (userId: string, data: Partial<User>) => {
+    try {
+        await db.collection('users').doc(userId).set(data, { merge: true });
+    } catch (error) {
+        console.error("Error updating user profile:", error);
+        throw error;
+    }
+};

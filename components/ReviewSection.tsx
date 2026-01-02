@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { getReviewsByPostId, addReview } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 // NOTE: You must define the 'Review' type in your types.ts file
-import { Review } from '../types';
+import { BlogPostReview } from '../types';
 
 interface ReviewSectionProps {
   postId: string;
@@ -30,7 +30,7 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
 
 const ReviewSection: React.FC<ReviewSectionProps> = ({ postId }) => {
   const { user } = useAuth();
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<BlogPostReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [newReviewText, setNewReviewText] = useState('');
   const [newReviewRating, setNewReviewRating] = useState(5);
@@ -65,7 +65,7 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ postId }) => {
 
     // Optimistically update the local state
     setReviews([
-      { ...reviewData, id: `temp-${Date.now()}` } as Review,
+      { ...reviewData, id: `temp-${Date.now()}` } as BlogPostReview,
       ...reviews
     ]);
     setNewReviewText('');

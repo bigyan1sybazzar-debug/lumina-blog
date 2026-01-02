@@ -6,7 +6,40 @@ export interface User {
   email: string;
   role: UserRole;
   avatar: string;
+  coverImage?: string;
   status: 'approved' | 'pending' | 'rejected';
+  friendIds?: string[];
+  bio?: string;
+}
+
+export interface DirectMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  timestamp: string;
+  read: boolean;
+  chatId: string;
+  participants: string[];
+}
+
+export interface FriendRequest {
+  id: string;
+  fromId: string;
+  senderName: string;
+  senderAvatar: string;
+  toId: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  timestamp: string;
+}
+
+export interface Friend {
+  id: string;
+  name: string;
+  avatar: string;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount?: number;
 }
 
 export interface BlogPost {
@@ -46,7 +79,7 @@ export interface Category {
   icon: string;
 }
 
-export interface Comment {
+export interface BlogPostComment {
   id: string;
   postId: string;
   postTitle?: string;            // For admin view
@@ -62,7 +95,7 @@ export interface Comment {
   };
 }
 
-export interface Review {
+export interface BlogPostReview {
   id: string;
   postId: string;
   postTitle?: string;            // For admin view

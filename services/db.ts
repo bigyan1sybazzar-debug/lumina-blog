@@ -2,7 +2,7 @@
 import { notifyIndexNow, notifyBingWebmaster } from './indexingService'; // Ensure this is imported
 import firebase from 'firebase/compat/app';
 import { db } from './firebase';
-import { BlogPost, Category, User, Comment, Review, Poll, PollOption } from '../types';
+import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption } from '../types';
 import { MOCK_POSTS, CATEGORIES } from '../constants';
 import { slugify } from '../lib/slugify'; // <-- NEW IMPORT
 
@@ -429,13 +429,13 @@ export const updateUserStatus = async (userId: string, status: 'approved' | 'pen
 
 // --- COMMENTS ---
 
-export const getCommentsByPostId = async (postId: string): Promise<Comment[]> => {
+export const getCommentsByPostId = async (postId: string): Promise<BlogPostComment[]> => {
   try {
     const snapshot = await db.collection(COMMENTS_COLLECTION)
       .where('postId', '==', postId)
       .get();
 
-    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostComment));
 
     return comments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
@@ -444,7 +444,20 @@ export const getCommentsByPostId = async (postId: string): Promise<Comment[]> =>
   }
 };
 
-export const addComment = async (comment: Omit<Comment, 'id' | 'createdAt'>) => {
+export const getCommentsByUserId = async (userId: string): Promise<BlogPostComment[]> => {
+  try {
+    const snapshot = await db.collection(COMMENTS_COLLECTION)
+      .where('userId', '==', userId)
+      .get();
+    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostComment));
+    return comments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error) {
+    console.error('Error fetching user comments:', error);
+    return [];
+  }
+};
+
+export const addComment = async (comment: Omit<BlogPostComment, 'id' | 'createdAt'>) => {
   await db.collection(COMMENTS_COLLECTION).add({
     ...comment,
     createdAt: new Date().toISOString(),
@@ -453,13 +466,13 @@ export const addComment = async (comment: Omit<Comment, 'id' | 'createdAt'>) => 
 
 // --- REVIEWS (Star Ratings) ---
 
-export const getReviewsByPostId = async (postId: string): Promise<Review[]> => {
+export const getReviewsByPostId = async (postId: string): Promise<BlogPostReview[]> => {
   try {
     const snapshot = await db.collection(REVIEWS_COLLECTION)
       .where('postId', '==', postId)
       .get();
 
-    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
+    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostReview));
 
     return reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
@@ -468,7 +481,20 @@ export const getReviewsByPostId = async (postId: string): Promise<Review[]> => {
   }
 };
 
-export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
+export const getReviewsByUserId = async (userId: string): Promise<BlogPostReview[]> => {
+  try {
+    const snapshot = await db.collection(REVIEWS_COLLECTION)
+      .where('userId', '==', userId)
+      .get();
+    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostReview));
+    return reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error) {
+    console.error('Error fetching user reviews:', error);
+    return [];
+  }
+};
+
+export const addReview = async (review: Omit<BlogPostReview, 'id' | 'createdAt'>) => {
   try {
     await db.collection(REVIEWS_COLLECTION).add({
       ...review,
@@ -482,10 +508,10 @@ export const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
 
 // --- ADMIN: COMMENTS & REVIEWS MANAGEMENT ---
 
-export const getAllComments = async (): Promise<Comment[]> => {
+export const getAllComments = async (): Promise<BlogPostComment[]> => {
   try {
     const snapshot = await db.collection(COMMENTS_COLLECTION).get();
-    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostComment));
 
     // Fetch post titles for each comment
     const commentsWithTitles = await Promise.all(
@@ -505,10 +531,10 @@ export const getAllComments = async (): Promise<Comment[]> => {
   }
 };
 
-export const getAllReviews = async (): Promise<Review[]> => {
+export const getAllReviews = async (): Promise<BlogPostReview[]> => {
   try {
     const snapshot = await db.collection(REVIEWS_COLLECTION).get();
-    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
+    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostReview));
 
     // Fetch post titles for each review
     const reviewsWithTitles = await Promise.all(

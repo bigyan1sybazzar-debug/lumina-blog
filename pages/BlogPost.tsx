@@ -12,7 +12,7 @@ import {
   addComment,
   toggleLikePost,
 } from '../services/db';
-import { BlogPost, Comment } from '../types';
+import { BlogPost, BlogPostComment } from '../types';
 import { Calendar, Clock, Share2, MessageSquare, Heart, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ReviewSection from '../components/ReviewSection';
@@ -75,7 +75,7 @@ export const BlogPostPage: React.FC = () => {
 
   const [post, setPost] = useState<BlogPost | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<BlogPostComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);

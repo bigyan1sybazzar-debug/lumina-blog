@@ -7,7 +7,7 @@ import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogIm
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { BlogPost, User, Category, Comment, Review, Poll } from '../types';
+import { BlogPost, User, Category, BlogPostComment, BlogPostReview, Poll } from '../types';
 // Removed modular firestore imports for consistency with services/firebase.ts
 import { db } from '../services/firebase';
 import { getAllChats } from '../services/chatService';
@@ -37,7 +37,7 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -65,8 +65,8 @@ export const Admin: React.FC = () => {
   const [isLoadingChats, setIsLoadingChats] = useState(false);
 
   // Reviews & Comments State
-  const [allComments, setAllComments] = useState<Comment[]>([]);
-  const [allReviews, setAllReviews] = useState<Review[]>([]);
+  const [allComments, setAllComments] = useState<BlogPostComment[]>([]);
+  const [allReviews, setAllReviews] = useState<BlogPostReview[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [reviewsTab, setReviewsTab] = useState<'reviews' | 'comments'>('reviews');
   const [replyingTo, setReplyingTo] = useState<{ type: 'review' | 'comment', id: string } | null>(null);
@@ -141,6 +141,24 @@ export const Admin: React.FC = () => {
     setEditingPostId(null);
     setStep(1);
   };
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (!searchParams) return;
+
+    const tab = searchParams.get('tab');
+    if (tab === 'editor') {
+      setActiveTab('editor');
+      setEditorMode('manual');
+      setStep(3);
+    }
+
+    const editId = searchParams.get('edit');
+    if (editId) {
+      handleEditPost(editId);
+    }
+  }, [searchParams]);
 
   // === Load & Save Featured Posts ===
   const loadFeaturedPosts = async () => {
@@ -916,6 +934,16 @@ export const Admin: React.FC = () => {
                       }`}
                   >
                     <Vote size={18} className="mr-3" /> Manage Polls
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveTab('social'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'social'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <Users size={18} className="mr-3" /> Social Mgmt
                   </button>
                 </>
               )}
@@ -1917,6 +1945,66 @@ export const Admin: React.FC = () => {
             )
           }
 
+          {/* SOCIAL MANAGEMENT TAB */}
+          {
+            activeTab === 'social' && isAdmin && (
+              <div className="max-w-7xl mx-auto space-y-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Social & Profile Management</h1>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2 space-y-6">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">User Profiles</h3>
+                      <div className="space-y-4">
+                        {usersList.map(u => (
+                          <div key={u.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700">
+                            <div className="flex items-center space-x-3">
+                              <img src={u.avatar} className="w-10 h-10 rounded-full object-cover" />
+                              <div>
+                                <p className="font-bold dark:text-white">{u.name}</p>
+                                <p className="text-xs text-gray-500">{u.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={async () => {
+                                  const newBio = prompt('Enter new bio for user:', u.bio || '');
+                                  if (newBio !== null) {
+                                    await db.collection('users').doc(u.id).update({ bio: newBio });
+                                    refreshData();
+                                  }
+                                }}
+                                className="p-2 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
+                              >
+                                <Edit3 size={18} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Social Stats</h3>
+                      <div className="space-y-4 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Total Users</span>
+                          <span className="font-bold dark:text-white">{usersList.length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Social Interface</span>
+                          <span className="font-bold dark:text-white">Active</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
           {/* CATEGORIES TAB */}
           {
             activeTab === 'categories' && isAdmin && (
@@ -2679,7 +2767,7 @@ export const Admin: React.FC = () => {
 
                               <div className="text-sm">
                                 <span className="text-gray-500">On post: </span>
-                                <Link href={`/blog/${review.postId}`} className="text-primary-600 hover:underline">
+                                <Link href={`/${review.postId}`} className="text-primary-600 hover:underline">
                                   {review.postTitle}
                                 </Link>
                               </div>
@@ -2767,7 +2855,7 @@ export const Admin: React.FC = () => {
 
                               <div className="text-sm">
                                 <span className="text-gray-500">On post: </span>
-                                <Link href={`/blog/${comment.postId}`} className="text-primary-600 hover:underline">
+                                <Link href={`/${comment.postId}`} className="text-primary-600 hover:underline">
                                   {comment.postTitle}
                                 </Link>
                               </div>

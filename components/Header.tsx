@@ -60,6 +60,8 @@ export const Header: React.FC = () => {
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (searchQuery.trim()) {
+      // Direct community/user search to categories/search with a 'community' flag or just the query
+      // By default redirect to search results page
       router.push(`/categories?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
       setIsMenuOpen(false);
@@ -191,6 +193,12 @@ export const Header: React.FC = () => {
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
                       <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 mt-1 capitalize">{user.role}</p>
                     </div>
+                    <Link
+                      href="/Profile"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      My Profile
+                    </Link>
                     <Link
                       href="/admin"
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"

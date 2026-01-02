@@ -5,6 +5,7 @@ import { Providers } from '../components/Providers';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { Analytics } from '../components/Analytics';
+import FriendsSidebar from '../components/FriendsSidebar';
 import Script from 'next/script';
 
 export const viewport: Viewport = {
@@ -109,6 +110,7 @@ export default function RootLayout({
             <body className="flex flex-col min-h-screen">
                 <Providers>
                     <Header />
+                    <FriendsSidebar />
                     <Analytics />
                     <Script src="https://js.puter.com/v2/" strategy="lazyOnload" />
                     <Script
