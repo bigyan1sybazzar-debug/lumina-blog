@@ -15,14 +15,15 @@ export async function GET() {
 
   const staticPages = [
     '',
+    '/voting',
     '/login',
     '/signup',
-    '/tools/my-phone-price',
     '/about',
     '/contact',
     '/privacy-policy',
     '/terms-of-service',
     '/disclaimer',
+    '/tools/my-phone-price',
     // Add other static routes as needed
   ];
 
@@ -49,7 +50,7 @@ export async function GET() {
               <loc>${BASE_URL}/${post.slug}</loc>
               <lastmod>${post.updatedAt || new Date().toISOString()}</lastmod>
               <changefreq>weekly</changefreq>
-              <priority>0.6</priority>
+              <priority>0.7</priority>
             </url>
           `;
       })
