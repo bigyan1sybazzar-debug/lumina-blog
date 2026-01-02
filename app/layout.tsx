@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Merriweather } from 'next/font/google';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 import { Providers } from '../components/Providers';
 import { Header } from '../components/Header';
@@ -127,6 +128,7 @@ export default function RootLayout({
                         {children}
                     </main>
                     <Footer />
+                    <SpeedInsights />
                 </Providers>
             </body>
         </html>
