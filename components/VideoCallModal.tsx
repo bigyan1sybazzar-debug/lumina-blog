@@ -25,6 +25,7 @@ export const VideoCallModal: React.FC = () => {
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const ignoredCalls = useRef<Set<string>>(new Set());
     const activeCallRef = useRef<Call | null>(null); // Track activeCall for async callbacks
+    const iceCandidateUnsubscribeRef = useRef<(() => void) | null>(null); // Track listener cleanup
 
     // Audio/Video State
     const [isMuted, setIsMuted] = useState(false);
@@ -35,20 +36,30 @@ export const VideoCallModal: React.FC = () => {
         activeCallRef.current = activeCall;
     }, [activeCall]);
 
+    // Track call status in ref for listeners
+    const callStatusRef = useRef(callStatus);
+    useEffect(() => { callStatusRef.current = callStatus; }, [callStatus]);
+
     // Listen for incoming calls
     useEffect(() => {
         if (!user) return;
+        console.log("[VideoModal] Subscribing to incoming calls for user:", user.id);
         const unsubscribe = listenForIncomingCalls(user.id, (calls) => {
             // Filter out calls we've ignored/failed locally
             const validCalls = calls.filter(c => !ignoredCalls.current.has(c.id));
 
-            if (validCalls.length > 0 && callStatus === 'idle') {
+            // Use Ref to check status without re-running effect
+            if (validCalls.length > 0 && callStatusRef.current === 'idle') {
+                console.log("[VideoModal] Incoming call detected:", validCalls[0]);
                 setIncomingCall(validCalls[0]);
                 setCallStatus('incoming');
             }
         });
-        return () => unsubscribe();
-    }, [user, callStatus]);
+        return () => {
+            console.log("[VideoModal] Unsubscribing from incoming calls");
+            unsubscribe();
+        }
+    }, [user]); // Removed callStatus dependency to prevent churn
 
     // Cleanup on unmount
     useEffect(() => {
@@ -173,7 +184,6 @@ export const VideoCallModal: React.FC = () => {
         if (callStatus === 'connecting' || callStatus === 'connected') return; // Prevent double-accept
 
         setCallStatus('connecting');
-        setCallStatus('connecting');
         setActiveCall(incomingCall);
         activeCallRef.current = incomingCall; // Immediate update for callbacks
         setIncomingCall(null);
@@ -191,10 +201,11 @@ export const VideoCallModal: React.FC = () => {
                 await answerCall(incomingCall.id, answer);
 
                 // Listen for Remote ICE Candidates
-                listenForIceCandidates(incomingCall.id, 'caller', (candidate) => {
+                const unsubIce = listenForIceCandidates(incomingCall.id, 'caller', (candidate) => {
                     pc.addIceCandidate(new RTCIceCandidate(candidate))
                         .catch(e => console.error("Error adding remote ICE candidate:", e));
                 });
+                iceCandidateUnsubscribeRef.current = unsubIce;
             }
 
         } catch (err) {
@@ -240,7 +251,12 @@ export const VideoCallModal: React.FC = () => {
             peerConnection.current.close();
             peerConnection.current = null;
         }
+        if (iceCandidateUnsubscribeRef.current) {
+            iceCandidateUnsubscribeRef.current();
+            iceCandidateUnsubscribeRef.current = null;
+        }
         setActiveCall(null);
+        activeCallRef.current = null;
         setIncomingCall(null);
         setCallStatus('idle');
     };
@@ -289,7 +305,7 @@ export const VideoCallModal: React.FC = () => {
                 // Listen for Answer (handled by main 'listenToCall' effect)
 
                 // Listen for Remote ICE Candidates (Receiver)
-                listenForIceCandidates(callId, 'receiver', (candidate) => {
+                const unsubIce = listenForIceCandidates(callId, 'receiver', (candidate) => {
                     if (pc.remoteDescription) {
                         pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.error);
                     } else {
@@ -297,6 +313,7 @@ export const VideoCallModal: React.FC = () => {
                         candidateQueue.current.push(new RTCIceCandidate(candidate));
                     }
                 });
+                iceCandidateUnsubscribeRef.current = unsubIce;
             }
         };
 
