@@ -771,7 +771,7 @@ const Profile: React.FC = () => {
                                                         >
                                                             <div className="flex justify-between items-center mb-1">
                                                                 <span className={`text-[10px] font-bold tracking-wider ${msg.senderId === user?.id ? 'text-gray-500' : 'text-cyan-400'}`}>
-                                                                    {msg.senderId === user?.id ? 'OUTGOING TX' : 'INCOMING RX'}
+                                                                    {msg.senderId === user?.id ? 'You' : (friends.find(f => f.id === msg.senderId)?.name || 'User')}
                                                                 </span>
                                                                 <span className="text-[10px] text-gray-600 font-mono">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                                                             </div>
