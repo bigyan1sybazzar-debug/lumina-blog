@@ -303,6 +303,14 @@ export const Header: React.FC = () => {
                       <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
                   </div>
+                  <div className="pt-2 space-y-1">
+                    <Link
+                      href="/Profile"
+                      className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      My Profile
+                    </Link>
+                  </div>
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center justify-center px-4 py-2 rounded-lg text-base font-medium text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"

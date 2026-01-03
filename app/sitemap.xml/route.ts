@@ -59,11 +59,11 @@ export async function GET() {
   `;
 
   // 3. Return the response with the correct XML header
+  // 3. Return the response with the correct XML header
   return new NextResponse(sitemap, {
     headers: {
       'Content-Type': 'application/xml',
-      // Cache-Control ensures search engines check back frequently
-      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate',
     },
   });
 }
+export const revalidate = 86400; // Revalidate every 24 hours, or on-demand via API

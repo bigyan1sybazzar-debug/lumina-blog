@@ -605,7 +605,7 @@ export const Admin: React.FC = () => {
     setIsGeneratingSitemap(true);
 
     try {
-      const response = await fetch('https://bigyann.com.np/api/sitemap', {
+      const response = await fetch('/api/sitemap', {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer bigyann-2025-super-secret-987654321',
