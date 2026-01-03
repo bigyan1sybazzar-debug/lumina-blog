@@ -44,6 +44,23 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // --- VIDEO CALLS ---
+    match /calls/{callId} {
+      // Allow participants to read/write their own call docs
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (resource.data.receiverId == request.auth.uid || resource.data.callerId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.receiverId == request.auth.uid || resource.data.callerId == request.auth.uid);
+      
+      // Allow subcollections (ICE candidates)
+      match /callerCandidates/{candidateId} {
+        allow read, write: if isSignedIn();
+      }
+      match /receiverCandidates/{candidateId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+
     match /chats/{chatId} {
       allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow create, update, delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);

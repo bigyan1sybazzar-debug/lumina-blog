@@ -12,12 +12,14 @@ const merriweather = Merriweather({
 });
 
 import { GlobalListener } from '../components/GlobalListener';
+import { VideoCallModal } from '../components/VideoCallModal';
 
 function MyApp({ Component, pageProps }: AppProps) {
     return (
         <div className={`${inter.variable} ${merriweather.variable} font-sans`}>
             <Providers>
                 <GlobalListener />
+                <VideoCallModal />
                 <Component {...pageProps} />
             </Providers>
         </div>

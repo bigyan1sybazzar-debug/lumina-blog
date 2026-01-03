@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DirectMessage, User } from '../types';
 import { db } from '../services/firebase';
 import { sendDirectMessage, listenToDirectMessages } from '../services/chatService';
-import { Send, Loader2, X, MessageCircle } from 'lucide-react';
+import { initiateCall } from '../services/videoService';
+import { Send, Loader2, X, MessageCircle, Video } from 'lucide-react';
 
 interface DirectChatProps {
     currentUser: User;
@@ -43,6 +44,20 @@ const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onClose })
         }
     };
 
+    const handleStartVideoCall = async () => {
+        try {
+            const callId = await initiateCall(currentUser, friend);
+            // Dispatch global event for the VideoCallModal
+            const event = new CustomEvent('start-video-call', {
+                detail: { callId, isCaller: true }
+            });
+            window.dispatchEvent(event);
+        } catch (error) {
+            alert('Failed to start video call');
+            console.error(error);
+        }
+    };
+
     return (
         <div className="fixed bottom-4 right-4 w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col z-50 overflow-hidden h-[500px] animate-in slide-in-from-bottom-5">
             {/* Header */}
@@ -54,9 +69,18 @@ const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onClose })
                         <p className="text-[10px] opacity-80">Online</p>
                     </div>
                 </div>
-                <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-lg">
-                    <X size={18} />
-                </button>
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={handleStartVideoCall}
+                        className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
+                        title="Start Video Call"
+                    >
+                        <Video size={18} />
+                    </button>
+                    <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-lg">
+                        <X size={18} />
+                    </button>
+                </div>
             </div>
 
             {/* Messages */}

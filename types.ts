@@ -160,3 +160,17 @@ export interface Poll {
   isFeatured?: boolean;
   featuredOrder?: number;
 }
+
+export interface Call {
+  id: string;
+  callerId: string;
+  callerName: string;
+  callerAvatar: string;
+  receiverId: string;
+  receiverName: string;
+  receiverAvatar: string;
+  status: 'ringing' | 'connected' | 'ended' | 'rejected';
+  offer?: any;
+  answer?: any;
+  timestamp: string;
+}
