@@ -1291,9 +1291,11 @@ export const Admin: React.FC = () => {
             activeTab === 'automation' && isAdmin && (
               <AutomationPanel
                 isAutoPilotOn={isAutoPilotOn}
-                logs={autoLogs}
-                onToggleAutoPilot={async () => { await toggleAutoPilot(); }}
-                onRunAutomation={async () => { await runAutomationCycle(); }}
+                toggleAutoPilot={toggleAutoPilot}
+                runAutomationCycle={runAutomationCycle}
+                autoLogs={autoLogs}
+                setAutoLogs={setAutoLogs}
+                categories={categories}
               />
             )
           }
