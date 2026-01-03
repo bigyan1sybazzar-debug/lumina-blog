@@ -1561,12 +1561,6 @@ export const Admin: React.FC = () => {
             activeTab === 'categories' && isAdmin && (
               <CategoriesManager
                 categories={categories}
-                newCatName={newCatName}
-                setNewCatName={setNewCatName}
-                newCatDesc={newCatDesc}
-                setNewCatDesc={setNewCatDesc}
-                newCatIcon={newCatIcon}
-                setNewCatIcon={setNewCatIcon}
                 onCreateCategory={handleCreateCategory}
                 onDeleteCategory={handleDeleteCategory}
               />
