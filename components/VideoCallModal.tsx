@@ -24,10 +24,16 @@ export const VideoCallModal: React.FC = () => {
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const ignoredCalls = useRef<Set<string>>(new Set());
+    const activeCallRef = useRef<Call | null>(null); // Track activeCall for async callbacks
 
     // Audio/Video State
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
+
+    // Sync Ref with State
+    useEffect(() => {
+        activeCallRef.current = activeCall;
+    }, [activeCall]);
 
     // Listen for incoming calls
     useEffect(() => {
@@ -102,8 +108,9 @@ export const VideoCallModal: React.FC = () => {
         pc.oniceconnectionstatechange = () => {
             console.log("ICE Connection State:", pc.iceConnectionState);
             if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+                console.error("ICE Connection Failed/Disconnected. Possible firewall or minimal STUN issues.");
                 // handleCleanup(); // Optional: don't auto-close immediately, let them retry?
-                alert("Connection lost or failed.");
+                // alert("Connection lost or failed.");
             }
         };
 
@@ -148,9 +155,13 @@ export const VideoCallModal: React.FC = () => {
 
         // ICE Candidates
         pc.onicecandidate = (event) => {
-            if (event.candidate && activeCall) {
-                addIceCandidate(activeCall.id, event.candidate.toJSON(), user?.id === activeCall.callerId ? 'caller' : 'receiver')
+            const currentCall = activeCallRef.current; // Use Ref to avoid stale closure
+            if (event.candidate && currentCall) {
+                console.log("[VideoModal] Found ICE Candidate. Sending...");
+                addIceCandidate(currentCall.id, event.candidate.toJSON(), user?.id === currentCall.callerId ? 'caller' : 'receiver')
                     .catch(e => console.error("Error adding ICE candidate:", e));
+            } else if (event.candidate) {
+                console.warn("[VideoModal] Found ICE Candidate but 'activeCall' is missing inside callback!", { currentCall, activeCallState: activeCall });
             }
         };
 
@@ -162,7 +173,9 @@ export const VideoCallModal: React.FC = () => {
         if (callStatus === 'connecting' || callStatus === 'connected') return; // Prevent double-accept
 
         setCallStatus('connecting');
+        setCallStatus('connecting');
         setActiveCall(incomingCall);
+        activeCallRef.current = incomingCall; // Immediate update for callbacks
         setIncomingCall(null);
 
         try {
@@ -261,7 +274,9 @@ export const VideoCallModal: React.FC = () => {
 
                 // Fetch full call object to set active
                 // Actually, we can just set partial activeCall with ID and wait for listener?
-                setActiveCall({ id: callId, callerId: user!.id } as Call); // partial
+                const newCall = { id: callId, callerId: user!.id } as Call;
+                setActiveCall(newCall);
+                activeCallRef.current = newCall; // Immediate update
                 setCallStatus('connecting');
 
                 const pc = await setupWebrtc();

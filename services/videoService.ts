@@ -85,16 +85,19 @@ export const listenToCall = (callId: string, callback: (call: Call | null) => vo
 // Save ICE Candidates
 export const addIceCandidate = async (callId: string, candidate: any, type: 'caller' | 'receiver') => {
     const subcollection = type === 'caller' ? 'callerCandidates' : 'receiverCandidates';
+    console.log(`[VideoService] Adding ICE candidate to ${subcollection}:`, candidate);
     await db.collection(CALLS_COLLECTION).doc(callId).collection(subcollection).add(candidate);
 };
 
 // Listen for ICE Candidates
 export const listenForIceCandidates = (callId: string, type: 'caller' | 'receiver', callback: (candidate: any) => void) => {
     const subcollection = type === 'caller' ? 'callerCandidates' : 'receiverCandidates';
+    console.log(`[VideoService] Listening for ICE candidates in ${subcollection}`);
     return db.collection(CALLS_COLLECTION).doc(callId).collection(subcollection)
         .onSnapshot(snapshot => {
             snapshot.docChanges().forEach(change => {
                 if (change.type === 'added') {
+                    console.log(`[VideoService] Received ICE candidate from ${subcollection}:`, change.doc.data());
                     callback(change.doc.data());
                 }
             });
