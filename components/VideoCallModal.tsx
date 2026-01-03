@@ -20,9 +20,10 @@ export const VideoCallModal: React.FC = () => {
 
     // WebRTC Refs
     const peerConnection = useRef<RTCPeerConnection | null>(null);
+    const localStreamRef = useRef<MediaStream | null>(null);
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
-    const localStreamRef = useRef<MediaStream | null>(null);
+    const ignoredCalls = useRef<Set<string>>(new Set());
 
     // Audio/Video State
     const [isMuted, setIsMuted] = useState(false);
@@ -32,10 +33,12 @@ export const VideoCallModal: React.FC = () => {
     useEffect(() => {
         if (!user) return;
         const unsubscribe = listenForIncomingCalls(user.id, (calls) => {
-            if (calls.length > 0 && callStatus === 'idle') {
-                setIncomingCall(calls[0]);
+            // Filter out calls we've ignored/failed locally
+            const validCalls = calls.filter(c => !ignoredCalls.current.has(c.id));
+
+            if (validCalls.length > 0 && callStatus === 'idle') {
+                setIncomingCall(validCalls[0]);
                 setCallStatus('incoming');
-                // Play ringtone here if desired
             }
         });
         return () => unsubscribe();
@@ -53,10 +56,12 @@ export const VideoCallModal: React.FC = () => {
         };
     }, []);
 
+    const candidateQueue = useRef<RTCIceCandidate[]>([]);
+
     // Listen to active call status changes (e.g., remote end)
     useEffect(() => {
         if (!activeCall) return;
-        const unsubscribe = listenToCall(activeCall.id, (updatedCall) => {
+        const unsubscribe = listenToCall(activeCall.id, async (updatedCall) => {
             if (!updatedCall || updatedCall.status === 'ended' || updatedCall.status === 'rejected') {
                 handleCleanup();
             } else if (updatedCall.status === 'connected' && callStatus === 'connecting') {
@@ -66,7 +71,15 @@ export const VideoCallModal: React.FC = () => {
                 const pc = peerConnection.current;
                 if (pc) {
                     const remoteDesc = new RTCSessionDescription(updatedCall.answer);
-                    pc.setRemoteDescription(remoteDesc);
+                    await pc.setRemoteDescription(remoteDesc);
+
+                    // Flush queued candidates
+                    while (candidateQueue.current.length > 0) {
+                        const candidate = candidateQueue.current.shift();
+                        if (candidate) {
+                            pc.addIceCandidate(candidate).catch(console.error);
+                        }
+                    }
                 }
             }
         });
@@ -85,6 +98,15 @@ export const VideoCallModal: React.FC = () => {
         const pc = new RTCPeerConnection(SERVERS);
         peerConnection.current = pc;
 
+        // Monitor Connection State
+        pc.oniceconnectionstatechange = () => {
+            console.log("ICE Connection State:", pc.iceConnectionState);
+            if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+                // handleCleanup(); // Optional: don't auto-close immediately, let them retry?
+                alert("Connection lost or failed.");
+            }
+        };
+
         try {
             // Get Local Stream
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -99,12 +121,13 @@ export const VideoCallModal: React.FC = () => {
                 pc.addTrack(track, stream);
             });
         } catch (e: any) {
-            console.error("Media access error:", e);
+            console.error("Media access error:", e, "Constraints:", constraints);
 
-            // Fallback: If video is unavailable/in-use, try Audio only
-            if (constraints.video && (e.name === 'NotReadableError' || e.name === 'TrackStartError')) {
-                console.warn("Video source failed (likely in use). Falling back to Audio only.");
-                alert("Camera is busy or unavailable. Switching to Audio-only call.");
+            // Fallback: If video is unavailable/in-use/missing, try Audio only
+            const retryErrors = ['NotReadableError', 'TrackStartError', 'NotFoundError', 'OverconstrainedError', 'DevicesNotFoundError'];
+            if (constraints.video && retryErrors.includes(e.name)) {
+                console.warn(`Video failed (${e.name}). Falling back to Audio only.`);
+                // alert("Camera unavailable or missing. Switching to Audio-only call."); // Removed blocking alert
                 return setupWebrtc({ video: false, audio: true });
             }
 
@@ -136,6 +159,8 @@ export const VideoCallModal: React.FC = () => {
 
     const handleAcceptCall = async () => {
         if (!incomingCall || !user) return;
+        if (callStatus === 'connecting' || callStatus === 'connected') return; // Prevent double-accept
+
         setCallStatus('connecting');
         setActiveCall(incomingCall);
         setIncomingCall(null);
@@ -161,16 +186,21 @@ export const VideoCallModal: React.FC = () => {
 
         } catch (err) {
             console.error("Error accepting call:", err);
-            // If we failed to accept (e.g. no camera), we should probably reject/end the intent so we don't loop
-            // But checking if we should reject the server call or just local cleanup
-            // Let's reject it to stop it from ringing
-            if (incomingCall) rejectCall(incomingCall.id).catch(console.error);
+            // More detailed logging if it's a media error
+            if (err instanceof Error) {
+                console.error("Accept call error details:", err.message, err.stack);
+            }
+            if (incomingCall) {
+                ignoredCalls.current.add(incomingCall.id); // Stop re-ringing
+                rejectCall(incomingCall.id).catch(console.error);
+            }
             handleCleanup();
         }
     };
 
     const handleRejectCall = async () => {
         if (incomingCall) {
+            ignoredCalls.current.add(incomingCall.id); // Ignore locally immediately
             try {
                 await rejectCall(incomingCall.id);
             } catch (error) {
@@ -245,7 +275,12 @@ export const VideoCallModal: React.FC = () => {
 
                 // Listen for Remote ICE Candidates (Receiver)
                 listenForIceCandidates(callId, 'receiver', (candidate) => {
-                    pc.addIceCandidate(new RTCIceCandidate(candidate));
+                    if (pc.remoteDescription) {
+                        pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.error);
+                    } else {
+                        // Queue candidate if remote description not set
+                        candidateQueue.current.push(new RTCIceCandidate(candidate));
+                    }
                 });
             }
         };
