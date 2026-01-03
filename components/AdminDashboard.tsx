@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
@@ -16,10 +15,16 @@ import { ChatSession } from '../types';
 import {
   LayoutDashboard, FileText, Settings, Sparkles, Loader2, Save, LogOut, Home, Database,
   PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw,
-  Users, CheckCircle, Clock, Shield, Tag, Globe, ExternalLink, Trash2, Eye,
+  Users, CheckCircle, Shield, Tag, Globe, ExternalLink, Trash2, Eye,
   Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter,
-  Bot, Zap, Play, Pause, AlertTriangle, Terminal, GripVertical, Vote
+  Bot, Vote
 } from 'lucide-react';
+import { AnalyticsDashboard } from './admin/AnalyticsDashboard';
+import { UserManagement } from './admin/UserManagement';
+import { ContentApprovals } from './admin/ContentApprovals';
+import { AutomationPanel } from './admin/AutomationPanel';
+import { FeaturedManager } from './admin/FeaturedManager';
+import { CategoriesManager } from './admin/CategoriesManager';
 
 import { ANALYTICS_DATA } from '../constants';
 import { deleteCategory, updatePost, deletePost, getPostById } from '../services/db';
@@ -993,110 +998,14 @@ export const Admin: React.FC = () => {
           {/* === FEATURED POSTS TAB === */}
           {
             activeTab === 'featured' && isAdmin && (
-              <div className="max-w-6xl mx-auto space-y-8">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                      <Sparkles className="text-yellow-500" />
-                      Featured Posts Manager
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Choose and reorder the 3 posts shown in the homepage hero section</p>
-                  </div>
-                  <button
-                    onClick={saveFeaturedOrder}
-                    disabled={isSavingFeatured}
-                    className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all flex items-center gap-2 disabled:opacity-50"
-                  >
-                    {isSavingFeatured ? <Loader2 className="animate-spin" /> : <Save size={18} />}
-                    Save Changes
-                  </button>
-                </div>
-
-                <div className="grid lg:grid-cols-2 gap-8">
-                  {/* Current Featured */}
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-                    <h2 className="text-xl font-bold mb-4">Current Featured ({featuredPosts.length}/3)</h2>
-                    {featuredPosts.length === 0 ? (
-                      <p className="text-center py-12 text-gray-500">No posts selected yet</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {featuredPosts.map((post, index) => (
-                          <div
-                            key={post.id}
-                            draggable
-                            onDragStart={(e) => (e.dataTransfer as any).setData('index', index)}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              const fromIndex = Number((e.dataTransfer as any).getData('index'));
-                              const newPosts = [...featuredPosts];
-                              const [moved] = newPosts.splice(fromIndex, 1);
-                              newPosts.splice(index, 0, moved);
-                              setFeaturedPosts(newPosts);
-                            }}
-                            className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl cursor-move hover:shadow-md border-2 border-dashed border-transparent hover:border-primary-400 transition-all"
-                          >
-                            <GripVertical className="text-gray-400" />
-                            <span className="text-2xl font-bold text-primary-600 w-8">{index + 1}</span>
-                            <img src={post.coverImage} alt="" className="w-16 h-16 object-cover rounded-lg" />
-                            <div className="flex-1">
-                              <h4 className="font-semibold">{post.title}</h4>
-                              <p className="text-sm text-gray-500">{post.category} • {post.date}</p>
-                            </div>
-                            <button
-                              onClick={() => {
-                                // 1. Find the post to remove
-                                const postToRemove = featuredPosts.find(p => p.id === post.id);
-
-                                // 2. Remove it from featured
-                                setFeaturedPosts(featuredPosts.filter(p => p.id !== post.id));
-
-                                // 3. Add it back to available so it can be picked again later
-                                if (postToRemove) {
-                                  setAvailablePosts(prev => [...prev, postToRemove]);
-                                }
-                              }}
-                              className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-lg"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Available Posts */}
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-                    <h2 className="text-xl font-bold mb-4">Add from All Posts</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
-                      {availablePosts.map(post => (
-                        <div
-                          key={post.id}
-                          className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer group"
-                          onClick={() => {
-                            if (featuredPosts.length >= 3) {
-                              alert('Maximum 3 posts allowed. Remove one first.');
-                              return;
-                            }
-                            // 1. Add to featured
-                            setFeaturedPosts([...featuredPosts, post]);
-                            // 2. Remove from available
-                            setAvailablePosts(availablePosts.filter(p => p.id !== post.id));
-                          }}
-                        >
-                          <Plus className="text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          <img src={post.coverImage} className="w-12 h-12 rounded object-cover" />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium truncate">{post.title}</h4>
-                            <p className="text-xs text-gray-500">{post.date}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <FeaturedManager
+                featuredPosts={featuredPosts}
+                availablePosts={availablePosts}
+                isSavingFeatured={isSavingFeatured}
+                onSave={saveFeaturedOrder}
+                setFeaturedPosts={setFeaturedPosts}
+                setAvailablePosts={setAvailablePosts}
+              />
             )}
           {/* === CHAT HISTORY TAB === */}
           {
@@ -1236,32 +1145,13 @@ export const Admin: React.FC = () => {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Views</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.views.toLocaleString()}</p>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Posts</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.posts}</p>
-                  </div>
-                  {isAdmin && (
-                    <>
-                      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Review</p>
-                        <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">{pendingPosts.length}</p>
-                      </div>
-                      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
-                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">{stats.users}</p>
-                      </div>
-                      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Engagement Rate</p>
-                        <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">{stats.engagement}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
+                {/* New component handling Stats and Chart */}
+                <AnalyticsDashboard
+                  stats={stats}
+                  pendingPostsCount={pendingPosts.length}
+                  chartData={chartData}
+                  isAdmin={isAdmin}
+                />
 
                 {/* Sitemap Card for Admin */}
                 {isAdmin && sitemapUrl && (
@@ -1391,27 +1281,7 @@ export const Admin: React.FC = () => {
                 </div>
 
                 {/* Admin Analytics Chart */}
-                {isAdmin && (
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Real-Time Content Performance (Views by Category)</h3>
-                    <div className="h-64 md:h-80 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.1} />
-                          <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                          <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} dx={-10} />
-                          <Tooltip
-                            contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#F3F4F6', borderRadius: '8px' }}
-                            itemStyle={{ color: '#F3F4F6' }}
-                            cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
-                          />
-                          <Bar dataKey="views" name="Total Views" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={32} />
-                          <Bar dataKey="posts" name="Total Posts" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={32} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
+                {/* Chart removed as it is now included in AnalyticsDashboard above */}
               </div>
             )
           }
@@ -1419,133 +1289,12 @@ export const Admin: React.FC = () => {
           {/* AUTOMATION TAB */}
           {
             activeTab === 'automation' && isAdmin && (
-              <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                      <Bot size={28} className="text-primary-600" />
-                      Auto-Pilot Automation
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">
-                      Automatically fetch news, generate articles, create images, and publish 4 times a day.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg text-sm">
-                      <span className="text-gray-500 mr-2">Status:</span>
-                      <span className={`font-bold ${isAutoPilotOn ? 'text-green-500' : 'text-gray-500'}`}>
-                        {isAutoPilotOn ? 'Active (Server)' : 'Inactive'}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={toggleAutoPilot}
-                      className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all shadow-sm ${isAutoPilotOn
-                        ? 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800'
-                        : 'bg-green-600 text-white hover:bg-green-700 shadow-lg hover:shadow-green-500/20'
-                        }`}
-                    >
-                      {isAutoPilotOn ? <Pause size={18} /> : <Play size={18} />}
-                      {isAutoPilotOn ? 'Stop Auto-Pilot' : 'Start Auto-Pilot'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Status Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden">
-                    <div className={`absolute top-0 right-0 p-4 opacity-10 ${isAutoPilotOn ? 'text-green-500' : 'text-gray-400'}`}>
-                      <Zap size={64} />
-                    </div>
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h3>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className={`w-3 h-3 rounded-full ${isAutoPilotOn ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></span>
-                      <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {isAutoPilotOn ? 'Running' : 'Stopped'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-2">
-                      {isAutoPilotOn ? 'Scheduled to run once/day' : 'Click start to begin'}
-                    </p>
-                  </div>
-
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Next Scheduled Run</h3>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Clock size={24} className="text-blue-500" />
-                      <span className="text-xl font-bold text-gray-900 dark:text-white">
-                        Every 24 Hours
-                      </span>
-                    </div>
-                    <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
-                      <CheckCircle size={12} />
-                      Server-side automation active
-                    </p>
-                  </div>
-
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Target Categories</h3>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {categories.slice(0, 5).map(c => (
-                        <span key={c.id} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300">
-                          {c.name}
-                        </span>
-                      ))}
-                      {categories.length > 5 && (
-                        <span className="text-xs text-gray-400 self-center">+{categories.length - 5} more</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Console Log Area */}
-                <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-700 shadow-2xl flex flex-col h-[400px]">
-                  <div className="bg-gray-800 px-4 py-2 flex items-center justify-between border-b border-gray-700">
-                    <div className="flex items-center gap-2">
-                      <Terminal size={16} className="text-gray-400" />
-                      <span className="text-sm font-mono text-gray-300">Automation Logs</span>
-                    </div>
-                    <button
-                      onClick={() => setAutoLogs([])}
-                      className="text-xs text-gray-400 hover:text-white hover:underline"
-                    >
-                      Clear Logs
-                    </button>
-                  </div>
-                  <div className="flex-1 p-4 overflow-y-auto font-mono text-sm space-y-2">
-                    {autoLogs.length === 0 && (
-                      <div className="text-gray-600 italic text-center mt-10">No activity logs yet...</div>
-                    )}
-                    {autoLogs.map((log) => (
-                      <div key={log.id} className="flex gap-3">
-                        <span className="text-gray-500 shrink-0">[{log.timestamp}]</span>
-                        <span className={`break-all ${log.type === 'error' ? 'text-red-400' :
-                          log.type === 'success' ? 'text-green-400' :
-                            log.type === 'warning' ? 'text-yellow-400' :
-                              'text-blue-300'
-                          }`}>
-                          {log.type === 'success' && '✓ '}
-                          {log.type === 'error' && '✕ '}
-                          {log.message}
-                        </span>
-                      </div>
-                    ))}
-                    <div ref={logsEndRef} />
-                  </div>
-                </div>
-
-                {/* Manual Trigger for Testing */}
-                <div className="flex justify-end">
-                  <button
-                    onClick={runAutomationCycle}
-                    disabled={isAutoPilotOn}
-                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50"
-                  >
-                    Trigger Single Run (Test)
-                  </button>
-                </div>
-              </div>
+              <AutomationPanel
+                isAutoPilotOn={isAutoPilotOn}
+                logs={autoLogs}
+                onToggleAutoPilot={async () => { await toggleAutoPilot(); }}
+                onRunAutomation={async () => { await runAutomationCycle(); }}
+              />
             )
           }
 
@@ -1720,131 +1469,14 @@ export const Admin: React.FC = () => {
           {/* APPROVALS TAB */}
           {
             activeTab === 'approvals' && isAdmin && (
-              <div className="max-w-7xl mx-auto space-y-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pending Approvals</h1>
-
-                {/* --- PENDING POSTS SECTION --- */}
-                <div className="space-y-4">
-                  <h2 className="text-sm font-black uppercase tracking-widest text-primary-600 flex items-center gap-2">
-                    <FileText size={16} /> Pending Blog Posts ({pendingPosts.length})
-                  </h2>
-                  {pendingPosts.length > 0 ? (
-                    <div className="space-y-4">
-                      {pendingPosts.map(post => (
-                        <div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                          <div className="flex flex-col md:flex-row justify-between gap-6">
-                            <div className="flex-1">
-                              <div className="flex items-start gap-4">
-                                <img
-                                  src={post.coverImage}
-                                  alt={post.title}
-                                  className="w-24 h-24 rounded-lg object-cover"
-                                />
-                                <div>
-                                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{post.title}</h3>
-                                  <div className="flex items-center gap-3 mb-3">
-                                    <div className="flex items-center">
-                                      <img src={post.author.avatar} alt={post.author.name} className="w-5 h-5 rounded-full mr-2" />
-                                      <span className="text-sm text-gray-600 dark:text-gray-400">{post.author.name}</span>
-                                    </div>
-                                    <span className="text-sm text-gray-500">•</span>
-                                    <span className="text-sm text-gray-500">{post.date}</span>
-                                    <span className="text-sm text-gray-500">•</span>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-white">{post.category}</span>
-                                  </div>
-                                  <p className="text-gray-600 dark:text-gray-300 mb-3">{post.excerpt}</p>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-2 md:w-48">
-                              <button
-                                onClick={() => window.open(`/${post.slug}`, '_blank')}
-                                className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 text-sm"
-                              >
-                                <Eye size={16} />
-                                Preview
-                              </button>
-                              <button
-                                onClick={() => handleApprovePost(post.id)}
-                                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                              >
-                                <CheckCircle size={16} />
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleRejectPost(post.id)}
-                                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                              >
-                                <X size={16} />
-                                Reject
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-gray-500 italic text-sm">
-                      No pending posts.
-                    </div>
-                  )}
-                </div>
-
-                <hr className="border-gray-200 dark:border-gray-700 my-8" />
-
-                {/* --- PENDING POLLS SECTION --- */}
-                <div className="space-y-4">
-                  <h2 className="text-sm font-black uppercase tracking-widest text-primary-600 flex items-center gap-2">
-                    <Vote size={16} /> Pending Polls ({allPolls.filter(p => p.status === 'pending').length})
-                  </h2>
-                  {allPolls.filter(p => p.status === 'pending').length > 0 ? (
-                    <div className="space-y-4">
-                      {allPolls.filter(p => p.status === 'pending').map(poll => (
-                        <div key={poll.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                          <div className="flex flex-col md:flex-row justify-between gap-6">
-                            <div className="flex-1">
-                              <div className="flex items-start gap-4">
-                                <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-xl">
-                                  <Vote className="text-primary-600" size={32} />
-                                </div>
-                                <div>
-                                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{poll.question}</h3>
-                                  <div className="flex items-center gap-3 mb-3">
-                                    <span className="text-sm font-medium text-gray-900 dark:text-white capitalize bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">{poll.category}</span>
-                                    <span className="text-sm text-gray-500">•</span>
-                                    <span className="text-sm text-gray-500 font-mono">/{poll.slug}</span>
-                                  </div>
-                                  <p className="text-gray-600 dark:text-gray-300 mb-3">{poll.description}</p>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-2 md:w-48">
-                              <button
-                                onClick={() => handleApprovePoll(poll.id)}
-                                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                              >
-                                <CheckCircle size={16} />
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleRejectPoll(poll.id)}
-                                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                              >
-                                <X size={16} />
-                                Reject
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-gray-500 italic text-sm">
-                      No pending polls.
-                    </div>
-                  )}
-                </div>
-              </div>
+              <ContentApprovals
+                pendingPosts={pendingPosts}
+                pendingPolls={allPolls.filter(p => p.status === 'pending')}
+                onApprovePost={handleApprovePost}
+                onRejectPost={handleRejectPost}
+                onApprovePoll={handleApprovePoll}
+                onRejectPoll={handleRejectPoll}
+              />
             )
           }
 
@@ -1852,95 +1484,12 @@ export const Admin: React.FC = () => {
           {
             activeTab === 'users' && isAdmin && (
               <div className="max-w-7xl mx-auto space-y-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
-
-                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead className="bg-gray-50 dark:bg-gray-900/50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posts</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                        {usersList.map(u => {
-                          const userPosts = allPosts.filter(p => p.author.id === u.id);
-                          return (
-                            <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center">
-                                  <img className="h-10 w-10 rounded-full" src={u.avatar} alt="" />
-                                  <div className="ml-4">
-                                    <div className="text-sm font-medium text-gray-900 dark:text-white">{u.name}</div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                {u.email}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${u.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
-                                  u.role === 'moderator' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                                    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                  }`}>
-                                  {u.role}
-                                </span>
-                              </td>
-
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${u.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                                  u.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                  }`}>
-                                  {u.status || 'pending'}
-                                </span>
-                              </td>
-
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                {userPosts.length}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <div className="flex flex-col gap-2">
-                                  <select
-                                    value={u.role}
-                                    onChange={(e) => handleChangeRole(u.id, e.target.value)}
-                                    className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:text-white mb-2"
-                                  >
-                                    <option value="user">User</option>
-                                    <option value="moderator">Moderator</option>
-                                    <option value="admin">Admin</option>
-                                  </select>
-
-                                  {u.status !== 'approved' && (
-                                    <button
-                                      onClick={() => handleApproveUser(u.id)}
-                                      className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
-                                    >
-                                      Approve
-                                    </button>
-                                  )}
-                                  {u.status === 'pending' && (
-                                    <button
-                                      onClick={() => handleRejectUser(u.id)}
-                                      className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors"
-                                    >
-                                      Reject
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <UserManagement
+                  users={usersList}
+                  onChangeRole={handleChangeRole}
+                  onApproveUser={handleApproveUser}
+                  onRejectUser={handleRejectUser}
+                />
               </div>
             )
           }
@@ -2008,150 +1557,34 @@ export const Admin: React.FC = () => {
           {/* CATEGORIES TAB */}
           {
             activeTab === 'categories' && isAdmin && (
-              <div className="max-w-7xl mx-auto space-y-8">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Categories</h1>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* Create Category Form */}
-                  <div className="lg:col-span-1">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4 sticky top-6">
-                      <h3 className="font-bold text-lg text-gray-900 dark:text-white">Add New Category</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., AI Trends"
-                            value={newCatName}
-                            onChange={(e) => setNewCatName(e.target.value)}
-                            className="input-field"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icon Name</label>
-                          <input
-                            type="text"
-                            placeholder="Lucide icon name"
-                            value={newCatIcon}
-                            onChange={(e) => setNewCatIcon(e.target.value)}
-                            className="input-field"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">Use icon names from Lucide React Icons</p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                          <textarea
-                            placeholder="Brief description of this category"
-                            value={newCatDesc}
-                            onChange={(e) => setNewCatDesc(e.target.value)}
-                            className="input-field min-h-[100px]"
-                          />
-                        </div>
-                        <button
-                          onClick={handleCreateCategory}
-                          className="w-full btn-primary flex items-center justify-center gap-2"
-                        >
-                          <Plus size={18} />
-                          Create Category
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Categories List */}
-                  <div className="lg:col-span-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {categories.map(cat => (
-                        <div key={cat.id} className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex justify-between items-start hover:shadow-md transition-shadow">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center">
-                                <Tag size={20} className="text-primary-600 dark:text-primary-400" />
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-lg text-gray-900 dark:text-white">{cat.name}</h4>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{cat.description || 'No description'}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between mt-4">
-                              <span className="text-xs font-medium bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-gray-700 dark:text-gray-300">
-                                {cat.count || 0} posts
-                              </span>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleDeleteCategory(cat.id)}
-                                  className="text-red-600 hover:text-red-800 dark:text-red-400 p-1"
-                                  title="Delete"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                      {categories.length === 0 && (
-                        <div className="col-span-2 text-center py-12">
-                          <Tag size={48} className="mx-auto text-gray-400 mb-4" />
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No categories yet</h3>
-                          <p className="text-gray-500 dark:text-gray-400">Create your first category to organize posts.</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <CategoriesManager
+                categories={categories}
+                newCatName={newCatName}
+                setNewCatName={setNewCatName}
+                newCatDesc={newCatDesc}
+                setNewCatDesc={setNewCatDesc}
+                newCatIcon={newCatIcon}
+                setNewCatIcon={setNewCatIcon}
+                onCreateCategory={handleCreateCategory}
+                onDeleteCategory={handleDeleteCategory}
+              />
             )
           }
 
           {/* ANALYTICS TAB */}
           {
             activeTab === 'analytics' && isAdmin && (
-              <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+              <div className="max-w-7xl mx-auto">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3 mb-6">
                   <TrendingUp className="text-primary-500" />
                   Performance Analytics
                 </h1>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Posts</div>
-                    <div className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">{stats.posts}</div>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Views</div>
-                    <div className="text-3xl font-bold mt-2 text-blue-600 dark:text-blue-400">{stats.views.toLocaleString()}</div>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Registered Users</div>
-                    <div className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">{stats.users}</div>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Avg. Engagement</div>
-                    <div className="text-3xl font-bold mt-2 text-green-600 dark:text-green-400">{stats.engagement}</div>
-                  </div>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Views by Category</h3>
-                  <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.1} />
-                        <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                        <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} dx={-10} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#F3F4F6', borderRadius: '8px' }}
-                          itemStyle={{ color: '#F3F4F6' }}
-                          cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
-                        />
-                        <Bar dataKey="views" name="Total Views" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={32} />
-                        <Bar dataKey="posts" name="Total Posts" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={32} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+                <AnalyticsDashboard
+                  stats={stats}
+                  pendingPostsCount={pendingPosts.length}
+                  chartData={chartData}
+                  isAdmin={isAdmin}
+                />
               </div>
             )
           }

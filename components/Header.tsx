@@ -134,8 +134,8 @@ export const Header: React.FC = () => {
               )}
             </div>
 
-            {/* Dashboard Link for Logged In Users */}
-            {user && (
+            {/* Dashboard Link for Logged In Users - ADMIN ONLY */}
+            {user && user.role === 'admin' && (
               <Link
                 href="/admin"
                 className={`text-sm font-medium transition-colors hover:text-primary-600 dark:hover:text-primary-400 ${isActive('/admin')
@@ -199,12 +199,14 @@ export const Header: React.FC = () => {
                     >
                       My Profile
                     </Link>
-                    <Link
-                      href="/admin"
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      Dashboard
-                    </Link>
+                    {user.role === 'admin' && (
+                      <Link
+                        href="/admin"
+                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        Dashboard
+                      </Link>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -281,7 +283,7 @@ export const Header: React.FC = () => {
               </Link>
             ))}
 
-            {user && (
+            {user && user.role === 'admin' && (
               <Link
                 href="/admin"
                 className={`block px-3 py-3 rounded-lg text-base font-medium ${isActive('/admin')

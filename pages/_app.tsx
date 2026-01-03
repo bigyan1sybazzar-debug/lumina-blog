@@ -11,10 +11,13 @@ const merriweather = Merriweather({
     display: 'swap'
 });
 
+import { GlobalListener } from '../components/GlobalListener';
+
 function MyApp({ Component, pageProps }: AppProps) {
     return (
         <div className={`${inter.variable} ${merriweather.variable} font-sans`}>
             <Providers>
+                <GlobalListener />
                 <Component {...pageProps} />
             </Providers>
         </div>
