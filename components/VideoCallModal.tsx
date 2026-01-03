@@ -81,8 +81,9 @@ export const VideoCallModal: React.FC = () => {
         const unsubscribe = listenToCall(activeCall.id, async (updatedCall) => {
             if (!updatedCall || updatedCall.status === 'ended' || updatedCall.status === 'rejected') {
                 handleCleanup();
-            } else if (updatedCall.status === 'connected' && callStatus === 'connecting') {
+            } else if (updatedCall.status === 'connected' && callStatusRef.current === 'connecting') {
                 setCallStatus('connected');
+                // Ensure we update state to 'connected' immediately to stop spinner
             } else if (updatedCall.answer && !peerConnection.current?.currentRemoteDescription) {
                 // Caller receives Answer
                 const pc = peerConnection.current;
@@ -101,7 +102,7 @@ export const VideoCallModal: React.FC = () => {
             }
         });
         return () => unsubscribe();
-    }, [activeCall, callStatus]);
+    }, [activeCall]); // Removed callStatus dependency to prevent re-subscriptions
 
 
     const setupWebrtc = async (constraints = { video: true, audio: true }) => {
@@ -179,7 +180,11 @@ export const VideoCallModal: React.FC = () => {
         return pc;
     };
 
-    const handleAcceptCall = async () => {
+    const handleAcceptCall = async (e?: React.MouseEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         if (!incomingCall || !user) return;
         if (callStatus === 'connecting' || callStatus === 'connected') return; // Prevent double-accept
 
@@ -222,7 +227,11 @@ export const VideoCallModal: React.FC = () => {
         }
     };
 
-    const handleRejectCall = async () => {
+    const handleRejectCall = async (e?: React.MouseEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         if (incomingCall) {
             ignoredCalls.current.add(incomingCall.id); // Ignore locally immediately
             try {
@@ -340,10 +349,10 @@ export const VideoCallModal: React.FC = () => {
                     <h3 className="text-2xl font-bold dark:text-white mb-1">{incomingCall.callerName}</h3>
                     <p className="text-gray-500 mb-8 animate-pulse">Incoming Video Call...</p>
                     <div className="flex gap-8">
-                        <button onClick={handleRejectCall} className="p-4 bg-red-500 text-white rounded-full hover:bg-red-600 transition-transform hover:scale-110 shadow-lg">
+                        <button type="button" onClick={handleRejectCall} className="p-4 bg-red-500 text-white rounded-full hover:bg-red-600 transition-transform hover:scale-110 shadow-lg">
                             <PhoneOff size={32} />
                         </button>
-                        <button onClick={handleAcceptCall} className="p-4 bg-green-500 text-white rounded-full hover:bg-green-600 transition-transform hover:scale-110 shadow-lg animate-bounce">
+                        <button type="button" onClick={handleAcceptCall} className="p-4 bg-green-500 text-white rounded-full hover:bg-green-600 transition-transform hover:scale-110 shadow-lg animate-bounce">
                             <Phone size={32} />
                         </button>
                     </div>
@@ -374,13 +383,13 @@ export const VideoCallModal: React.FC = () => {
 
                     {/* Controls */}
                     <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-6 p-4 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10">
-                        <button onClick={toggleMute} className={`p-4 rounded-full transition-colors ${isMuted ? 'bg-red-500 text-white' : 'bg-gray-700/80 text-white hover:bg-gray-600'}`}>
+                        <button type="button" onClick={toggleMute} className={`p-4 rounded-full transition-colors ${isMuted ? 'bg-red-500 text-white' : 'bg-gray-700/80 text-white hover:bg-gray-600'}`}>
                             {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
                         </button>
-                        <button onClick={toggleVideo} className={`p-4 rounded-full transition-colors ${isVideoOff ? 'bg-red-500 text-white' : 'bg-gray-700/80 text-white hover:bg-gray-600'}`}>
+                        <button type="button" onClick={toggleVideo} className={`p-4 rounded-full transition-colors ${isVideoOff ? 'bg-red-500 text-white' : 'bg-gray-700/80 text-white hover:bg-gray-600'}`}>
                             {isVideoOff ? <VideoOff size={24} /> : <Video size={24} />}
                         </button>
-                        <button onClick={handleEndCall} className="p-4 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg">
+                        <button type="button" onClick={handleEndCall} className="p-4 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg">
                             <PhoneOff size={24} />
                         </button>
                     </div>
