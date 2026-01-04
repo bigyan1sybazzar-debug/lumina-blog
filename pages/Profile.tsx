@@ -7,7 +7,7 @@ import { db } from '../services/firebase';
 import firebase from 'firebase/compat/app';
 import { sendFriendRequest, acceptFriendRequest, getUserProfile, updateUserProfile, rejectFriendRequest } from '../services/chatService';
 import { getReviewsByUserId, getCommentsByUserId, getUserPosts, deletePost } from '../services/db';
-import { User as UserIcon, Settings, Users, MessageSquare, Search, Check, X, UserPlus, Loader2, MessageCircle, Star as StarIcon, Camera, Image as ImageIcon, Star, MessageCircle as DiscussionIcon, FileText, Plus, Edit2, Trash2, Sparkles, LayoutDashboard, BarChart2, Heart, TrendingUp, Zap, Radio, Activity, Eye, Bell, Wifi, Cpu } from 'lucide-react';
+import { User as UserIcon, Settings, Users, MessageSquare, Search, Check, X, UserPlus, Loader2, MessageCircle, Star as StarIcon, Camera, Image as ImageIcon, Star, MessageCircle as DiscussionIcon, FileText, Plus, Edit2, Trash2, Sparkles, LayoutDashboard, BarChart2, Heart, TrendingUp, Zap, Radio, Activity, Eye, Bell, Wifi, Cpu, Tag, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import DirectChat from '../components/DirectChat';
 import { AnalyticsDashboard } from '../components/admin/AnalyticsDashboard';
@@ -22,6 +22,9 @@ import {
     updatePollStatus, getLatestPosts
 } from '../services/db';
 import { generateNewsPost, generateBlogImage } from '../services/geminiService';
+import { getMyListings, updateListingStatus, deleteListing } from '../services/marketplaceService';
+import { MarketplaceManager } from '../components/admin/MarketplaceManager';
+import { ListingCard } from '../components/marketplace/ListingCard';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Category, Poll } from '../types'; // Ensure Poll is imported
 
@@ -33,7 +36,7 @@ const Profile: React.FC = () => {
     const [bio, setBio] = useState('');
     const [avatar, setAvatar] = useState('');
     const [coverImage, setCoverImage] = useState('');
-    const [activeTab, setActiveTab] = useState<'profile' | 'friends' | 'chat' | 'requests' | 'discover' | 'reviews' | 'posts' | 'dashboard' | 'users' | 'approvals' | 'automation' | 'featured' | 'categories'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'friends' | 'chat' | 'requests' | 'discover' | 'reviews' | 'posts' | 'listings' | 'dashboard' | 'users' | 'approvals' | 'automation' | 'featured' | 'categories' | 'marketplace'>('profile');
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<User[]>([]);
     const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
@@ -45,8 +48,10 @@ const Profile: React.FC = () => {
     const [userComments, setUserComments] = useState<BlogPostComment[]>([]);
     const [isLoadingReviews, setIsLoadingReviews] = useState(false);
     const [userPosts, setUserPosts] = useState<BlogPost[]>([]);
+    const [userListings, setUserListings] = useState<any[]>([]); // Using any for now to avoid strict typing issues during fetch
     const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
     const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+    const [isLoadingListings, setIsLoadingListings] = useState(false);
     const [userStats, setUserStats] = useState({ totalViews: 0, totalLikes: 0, totalPosts: 0, popularPost: null as BlogPost | null });
     const [latestMessages, setLatestMessages] = useState<any[]>([]);
     const audioRef = React.useRef<HTMLAudioElement | null>(null);
@@ -164,7 +169,8 @@ const Profile: React.FC = () => {
             if (activeTab === 'friends' || activeTab === 'profile' || activeTab === 'chat') fetchFriends();
             if (activeTab === 'reviews') fetchUserActivity();
             if (activeTab === 'posts' || activeTab === 'profile') fetchUserPosts();
-            if (['dashboard', 'users', 'approvals', 'automation', 'featured', 'categories'].includes(activeTab)) {
+            if (activeTab === 'listings') fetchUserListings();
+            if (['dashboard', 'users', 'approvals', 'automation', 'featured', 'categories', 'marketplace'].includes(activeTab)) {
                 fetchAdminData();
             }
         }
@@ -393,6 +399,34 @@ const Profile: React.FC = () => {
         }
     };
 
+    const fetchUserListings = async () => {
+        if (!user) return;
+        setIsLoadingListings(true);
+        try {
+            const listings = await getMyListings(user.id);
+            setUserListings(listings);
+        } catch (error) {
+            console.error("Error fetching listings:", error);
+        } finally {
+            setIsLoadingListings(false);
+        }
+    };
+
+    const handleListingAction = async (id: string, action: 'delete' | 'sold') => {
+        if (!confirm(`Are you sure you want to ${action === 'delete' ? 'delete' : 'mark as sold'} this listing?`)) return;
+        try {
+            if (action === 'delete') {
+                await deleteListing(id);
+                setUserListings(prev => prev.filter(l => l.id !== id));
+            } else {
+                await updateListingStatus(id, 'sold');
+                setUserListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
+            }
+        } catch (error) {
+            alert('Action failed');
+        }
+    };
+
     const handleDeletePost = async (postId: string) => {
         if (window.confirm('Are you sure you want to delete this post?')) {
             try {
@@ -509,6 +543,7 @@ const Profile: React.FC = () => {
     const navItems = React.useMemo(() => [
         { id: 'profile', label: 'Overview', icon: UserIcon },
         { id: 'posts', label: 'My Posts', icon: FileText },
+        { id: 'listings', label: 'My Listings', icon: Tag },
         { id: 'friends', label: 'Friends', icon: Users },
         { id: 'chat', label: 'Chat', icon: MessageCircle },
         { id: 'requests', label: 'Requests', icon: UserPlus, count: incomingRequests.length },
@@ -517,6 +552,7 @@ const Profile: React.FC = () => {
         ...(isAdmin ? [
             { id: 'dashboard', label: 'Analytics', icon: LayoutDashboard },
             { id: 'automation', label: 'Auto-Pilot', icon: Sparkles },
+            { id: 'marketplace', label: 'Marketplace', icon: ShoppingBag },
             { id: 'featured', label: 'Featured', icon: Star },
             { id: 'categories', label: 'Categories', icon: Settings },
         ] : []),
@@ -1183,6 +1219,58 @@ const Profile: React.FC = () => {
                                     onCreateCategory={handleCreateCategory}
                                     onDeleteCategory={handleDeleteCategory}
                                 />
+                            )}
+
+                            {activeTab === 'marketplace' && isAdmin && (
+                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <MarketplaceManager />
+                                </div>
+                            )}
+
+                            {activeTab === 'listings' && (
+                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">My Listings</h2>
+                                        <Link href="/tools/phone-marketplace" className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-bold">
+                                            Create New
+                                        </Link>
+                                    </div>
+                                    {isLoadingListings ? (
+                                        <div className="flex justify-center p-10"><Loader2 className="animate-spin" /></div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {userListings.map(listing => (
+                                                <div key={listing.id} className="relative group">
+                                                    <ListingCard listing={listing} />
+                                                    <div className="absolute top-2 left-2 px-2 py-1 bg-black/70 text-white text-xs font-bold rounded">
+                                                        {listing.status.toUpperCase()}
+                                                    </div>
+                                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-xl">
+                                                        {listing.status !== 'sold' && (
+                                                            <button
+                                                                onClick={() => handleListingAction(listing.id, 'sold')}
+                                                                className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-sm"
+                                                            >
+                                                                Mark Sold
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => handleListingAction(listing.id, 'delete')}
+                                                            className="px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-sm"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {userListings.length === 0 && (
+                                                <div className="col-span-full text-center py-10 text-gray-500">
+                                                    You haven't listed any phones yet.
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             )}
 
                         </div>

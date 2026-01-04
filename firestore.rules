@@ -77,6 +77,19 @@ service cloud.firestore {
     match /config/{configId} { allow read: if true; allow write: if isAdmin(); }
     match /settings/{docId} { allow read: if true; allow write: if isAdmin(); }
 
+    // --- MARKETPLACE ---
+    match /phone_listings/{listingId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.sellerId == request.auth.uid);
+    }
+
+    match /buyer_requests/{requestId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.buyerId == request.auth.uid);
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

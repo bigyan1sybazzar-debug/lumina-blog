@@ -25,6 +25,7 @@ const TOOL_LINKS = [
   { name: 'EMI Calculator', path: '/tools/emi-calculator' },
   { name: 'Exchange Offer', path: '/tools/exchange-offer' },
   { name: 'AI Humanizer', path: '/ai-humanizer' },
+  { name: 'Second Hand Phones', path: '/tools/phone-marketplace' },
   { name: 'Electronic Voting', path: '/voting' },
 ];
 

@@ -177,3 +177,35 @@ export interface Call {
   answer?: any;
   timestamp: string;
 }
+
+export interface PhoneListing {
+  id: string;
+  sellerId: string;
+  sellerName: string;
+  sellerAvatar: string;
+  brand: string;
+  model: string;
+  storage: string;
+  condition: 'New' | 'Like New' | 'Used' | 'Refurbished';
+  price: number;
+  currency: string;
+  images: string[]; // URLs from Vercel Blob
+  location: string;
+  contactInfo: string;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected' | 'sold';
+  timestamp: string;
+}
+
+export interface BuyerRequest {
+  id: string;
+  buyerId: string;
+  buyerName: string;
+  buyerAvatar: string;
+  model: string; // Specific model or "Any"
+  budgetRange: string;
+  condition: string;
+  location: string;
+  description: string;
+  timestamp: string;
+}
