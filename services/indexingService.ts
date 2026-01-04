@@ -20,14 +20,9 @@ export const notifyIndexNow = async (urls: string[]) => {
     return;
   }
 
-  // Filter out URLs that have already been pinged in this browser session
-  // This prevents spamming engines when a user refreshes or navigates back/forth
-  const urlsToPing = urls.filter(url => {
-    if (typeof window === 'undefined') return true; // Server-side, always submit
-    const storageKey = `indexed_${url}`;
-    if (sessionStorage.getItem(storageKey)) return false;
-    return true;
-  });
+  // Filter logic removed as we no longer ping on page view.
+  // All calls to this function should be from intentional content updates (Admin).
+  const urlsToPing = urls;
 
   if (urlsToPing.length === 0) return;
 
@@ -45,12 +40,8 @@ export const notifyIndexNow = async (urls: string[]) => {
       const data = await response.json();
       console.log(`📡 IndexNow: Successfully submitted ${urlsToPing.length} URL(s)`, data);
 
-      // Mark as pinged so we don't do it again this session
-      if (typeof window !== 'undefined') {
-        urlsToPing.forEach(url => {
-          sessionStorage.setItem(`indexed_${url}`, 'true');
-        });
-      }
+      // Log success
+
     } else {
       const error = await response.json();
       console.warn(`⚠️ IndexNow: Failed to submit URLs`, error);

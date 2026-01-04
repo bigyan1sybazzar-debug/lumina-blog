@@ -18,6 +18,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         // Fetch the URL to get the HTTP response
         const response = await fetch(url);
+
+        if (!response.ok) {
+            console.error(`❌ Bing Webmaster: Aborting submission. Target URL ${url} returned status ${response.status}`);
+            return res.status(400).json({
+                error: `Target URL unreachable (Status ${response.status}). Ensure the page is live before submitting.`
+            });
+        }
+
         const content = await response.text();
 
         // Build HTTP response message

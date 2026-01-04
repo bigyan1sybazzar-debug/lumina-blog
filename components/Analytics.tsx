@@ -9,9 +9,8 @@ export const Analytics = () => {
 
     useEffect(() => {
         // Only notify IndexNow for actual content pages, not /login or /admin
-        if (pathname && !pathname.startsWith('/admin') && !pathname.startsWith('/login')) {
-            notifyIndexNow([pathname]);
-        }
+        // Removed notifyIndexNow([pathname]) to prevent "IndexNow misuse" (too many requests)
+        // IndexNow should only be triggered on content creation/update/deletion (handled in db.ts)
         // Scroll to top is handled by Next.js automatically, but sometimes needed for edge cases
         window.scrollTo(0, 0);
     }, [pathname]);
