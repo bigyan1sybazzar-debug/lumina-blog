@@ -10,9 +10,12 @@ interface BuySectionProps {
     onContact?: (listing: PhoneListing) => void;
 }
 
+import { ListingDetailModal } from './ListingDetailModal';
+
 export const BuySection: React.FC<BuySectionProps> = ({ onContact }) => {
     const [listings, setListings] = useState<PhoneListing[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedListing, setSelectedListing] = useState<PhoneListing | null>(null);
     const [filters, setFilters] = useState({
         brand: 'All',
         priceRange: 'All',
@@ -21,17 +24,14 @@ export const BuySection: React.FC<BuySectionProps> = ({ onContact }) => {
 
     useEffect(() => {
         fetchListings();
-    }, [filters]); // Re-fetch when filters change (optimization: client-side filter if small dataset)
+    }, [filters]);
 
     const fetchListings = async () => {
         setLoading(true);
         try {
-            // Mapping filters to service params
             const serviceFilters: any = {};
             if (filters.brand !== 'All') serviceFilters.brand = filters.brand;
             if (filters.condition !== 'All') serviceFilters.condition = filters.condition;
-            // Price parsing logic could go here or in service
-
             const data = await getPhoneListings(serviceFilters);
             setListings(data);
         } catch (error) {
@@ -96,7 +96,12 @@ export const BuySection: React.FC<BuySectionProps> = ({ onContact }) => {
             ) : listings.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {listings.map(listing => (
-                        <ListingCard key={listing.id} listing={listing} onContact={onContact} />
+                        <ListingCard
+                            key={listing.id}
+                            listing={listing}
+                            onContact={onContact}
+                            onClick={() => setSelectedListing(listing)}
+                        />
                     ))}
                 </div>
             ) : (
@@ -104,6 +109,19 @@ export const BuySection: React.FC<BuySectionProps> = ({ onContact }) => {
                     <Search size={48} className="mx-auto mb-4 opacity-20" />
                     <p>No phones found matching your criteria.</p>
                 </div>
+            )}
+
+            {/* Details Modal */}
+            {selectedListing && (
+                <ListingDetailModal
+                    listing={selectedListing}
+                    isOpen={!!selectedListing}
+                    onClose={() => setSelectedListing(null)}
+                    onContact={(l) => {
+                        setSelectedListing(null);
+                        onContact && onContact(l);
+                    }}
+                />
             )}
         </div>
     );

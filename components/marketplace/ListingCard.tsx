@@ -7,11 +7,15 @@ import { User, MapPin, Phone, MessageCircle } from 'lucide-react';
 interface ListingCardProps {
     listing: PhoneListing;
     onContact?: (listing: PhoneListing) => void;
+    onClick?: (listing: PhoneListing) => void;
 }
 
-export const ListingCard: React.FC<ListingCardProps> = ({ listing, onContact }) => {
+export const ListingCard: React.FC<ListingCardProps> = ({ listing, onContact, onClick }) => {
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col h-full">
+        <div
+            onClick={() => onClick && onClick(listing)}
+            className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col h-full cursor-pointer"
+        >
             <div className="relative h-48 w-full bg-gray-200 dark:bg-gray-700">
                 <img
                     src={listing.images[0] || 'https://via.placeholder.com/400x300?text=No+Image'}
@@ -43,7 +47,10 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onContact }) 
 
                 <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 flex space-x-2">
                     <button
-                        onClick={() => onContact && onContact(listing)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onContact && onContact(listing);
+                        }}
                         className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg text-sm font-semibold flex items-center justify-center transition-colors"
                     >
                         <MessageCircle size={16} className="mr-2" /> Contact
