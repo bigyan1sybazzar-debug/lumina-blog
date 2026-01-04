@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DirectMessage, User } from '../types';
 import { db } from '../services/firebase';
 import { sendDirectMessage, listenToDirectMessages } from '../services/chatService';
-import { initiateCall } from '../services/videoService';
-import { Send, Loader2, X, MessageCircle, Video } from 'lucide-react';
+import { Send, Loader2, X, MessageCircle, Image as ImageIcon, Mic, StopCircle, Play, Pause } from 'lucide-react';
+import { put } from '@vercel/blob';
 
 interface DirectChatProps {
     currentUser: User;
@@ -15,7 +15,13 @@ const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onClose })
     const [messages, setMessages] = useState<DirectMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+    const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const unsub = listenToDirectMessages(currentUser.id, friend.id, (msgs) => {
@@ -30,8 +36,8 @@ const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onClose })
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const handleSend = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSend = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         if (!newMessage.trim()) return;
 
         const content = newMessage.trim();
@@ -44,18 +50,113 @@ const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onClose })
         }
     };
 
-    const handleStartVideoCall = async () => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length) return;
+        const file = e.target.files[0];
+        setIsUploading(true);
+
         try {
-            const callId = await initiateCall(currentUser, friend);
-            // Dispatch global event for the VideoCallModal
-            const event = new CustomEvent('start-video-call', {
-                detail: { callId, isCaller: true }
+            const response = await fetch(`/api/upload?filename=${file.name}`, {
+                method: 'POST',
+                body: file,
             });
-            window.dispatchEvent(event);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Upload failed: ${response.status} ${errorText}`);
+            }
+
+            const newBlob = await response.json();
+
+            await sendDirectMessage(currentUser.id, friend.id, '', {
+                type: 'image',
+                url: newBlob.url,
+                mimeType: file.type
+            });
         } catch (error) {
-            alert('Failed to start video call');
-            console.error(error);
+            console.error("Upload failed:", error);
+            alert("Failed to upload image.");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            setMediaRecorder(recorder);
+
+            const chunks: Blob[] = [];
+            recorder.ondataavailable = (e) => chunks.push(e.data);
+            recorder.onstop = async () => {
+                const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+                await handleAudioUpload(audioBlob);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            recorder.start();
+            setIsRecording(true);
+        } catch (err) {
+            console.error("Error accessing microphone:", err);
+            alert("Could not access microphone.");
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            setIsRecording(false);
+            setMediaRecorder(null);
+        }
+    };
+
+    const handleAudioUpload = async (audioBlob: Blob) => {
+        setIsUploading(true);
+        try {
+            const filename = `voice-message-${Date.now()}.webm`;
+            const response = await fetch(`/api/upload?filename=${filename}`, {
+                method: 'POST',
+                body: audioBlob,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Upload failed: ${response.status} ${errorText}`);
+            }
+
+            const newBlob = await response.json();
+
+            await sendDirectMessage(currentUser.id, friend.id, '', {
+                type: 'audio',
+                url: newBlob.url,
+                mimeType: 'audio/webm'
+            });
+        } catch (error) {
+            console.error("Audio upload failed:", error);
+            alert(`Failed to upload audio. Check console for details.`);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const renderMessageContent = (msg: DirectMessage) => {
+        if (msg.type === 'image' && msg.mediaUrl) {
+            return (
+                <div className="space-y-1">
+                    <img src={msg.mediaUrl} alt="Image" className="max-w-[200px] rounded-lg border border-white/10" />
+                </div>
+            );
+        }
+        if (msg.type === 'audio' && msg.mediaUrl) {
+            return (
+                <div className="flex items-center gap-2 min-w-[150px]">
+                    <audio controls src={msg.mediaUrl} className="h-8 max-w-[200px]" />
+                </div>
+            );
+        }
+        return <p>{msg.content}</p>;
     };
 
     return (
@@ -70,13 +171,6 @@ const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onClose })
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <button
-                        onClick={handleStartVideoCall}
-                        className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
-                        title="Start Video Call"
-                    >
-                        <Video size={18} />
-                    </button>
                     <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-lg">
                         <X size={18} />
                     </button>
@@ -95,11 +189,11 @@ const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onClose })
                 ) : (
                     messages.map(msg => (
                         <div key={msg.id} className={`flex ${msg.senderId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.senderId === currentUser.id
+                            <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.senderId === currentUser.id
                                 ? 'bg-primary-600 text-white rounded-tr-none'
                                 : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-100 dark:border-gray-600 rounded-tl-none'
                                 }`}>
-                                {msg.content}
+                                {renderMessageContent(msg)}
                                 <p className={`text-[10px] mt-1 opacity-60 ${msg.senderId === currentUser.id ? 'text-right' : 'text-left'}`}>
                                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </p>
@@ -110,22 +204,64 @@ const DirectChat: React.FC<DirectChatProps> = ({ currentUser, friend, onClose })
                 <div ref={messagesEndRef} />
             </div>
 
+            {/* Upload Progress */}
+            {isUploading && (
+                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-900 text-xs text-primary-600 flex items-center justify-center animate-pulse">
+                    <Loader2 size={12} className="animate-spin mr-2" /> Uploading media...
+                </div>
+            )}
+
             {/* Input */}
-            <form onSubmit={handleSend} className="p-3 border-t border-gray-100 dark:border-gray-700 flex space-x-2 bg-white dark:bg-gray-800">
-                <input
-                    type="text"
-                    placeholder="Type a message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    className="flex-1 bg-gray-50 dark:bg-gray-900 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary-500 outline-none dark:text-white"
-                />
-                <button
-                    type="submit"
-                    className="p-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/20"
-                >
-                    <Send size={18} />
-                </button>
-            </form>
+            <div className="p-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <form onSubmit={handleSend} className="flex items-center gap-2">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                    />
+
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 text-gray-400 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                        title="Send Image"
+                        disabled={isUploading || isRecording}
+                    >
+                        <ImageIcon size={20} />
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={isRecording ? stopRecording : startRecording}
+                        className={`p-2 rounded-xl transition-colors ${isRecording
+                            ? 'text-red-500 bg-red-100 dark:bg-red-500/20 animate-pulse'
+                            : 'text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                        title={isRecording ? "Stop Recording" : "Record Voice Message"}
+                        disabled={isUploading}
+                    >
+                        {isRecording ? <StopCircle size={20} /> : <Mic size={20} />}
+                    </button>
+
+                    <input
+                        type="text"
+                        placeholder={isRecording ? "Recording..." : "Type a message..."}
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        disabled={isRecording}
+                        className="flex-1 bg-gray-50 dark:bg-gray-900 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary-500 outline-none dark:text-white disabled:opacity-50"
+                    />
+
+                    <button
+                        type="submit"
+                        disabled={!newMessage.trim() || isRecording || isUploading}
+                        className="p-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/20 disabled:opacity-50 disabled:shadow-none"
+                    >
+                        <Send size={18} />
+                    </button>
+                </form>
+            </div>
         </div>
     );
 };

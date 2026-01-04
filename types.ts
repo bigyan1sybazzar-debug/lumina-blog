@@ -21,6 +21,9 @@ export interface DirectMessage {
   read: boolean;
   chatId: string;
   participants: string[];
+  type?: 'text' | 'image' | 'audio';
+  mediaUrl?: string; // URL from Vercel Blob
+  mimeType?: string;
 }
 
 export interface FriendRequest {

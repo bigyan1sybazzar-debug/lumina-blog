@@ -122,18 +122,32 @@ export const getAllChats = async (): Promise<ChatSession[]> => {
 
 // --- DIRECT MESSAGING ---
 
-export const sendDirectMessage = async (senderId: string, receiverId: string, content: string) => {
+export const sendDirectMessage = async (
+    senderId: string,
+    receiverId: string,
+    content: string,
+    media?: { type: 'image' | 'audio'; url: string; mimeType?: string }
+) => {
     try {
         const chatId = [senderId, receiverId].sort().join('_');
         const messageData: Partial<DirectMessage> = {
             senderId,
             receiverId,
-            content,
+            content, // Can be empty if media is present, or a caption
             timestamp: new Date().toISOString(),
             read: false,
             chatId,
             participants: [senderId, receiverId],
         };
+
+        if (media) {
+            messageData.type = media.type;
+            messageData.mediaUrl = media.url;
+            messageData.mimeType = media.mimeType;
+        } else {
+            messageData.type = 'text';
+        }
+
         await db.collection('direct_messages').add(messageData);
     } catch (error) {
         console.error("Error sending direct message:", error);
