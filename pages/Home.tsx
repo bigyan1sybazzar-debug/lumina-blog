@@ -5,7 +5,7 @@ import { getPosts, getPolls, getPostById } from '../services/db';
 import { BlogPost, Poll } from '../types';
 import { PostCard } from '../components/PostCard';
 import PollCard from '../components/PollCard';
-import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail, ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen, Vote } from 'lucide-react';
+import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail, ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen, Vote, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 // Removed modular firestore imports for consistency with services/firebase.ts
@@ -281,6 +281,21 @@ export const Home: React.FC = () => {
               <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Bypass AI Detection (0%)</p>
             </Link>
 
+            {/* New: Second Hand Phones */}
+            <Link
+              href="/tools/phone-marketplace"
+              className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
+                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
+                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+            >
+              <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-green-500 to-teal-600 
+                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <ShoppingBag className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Buy/Sell Phones</h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Marketplace</p>
+            </Link>
+
             {/* Tab 1: Old Phone Price */}
             <Link
               href="/price/my-phone-price"
@@ -348,7 +363,7 @@ export const Home: React.FC = () => {
               href="https://bigyann.com.np/tools/emi-calculator"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
+              className="col-span-2 lg:col-span-1 text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
                    transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
                    group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
@@ -363,7 +378,7 @@ export const Home: React.FC = () => {
             {/* Tab 6: Exchange Offer (Full Width on Mobile & Desktop) */}
             <Link
               href="/tools/exchange-offer"
-              className="col-span-2 lg:col-span-3 text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
+              className="col-span-2 lg:col-span-2 text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
                    transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
                    group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >

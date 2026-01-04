@@ -70,7 +70,7 @@ export const SellSection: React.FC = () => {
                 location: formData.location,
                 contactInfo: formData.contactInfo,
                 description: formData.description,
-                status: 'available'
+                status: 'pending'
             });
 
             setSuccess(true);
