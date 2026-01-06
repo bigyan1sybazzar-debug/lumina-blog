@@ -88,7 +88,7 @@ export const generateFullPost = async (title: string, outline: string): Promise<
       ${outline}
       
       Requirements (Strict Article Format):
-      - 1200–2500 words
+      - 800–1500 words
       - Natural, conversational **English** tone.
       - Focus on global availability, specs, and trends.
       - **COMPULSORY: Use ### for main sections and #### for subsections.** Use bullet points, bold highlights, and emojis where natural.

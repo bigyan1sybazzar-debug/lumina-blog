@@ -19,6 +19,7 @@ import ReviewSection from '../components/ReviewSection';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 
 // ------------------------------------------------------------------
@@ -361,6 +362,14 @@ export const BlogPostPage: React.FC = () => {
                 {post.id && <ReviewSection postId={post.id} />}
               </div>
             </article>
+
+            {/* AdSense: Multiplex Ad (Bottom of Article / Sidebar) */}
+            <div className="lg:col-span-12 my-8">
+              <GoogleAdSense
+                slot="7539189957"
+                format="autorelaxed"
+              />
+            </div>
 
             {/* Sidebar Right: Related Posts */}
             <aside className="hidden lg:block lg:col-span-3">

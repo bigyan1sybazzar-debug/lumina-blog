@@ -14,6 +14,7 @@ import { db } from '../services/firebase';
 import { Calculator, RefreshCw } from 'lucide-react';
 import { LogIn, FileText, Edit } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import GoogleAdSense from '../components/GoogleAdSense';
 export const Home: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [heroFeatured, setHeroFeatured] = useState<BlogPost[]>([]);
@@ -200,6 +201,11 @@ export const Home: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Ads Home - Display Ad */}
+      <div className="max-w-7xl mx-auto px-4 mb-8">
+        <GoogleAdSense slot="7838572857" format="auto" responsive={true} />
+      </div>
 
       {/* Hot & Fresh Slider - Latest 8 Posts (Reduced py- from py-16 to py-12) */}
       {editorPicks.length > 0 && (
@@ -536,16 +542,28 @@ export const Home: React.FC = () => {
           {filteredPosts.length > 0 ? (
             <>
               <div className="grid grid-cols-2 min-[480px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                {filteredPosts.slice(0, 16).map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    categoryName={post.category}
-                    variant="vertical"
-                    textSizeClass="text-base"
-                    increasedTitle={false}
-                    alignLeft={true}
-                  />
+                {filteredPosts.slice(0, 16).map((post, index) => (
+                  <React.Fragment key={post.id}>
+                    <PostCard
+                      post={post}
+                      categoryName={post.category}
+                      variant="vertical"
+                      textSizeClass="text-base"
+                      increasedTitle={false}
+                      alignLeft={true}
+                    />
+                    {/* Insert In-Feed Ad after the 4th item (index 3) */}
+                    {index === 3 && (
+                      <div key="adsense-infeed" className="col-span-2 min-[480px]:col-span-2 sm:col-span-2 lg:col-span-3 xl:col-span-4">
+                        <GoogleAdSense
+                          slot="8960082830"
+                          format="fluid"
+                          layoutKey="-gw-3+1f-3d+2z"
+                          style={{ display: 'block' }}
+                        />
+                      </div>
+                    )}
+                  </React.Fragment>
                 ))}
               </div>
 
