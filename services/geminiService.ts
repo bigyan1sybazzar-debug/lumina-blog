@@ -11,21 +11,32 @@ if (!API_KEY) {
 
 const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
 
-// ✨ UPDATED SYSTEM INSTRUCTION: No bold in paragraphs, Blue Underlined Links ✨
-const SYSTEM_INSTRUCTION = `
-You are an expert professional blog writer for a popular global tech and gadget magazine.
-Focus primarily on the **latest mobile phones, gadgets, AI, science, and technology trends**.
-Writing style: engaging, conversational, human-like, and easy for a 13-year-old to understand.
+// ————————————————————————————————————————
+// TYPES & EXPORTS
+// ————————————————————————————————————————
+export type HumanizerMode = 'Standard' | 'Academic' | 'Blog' | 'Professional' | 'Creative';
 
-**STRICT FORMATTING RULES:**
-1. All output must be in English.
-2. Use H3 (###) for main sections and H4 (####) for subsections.
-3. ❌ **NO BOLD TEXT** inside paragraphs. Use plain text only for the body of paragraphs.
-4. ✅ **INTERNAL LINKS**: For links, use the format: <a href="URL" style="color: blue; text-decoration: underline;">Anchor Text</a>.
-5. Use bullet points and tables where relevant, but do not use bolding within them.
+export interface PlagiarismAnalysisResult {
+    score: number;
+    explanation: string;
+    flagged_sentences: string[];
+    humanized_text: string;
+}
+
+// ✨ UPDATED SYSTEM INSTRUCTION: No Bold, Blue Underlined Links, 13-Year-Old Friendly ✨
+const SYSTEM_INSTRUCTION = `
+You are an expert professional blog writer for a popular global tech magazine.
+Focus on mobile phones, gadgets, AI, science, and tech trends.
+
+STRICT FORMATTING RULES:
+1. Language: English only.
+2. Headers: Use ### for main sections and #### for subsections.
+3. ❌ NO BOLD TEXT: Do not use **bolding** inside any paragraphs or lists. Body text must be plain.
+4. ✅ BLUE UNDERLINED LINKS: Use HTML format: <a href="URL" style="color: blue; text-decoration: underline;">Anchor Text</a>.
+5. Tone: Conversational, simple (13-year-old level), and 0% AI-detectable.
 `;
 
-const INTERNAL_LINKS = `
+const INTERNAL_LINKS_LIST = `
 https://bigyann.com.np/lg-ultrafine-evo-32u990a-s-review
 https://bigyann.com.np/ipad-pro-m4-price-in-nepal
 https://bigyann.com.np/trifold-durability-questioned
@@ -100,6 +111,9 @@ https://bigyann.com.np/galaxy-tab-a11-nepal-price
 https://bigyann.com.np/m5-mac-mini-value-king
 `;
 
+// ————————————————————————————————————————
+// REUSABLE CONFIG BUILDER
+// ————————————————————————————————————————
 const getConfig = (options: { useSearch?: boolean; temperature?: number } = {}): GenerateContentConfig => {
     const { useSearch = false, temperature = 0.8 } = options;
     const config: GenerateContentConfig = {
@@ -112,83 +126,83 @@ const getConfig = (options: { useSearch?: boolean; temperature?: number } = {}):
     return config;
 };
 
-// 1. Generate Blog Post Outline
+// ————————————————————————————————————————
+// 1. Generate Blog Outline
+// ————————————————————————————————————————
 export const generateBlogOutline = async (topic: string): Promise<string> => {
     if (!ai) throw new Error("Gemini API key missing");
     try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `Generate a detailed outline for: "${topic}". 
-            - Title: # 4-5 words max.
-            - Sections: Use ### and ####. 
-            - NO BOLD in paragraphs.`,
+            contents: `Create a detailed blog outline for: "${topic}". 
+            Rules: # Title (4-5 words max), Main Sections ###, Subsections ####. ❌ NO BOLD TEXT.`,
             config: getConfig({ temperature: 0.8 }),
         });
         return response.text?.trim() || "";
     } catch (error: any) {
-        throw new Error("Outline generation failed: " + error.message);
+        throw new Error("Failed to generate outline: " + error.message);
     }
 };
 
-// 2. Generate Full Blog Post
+// ————————————————————————————————————————
+// 2. Generate Full Post
+// ————————————————————————————————————————
 export const generateFullPost = async (title: string, outline: string): Promise<string> => {
     if (!ai) throw new Error("Gemini API key missing");
     try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `Write a full 1200+ word blog post.
-      Title: ${title} (4-5 words max).
-      Outline: ${outline}
-      
-      RULES:
-      - ❌ **ABSOLUTELY NO BOLD TEXT** inside any paragraphs.
-      - ❌ **NO ROBOTIC PHRASES** (e.g., "In conclusion", "Moreover").
-      - ✅ **BLUE UNDERLINED LINKS**: Insert 3 links from this list using <a href="URL" style="color: blue; text-decoration: underline;">Anchor Text</a>:
-      ${INTERNAL_LINKS}
-      - Write for a 13-year-old audience. 
-      - Include 8 FAQs at the end using ###. 
-      - Goal: 0% AI detection through high burstiness and human-like flow.`,
+            contents: `Write a 1200+ word article. Title: ${title} (4-5 words max). Outline: ${outline}.
+            RULES:
+            - Tone: 13-year-old level.
+            - Headers: ### and ####.
+            - ❌ NO BOLDING in paragraphs.
+            - ✅ BLUE LINKS: Include 3 internal links from this list using <a href="URL" style="color: blue; text-decoration: underline;">Anchor Text</a> format: ${INTERNAL_LINKS_LIST}.
+            - Include 8 FAQs using ### at the end.`,
             config: getConfig({ temperature: 0.9 }),
         });
         return response.text?.trim() || "";
     } catch (error: any) {
-        throw new Error("Post generation failed: " + error.message);
+        throw new Error("Failed to generate full post: " + error.message);
     }
 };
 
+// ————————————————————————————————————————
 // 3. Generate Trending News Post
+// ————————————————————————————————————————
 export const generateNewsPost = async (category: string = "tech") => {
     if (!ai) throw new Error("Gemini API key missing");
     try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `Find breaking news in "${category}". Write a full article.
-            - Title: # 4-5 words max.
-            - Use ### and ####. 
-            - ❌ **NO BOLD** in paragraphs.
-            - ✅ **BLUE UNDERLINED LINKS**: Insert 2 relevant links:
-            ${INTERNAL_LINKS}
-            - Include 8 FAQs.`,
+            contents: `Search for trending news in "${category}". Write a detailed blog post.
+            Rules: # Title (4-5 words max), ###/#### headers, ❌ NO BOLD. 
+            ✅ BLUE LINKS from: ${INTERNAL_LINKS_LIST}. 13-year-old friendly language.`,
             config: getConfig({ useSearch: true, temperature: 0.8 }),
         });
+
         const fullText = response.text?.trim() || "";
-        return { title: "Latest News", content: fullText, sources: null };
+        const lines = fullText.split("\n");
+        const titleLine = lines.find((l: string) => l.trim().startsWith("# "));
+        let title = titleLine ? titleLine.replace(/^#+\s*/, "").trim() : `Latest Tech News`;
+        title = title.split(/\s+/).slice(0, 5).join(" ");
+
+        return { title, content: fullText, sources: null };
     } catch (error: any) {
-        throw new Error("News failed: " + error.message);
+        throw new Error("News generation failed: " + error.message);
     }
 };
 
-// 4. Generate Blog Header Image
+// ————————————————————————————————————————
+// 4. Generate Blog Image
+// ————————————————————————————————————————
 export const generateBlogImage = async (prompt: string): Promise<string> => {
     if (!ai) return `https://picsum.photos/seed/${Date.now()}/1600/900`;
     try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-image",
-            contents: [{ parts: [{ text: `Cinematic tech 16:9 header: ${prompt}. Photorealistic.` }] }],
-            config: {
-                responseModalities: [Modality.IMAGE],
-                imageConfig: { aspectRatio: "16:9" },
-            } as GenerateContentConfig,
+            contents: [{ parts: [{ text: `Professional cinematic 16:9 tech blog header: ${prompt}. Photorealistic, modern.` }] }],
+            config: { responseModalities: [Modality.IMAGE], imageConfig: { aspectRatio: "16:9" } } as GenerateContentConfig,
         });
         const data = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
         return data ? `data:image/png;base64,${data}` : `https://picsum.photos/seed/err/1600/900`;
@@ -197,47 +211,49 @@ export const generateBlogImage = async (prompt: string): Promise<string> => {
     }
 };
 
-// 5. AI Humanizer (0% AI Target)
-export interface PlagiarismAnalysisResult {
-    score: number;
-    explanation: string;
-    flagged_sentences: string[];
-    humanized_text: string;
-}
-
-export const analyzeAndHumanize = async (text: string, mode: string = 'Blog'): Promise<PlagiarismAnalysisResult> => {
+// ————————————————————————————————————————
+// 5. AI Humanizer
+// ————————————————————————————————————————
+export const analyzeAndHumanize = async (text: string, mode: HumanizerMode = 'Standard'): Promise<PlagiarismAnalysisResult> => {
     if (!ai) throw new Error("Gemini API key missing");
+
+    let stylePrompt = "";
+    switch (mode) {
+        case 'Academic': stylePrompt = "Formal, authoritative, no contractions."; break;
+        case 'Blog': stylePrompt = "Punchy, use 'I/You', conversational, very bursty."; break;
+        case 'Professional': stylePrompt = "Polished, clear, corporate but natural."; break;
+        case 'Creative': stylePrompt = "Evocative, narrative, varied rhythm."; break;
+        default: stylePrompt = "Natural, confident, industry expert tone."; break;
+    }
+
+    const prompt = `Rewrite the following text to achieve 0% AI detection. 
+    Mode: ${mode}. Instructions: ${stylePrompt}.
+    Rules: ❌ NO BOLDING. Keep HTML links if present. Mix short and long sentences. 
+    Ban words: 'Moreover', 'Furthermore', 'Tapestry', 'In conclusion'.
+    
+    Text to rewrite: "${text}"
+
+    Return ONLY raw JSON:
+    {
+        "score": number,
+        "flagged_sentences": [],
+        "humanized_text": "...",
+        "explanation": "..."
+    }`;
+
     try {
-        const prompt = `
-        TASK: Rewrite this text to bypass all AI detectors (Target: 0% AI score).
-        Input: "${text}"
-        
-        HUMANIZATION STRATEGY:
-        1. **Vary sentence length** drastically (4 words followed by 30 words).
-        2. **Use human imperfections**: Sentence fragments, conversational transitions.
-        3. **Strictly remove all bold text** from the output.
-        4. **Remove forbidden AI words**: "unlock", "delve", "tapestry", "moreover".
-        5. **Link Style**: Ensure links remain <a href="..." style="color: blue; text-decoration: underline;">Text</a>.
-
-        RETURN JSON:
-        {
-            "score": 0,
-            "flagged_sentences": [],
-            "humanized_text": "REWRITTEN TEXT HERE",
-            "explanation": "Removed robotic patterns and bolding."
-        }`;
-
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
-                temperature: 1.4, // High temperature for maximum human-like variance
+                temperature: 1.4,
+                topP: 0.99
             },
         });
         return JSON.parse(response.text?.trim() || "{}") as PlagiarismAnalysisResult;
     } catch (error: any) {
-        throw new Error("Humanizer failed.");
+        throw new Error("Failed to humanize text: " + error.message);
     }
 };
 
