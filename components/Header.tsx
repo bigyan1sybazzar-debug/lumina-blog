@@ -26,6 +26,7 @@ const TOOL_LINKS = [
   { name: 'Exchange Offer', path: '/tools/exchange-offer' },
   { name: 'AI Humanizer', path: '/ai-humanizer' },
   { name: 'Second Hand Phones', path: '/tools/phone-marketplace' },
+  { name: 'Live Sports', path: '/tools/live-tv' },
   { name: 'Electronic Voting', path: '/voting' },
 ];
 
