@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: ['/admin/', '/admin', '/login', '/signup', '/api/'],
         },
-        sitemap: 'https://bigyann.com.np/sitemap.xml',
+        sitemap: 'https://bigyann.com.np/sitemap_index.xml',
     };
 }

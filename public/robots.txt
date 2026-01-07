@@ -6,4 +6,4 @@ Disallow: /login
 Disallow: /signup
 Disallow: /api/
 
-Sitemap: https://bigyann.com.np/sitemap.xml
+Sitemap: https://bigyann.com.np/sitemap_index.xml
