@@ -2,7 +2,7 @@
 import { notifyIndexNow, notifyBingWebmaster } from './indexingService'; // Ensure this is imported
 import firebase from 'firebase/compat/app';
 import { db } from './firebase';
-import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption } from '../types';
+import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption, LiveLink } from '../types';
 import { MOCK_POSTS, CATEGORIES } from '../constants';
 import { slugify } from '../lib/slugify'; // <-- NEW IMPORT
 
@@ -12,6 +12,7 @@ const CATEGORIES_COLLECTION = 'categories';
 const COMMENTS_COLLECTION = 'comments';
 const REVIEWS_COLLECTION = 'reviews';
 const POLLS_COLLECTION = 'polls';
+const LIVE_LINKS_COLLECTION = 'live_links';
 
 
 // Helper: client-side sort (avoids Firestore composite index requirement)
@@ -799,8 +800,8 @@ export const voteInPoll = async (pollId: string, optionId: string, userId: strin
 
     await pollRef.update({
       options: updatedOptions,
-      totalVotes: firebase.firestore.FieldValue.increment(1),
-      votedUserIds: firebase.firestore.FieldValue.arrayUnion(userId)
+      votedUserIds: firebase.firestore.FieldValue.arrayUnion(userId),
+      totalVotes: firebase.firestore.FieldValue.increment(1)
     });
 
     return true;
@@ -809,6 +810,47 @@ export const voteInPoll = async (pollId: string, optionId: string, userId: strin
     return false;
   }
 };
+
+// --- LIVE LINKS (Admin managed) ---
+
+export const getLiveLinks = async (): Promise<LiveLink[]> => {
+  try {
+    const snapshot = await db.collection(LIVE_LINKS_COLLECTION)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as LiveLink));
+  } catch (error) {
+    console.error('Error fetching live links:', error);
+    return [];
+  }
+};
+
+export const addLiveLink = async (link: Omit<LiveLink, 'id'>) => {
+  try {
+    await db.collection(LIVE_LINKS_COLLECTION).add({
+      ...link,
+      createdAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error adding live link:', error);
+    throw error;
+  }
+};
+
+export const deleteLiveLink = async (id: string) => {
+  try {
+    await db.collection(LIVE_LINKS_COLLECTION).doc(id).delete();
+  } catch (error) {
+    console.error('Error deleting live link:', error);
+    throw error;
+  }
+};
+
+
 
 export const createPoll = async (poll: Omit<Poll, 'id' | 'createdAt' | 'totalVotes' | 'votedUserIds' | 'slug' | 'status'>) => {
   try {

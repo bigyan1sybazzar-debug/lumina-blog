@@ -209,3 +209,11 @@ export interface BuyerRequest {
   description: string;
   timestamp: string;
 }
+
+export interface LiveLink {
+  id: string;
+  heading: string;
+  iframeUrl: string;
+  createdAt: string;
+  status: 'active' | 'inactive';
+}

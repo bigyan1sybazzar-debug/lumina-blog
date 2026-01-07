@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, deleteLiveLink } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { BlogPost, User, Category, BlogPostComment, BlogPostReview, Poll } from '../types';
+import { BlogPost, User, Category, BlogPostComment, BlogPostReview, Poll, LiveLink } from '../types';
 // Removed modular firestore imports for consistency with services/firebase.ts
 import { db } from '../services/firebase';
 import { getAllChats } from '../services/chatService';
@@ -42,7 +42,7 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -122,6 +122,11 @@ export const Admin: React.FC = () => {
   const [featuredPosts, setFeaturedPosts] = useState<BlogPost[]>([]);
   const [availablePosts, setAvailablePosts] = useState<BlogPost[]>([]);
   const [isSavingFeatured, setIsSavingFeatured] = useState(false);
+
+  // Live Section State
+  const [liveLinks, setLiveLinks] = useState<LiveLink[]>([]);
+  const [newLiveHeading, setNewLiveHeading] = useState('');
+  const [newLiveIframe, setNewLiveIframe] = useState('');
 
   const logsEndRef = useRef<HTMLDivElement>(null);
   const isAdmin = user?.role === 'admin';
@@ -205,6 +210,9 @@ export const Admin: React.FC = () => {
   useEffect(() => {
     if (allPosts.length > 0 && activeTab === 'featured') {
       loadFeaturedPosts();
+    }
+    if (activeTab === 'live-section') {
+      getLiveLinks().then(setLiveLinks);
     }
   }, [allPosts, activeTab]);
 
@@ -752,7 +760,43 @@ export const Admin: React.FC = () => {
       alert('Failed to add reply.');
       console.error(error);
     }
+  }
+
+
+  const handleAddLiveLink = async () => {
+    if (!newLiveHeading || !newLiveIframe) {
+      alert('Please fill in both Heading and Iframe URL');
+      return;
+    }
+    try {
+      await addLiveLink({
+        heading: newLiveHeading,
+        iframeUrl: newLiveIframe,
+        status: 'active',
+        createdAt: new Date().toISOString()
+      });
+      alert('Live Link added!');
+      setNewLiveHeading('');
+      setNewLiveIframe('');
+      getLiveLinks().then(setLiveLinks);
+    } catch (error) {
+      console.error(error);
+      alert('Failed to add live link');
+    }
   };
+
+  const handleDeleteLiveLink = async (id: string) => {
+    if (confirm('Are you sure you want to delete this link?')) {
+      try {
+        await deleteLiveLink(id);
+        getLiveLinks().then(setLiveLinks);
+      } catch (error) {
+        console.error(error);
+        alert('Failed to delete live link');
+      }
+    }
+  };
+
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const setRandomImage = () => setCoverImage(`https://picsum.photos/800/400?random=${Math.floor(Math.random() * 1000)}`);
@@ -949,6 +993,16 @@ export const Admin: React.FC = () => {
                       }`}
                   >
                     <Users size={18} className="mr-3" /> Social Mgmt
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveTab('live-section'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'live-section'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <Globe size={18} className="mr-3" /> Live Section
                   </button>
                 </>
               )}
@@ -1551,6 +1605,88 @@ export const Admin: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            )
+          }
+
+          {/* LIVE SECTION TAB */}
+          {
+            activeTab === 'live-section' && isAdmin && (
+              <div className="max-w-7xl mx-auto space-y-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                  <Globe className="text-primary-500" />
+                  Live Section Management
+                </h1>
+
+                {/* Add New Live Link */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Add New Live Link</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Heading</label>
+                      <input
+                        type="text"
+                        value={newLiveHeading}
+                        onChange={(e) => setNewLiveHeading(e.target.value)}
+                        placeholder="e.g. Latest News Coverage"
+                        className="input-field"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Iframe URL</label>
+                      <input
+                        type="text"
+                        value={newLiveIframe}
+                        onChange={(e) => setNewLiveIframe(e.target.value)}
+                        placeholder="https://www.youtube.com/embed/..."
+                        className="input-field font-mono text-sm"
+                      />
+                    </div>
+                    <button
+                      onClick={handleAddLiveLink}
+                      className="btn-primary"
+                    >
+                      Add Live Link
+                    </button>
+                  </div>
+                </div>
+
+                {/* List of Live Links */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-900/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heading</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Iframe URL</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {liveLinks.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No live links found.</td>
+                        </tr>
+                      ) : (
+                        liveLinks.map(link => (
+                          <tr key={link.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{link.heading}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={link.iframeUrl}>{link.iframeUrl}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(link.createdAt).toLocaleDateString()}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <button
+                                onClick={() => handleDeleteLiveLink(link.id)}
+                                className="text-red-600 hover:text-red-800 transition-colors"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )

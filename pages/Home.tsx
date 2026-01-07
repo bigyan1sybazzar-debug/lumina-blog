@@ -11,7 +11,7 @@ import Image from 'next/image';
 // Removed modular firestore imports for consistency with services/firebase.ts
 import { db } from '../services/firebase';
 
-import { Calculator, RefreshCw } from 'lucide-react';
+import { Calculator, RefreshCw, Tv } from 'lucide-react';
 import { LogIn, FileText, Edit } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import GoogleAdSense from '../components/GoogleAdSense';
@@ -257,6 +257,7 @@ export const Home: React.FC = () => {
           </div>
         </section>
       )}
+      {/* Live Section */}
 
 
       {/* AI Tools Section */}
@@ -381,10 +382,10 @@ export const Home: React.FC = () => {
               <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Loan Estimates</p>
             </a>
 
-            {/* Tab 6: Exchange Offer (Full Width on Mobile & Desktop) */}
+            {/* Tab 6: Exchange Offer (Standard Width) */}
             <Link
               href="/tools/exchange-offer"
-              className="col-span-2 lg:col-span-2 text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
+              className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
                    transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
                    group rounded-2xl border border-gray-100 dark:border-gray-700/50"
             >
@@ -396,9 +397,30 @@ export const Home: React.FC = () => {
               <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Check Value</p>
             </Link>
 
+            {/* Tab 7: Live TV Shortcut */}
+            <Link
+              href="/tools/live-tv"
+              className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
+                    transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
+                    group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+            >
+              <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-red-500 to-orange-600 
+                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <Tv className="w-5 h-5 text-white" />
+                <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+              </div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Live Sports </h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Watch Now</p>
+            </Link>
+
           </div>
         </div>
       </section>
+
+
 
       {/* Community Polls Section - Repositioned below AI Tools */}
       {polls.length > 0 && (
