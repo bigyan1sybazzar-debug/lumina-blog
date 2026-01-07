@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>CORS Test</h1>
+  <div id="result">Testing...</div>
+  <script>
+    fetch('https://www.1secmail.com/api/v1/?action=genRandomMailbox&count=1')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('result').textContent = 'Success: ' + JSON.stringify(data);
+      })
+      .catch(err => {
+        document.getElementById('result').textContent = 'Error: ' + err.message;
+      });
+  </script>
+</body>
+</html>

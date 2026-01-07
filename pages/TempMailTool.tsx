@@ -13,50 +13,57 @@ const TempMailTool: React.FC = () => {
   const [copied, setCopied] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  /* 
+   * Guerrilla Mail API via local proxy:
+   * Generate: /api/temp-mail?action=get_email_address
+   * Messages: /api/temp-mail?action=check_email&sid_token=...&seq=...
+   * Read: /api/temp-mail?action=fetch_email&sid_token=...&email_id=...
+   */
+
   const generateGmail = async () => {
     setLoading(true);
     setError(null);
     try {
-      const domainRes = await fetch('https://api.mail.tm/domains');
-      const domainData = await domainRes.json();
-      const domain = domainData['hydra:member'][0].domain;
+      // 1. Get new email address + session ID
+      const res = await fetch('/api/temp-mail?action=get_email_address');
+      if (!res.ok) throw new Error("Failed to generate email");
 
-      const address = `user${Math.random().toString(36).substring(7)}@${domain}`;
-      const password = 'password123';
+      const data = await res.json();
+      // data: { email_addr: "...", sid_token: "...", alias: "..." }
 
-      const accountRes = await fetch('https://api.mail.tm/accounts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address, password }),
-      });
-      const accData = await accountRes.json();
-
-      const tokenRes = await fetch('https://api.mail.tm/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address, password }),
-      });
-      const tokenData = await tokenRes.json();
-
-      setAccount({ address: accData.address, token: tokenData.token });
+      setAccount({ address: data.email_addr, token: data.sid_token });
     } catch (err) {
-      setError("Mail nodes are currently busy. Please try again.");
+      setError("Failed to generate email. Please try again.");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   const checkMessages = async () => {
-    if (!account) return;
+    if (!account?.token) return;
     setCheckingMail(true);
     try {
-      const res = await fetch('https://api.mail.tm/messages', {
-        headers: { 'Authorization': `Bearer ${account.token}` },
-      });
+      // 2. Check for new emails using seq=0 to get list (or last known seq)
+      // Guerrilla Mail returns last 10 messages if seq=0
+      const res = await fetch(`/api/temp-mail?action=check_email&sid_token=${account.token}&seq=0`);
+      if (!res.ok) throw new Error("Failed to fetch messages");
+
       const data = await res.json();
-      setMessages(data['hydra:member'] || []);
+      // data: { list: [ { mail_id, mail_from, mail_subject, mail_date, ... } ], ... }
+
+      if (data.list && Array.isArray(data.list)) {
+        const mappedMessages = data.list.map((msg: any) => ({
+          id: msg.mail_id,
+          from: msg.mail_from,
+          subject: msg.mail_subject,
+          createdAt: new Date().toISOString(), // Guerrilla doesn't always send ISO date, simplified for now
+          intro: msg.mail_excerpt
+        }));
+        setMessages(mappedMessages);
+      }
     } catch (err) {
-      console.error("Inbox sync failed");
+      console.error("Inbox sync failed", err);
     } finally {
       setCheckingMail(false);
     }
@@ -64,14 +71,21 @@ const TempMailTool: React.FC = () => {
 
   // Fetch full message content when one is clicked
   const openMessage = async (msg: any) => {
+    if (!account?.token) return;
     try {
-      const res = await fetch(`https://api.mail.tm/messages/${msg.id}`, {
-        headers: { 'Authorization': `Bearer ${account?.token}` },
-      });
+      const res = await fetch(`/api/temp-mail?action=fetch_email&sid_token=${account.token}&email_id=${msg.id}`);
+      if (!res.ok) throw new Error("Failed to read message");
+
       const fullMsg = await res.json();
-      setSelectedMessage(fullMsg);
+      // fullMsg: { mail_body, ... }
+
+      setSelectedMessage({
+        ...msg, // keep header info
+        html: fullMsg.mail_body ? [fullMsg.mail_body] : [],
+        text: fullMsg.mail_body // Guerrilla mostly sends HTML
+      });
     } catch (err) {
-      console.error("Failed to load full message");
+      console.error("Failed to load full message", err);
     }
   };
 
