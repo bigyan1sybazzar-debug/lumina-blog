@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         openGraph: {
             title: post.title,
             description: post.excerpt || `Read ${post.title} on Bigyann.`,
-            url: `/${post.slug}`,
+            url: `https://bigyann.com.np/${post.slug}`,
             siteName: 'Bigyann',
             images: [
                 {
@@ -60,5 +60,50 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function Page({ params }: Props) {
-    return <BlogPostPage />;
+    const { slug } = await params;
+    const post = await getPostBySlug(slug);
+
+    if (!post) {
+        return <BlogPostPage />;
+    }
+
+    const isoDate = post.date ? new Date(post.date).toISOString() : new Date().toISOString();
+    const updatedDate = post.updatedAt ? new Date(post.updatedAt).toISOString() : isoDate;
+
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: post.title,
+        description: post.excerpt,
+        image: post.coverImage ? [post.coverImage] : [],
+        datePublished: isoDate,
+        dateModified: updatedDate,
+        author: {
+            '@type': 'Person',
+            name: post.author.name,
+            url: `https://bigyann.com.np/u/${post.author.id}` // Assuming user profile route
+        },
+        publisher: {
+            '@type': 'Organization',
+            name: 'Bigyann',
+            logo: {
+                '@type': 'ImageObject',
+                url: 'https://bigyann.com.np/icon-192x192.png'
+            }
+        },
+        mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': `https://bigyann.com.np/${post.slug}`
+        }
+    };
+
+    return (
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+            <BlogPostPage />
+        </>
+    );
 }

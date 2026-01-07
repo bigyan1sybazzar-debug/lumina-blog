@@ -1,21 +1,29 @@
 import { NextResponse } from 'next/server';
-import { getPosts } from '../../services/db';
-import { BlogPost } from '../../types';
+import { getPosts, getPolls } from '../../services/db';
+import { BlogPost, Poll } from '../../types';
 
 const BASE_URL = 'https://bigyann.com.np';
 
 export async function GET() {
   // 1. Fetch dynamic data
   let dynamicPosts: BlogPost[] = [];
+  let dynamicPolls: Poll[] = [];
+
   try {
-    dynamicPosts = await getPosts();
+    const [posts, polls] = await Promise.all([
+      getPosts(),
+      getPolls('all')
+    ]);
+    dynamicPosts = posts;
+    dynamicPolls = polls;
   } catch (error) {
-    console.error('Failed to fetch posts for sitemap:', error);
+    console.error('Failed to fetch data for sitemap:', error);
   }
 
   const staticPages = [
     '',
     '/voting',
+    '/categories',
     '/login',
     '/signup',
     '/about',
@@ -24,7 +32,12 @@ export async function GET() {
     '/terms-of-service',
     '/disclaimer',
     '/tools/my-phone-price',
-    // Add other static routes as needed
+    '/tools/ai-translator',
+    '/tools/emi-calculator',
+    '/tools/exchange-offer',
+    '/tools/resume-checker',
+    '/tools/temp-mail',
+    '/tools/video-downloader',
   ];
 
   // 2. Generate the XML string
@@ -55,10 +68,22 @@ export async function GET() {
           `;
       })
       .join('')}
+
+      ${dynamicPolls
+      .map((poll) => {
+        return `
+            <url>
+              <loc>${BASE_URL}/voting/${poll.slug}</loc>
+              <lastmod>${new Date().toISOString()}</lastmod>
+              <changefreq>weekly</changefreq>
+              <priority>0.6</priority>
+            </url>
+          `;
+      })
+      .join('')}
     </urlset>
   `;
 
-  // 3. Return the response with the correct XML header
   // 3. Return the response with the correct XML header
   return new NextResponse(sitemap, {
     headers: {

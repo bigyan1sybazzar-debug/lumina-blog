@@ -70,7 +70,7 @@ export const metadata: Metadata = {
         images: ['https://bigyann.com.np/og-image.png'],
     },
     alternates: {
-        canonical: 'https://bigyann.com.np',
+        canonical: './',
     },
     verification: {
         google: 'your-google-verification-code', // Placeholder if needed
