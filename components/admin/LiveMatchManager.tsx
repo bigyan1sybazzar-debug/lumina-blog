@@ -16,8 +16,8 @@ export const LiveMatchManager: React.FC<LiveMatchManagerProps> = ({ matches, onC
     const [matchUrl, setMatchUrl] = useState('');
 
     const handleCreate = async () => {
-        if (!title || !team1 || !team2 || !matchUrl) {
-            alert('Please fill all fields');
+        if (!title || !matchUrl) {
+            alert('Title and Live URL are required');
             return;
         }
         await onCreateMatch({ title, team1, team2, matchUrl, isActive: true });
@@ -35,34 +35,54 @@ export const LiveMatchManager: React.FC<LiveMatchManagerProps> = ({ matches, onC
                     Create Live Match Notification
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                        type="text"
-                        placeholder="Match Title (e.g. Premier League)"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        className="input-field"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Live URL"
-                        value={matchUrl}
-                        onChange={(e) => setMatchUrl(e.target.value)}
-                        className="input-field"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Team 1"
-                        value={team1}
-                        onChange={(e) => setTeam1(e.target.value)}
-                        className="input-field"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Team 2"
-                        value={team2}
-                        onChange={(e) => setTeam2(e.target.value)}
-                        className="input-field"
-                    />
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Main Title (Required)
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="e.g. ICC World Cup 2024"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="input-field"
+                        />
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Live URL (Required)
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="https://example.com/live"
+                            value={matchUrl}
+                            onChange={(e) => setMatchUrl(e.target.value)}
+                            className="input-field"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Team 1 (Optional)
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="e.g. Brazil"
+                            value={team1}
+                            onChange={(e) => setTeam1(e.target.value)}
+                            className="input-field"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Team 2 (Optional)
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="e.g. Argentina"
+                            value={team2}
+                            onChange={(e) => setTeam2(e.target.value)}
+                            className="input-field"
+                        />
+                    </div>
                 </div>
                 <button
                     onClick={handleCreate}
@@ -85,11 +105,13 @@ export const LiveMatchManager: React.FC<LiveMatchManagerProps> = ({ matches, onC
                                     <span className={`w-2 h-2 rounded-full ${match.isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
                                     <h4 className="font-bold text-gray-900 dark:text-white">{match.title}</h4>
                                 </div>
-                                <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-                                    <span className="font-medium text-primary-600">{match.team1}</span>
-                                    <span>vs</span>
-                                    <span className="font-medium text-primary-600">{match.team2}</span>
-                                </div>
+                                {match.team1 && match.team2 && (
+                                    <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                                        <span className="font-medium text-primary-600">{match.team1}</span>
+                                        <span>vs</span>
+                                        <span className="font-medium text-primary-600">{match.team2}</span>
+                                    </div>
+                                )}
                                 <div className="mt-1">
                                     <a href={match.matchUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1">
                                         <ExternalLink size={10} />

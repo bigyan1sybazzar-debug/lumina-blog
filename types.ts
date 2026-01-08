@@ -235,8 +235,8 @@ export interface SEOData {
 export interface LiveMatch {
   id: string;
   title: string;
-  team1: string;
-  team2: string;
+  team1?: string;
+  team2?: string;
   matchUrl: string;
   isActive: boolean;
   createdAt: string;
