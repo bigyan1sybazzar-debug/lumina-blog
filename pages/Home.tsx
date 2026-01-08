@@ -15,6 +15,7 @@ import { Calculator, RefreshCw, Tv } from 'lucide-react';
 import { LogIn, FileText, Edit } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import GoogleAdSense from '../components/GoogleAdSense';
+import { LiveMatchPopup } from '../components/LiveMatchPopup';
 export const Home: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [heroFeatured, setHeroFeatured] = useState<BlogPost[]>([]);
@@ -703,6 +704,7 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
+      <LiveMatchPopup />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import { BlogPostPage } from '../../components/BlogPost';
 import { Metadata } from 'next';
 import { getPostBySlug } from '../../services/db';
+import { generateArticleSchema } from '../../lib/schemaGenerator';
 
 type Props = {
     params: Promise<{ slug: string }>
@@ -18,21 +19,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         };
     }
 
-    const keywords = post.tags || [];
+    const keywords = post.seo?.focusKeywords || post.tags || [];
     const publishedTime = post.date ? new Date(post.date).toISOString() : new Date().toISOString();
     const modifiedTime = post.updatedAt || publishedTime;
 
     return {
-        title: post.title,
-        description: post.excerpt || `Read the latest article about ${post.title} on Bigyann.`,
+        title: post.seo?.metaTitle || post.title,
+        description: post.seo?.metaDescription || post.excerpt || `Read the latest article about ${post.title} on Bigyann.`,
         keywords: keywords,
         authors: [{ name: post.author.name }],
         alternates: {
             canonical: `https://bigyann.com.np/${post.slug}`,
         },
         openGraph: {
-            title: post.title,
-            description: post.excerpt || `Read ${post.title} on Bigyann.`,
+            title: post.seo?.metaTitle || post.title,
+            description: post.seo?.metaDescription || post.excerpt || `Read ${post.title} on Bigyann.`,
             url: `https://bigyann.com.np/${post.slug}`,
             siteName: 'Bigyann',
             images: [
@@ -52,8 +53,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
         twitter: {
             card: 'summary_large_image',
-            title: post.title,
-            description: post.excerpt || `Read ${post.title} on Bigyann.`,
+            title: post.seo?.metaTitle || post.title,
+            description: post.seo?.metaDescription || post.excerpt || `Read ${post.title} on Bigyann.`,
             images: [post.coverImage],
         },
     };
@@ -67,41 +68,24 @@ export default async function Page({ params }: Props) {
         return <BlogPostPage />;
     }
 
-    const isoDate = post.date ? new Date(post.date).toISOString() : new Date().toISOString();
-    const updatedDate = post.updatedAt ? new Date(post.updatedAt).toISOString() : isoDate;
-
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'BlogPosting',
-        headline: post.title,
-        description: post.excerpt,
-        image: post.coverImage ? [post.coverImage] : [],
-        datePublished: isoDate,
-        dateModified: updatedDate,
-        author: {
-            '@type': 'Person',
-            name: post.author.name,
-            url: `https://bigyann.com.np/u/${post.author.id}` // Assuming user profile route
-        },
-        publisher: {
-            '@type': 'Organization',
-            name: 'Bigyann',
-            logo: {
-                '@type': 'ImageObject',
-                url: 'https://bigyann.com.np/icon-192x192.png'
-            }
-        },
-        mainEntityOfPage: {
-            '@type': 'WebPage',
-            '@id': `https://bigyann.com.np/${post.slug}`
-        }
-    };
+    const canonicalUrl = `https://bigyann.com.np/${post.slug}`;
+    const { articleSchema, faqSchema, breadcrumbSchema } = generateArticleSchema(post, canonicalUrl);
 
     return (
         <>
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+            />
+            {faqSchema && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+                />
+            )}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
             />
             <BlogPostPage />
         </>

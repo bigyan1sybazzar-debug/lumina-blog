@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, deleteLiveLink } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, deleteLiveLink, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { BlogPost, User, Category, BlogPostComment, BlogPostReview, Poll, LiveLink } from '../types';
+import { BlogPost, User, Category, BlogPostComment, BlogPostReview, Poll, LiveLink, Keyword, LiveMatch } from '../types';
 // Removed modular firestore imports for consistency with services/firebase.ts
 import { db } from '../services/firebase';
 import { getAllChats } from '../services/chatService';
@@ -17,7 +17,7 @@ import {
   PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw,
   Users, CheckCircle, Shield, Tag, Globe, ExternalLink, Trash2, Eye,
   Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter,
-  Bot, Vote
+  Bot, Vote, Hash, Trophy
 } from 'lucide-react';
 import { AnalyticsDashboard } from './admin/AnalyticsDashboard';
 import { UserManagement } from './admin/UserManagement';
@@ -25,6 +25,8 @@ import { ContentApprovals } from './admin/ContentApprovals';
 import { AutomationPanel } from './admin/AutomationPanel';
 import { FeaturedManager } from './admin/FeaturedManager';
 import { CategoriesManager } from './admin/CategoriesManager';
+import { KeywordsManager } from './admin/KeywordsManager';
+import { LiveMatchManager } from './admin/LiveMatchManager';
 
 import { ANALYTICS_DATA } from '../constants';
 import { deleteCategory, updatePost, deletePost, getPostById } from '../services/db';
@@ -42,7 +44,7 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'keywords' | 'live-matches' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -60,6 +62,8 @@ export const Admin: React.FC = () => {
   const [myPosts, setMyPosts] = useState<BlogPost[]>([]);
   const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [keywords, setKeywords] = useState<Keyword[]>([]);
+  const [liveMatches, setLiveMatches] = useState<LiveMatch[]>([]);
   const [allPolls, setAllPolls] = useState<Poll[]>([]);
   const [sitemapUrl, setSitemapUrl] = useState<string | null>(null);
   const [isGeneratingSitemap, setIsGeneratingSitemap] = useState(false);
@@ -95,6 +99,9 @@ export const Admin: React.FC = () => {
   const [fullContent, setFullContent] = useState('');
   const [category, setCategory] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [focusKeywords, setFocusKeywords] = useState('');
   const [coverImage, setCoverImage] = useState('https://picsum.photos/800/400?random=1');
   const [coverImageAlt, setCoverImageAlt] = useState(''); // Alt Text State
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -143,6 +150,9 @@ export const Admin: React.FC = () => {
     setFullContent('');
     setCategory('');
     setTagsInput('');
+    setMetaTitle('');
+    setMetaDescription('');
+    setFocusKeywords('');
     setCoverImage(`https://picsum.photos/800/400?random=${Date.now()}`);
     setCoverImageAlt('');
     setExcerpt('');
@@ -249,6 +259,12 @@ export const Admin: React.FC = () => {
       if (cats.length > 0 && !category) {
         setCategory(cats[0].name);
       }
+
+      const keys = await getKeywords();
+      setKeywords(keys);
+
+      const matches = await getLiveMatches();
+      setLiveMatches(matches);
 
       // --- CALCULATE REAL ANALYTICS ---
       if (isAdmin) { // Ensure using the refreshed allPostsData
@@ -430,6 +446,11 @@ export const Admin: React.FC = () => {
         readTime: `${Math.ceil(fullContent.split(' ').length / 200)} min read`,
         category,
         tags,
+        seo: {
+          metaTitle: metaTitle || title,
+          metaDescription: metaDescription || excerpt || fullContent.substring(0, 150).replace(/[#*`]/g, '') + '...',
+          focusKeywords: focusKeywords.split(',').map(k => k.trim()).filter(k => k.length > 0)
+        },
         coverImage,
         coverImageAlt,
         slug: slug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') || undefined,
@@ -466,6 +487,9 @@ export const Admin: React.FC = () => {
         setFullContent(post.content);
         setCategory(post.category);
         setTagsInput(post.tags?.join(', ') || '');
+        setMetaTitle(post.seo?.metaTitle || post.title);
+        setMetaDescription(post.seo?.metaDescription || post.excerpt);
+        setFocusKeywords(post.seo?.focusKeywords?.join(', ') || '');
         setCoverImage(post.coverImage || 'https://picsum.photos/800/400?random=1');
         setCoverImageAlt(post.coverImageAlt || '');
         setSlug(post.slug || '');
@@ -609,6 +633,64 @@ export const Admin: React.FC = () => {
         refreshData();
       } catch (error) {
         alert('Failed to delete category.');
+        console.error(error);
+      }
+    }
+  };
+
+  const handleCreateKeyword = async (name: string) => {
+    try {
+      await createKeyword(name);
+      alert('Keyword added successfully!');
+      refreshData();
+    } catch (error) {
+      alert('Failed to create keyword.');
+      console.error(error);
+    }
+  };
+
+  const handleDeleteKeyword = async (keywordId: string) => {
+    if (confirm('Are you sure you want to delete this keyword?')) {
+      try {
+        await deleteKeyword(keywordId);
+        alert('Keyword deleted successfully!');
+        refreshData();
+      } catch (error) {
+        alert('Failed to delete keyword.');
+        console.error(error);
+      }
+    }
+  };
+
+  const handleCreateLiveMatch = async (match: Omit<LiveMatch, 'id' | 'createdAt'>) => {
+    try {
+      await createLiveMatch(match);
+      alert('Live match notification added!');
+      refreshData();
+    } catch (error) {
+      alert('Failed to add live match.');
+      console.error(error);
+    }
+  };
+
+  const handleUpdateLiveMatchStatus = async (id: string, isActive: boolean) => {
+    try {
+      await updateLiveMatchStatus(id, isActive);
+      refreshData();
+    } catch (error) {
+      alert('Failed to update status.');
+      console.error(error);
+    }
+  };
+
+  const handleDeleteLiveMatch = async (id: string) => {
+    if (confirm('Are you sure you want to delete this live match notification?')) {
+      try {
+        await deleteLiveMatch(id);
+        alert('Live match notification deleted!');
+        refreshData();
+      } catch (error) {
+        alert('Failed to delete live match.');
         console.error(error);
       }
     }
@@ -943,6 +1025,26 @@ export const Admin: React.FC = () => {
                       }`}
                   >
                     <Tag size={18} className="mr-3" /> Categories
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveTab('keywords'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'keywords'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <Hash size={18} className="mr-3" /> Keywords
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveTab('live-matches'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'live-matches'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <Trophy size={18} className="mr-3" /> Live Matches
                   </button>
 
                   <button
@@ -1703,6 +1805,29 @@ export const Admin: React.FC = () => {
             )
           }
 
+          {/* KEYWORDS TAB */}
+          {
+            activeTab === 'keywords' && isAdmin && (
+              <KeywordsManager
+                keywords={keywords}
+                onCreateKeyword={handleCreateKeyword}
+                onDeleteKeyword={handleDeleteKeyword}
+              />
+            )
+          }
+
+          {/* LIVE MATCHES TAB */}
+          {
+            activeTab === 'live-matches' && isAdmin && (
+              <LiveMatchManager
+                matches={liveMatches}
+                onCreateMatch={handleCreateLiveMatch}
+                onUpdateStatus={handleUpdateLiveMatchStatus}
+                onDeleteMatch={handleDeleteLiveMatch}
+              />
+            )
+          }
+
           {/* ANALYTICS TAB */}
           {
             activeTab === 'analytics' && isAdmin && (
@@ -2002,6 +2127,68 @@ export const Admin: React.FC = () => {
                               />
                               <p className="text-xs text-gray-500 mt-1">Shown in post listings and SEO previews</p>
                             </div>
+
+                            {/* SEO Fields Section */}
+                            <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                <TrendingUp size={18} className="text-primary-500" />
+                                SEO Optimization
+                              </h3>
+
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Meta Title
+                                    <span className="text-xs text-gray-500 ml-2">(Recommended: 50-60 characters)</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={metaTitle}
+                                    onChange={(e) => setMetaTitle(e.target.value)}
+                                    placeholder={title || "SEO-optimized title for search engines"}
+                                    className="input-field"
+                                    maxLength={60}
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {metaTitle.length}/60 characters
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Meta Description
+                                    <span className="text-xs text-gray-500 ml-2">(Recommended: 150-160 characters)</span>
+                                  </label>
+                                  <textarea
+                                    value={metaDescription}
+                                    onChange={(e) => setMetaDescription(e.target.value)}
+                                    placeholder="Compelling description for search engine results..."
+                                    className="input-field min-h-[80px]"
+                                    maxLength={160}
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {metaDescription.length}/160 characters
+                                  </p>
+                                </div>
+
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Focus Keywords
+                                    <span className="text-xs text-gray-500 ml-2">(Comma-separated)</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={focusKeywords}
+                                    onChange={(e) => setFocusKeywords(e.target.value)}
+                                    placeholder="seo, optimization, keywords"
+                                    className="input-field"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Target keywords for search engine ranking
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
 
                           {/* Right Column - Preview */}
@@ -2161,6 +2348,68 @@ export const Admin: React.FC = () => {
                               className="input-field min-h-[100px]"
                             />
                             <p className="text-xs text-gray-500 mt-1">Shown in post listings and SEO previews</p>
+                          </div>
+
+                          {/* SEO Fields Section */}
+                          <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                              <TrendingUp size={18} className="text-primary-500" />
+                              SEO Optimization
+                            </h3>
+
+                            <div className="space-y-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                  Meta Title
+                                  <span className="text-xs text-gray-500 ml-2">(Recommended: 50-60 characters)</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={metaTitle}
+                                  onChange={(e) => setMetaTitle(e.target.value)}
+                                  placeholder={title || "SEO-optimized title for search engines"}
+                                  className="input-field"
+                                  maxLength={60}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {metaTitle.length}/60 characters
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                  Meta Description
+                                  <span className="text-xs text-gray-500 ml-2">(Recommended: 150-160 characters)</span>
+                                </label>
+                                <textarea
+                                  value={metaDescription}
+                                  onChange={(e) => setMetaDescription(e.target.value)}
+                                  placeholder="Compelling description for search engine results..."
+                                  className="input-field min-h-[80px]"
+                                  maxLength={160}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {metaDescription.length}/160 characters
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                  Focus Keywords
+                                  <span className="text-xs text-gray-500 ml-2">(Comma-separated)</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={focusKeywords}
+                                  onChange={(e) => setFocusKeywords(e.target.value)}
+                                  placeholder="seo, optimization, keywords"
+                                  className="input-field"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Target keywords for search engine ranking
+                                </p>
+                              </div>
+                            </div>
                           </div>
 
                           <div>

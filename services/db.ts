@@ -13,6 +13,8 @@ const COMMENTS_COLLECTION = 'comments';
 const REVIEWS_COLLECTION = 'reviews';
 const POLLS_COLLECTION = 'polls';
 const LIVE_LINKS_COLLECTION = 'live_links';
+const KEYWORDS_COLLECTION = 'keywords';
+const LIVE_MATCHES_COLLECTION = 'live_matches';
 
 
 // Helper: client-side sort (avoids Firestore composite index requirement)
@@ -927,6 +929,87 @@ export const deletePoll = async (pollId: string): Promise<void> => {
     await db.collection(POLLS_COLLECTION).doc(pollId).delete();
   } catch (error) {
     console.error('Error deleting poll:', error);
+    throw error;
+  }
+};
+
+// --- KEYWORDS ---
+
+export const getKeywords = async (): Promise<{ id: string; name: string; count: number }[]> => {
+  try {
+    const snapshot = await db.collection(KEYWORDS_COLLECTION).orderBy('name').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as { id: string; name: string; count: number }));
+  } catch (error) {
+    console.error('Error fetching keywords:', error);
+    return [];
+  }
+};
+
+export const createKeyword = async (name: string) => {
+  try {
+    const normalizedName = name.trim().toLowerCase();
+    // Check if exists
+    const snapshot = await db.collection(KEYWORDS_COLLECTION).where('name', '==', normalizedName).limit(1).get();
+    if (!snapshot.empty) return; // Already exists
+
+    await db.collection(KEYWORDS_COLLECTION).add({
+      name: normalizedName,
+      count: 0,
+      createdAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error creating keyword:', error);
+    throw error;
+  }
+};
+
+export const deleteKeyword = async (id: string) => {
+  try {
+    await db.collection(KEYWORDS_COLLECTION).doc(id).delete();
+  } catch (error) {
+    console.error('Error deleting keyword:', error);
+    throw error;
+  }
+};
+
+// --- LIVE MATCHES ---
+
+export const getLiveMatches = async (): Promise<any[]> => {
+  try {
+    const snapshot = await db.collection(LIVE_MATCHES_COLLECTION).orderBy('createdAt', 'desc').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error fetching live matches:', error);
+    return [];
+  }
+};
+
+export const createLiveMatch = async (match: any) => {
+  try {
+    await db.collection(LIVE_MATCHES_COLLECTION).add({
+      ...match,
+      createdAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error creating live match:', error);
+    throw error;
+  }
+};
+
+export const updateLiveMatchStatus = async (id: string, isActive: boolean) => {
+  try {
+    await db.collection(LIVE_MATCHES_COLLECTION).doc(id).update({ isActive });
+  } catch (error) {
+    console.error('Error updating live match status:', error);
+    throw error;
+  }
+};
+
+export const deleteLiveMatch = async (id: string) => {
+  try {
+    await db.collection(LIVE_MATCHES_COLLECTION).doc(id).delete();
+  } catch (error) {
+    console.error('Error deleting live match:', error);
     throw error;
   }
 };

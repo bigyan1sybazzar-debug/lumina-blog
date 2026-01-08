@@ -201,8 +201,6 @@ export const BlogPostPage: React.FC = () => {
 
   return (
     <>
-
-
       <div className="bg-white dark:bg-gray-900 min-h-screen pb-20">
         <div className="h-[50vh] w-full relative">
           <Image

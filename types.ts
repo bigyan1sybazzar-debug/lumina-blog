@@ -70,6 +70,8 @@ export interface BlogPost {
   status: 'published' | 'pending' | 'draft' | 'hidden';
   likes: string[];               // REQUIRED (Defaulted to [] in db.ts)
 
+  seo?: SEOData;                 // New SEO fields
+
   createdAt: string;             // ISO string (REQUIRED)
   updatedAt: string;             // ISO string (REQUIRED)
 }
@@ -216,4 +218,26 @@ export interface LiveLink {
   iframeUrl: string;
   createdAt: string;
   status: 'active' | 'inactive';
+}
+
+export interface Keyword {
+  id: string;
+  name: string;
+  count: number;
+}
+
+export interface SEOData {
+  metaTitle?: string;
+  metaDescription?: string;
+  focusKeywords?: string[];
+}
+
+export interface LiveMatch {
+  id: string;
+  title: string;
+  team1: string;
+  team2: string;
+  matchUrl: string;
+  isActive: boolean;
+  createdAt: string;
 }
