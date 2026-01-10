@@ -15,6 +15,7 @@ interface GoogleAdSenseProps {
     responsive?: boolean;
     style?: React.CSSProperties;
     className?: string;
+    minHeight?: string | number;
 }
 
 const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
@@ -26,6 +27,7 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
     responsive = true,
     style,
     className,
+    minHeight,
 }) => {
     const adRef = useRef<HTMLModElement>(null);
     const initialized = useRef(false);
@@ -46,7 +48,10 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
     }, []);
 
     return (
-        <div className={`ad-container ${className || ''} my-4 overflow-hidden`}>
+        <div
+            className={`ad-container ${className || ''} my-4 overflow-hidden rounded-xl bg-gray-50/50 dark:bg-gray-800/20`}
+            style={{ minHeight: minHeight || 'auto' }}
+        >
             <ins
                 className="adsbygoogle"
                 style={{ display: 'block', ...style }}

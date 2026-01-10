@@ -16,12 +16,22 @@ import { LogIn, FileText, Edit } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import GoogleAdSense from '../components/GoogleAdSense';
 import { LiveMatchPopup } from '../components/LiveMatchPopup';
-export const Home: React.FC = () => {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [heroFeatured, setHeroFeatured] = useState<BlogPost[]>([]);
-  const [editorPicks, setEditorPicks] = useState<BlogPost[]>([]);
-  const [polls, setPolls] = useState<Poll[]>([]);
-  const [loading, setLoading] = useState(true);
+interface HomeProps {
+  initialPosts?: BlogPost[];
+  initialHeroFeatured?: BlogPost[];
+  initialPolls?: Poll[];
+}
+
+export const Home: React.FC<HomeProps> = ({
+  initialPosts = [],
+  initialHeroFeatured = [],
+  initialPolls = []
+}) => {
+  const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
+  const [heroFeatured, setHeroFeatured] = useState<BlogPost[]>(initialHeroFeatured);
+  const [editorPicks, setEditorPicks] = useState<BlogPost[]>(initialPosts.slice(0, 8));
+  const [polls, setPolls] = useState<Poll[]>(initialPolls);
+  const [loading, setLoading] = useState(initialPosts.length === 0);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -50,12 +60,17 @@ export const Home: React.FC = () => {
 
 
   useEffect(() => {
+    if (initialPosts.length > 0) {
+      setEditorPicks(initialPosts.slice(0, 8));
+      return;
+    }
+
     const load = async () => {
       setLoading(true);
       const data = await fetchPosts();
       const sorted = data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setPosts(sorted);
-      setEditorPicks(sorted.slice(0, 8)); // ← Latest 8 for slider
+      setEditorPicks(sorted.slice(0, 8));
 
       // Load Admin-selected Hero Posts
       try {
@@ -205,7 +220,7 @@ export const Home: React.FC = () => {
 
       {/* Ads Home - Display Ad */}
       <div className="max-w-7xl mx-auto px-4 mb-8">
-        <GoogleAdSense slot="7838572857" format="auto" responsive={true} />
+        <GoogleAdSense slot="7838572857" format="auto" responsive={true} minHeight={280} />
       </div>
 
       {/* Hot & Fresh Slider - Latest 8 Posts (Reduced py- from py-16 to py-12) */}
@@ -583,6 +598,7 @@ export const Home: React.FC = () => {
                           format="fluid"
                           layoutKey="-gw-3+1f-3d+2z"
                           style={{ display: 'block' }}
+                          minHeight={320}
                         />
                       </div>
                     )}
