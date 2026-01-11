@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getPages } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
@@ -111,15 +111,17 @@ export const Admin: React.FC = () => {
       if (configDoc.exists()) {
         const ids: string[] = configDoc.data().postIds || [];
         const ordered: BlogPost[] = [];
+        const pool = [...allPosts, ...(await getPages())];
         ids.forEach(id => {
-          const post = allPosts.find(p => p.id === id);
-          if (post) ordered.push(post);
+          const item = pool.find(p => p.id === id);
+          if (item) ordered.push(item);
         });
         setFeaturedPosts(ordered);
-        setAvailablePosts(allPosts.filter(p => !ids.includes(p.id)));
+        setAvailablePosts(pool.filter(p => !ids.includes(p.id)));
       } else {
+        const pool = [...allPosts, ...(await getPages())];
         setFeaturedPosts([]);
-        setAvailablePosts(allPosts);
+        setAvailablePosts(pool);
       }
     } catch (err) {
       console.error('Failed to load featured posts');

@@ -14,7 +14,6 @@ import { db } from '../services/firebase';
 import { Calculator, RefreshCw, Tv } from 'lucide-react';
 import { LogIn, FileText, Edit } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import GoogleAdSense from '../components/GoogleAdSense';
 import { LiveMatchPopup } from '../components/LiveMatchPopup';
 interface HomeProps {
   initialPosts?: BlogPost[];
@@ -165,12 +164,9 @@ export const Home: React.FC<HomeProps> = ({
                 <Sparkles className="w-4 h-4" />
                 Welcome to the Bigyann
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
-                AI <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">Powered</span> Reviews & Discussions
+              <h1 className="text-4xl md:text-5xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
+                Confused About <span className="bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">New Gadgets?</span> Ask Our AI & Read Real Reviews
               </h1>
-              <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl">
-                AI powered Articles, Reviews & Discussions on latest tech, design, and AI technology.
-              </p>
               <div className="flex flex-wrap gap-3 pt-2"> {/* Reduced pt- from pt-4 to pt-2 */}
                 <button
                   onClick={() => document.getElementById('featured-posts')?.scrollIntoView({ behavior: 'smooth' })}
@@ -178,10 +174,10 @@ export const Home: React.FC<HomeProps> = ({
                 >
                   Explore Articles
                 </button>
-                <a href='https://bigyann.com.np/Chat'
+                <Link href='https://bigyann.com.np/chat'
                   className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-black dark:bg-gray-800 dark:hover:bg-gray-700 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5">
                   <Send className="w-4 h-4" /> Ask AI
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -218,10 +214,6 @@ export const Home: React.FC<HomeProps> = ({
         </div>
       </section>
 
-      {/* Ads Home - Display Ad */}
-      <div className="max-w-7xl mx-auto px-4 mb-8">
-        <GoogleAdSense slot="7838572857" format="auto" responsive={true} minHeight={280} />
-      </div>
 
       {/* Hot & Fresh Slider - Latest 8 Posts (Reduced py- from py-16 to py-12) */}
       {editorPicks.length > 0 && (
@@ -578,76 +570,20 @@ export const Home: React.FC<HomeProps> = ({
           </div>
 
           {filteredPosts.length > 0 ? (
-            <>
-              <div className="grid grid-cols-2 min-[480px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                {filteredPosts.slice(0, 16).map((post, index) => (
-                  <React.Fragment key={post.id}>
-                    <PostCard
-                      post={post}
-                      categoryName={post.category}
-                      variant="vertical"
-                      textSizeClass="text-base"
-                      increasedTitle={false}
-                      alignLeft={true}
-                    />
-                    {/* Insert In-Feed Ad after the 4th item (index 3) */}
-                    {index === 3 && (
-                      <div key="adsense-infeed" className="col-span-2 min-[480px]:col-span-2 sm:col-span-2 lg:col-span-3 xl:col-span-4">
-                        <GoogleAdSense
-                          slot="8960082830"
-                          format="fluid"
-                          layoutKey="-gw-3+1f-3d+2z"
-                          style={{ display: 'block' }}
-                          minHeight={320}
-                        />
-                      </div>
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-
-              {/* Show the rest of posts in hidden state initially */}
-              {filteredPosts.length > 16 && (
-                <div id="more-posts" className="hidden">
-                  <div className="grid grid-cols-2 min-[480px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-6">
-                    {filteredPosts.slice(16).map((post) => (
-                      <PostCard
-                        key={post.id}
-                        post={post}
-                        categoryName={post.category}
-                        variant="vertical"
-                        textSizeClass="text-base"
-                        increasedTitle={false}
-                        alignLeft={true}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Load More Button - Show if there are more than 16 posts */}
-              {filteredPosts.length > 16 && (
-                <div className="mt-8 text-center"> {/* Reduced mt- from mt-12 to mt-8 */}
-                  <button
-                    onClick={() => {
-                      const morePostsSection = document.getElementById('more-posts');
-                      const loadMoreBtn = document.getElementById('load-more-btn');
-                      if (morePostsSection) {
-                        morePostsSection.classList.remove('hidden');
-                        morePostsSection.classList.add('block');
-                      }
-                      if (loadMoreBtn) {
-                        loadMoreBtn.classList.add('hidden');
-                      }
-                    }}
-                    id="load-more-btn"
-                    className="px-8 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-700 rounded-xl font-semibold text-gray-700 dark:text-gray-300 transition-all hover:shadow-lg hover:-translate-y-0.5"
-                  >
-                    Load More Articles ({filteredPosts.length - 16} more)
-                  </button>
-                </div>
-              )}
-            </>
+            <div className="grid grid-cols-2 min-[480px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              {filteredPosts.map((post, index) => (
+                <React.Fragment key={post.id}>
+                  <PostCard
+                    post={post}
+                    categoryName={post.category}
+                    variant="vertical"
+                    textSizeClass="text-base"
+                    increasedTitle={false}
+                    alignLeft={true}
+                  />
+                </React.Fragment>
+              ))}
+            </div>
           ) : (
             <div className="text-center py-10 md:py-12"> {/* Reduced py- from py-16 to py-12 */}
               <div className="max-w-md mx-auto">

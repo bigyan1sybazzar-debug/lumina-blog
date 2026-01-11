@@ -15,6 +15,7 @@ const POLLS_COLLECTION = 'polls';
 const LIVE_LINKS_COLLECTION = 'live_links';
 const KEYWORDS_COLLECTION = 'keywords';
 const LIVE_MATCHES_COLLECTION = 'live_matches';
+const PAGES_COLLECTION = 'pages';
 
 
 // Helper: client-side sort (avoids Firestore composite index requirement)
@@ -140,6 +141,23 @@ export const getAllPostsAdmin = async (): Promise<BlogPost[]> => {
     return posts.sort(sortByDateDesc);
   } catch (error) {
     console.error('Error fetching all posts (admin):', error);
+    return [];
+  }
+};
+
+// --- PAGES ---
+
+export const getPages = async (): Promise<BlogPost[]> => {
+  try {
+    const snapshot = await db.collection(PAGES_COLLECTION).get();
+    const pages = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as BlogPost));
+
+    return pages.sort(sortByDateDesc);
+  } catch (error) {
+    console.error('Error fetching all pages:', error);
     return [];
   }
 };

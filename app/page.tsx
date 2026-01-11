@@ -17,7 +17,7 @@ export default async function Page() {
     const postsSnapshot = await db.collection('posts')
         .where('status', '==', 'published')
         .orderBy('createdAt', 'desc')
-        .limit(24)
+        .limit(100)
         .get();
 
     const posts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost));
@@ -32,11 +32,16 @@ export default async function Page() {
         // If some featured posts aren't in the latest 24, fetch them individually
         if (heroFeatured.length < ids.length) {
             const missingIds = ids.filter(id => !heroFeatured.find(p => p.id === id));
-            const missingPosts = await Promise.all(missingIds.map(async id => {
-                const doc = await db.collection('posts').doc(id).get();
+            const missingItems = await Promise.all(missingIds.map(async id => {
+                // Try posts first
+                let doc = await db.collection('posts').doc(id).get();
+                if (doc.exists) return { id: doc.id, ...doc.data() } as BlogPost;
+
+                // Fallback to pages
+                doc = await db.collection('pages').doc(id).get();
                 return doc.exists ? { id: doc.id, ...doc.data() } as BlogPost : null;
             }));
-            heroFeatured = [...heroFeatured, ...(missingPosts.filter(p => p !== null) as BlogPost[])];
+            heroFeatured = [...heroFeatured, ...(missingItems.filter(p => p !== null) as BlogPost[])];
         }
         // Maintain ordering
         heroFeatured = ids.map(id => heroFeatured.find(p => p.id === id)).filter(Boolean) as BlogPost[];
