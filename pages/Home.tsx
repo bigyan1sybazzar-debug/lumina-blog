@@ -165,7 +165,7 @@ export const Home: React.FC<HomeProps> = ({
                 <Sparkles className="w-4 h-4" />
                 Welcome to the Bigyann
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 dark:text-white">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
                 AI <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">Powered</span> Reviews & Discussions
               </h1>
               <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl">

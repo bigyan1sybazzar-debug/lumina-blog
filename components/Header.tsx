@@ -252,7 +252,7 @@ export const Header: React.FC = () => {
 
       {/* Mobile/Tablet Menu Overlay */}
       {isMenuOpen && (
-        <div className="lg:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-xl animate-in slide-in-from-top-4 duration-200">
+        <div className="lg:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-xl animate-in slide-in-from-top-4 duration-200 overflow-y-auto max-h-[calc(100vh-4rem)]">
           <div className="px-4 pt-4 pb-6 space-y-2">
 
             {/* Added Search Bar to Mobile/Tablet Menu */}

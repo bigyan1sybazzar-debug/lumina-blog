@@ -16,18 +16,23 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',   // Main brand color
-          600: '#0284c7',   // Hover states
-          700: '#0369a1',   // Active/darker
-          800: '#075985',   // Critical: now included
-          900: '#0c4a6e',
-          950: '#082f49',
+          50: '#f5f3ff',
+          100: '#ede9fe',
+          200: '#ddd6fe',
+          300: '#c4b5fd',
+          400: '#a78bfa',
+          500: '#8b5cf6', // Vibrant Violet
+          600: '#7c3aed', // Rich Purple-Indigo
+          700: '#6d28d9',
+          800: '#5b21b6',
+          900: '#4c1d95',
+          950: '#2e1065',
         },
+        surface: {
+          light: '#f8fafc', // Clean Slate/Stone
+          dark: '#020617',  // Deep Midnight
+          darkElevated: '#0f172a', // Subtle depth for cards
+        }
       },
 
       fontFamily: {
