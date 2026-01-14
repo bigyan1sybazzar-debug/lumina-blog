@@ -14,32 +14,31 @@ export const LiveSection: React.FC = () => {
     const [selectedLink, setSelectedLink] = useState<LiveLink | null>(null);
     const [pendingLink, setPendingLink] = useState<LiveLink | null>(null);
     const [showAd, setShowAd] = useState(false);
-    const [countdown, setCountdown] = useState(5); // 5 second countdown
+    const [adClicked, setAdClicked] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false); // Prevent double-clicks
 
     useEffect(() => {
         getLiveLinks().then(setLinks);
     }, []);
 
-    // Countdown timer effect
-    useEffect(() => {
-        if (showAd && countdown > 0) {
-            const timer = setTimeout(() => {
-                setCountdown(countdown - 1);
-            }, 1000);
-            return () => clearTimeout(timer);
-        }
-    }, [showAd, countdown]);
+
 
     const handleLinkClick = (link: LiveLink) => {
         setPendingLink(link);
         setShowAd(true);
-        setCountdown(5); // Reset countdown
+        setAdClicked(false);
         setIsProcessing(false); // Reset processing state
     };
 
     const handleAdClose = () => {
-        if (countdown > 0 || isProcessing) return; // Prevent closing if countdown not finished or already processing
+        if (isProcessing) return; // Prevent closing if already processing
+
+        if (!adClicked) {
+            setAdClicked(true);
+            // Simulate ad click by opening in new tab
+            window.open('https://bigyann.com.np', '_blank');
+            return;
+        }
 
         setIsProcessing(true); // Prevent double-clicks
         setShowAd(false);
@@ -122,12 +121,12 @@ export const LiveSection: React.FC = () => {
                             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Advertisement</span>
                             <button
                                 onClick={handleAdClose}
-                                disabled={countdown > 0 || isProcessing}
-                                className={`transition-colors ${countdown > 0 || isProcessing
+                                disabled={isProcessing}
+                                className={`transition-colors ${isProcessing
                                     ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
                                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                                     }`}
-                                title={countdown > 0 ? `Wait ${countdown}s` : 'Close'}
+                                title={adClicked ? 'Close' : 'Open Ad'}
                             >
                                 <X size={20} />
                             </button>
@@ -151,13 +150,13 @@ export const LiveSection: React.FC = () => {
 
                         <button
                             onClick={handleAdClose}
-                            disabled={countdown > 0 || isProcessing}
-                            className={`w-full py-3 font-bold rounded-xl transition-all shadow-lg ${countdown > 0 || isProcessing
+                            disabled={isProcessing}
+                            className={`w-full py-3 font-bold rounded-xl transition-all shadow-lg ${isProcessing
                                 ? 'bg-gray-400 dark:bg-gray-600 text-gray-200 dark:text-gray-400 cursor-not-allowed'
                                 : 'bg-primary-600 hover:bg-primary-700 text-white hover:shadow-primary-500/25'
                                 }`}
                         >
-                            {isProcessing ? 'Loading...' : countdown > 0 ? `Skip in ${countdown}s` : 'Skip to Video'}
+                            {isProcessing ? 'Loading...' : adClicked ? 'Skip to Content' : 'Click to Skip Ad'}
                         </button>
 
                         {/* Divider */}
