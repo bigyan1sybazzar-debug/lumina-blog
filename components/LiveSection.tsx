@@ -14,7 +14,6 @@ export const LiveSection: React.FC = () => {
     const [selectedLink, setSelectedLink] = useState<LiveLink | null>(null);
     const [pendingLink, setPendingLink] = useState<LiveLink | null>(null);
     const [showAd, setShowAd] = useState(false);
-    const [adClicked, setAdClicked] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false); // Prevent double-clicks
 
     useEffect(() => {
@@ -26,19 +25,11 @@ export const LiveSection: React.FC = () => {
     const handleLinkClick = (link: LiveLink) => {
         setPendingLink(link);
         setShowAd(true);
-        setAdClicked(false);
         setIsProcessing(false); // Reset processing state
     };
 
     const handleAdClose = () => {
         if (isProcessing) return; // Prevent closing if already processing
-
-        if (!adClicked) {
-            setAdClicked(true);
-            // Simulate ad click by opening in new tab
-            window.open('https://bigyann.com.np', '_blank');
-            return;
-        }
 
         setIsProcessing(true); // Prevent double-clicks
         setShowAd(false);
@@ -126,7 +117,7 @@ export const LiveSection: React.FC = () => {
                                     ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
                                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                                     }`}
-                                title={adClicked ? 'Close' : 'Open Ad'}
+                                title="Close"
                             >
                                 <X size={20} />
                             </button>
@@ -156,7 +147,7 @@ export const LiveSection: React.FC = () => {
                                 : 'bg-primary-600 hover:bg-primary-700 text-white hover:shadow-primary-500/25'
                                 }`}
                         >
-                            {isProcessing ? 'Loading...' : adClicked ? 'Skip to Content' : 'Click to Skip Ad'}
+                            {isProcessing ? 'Loading...' : 'Skip to Video'}
                         </button>
 
                         {/* Divider */}
