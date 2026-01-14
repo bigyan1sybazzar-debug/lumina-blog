@@ -2,7 +2,7 @@
 import { notifyIndexNow, notifyBingWebmaster } from './indexingService'; // Ensure this is imported
 import firebase from 'firebase/compat/app';
 import { db } from './firebase';
-import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption, LiveLink } from '../types';
+import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption, LiveLink, Prompt, PromptCategory, PromptSubcategory } from '../types';
 import { MOCK_POSTS, CATEGORIES } from '../constants';
 import { slugify } from '../lib/slugify'; // <-- NEW IMPORT
 
@@ -1040,19 +1040,19 @@ const PROMPTS_COLLECTION = 'prompts';
 
 // --- PROMPT CATEGORIES ---
 
-export const getPromptCategories = async (): Promise<any[]> => {
+export const getPromptCategories = async (): Promise<PromptCategory[]> => {
   try {
     const snapshot = await db.collection(PROMPT_CATEGORIES_COLLECTION)
       .orderBy('order', 'asc')
       .get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PromptCategory));
   } catch (error) {
     console.error('Error fetching prompt categories:', error);
     return [];
   }
 };
 
-export const addPromptCategory = async (category: any): Promise<string> => {
+export const addPromptCategory = async (category: Omit<PromptCategory, 'id' | 'createdAt'>): Promise<string> => {
   try {
     const docRef = await db.collection(PROMPT_CATEGORIES_COLLECTION).add({
       ...category,
@@ -1065,7 +1065,7 @@ export const addPromptCategory = async (category: any): Promise<string> => {
   }
 };
 
-export const updatePromptCategory = async (id: string, updates: any): Promise<void> => {
+export const updatePromptCategory = async (id: string, updates: Partial<PromptCategory>): Promise<void> => {
   try {
     await db.collection(PROMPT_CATEGORIES_COLLECTION).doc(id).update(updates);
   } catch (error) {
@@ -1103,7 +1103,7 @@ export const deletePromptCategory = async (id: string): Promise<void> => {
 
 // --- PROMPT SUBCATEGORIES ---
 
-export const getPromptSubcategories = async (categoryId?: string): Promise<any[]> => {
+export const getPromptSubcategories = async (categoryId?: string): Promise<PromptSubcategory[]> => {
   try {
     let query: firebase.firestore.Query = db.collection(PROMPT_SUBCATEGORIES_COLLECTION);
 
@@ -1112,14 +1112,14 @@ export const getPromptSubcategories = async (categoryId?: string): Promise<any[]
     }
 
     const snapshot = await query.orderBy('order', 'asc').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PromptSubcategory));
   } catch (error) {
     console.error('Error fetching prompt subcategories:', error);
     return [];
   }
 };
 
-export const addPromptSubcategory = async (subcategory: any): Promise<string> => {
+export const addPromptSubcategory = async (subcategory: Omit<PromptSubcategory, 'id' | 'createdAt'>): Promise<string> => {
   try {
     const docRef = await db.collection(PROMPT_SUBCATEGORIES_COLLECTION).add({
       ...subcategory,
@@ -1132,7 +1132,7 @@ export const addPromptSubcategory = async (subcategory: any): Promise<string> =>
   }
 };
 
-export const updatePromptSubcategory = async (id: string, updates: any): Promise<void> => {
+export const updatePromptSubcategory = async (id: string, updates: Partial<PromptSubcategory>): Promise<void> => {
   try {
     await db.collection(PROMPT_SUBCATEGORIES_COLLECTION).doc(id).update(updates);
   } catch (error) {
@@ -1166,7 +1166,7 @@ export const getPrompts = async (filters?: {
   subcategoryId?: string;
   status?: string;
   isFeatured?: boolean;
-}): Promise<any[]> => {
+}): Promise<Prompt[]> => {
   try {
     let query: firebase.firestore.Query = db.collection(PROMPTS_COLLECTION);
 
@@ -1187,7 +1187,7 @@ export const getPrompts = async (filters?: {
     }
 
     const snapshot = await query.get();
-    const prompts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const prompts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prompt));
 
     // Sort by creation date (newest first)
     return prompts.sort((a, b) =>
@@ -1199,11 +1199,11 @@ export const getPrompts = async (filters?: {
   }
 };
 
-export const getPromptById = async (id: string): Promise<any | null> => {
+export const getPromptById = async (id: string): Promise<Prompt | null> => {
   try {
     const doc = await db.collection(PROMPTS_COLLECTION).doc(id).get();
     if (doc.exists) {
-      return { id: doc.id, ...doc.data() };
+      return { id: doc.id, ...doc.data() } as Prompt;
     }
     return null;
   } catch (error) {
@@ -1212,7 +1212,7 @@ export const getPromptById = async (id: string): Promise<any | null> => {
   }
 };
 
-export const addPrompt = async (prompt: any): Promise<string> => {
+export const addPrompt = async (prompt: Omit<Prompt, 'id' | 'usageCount' | 'likes' | 'createdAt' | 'updatedAt'>): Promise<string> => {
   try {
     const docRef = await db.collection(PROMPTS_COLLECTION).add({
       ...prompt,
@@ -1228,7 +1228,7 @@ export const addPrompt = async (prompt: any): Promise<string> => {
   }
 };
 
-export const updatePrompt = async (id: string, updates: any): Promise<void> => {
+export const updatePrompt = async (id: string, updates: Partial<Prompt>): Promise<void> => {
   try {
     await db.collection(PROMPTS_COLLECTION).doc(id).update({
       ...updates,
