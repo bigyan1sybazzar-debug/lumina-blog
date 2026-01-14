@@ -24,6 +24,7 @@ import {
 import { generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { getMyListings, updateListingStatus, deleteListing } from '../services/marketplaceService';
 import { MarketplaceManager } from '../components/admin/MarketplaceManager';
+import { PromptManager } from '../components/admin/PromptManager';
 import { ListingCard } from '../components/marketplace/ListingCard';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Category, Poll } from '../types'; // Ensure Poll is imported
@@ -36,7 +37,7 @@ const Profile: React.FC = () => {
     const [bio, setBio] = useState('');
     const [avatar, setAvatar] = useState('');
     const [coverImage, setCoverImage] = useState('');
-    const [activeTab, setActiveTab] = useState<'profile' | 'friends' | 'chat' | 'requests' | 'discover' | 'reviews' | 'posts' | 'listings' | 'dashboard' | 'users' | 'approvals' | 'automation' | 'featured' | 'categories' | 'marketplace'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'friends' | 'chat' | 'requests' | 'discover' | 'reviews' | 'posts' | 'listings' | 'dashboard' | 'users' | 'approvals' | 'automation' | 'featured' | 'categories' | 'marketplace' | 'prompts'>('profile');
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<User[]>([]);
     const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
@@ -554,6 +555,7 @@ const Profile: React.FC = () => {
             { id: 'automation', label: 'Auto-Pilot', icon: Sparkles },
             { id: 'marketplace', label: 'Marketplace', icon: ShoppingBag },
             { id: 'featured', label: 'Featured', icon: Star },
+            { id: 'prompts', label: 'Prompts', icon: Sparkles },
             { id: 'categories', label: 'Categories', icon: Settings },
         ] : []),
         ...(isModerator ? [
@@ -1224,6 +1226,12 @@ const Profile: React.FC = () => {
                             {activeTab === 'marketplace' && isAdmin && (
                                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <MarketplaceManager />
+                                </div>
+                            )}
+
+                            {activeTab === 'prompts' && (isAdmin || isModerator) && (
+                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <PromptManager />
                                 </div>
                             )}
 

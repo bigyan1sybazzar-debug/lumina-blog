@@ -49,7 +49,7 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
 
     return (
         <div
-            className={`ad-container ${className || ''} my-4 overflow-hidden rounded-xl bg-gray-50/50 dark:bg-gray-800/20`}
+            className={`ad-container ${className || ''}`}
             style={{ minHeight: minHeight || 'auto' }}
         >
             <ins

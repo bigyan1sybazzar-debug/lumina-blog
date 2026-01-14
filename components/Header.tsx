@@ -28,6 +28,7 @@ const TOOL_LINKS = [
   { name: 'Second Hand Phones', path: '/tools/phone-marketplace' },
   { name: 'Live Sports', path: '/tools/live-tv' },
   { name: 'Electronic Voting', path: '/voting' },
+  { name: 'Prompts Library', path: '/prompts' },
 ];
 
 export const Header: React.FC = () => {

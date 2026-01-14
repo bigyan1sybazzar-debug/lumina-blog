@@ -241,3 +241,48 @@ export interface LiveMatch {
   isActive: boolean;
   createdAt: string;
 }
+
+export interface PromptCategory {
+  id: string;
+  name: string;
+  icon: string; // Emoji or icon name
+  description: string;
+  order: number;
+  createdAt: string;
+}
+
+export interface PromptSubcategory {
+  id: string;
+  categoryId: string;
+  name: string;
+  description: string;
+  order: number;
+  createdAt: string;
+}
+
+export interface Prompt {
+  id: string;
+  title: string;
+  content: string;
+  description: string;
+  categoryId: string;
+  categoryName: string;
+  subcategoryId: string;
+  subcategoryName: string;
+
+  author: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+
+  tags: string[];
+  usageCount: number;
+  likes: string[]; // User IDs who liked
+
+  status: 'pending' | 'approved' | 'rejected';
+  isFeatured: boolean;
+
+  createdAt: string;
+  updatedAt: string;
+}

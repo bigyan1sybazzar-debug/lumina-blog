@@ -1031,3 +1031,281 @@ export const deleteLiveMatch = async (id: string) => {
     throw error;
   }
 };
+
+// --- PROMPTS LIBRARY ---
+
+const PROMPT_CATEGORIES_COLLECTION = 'prompt_categories';
+const PROMPT_SUBCATEGORIES_COLLECTION = 'prompt_subcategories';
+const PROMPTS_COLLECTION = 'prompts';
+
+// --- PROMPT CATEGORIES ---
+
+export const getPromptCategories = async (): Promise<any[]> => {
+  try {
+    const snapshot = await db.collection(PROMPT_CATEGORIES_COLLECTION)
+      .orderBy('order', 'asc')
+      .get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error fetching prompt categories:', error);
+    return [];
+  }
+};
+
+export const addPromptCategory = async (category: any): Promise<string> => {
+  try {
+    const docRef = await db.collection(PROMPT_CATEGORIES_COLLECTION).add({
+      ...category,
+      createdAt: new Date().toISOString(),
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding prompt category:', error);
+    throw error;
+  }
+};
+
+export const updatePromptCategory = async (id: string, updates: any): Promise<void> => {
+  try {
+    await db.collection(PROMPT_CATEGORIES_COLLECTION).doc(id).update(updates);
+  } catch (error) {
+    console.error('Error updating prompt category:', error);
+    throw error;
+  }
+};
+
+export const deletePromptCategory = async (id: string): Promise<void> => {
+  try {
+    // Check if any subcategories use this category
+    const subcatsSnapshot = await db.collection(PROMPT_SUBCATEGORIES_COLLECTION)
+      .where('categoryId', '==', id)
+      .get();
+
+    if (!subcatsSnapshot.empty) {
+      throw new Error('Cannot delete category: Subcategories exist. Please delete them first.');
+    }
+
+    // Check if any prompts use this category
+    const promptsSnapshot = await db.collection(PROMPTS_COLLECTION)
+      .where('categoryId', '==', id)
+      .get();
+
+    if (!promptsSnapshot.empty) {
+      throw new Error('Cannot delete category: Prompts exist. Please reassign them first.');
+    }
+
+    await db.collection(PROMPT_CATEGORIES_COLLECTION).doc(id).delete();
+  } catch (error) {
+    console.error('Error deleting prompt category:', error);
+    throw error;
+  }
+};
+
+// --- PROMPT SUBCATEGORIES ---
+
+export const getPromptSubcategories = async (categoryId?: string): Promise<any[]> => {
+  try {
+    let query: firebase.firestore.Query = db.collection(PROMPT_SUBCATEGORIES_COLLECTION);
+
+    if (categoryId) {
+      query = query.where('categoryId', '==', categoryId);
+    }
+
+    const snapshot = await query.orderBy('order', 'asc').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error fetching prompt subcategories:', error);
+    return [];
+  }
+};
+
+export const addPromptSubcategory = async (subcategory: any): Promise<string> => {
+  try {
+    const docRef = await db.collection(PROMPT_SUBCATEGORIES_COLLECTION).add({
+      ...subcategory,
+      createdAt: new Date().toISOString(),
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding prompt subcategory:', error);
+    throw error;
+  }
+};
+
+export const updatePromptSubcategory = async (id: string, updates: any): Promise<void> => {
+  try {
+    await db.collection(PROMPT_SUBCATEGORIES_COLLECTION).doc(id).update(updates);
+  } catch (error) {
+    console.error('Error updating prompt subcategory:', error);
+    throw error;
+  }
+};
+
+export const deletePromptSubcategory = async (id: string): Promise<void> => {
+  try {
+    // Check if any prompts use this subcategory
+    const promptsSnapshot = await db.collection(PROMPTS_COLLECTION)
+      .where('subcategoryId', '==', id)
+      .get();
+
+    if (!promptsSnapshot.empty) {
+      throw new Error('Cannot delete subcategory: Prompts exist. Please reassign them first.');
+    }
+
+    await db.collection(PROMPT_SUBCATEGORIES_COLLECTION).doc(id).delete();
+  } catch (error) {
+    console.error('Error deleting prompt subcategory:', error);
+    throw error;
+  }
+};
+
+// --- PROMPTS ---
+
+export const getPrompts = async (filters?: {
+  categoryId?: string;
+  subcategoryId?: string;
+  status?: string;
+  isFeatured?: boolean;
+}): Promise<any[]> => {
+  try {
+    let query: firebase.firestore.Query = db.collection(PROMPTS_COLLECTION);
+
+    if (filters?.categoryId) {
+      query = query.where('categoryId', '==', filters.categoryId);
+    }
+
+    if (filters?.subcategoryId) {
+      query = query.where('subcategoryId', '==', filters.subcategoryId);
+    }
+
+    if (filters?.status) {
+      query = query.where('status', '==', filters.status);
+    }
+
+    if (filters?.isFeatured !== undefined) {
+      query = query.where('isFeatured', '==', filters.isFeatured);
+    }
+
+    const snapshot = await query.get();
+    const prompts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Sort by creation date (newest first)
+    return prompts.sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  } catch (error) {
+    console.error('Error fetching prompts:', error);
+    return [];
+  }
+};
+
+export const getPromptById = async (id: string): Promise<any | null> => {
+  try {
+    const doc = await db.collection(PROMPTS_COLLECTION).doc(id).get();
+    if (doc.exists) {
+      return { id: doc.id, ...doc.data() };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching prompt by ID:', error);
+    return null;
+  }
+};
+
+export const addPrompt = async (prompt: any): Promise<string> => {
+  try {
+    const docRef = await db.collection(PROMPTS_COLLECTION).add({
+      ...prompt,
+      usageCount: 0,
+      likes: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding prompt:', error);
+    throw error;
+  }
+};
+
+export const updatePrompt = async (id: string, updates: any): Promise<void> => {
+  try {
+    await db.collection(PROMPTS_COLLECTION).doc(id).update({
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error updating prompt:', error);
+    throw error;
+  }
+};
+
+export const deletePrompt = async (id: string): Promise<void> => {
+  try {
+    await db.collection(PROMPTS_COLLECTION).doc(id).delete();
+  } catch (error) {
+    console.error('Error deleting prompt:', error);
+    throw error;
+  }
+};
+
+export const approvePrompt = async (id: string): Promise<void> => {
+  try {
+    await db.collection(PROMPTS_COLLECTION).doc(id).update({
+      status: 'approved',
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error approving prompt:', error);
+    throw error;
+  }
+};
+
+export const rejectPrompt = async (id: string): Promise<void> => {
+  try {
+    await db.collection(PROMPTS_COLLECTION).doc(id).update({
+      status: 'rejected',
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error rejecting prompt:', error);
+    throw error;
+  }
+};
+
+export const likePrompt = async (promptId: string, userId: string): Promise<boolean> => {
+  try {
+    const ref = db.collection(PROMPTS_COLLECTION).doc(promptId);
+    const doc = await ref.get();
+
+    if (!doc.exists) return false;
+
+    const likes: string[] = doc.data()?.likes || [];
+
+    if (likes.includes(userId)) {
+      await ref.update({
+        likes: firebase.firestore.FieldValue.arrayRemove(userId)
+      });
+      return false;
+    } else {
+      await ref.update({
+        likes: firebase.firestore.FieldValue.arrayUnion(userId)
+      });
+      return true;
+    }
+  } catch (error) {
+    console.error('Error liking prompt:', error);
+    throw error;
+  }
+};
+
+export const incrementPromptUsage = async (promptId: string): Promise<void> => {
+  try {
+    await db.collection(PROMPTS_COLLECTION).doc(promptId).update({
+      usageCount: firebase.firestore.FieldValue.increment(1),
+    });
+  } catch (error) {
+    console.error('Error incrementing prompt usage:', error);
+    throw error;
+  }
+};

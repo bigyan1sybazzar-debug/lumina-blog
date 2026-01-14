@@ -3,34 +3,69 @@
 import React, { useState, useEffect } from 'react';
 import { getLiveLinks } from '../services/db';
 import { LiveLink } from '../types';
-import { X, Play, Radio } from 'lucide-react';
+import Link from 'next/link';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv } from 'lucide-react';
 
 import GoogleAdSense from './GoogleAdSense';
+
 
 export const LiveSection: React.FC = () => {
     const [links, setLinks] = useState<LiveLink[]>([]);
     const [selectedLink, setSelectedLink] = useState<LiveLink | null>(null);
     const [pendingLink, setPendingLink] = useState<LiveLink | null>(null);
     const [showAd, setShowAd] = useState(false);
+    const [countdown, setCountdown] = useState(5); // 5 second countdown
+    const [isProcessing, setIsProcessing] = useState(false); // Prevent double-clicks
 
     useEffect(() => {
         getLiveLinks().then(setLinks);
     }, []);
 
+    // Countdown timer effect
+    useEffect(() => {
+        if (showAd && countdown > 0) {
+            const timer = setTimeout(() => {
+                setCountdown(countdown - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [showAd, countdown]);
+
     const handleLinkClick = (link: LiveLink) => {
         setPendingLink(link);
         setShowAd(true);
+        setCountdown(5); // Reset countdown
+        setIsProcessing(false); // Reset processing state
     };
 
     const handleAdClose = () => {
+        if (countdown > 0 || isProcessing) return; // Prevent closing if countdown not finished or already processing
+
+        setIsProcessing(true); // Prevent double-clicks
         setShowAd(false);
+
         if (pendingLink) {
             setSelectedLink(pendingLink);
             setPendingLink(null);
         }
+
+        // Reset processing state after a short delay
+        setTimeout(() => setIsProcessing(false), 500);
     };
 
     if (links.length === 0) return null;
+
+    const tools = [
+        { name: 'AI Humanizer', href: '/ai-humanizer', icon: Sparkles, color: 'from-purple-500 to-blue-600' },
+        { name: 'Buy/Sell Phones', href: '/tools/phone-marketplace', icon: ShoppingBag, color: 'from-green-500 to-teal-600' },
+        { name: 'Old Phone Price', href: '/price/my-phone-price', icon: Send, color: 'from-primary-400 to-purple-500' },
+        { name: 'AI Translator', href: '/tools/ai-translator', icon: Languages, color: 'from-indigo-500 to-blue-600' },
+        { name: 'Resume Checker', href: '/tools/resume-checker', icon: FileText, color: 'from-purple-500 to-pink-600' },
+        { name: 'Prompts Library', href: '/prompts', icon: Terminal, color: 'from-pink-500 to-orange-400' },
+        { name: 'EMI Calculator', href: '/tools/emi-calculator', icon: Calculator, color: 'from-blue-400 to-cyan-500', external: true },
+        { name: 'Exchange Offer', href: '/tools/exchange-offer', icon: RefreshCw, color: 'from-green-400 to-teal-500' },
+        { name: 'Live Sports', href: '/tools/live-tv', icon: Tv, color: 'from-red-500 to-orange-600' },
+    ];
 
     return (
         <section id="live-section" className="py-12 bg-gray-50 dark:bg-gray-950 relative overflow-hidden">
@@ -82,29 +117,104 @@ export const LiveSection: React.FC = () => {
             {/* Ad Interstitial Modal */}
             {showAd && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center">
+                    <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center max-h-[90vh] overflow-y-auto">
                         <div className="w-full flex justify-between items-center mb-4">
                             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Advertisement</span>
                             <button
                                 onClick={handleAdClose}
-                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                disabled={countdown > 0 || isProcessing}
+                                className={`transition-colors ${countdown > 0 || isProcessing
+                                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                                    }`}
+                                title={countdown > 0 ? `Wait ${countdown}s` : 'Close'}
                             >
                                 <X size={20} />
                             </button>
                         </div>
 
-                        <div className="min-h-[250px] w-full flex items-center justify-center bg-gray-100 dark:bg-gray-700/50 rounded-xl mb-6 overflow-hidden">
-                            {/* Use the specific AdSense slot if available, or a generic responsive one */}
-                            {/* Reusing Home slot for now or generic since explicit video ad slot not provided */}
-                            <GoogleAdSense slot="7838572857" responsive={true} format="rectangle" />
+                        {/* Ad Container */}
+                        <div className="min-h-[280px] w-full flex items-center justify-center bg-gray-50/30 dark:bg-gray-800/30 rounded-xl mb-6 overflow-hidden relative">
+                            <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-sm pointer-events-none">
+                                Loading advertisement...
+                            </div>
+                            <div className="w-full h-full relative z-10">
+                                <GoogleAdSense
+                                    slot="7838572857"
+                                    responsive={true}
+                                    format="auto"
+                                    minHeight="280px"
+                                    style={{ width: '100%', height: '280px' }}
+                                />
+                            </div>
                         </div>
 
                         <button
                             onClick={handleAdClose}
-                            className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-primary-500/25"
+                            disabled={countdown > 0 || isProcessing}
+                            className={`w-full py-3 font-bold rounded-xl transition-all shadow-lg ${countdown > 0 || isProcessing
+                                ? 'bg-gray-400 dark:bg-gray-600 text-gray-200 dark:text-gray-400 cursor-not-allowed'
+                                : 'bg-primary-600 hover:bg-primary-700 text-white hover:shadow-primary-500/25'
+                                }`}
                         >
-                            Skip to Video
+                            {isProcessing ? 'Loading...' : countdown > 0 ? `Skip in ${countdown}s` : 'Skip to Video'}
                         </button>
+
+                        {/* Divider */}
+                        <div className="relative my-6 w-full">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-4 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium">
+                                    Our Tools
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Tools Grid Section */}
+                        <div className="w-full grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {tools.map((tool) => {
+                                const Icon = tool.icon;
+                                const content = (
+                                    <>
+                                        <div className={`w-8 h-8 mb-2 rounded-full bg-gradient-to-tr ${tool.color} 
+                                                        flex items-center justify-center shadow-md group-hover:scale-110 transition-transform`}>
+                                            <Icon className="w-4 h-4 text-white" />
+                                        </div>
+                                        <span className="text-xs font-semibold text-gray-900 dark:text-white text-center line-clamp-1">{tool.name}</span>
+                                    </>
+                                );
+
+                                if (tool.external) {
+                                    return (
+                                        <a
+                                            key={tool.name}
+                                            href="https://bigyann.com.np/tools/emi-calculator" // Hardcoded for safety essentially, or use tool.href if absolute
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex flex-col items-center justify-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl 
+                                                     hover:bg-white dark:hover:bg-gray-700 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 
+                                                     transition-all group"
+                                        >
+                                            {content}
+                                        </a>
+                                    );
+                                }
+
+                                return (
+                                    <Link
+                                        key={tool.name}
+                                        href={tool.href}
+                                        className="flex flex-col items-center justify-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl 
+                                                 hover:bg-white dark:hover:bg-gray-700 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 
+                                                 transition-all group"
+                                    >
+                                        {content}
+                                    </Link>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             )}

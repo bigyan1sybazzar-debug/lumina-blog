@@ -21,6 +21,7 @@ import {
 
 import { ANALYTICS_DATA } from '../constants';
 import { deleteCategory, updatePost, deletePost, getPostById } from '../services/db';
+import { PromptManager } from '../components/admin/PromptManager';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -35,7 +36,7 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'prompts'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -715,6 +716,16 @@ export const Admin: React.FC = () => {
                       }`}
                   >
                     <TrendingUp size={18} className="mr-3" /> Analytics
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveTab('prompts'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'prompts'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <Sparkles size={18} className="mr-3" /> Prompts Manager
                   </button>
                 </>
               )}
@@ -1646,12 +1657,18 @@ export const Admin: React.FC = () => {
                         itemStyle={{ color: '#F3F4F6' }}
                         cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
                       />
-                      <Bar dataKey="views" name="Total Views" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={32} />
                       <Bar dataKey="posts" name="Total Posts" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={32} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* PROMPTS TAB */}
+          {activeTab === 'prompts' && isAdmin && (
+            <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+              <PromptManager />
             </div>
           )}
 

@@ -1,11 +1,10 @@
+'use client';
 import React, { useState, useCallback } from 'react';
 import { Sparkles, Copy, AlertTriangle, CheckCircle, RefreshCw, Smartphone, Monitor, Upload, Download, FileText, X } from 'lucide-react';
 import { analyzeAndHumanize } from '../services/geminiService';
 import { PlagiarismAnalysisResult, HumanizerMode } from '../services/geminiService';
 import Head from 'next/head';
 import { useDropzone } from 'react-dropzone';
-import { Header } from '../components/Header';
-import { Footer } from '../components/Footer';
 
 const MAX_WORD_COUNT = 5000;
 
@@ -136,8 +135,6 @@ export default function AIHumanizer() {
                 <title>Premium AI Humanizer 2.0 | Bigyann</title>
                 <meta name="description" content="Advanced 0% AI Detection Humanizer. Upload docs, wide layout, and professional results." />
             </Head>
-
-            <Header />
 
             <main className="max-w-[95rem] mx-auto px-4 py-8 md:py-12 pt-24">
 
@@ -348,8 +345,6 @@ export default function AIHumanizer() {
                     </div>
                 </div>
             </main>
-
-            <Footer />
         </div>
     );
 }
