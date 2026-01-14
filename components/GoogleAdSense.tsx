@@ -30,22 +30,26 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
     minHeight,
 }) => {
     const adRef = useRef<HTMLModElement>(null);
-    const initialized = useRef(false);
+    const initialized = useRef<string | null>(null);
 
     useEffect(() => {
-        // Prevent double initialization in React Strict Mode or fast navigation
-        if (initialized.current) return;
+        // Prevent double initialization for the same slot
+        if (initialized.current === slot) return;
 
-        try {
-            if (typeof window !== 'undefined') {
-                // Push the ad
-                (window.adsbygoogle = window.adsbygoogle || []).push({});
-                initialized.current = true;
+        const timer = setTimeout(() => {
+            try {
+                if (typeof window !== 'undefined' && window.adsbygoogle) {
+                    // Push the ad
+                    (window.adsbygoogle = window.adsbygoogle || []).push({});
+                    initialized.current = slot;
+                }
+            } catch (err) {
+                console.error('AdSense error:', err);
             }
-        } catch (err) {
-            console.error('AdSense error:', err);
-        }
-    }, []);
+        }, 500); // 500ms delay for modal/animation stability
+
+        return () => clearTimeout(timer);
+    }, [slot]);
 
     return (
         <div

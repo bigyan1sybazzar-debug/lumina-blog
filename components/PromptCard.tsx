@@ -16,8 +16,10 @@ export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLikeUpdate }) 
     const [copied, setCopied] = useState(false);
     const [isLiked, setIsLiked] = useState(user ? prompt.likes.includes(user.id) : false);
     const [likeCount, setLikeCount] = useState(prompt.likes.length);
+    const [isExpanded, setIsExpanded] = useState(false);
 
-    const handleCopy = async () => {
+    const handleCopy = async (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent card expansion when clicking copy
         try {
             await navigator.clipboard.writeText(prompt.content);
             setCopied(true);
@@ -31,7 +33,8 @@ export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLikeUpdate }) 
         }
     };
 
-    const handleLike = async () => {
+    const handleLike = async (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent card expansion when clicking like
         if (!user) {
             alert('Please login to like prompts');
             return;
@@ -48,7 +51,10 @@ export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLikeUpdate }) 
     };
 
     return (
-        <div className="group relative bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-800 hover:border-primary-100 dark:hover:border-primary-900/30">
+        <div
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`group relative bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-800 hover:border-primary-100 dark:hover:border-primary-900/30 cursor-pointer ${isExpanded ? 'ring-2 ring-primary-500' : ''}`}
+        >
             {/* Featured Badge */}
             {prompt.isFeatured && (
                 <div className="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold rounded-full">
@@ -77,11 +83,13 @@ export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLikeUpdate }) 
             </p>
 
             {/* Content Preview */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 mb-4 relative overflow-hidden">
-                <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3 font-mono">
+            <div className={`bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 mb-4 relative overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-none' : 'max-h-32'}`}>
+                <p className={`text-sm text-gray-700 dark:text-gray-300 font-mono whitespace-pre-wrap ${isExpanded ? '' : 'line-clamp-3'}`}>
                     {prompt.content}
                 </p>
-                <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-gray-50 dark:from-gray-800/50 to-transparent pointer-events-none" />
+                {!isExpanded && (
+                    <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-gray-50 dark:from-gray-800/50 to-transparent pointer-events-none" />
+                )}
             </div>
 
             {/* Tags */}
@@ -105,23 +113,20 @@ export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLikeUpdate }) 
 
             {/* Actions & Stats */}
             <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-4 text-xs font-medium text-gray-500 dark:text-gray-400">
                     {/* Usage Count */}
                     <div className="flex items-center gap-1">
-                        <TrendingUp size={14} />
-                        <span>{prompt.usageCount}</span>
+                        <span>{prompt.usageCount} uses</span>
                     </div>
 
                     {/* Like Count */}
                     <div className="flex items-center gap-1">
-                        <Heart size={14} className={isLiked ? 'fill-red-500 text-red-500' : ''} />
-                        <span>{likeCount}</span>
+                        <span className={isLiked ? 'text-red-500' : ''}>{likeCount} likes</span>
                     </div>
 
                     {/* Author */}
                     <div className="flex items-center gap-1">
-                        <User size={14} />
-                        <span className="text-xs">{prompt.author.name}</span>
+                        <span>{prompt.author.name}</span>
                     </div>
                 </div>
 

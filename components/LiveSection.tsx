@@ -144,7 +144,7 @@ export const LiveSection: React.FC = () => {
                                     responsive={true}
                                     format="auto"
                                     minHeight="280px"
-                                    style={{ width: '100%', height: '280px' }}
+                                    style={{ width: '100%' }}
                                 />
                             </div>
                         </div>

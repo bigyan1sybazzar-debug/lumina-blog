@@ -171,13 +171,14 @@ const Profile: React.FC = () => {
             if (activeTab === 'reviews') fetchUserActivity();
             if (activeTab === 'posts' || activeTab === 'profile') fetchUserPosts();
             if (activeTab === 'listings') fetchUserListings();
-            if (['dashboard', 'users', 'approvals', 'automation', 'featured', 'categories', 'marketplace'].includes(activeTab)) {
+            if (['dashboard', 'users', 'approvals', 'automation', 'featured', 'categories', 'marketplace', 'prompts'].includes(activeTab)) {
                 fetchAdminData();
             }
         }
     }, [user, activeTab]);
 
     const isAdmin = user?.role === 'admin';
+    const isEditor = user?.role === 'editor' || isAdmin;
     const isModerator = user?.role === 'moderator' || isAdmin;
 
     const fetchAdminData = async () => {
@@ -555,8 +556,10 @@ const Profile: React.FC = () => {
             { id: 'automation', label: 'Auto-Pilot', icon: Sparkles },
             { id: 'marketplace', label: 'Marketplace', icon: ShoppingBag },
             { id: 'featured', label: 'Featured', icon: Star },
-            { id: 'prompts', label: 'Prompts', icon: Sparkles },
             { id: 'categories', label: 'Categories', icon: Settings },
+        ] : []),
+        ...(isEditor ? [
+            { id: 'prompts', label: 'Prompts', icon: Sparkles },
         ] : []),
         ...(isModerator ? [
             { id: 'approvals', label: 'Approvals', icon: Check, count: pendingPosts.length + pendingPolls.length },
@@ -1229,7 +1232,7 @@ const Profile: React.FC = () => {
                                 </div>
                             )}
 
-                            {activeTab === 'prompts' && (isAdmin || isModerator) && (
+                            {activeTab === 'prompts' && isEditor && (
                                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <PromptManager />
                                 </div>

@@ -93,7 +93,7 @@ export const PromptManager: React.FC = () => {
                     name: user.name,
                     avatar: user.avatar
                 },
-                status: user.role === 'admin' ? 'approved' : 'pending'
+                status: (user.role === 'admin' || user.role === 'editor') ? 'approved' : 'pending'
             });
 
             alert('Prompt added successfully!');
@@ -294,7 +294,7 @@ export const PromptManager: React.FC = () => {
                                 >
                                     <option value="">Select Category *</option>
                                     {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
                                     ))}
                                 </select>
 
@@ -458,7 +458,7 @@ export const PromptManager: React.FC = () => {
                             />
                             <input
                                 type="text"
-                                placeholder="Icon (emoji) *"
+                                placeholder="Icon (optional emoji)"
                                 value={newCategory.icon}
                                 onChange={(e) => setNewCategory({ ...newCategory, icon: e.target.value })}
                                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
@@ -499,7 +499,7 @@ export const PromptManager: React.FC = () => {
                             <div key={cat.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 flex justify-between items-center">
                                 <div>
                                     <h4 className="font-bold text-gray-900 dark:text-white">
-                                        {cat.icon} {cat.name}
+                                        {cat.name}
                                     </h4>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">{cat.description}</p>
                                     <span className="text-xs text-gray-500">Order: {cat.order}</span>
@@ -537,7 +537,7 @@ export const PromptManager: React.FC = () => {
                             >
                                 <option value="">Select Category *</option>
                                 {categories.map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
                             <input
@@ -587,7 +587,7 @@ export const PromptManager: React.FC = () => {
                                         <h4 className="font-bold text-gray-900 dark:text-white">{subcat.name}</h4>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">{subcat.description}</p>
                                         <span className="text-xs text-gray-500">
-                                            Category: {category?.icon} {category?.name} • Order: {subcat.order}
+                                            Category: {category?.name} • Order: {subcat.order}
                                         </span>
                                     </div>
                                     <button

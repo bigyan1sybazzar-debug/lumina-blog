@@ -94,7 +94,7 @@ export const PromptLibrary: React.FC<PromptLibraryProps> = ({
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-purple-600 dark:from-primary-500 dark:to-purple-500">
-                            💡 Prompts Library
+                            Prompts Library
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400 mt-1">
                             Browse and copy prompts for AI, writing, marketing, and more
@@ -131,8 +131,8 @@ export const PromptLibrary: React.FC<PromptLibraryProps> = ({
                                 setSelectedSubcategory('');
                             }}
                             className={`px-4 py-2 rounded-lg font-medium transition-all ${!selectedCategory
-                                    ? 'bg-primary-600 text-white shadow-md'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                ? 'bg-primary-600 text-white shadow-md'
+                                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                                 }`}
                         >
                             All
@@ -145,11 +145,11 @@ export const PromptLibrary: React.FC<PromptLibraryProps> = ({
                                     setSelectedSubcategory('');
                                 }}
                                 className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedCategory === cat.id
-                                        ? 'bg-primary-600 text-white shadow-md'
-                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                    ? 'bg-primary-600 text-white shadow-md'
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                                     }`}
                             >
-                                {cat.icon} {cat.name}
+                                {cat.name}
                             </button>
                         ))}
                     </div>
@@ -166,8 +166,8 @@ export const PromptLibrary: React.FC<PromptLibraryProps> = ({
                         <button
                             onClick={() => setSelectedSubcategory('')}
                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${!selectedSubcategory
-                                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
-                                    : 'bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
+                                : 'bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                                 }`}
                         >
                             All
@@ -177,8 +177,8 @@ export const PromptLibrary: React.FC<PromptLibraryProps> = ({
                                 key={subcat.id}
                                 onClick={() => setSelectedSubcategory(subcat.id)}
                                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${selectedSubcategory === subcat.id
-                                        ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
-                                        : 'bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
+                                    : 'bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                                     }`}
                             >
                                 {subcat.name}
@@ -191,8 +191,8 @@ export const PromptLibrary: React.FC<PromptLibraryProps> = ({
             {/* Prompts Grid */}
             {displayPrompts.length > 0 ? (
                 <div className={`grid gap-6 ${compact
-                        ? 'grid-cols-1'
-                        : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                    ? 'grid-cols-1'
+                    : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
                     }`}>
                     {displayPrompts.map(prompt => (
                         <PromptCard key={prompt.id} prompt={prompt} onLikeUpdate={loadPrompts} />
