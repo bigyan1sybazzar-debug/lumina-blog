@@ -16,6 +16,10 @@ const nextConfig = {
         source: '/api-google-translate/:path*',
         destination: 'https://translate.googleapis.com/:path*',
       },
+      {
+        source: '/api/football/:path*',
+        destination: 'https://api.sportmonks.com/v3/football/:path*',
+      },
     ]
   },
 

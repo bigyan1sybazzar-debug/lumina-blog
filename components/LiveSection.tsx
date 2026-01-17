@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { getLiveLinks, getHighlights } from '../services/db';
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft } from 'lucide-react';
+import { Splide, SplideSlide } from '@splidejs/react-splide';
+import '@splidejs/react-splide/css';
 
 import GoogleAdSense from './GoogleAdSense';
 
@@ -21,8 +23,6 @@ export const LiveSection: React.FC = () => {
         getLiveLinks().then(setLinks);
         getHighlights().then(setHighlights);
     }, []);
-
-
 
     const handleLinkClick = (link: LiveLink) => {
         setPendingLink(link);
@@ -49,67 +49,66 @@ export const LiveSection: React.FC = () => {
 
     if (links.length === 0 && highlights.length === 0) return null;
 
-    const tools = [
-        { name: 'AI Humanizer', href: '/ai-humanizer', icon: Sparkles, color: 'from-purple-500 to-blue-600' },
-        { name: 'Buy/Sell Phones', href: '/tools/phone-marketplace', icon: ShoppingBag, color: 'from-green-500 to-teal-600' },
-        { name: 'Old Phone Price', href: '/price/my-phone-price', icon: Send, color: 'from-primary-400 to-purple-500' },
-        { name: 'AI Translator', href: '/tools/ai-translator', icon: Languages, color: 'from-indigo-500 to-blue-600' },
-        { name: 'Resume Checker', href: '/tools/resume-checker', icon: FileText, color: 'from-purple-500 to-pink-600' },
-        { name: 'Prompts Library', href: '/prompts', icon: Terminal, color: 'from-pink-500 to-orange-400' },
-        { name: 'EMI Calculator', href: '/tools/emi-calculator', icon: Calculator, color: 'from-blue-400 to-cyan-500', external: true },
-        { name: 'Exchange Offer', href: '/tools/exchange-offer', icon: RefreshCw, color: 'from-green-400 to-teal-500' },
-        { name: 'Live Sports', href: '/tools/live-tv', icon: Tv, color: 'from-red-500 to-orange-600' },
-    ];
+    const splideOptionsHighlights = {
+        perPage: 4,
+        perMove: 1,
+        gap: '1rem',
+        arrows: true,
+        pagination: false,
+        breakpoints: {
+            1024: { perPage: 3 },
+            768: { perPage: 2 },
+            480: { perPage: 1.5, gap: '0.75rem', arrows: false, pagination: true },
+        },
+    };
 
     return (
-        <section id="live-section" className="py-12 bg-gray-50 dark:bg-gray-950 relative overflow-hidden">
-            {/* Background Decorative Elements */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-500/5 rounded-full blur-[100px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-orange-500/5 rounded-full blur-[100px]" />
-            </div>
+        <section id="live-section" className="py-12 bg-white dark:bg-[#050505] relative overflow-hidden">
+            {/* Minimalist Background Deco */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-red-500/5 rounded-full blur-[100px] -mr-64 -mt-64" />
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-[100px] -ml-64 -mb-64" />
 
             <div className="max-w-7xl mx-auto px-4 relative z-10">
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                <div className="flex items-center gap-3 mb-10">
+                    <div className="flex items-center gap-2">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                        </span>
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                            Live Stream <span className="text-gray-400 font-medium text-lg">Coverage</span>
+                        </h2>
                     </div>
-                    <h2 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-500 dark:to-orange-500">
-                        Live Coverage & Updates
-                    </h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* CONSISTENT 2-COLUMN GRID ON ALL PLATFORMS FOR LIVE STREAMS */}
+                <div className="grid grid-cols-2 gap-3 md:gap-6">
                     {links.map((link) => (
                         <div
                             key={link.id}
                             onClick={() => handleLinkClick(link)}
-                            className="group cursor-pointer relative bg-white dark:bg-gray-900 rounded-2xl p-1 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-800 hover:border-red-100 dark:hover:border-red-900/30"
+                            className="group cursor-pointer flex flex-col sm:flex-row items-center sm:items-center gap-3 md:gap-4 bg-gray-50 dark:bg-white/5 p-3 md:p-6 rounded-2xl border border-gray-100 dark:border-white/5 hover:border-red-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-red-500/5"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl opacity-0 group-hover:opacity-5 transition-opacity" />
-
-                            <div className="p-5 flex items-start gap-4">
-                                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500 dark:text-red-400 group-hover:scale-110 transition-transform">
-                                    <Play size={20} fill="currentColor" className="ml-0.5" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-2">
-                                        {link.heading}
-                                    </h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
-                                        <Radio size={12} className="text-red-500" />
-                                        LIVE STREAM
-                                    </p>
-                                </div>
+                            <div className="flex-shrink-0 w-10 h-10 md:w-14 md:h-14 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform shadow-inner">
+                                <Play size={18} fill="currentColor" className="ml-0.5 md:size-[24px]" />
                             </div>
+                            <div className="flex-1 min-w-0 text-center sm:text-left">
+                                <h3 className="font-bold text-[10px] md:text-base lg:text-lg text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-1">
+                                    {link.heading}
+                                </h3>
+                                <p className="text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center sm:justify-start gap-1 uppercase tracking-widest">
+                                    <Activity size={10} className="text-red-500" />
+                                    Live Stream
+                                </p>
+                            </div>
+                            <ChevronRight size={14} className="hidden md:block text-gray-300 group-hover:translate-x-1 transition-transform ml-auto" />
                         </div>
                     ))}
                 </div>
 
                 {/* HIGHLIGHTS SECTION */}
                 {highlights.length > 0 && (
-                    <div className="mt-16 space-y-12">
+                    <div className="mt-20 space-y-12">
                         <div className="flex items-center gap-3">
                             <Sparkles className="w-6 h-6 text-primary-500" />
                             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
@@ -119,42 +118,48 @@ export const LiveSection: React.FC = () => {
 
                         {Object.entries(groupedHighlights).map(([category, items]) => (
                             <div key={category} className="space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 border-l-4 border-primary-500 pl-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-1 h-6 bg-primary-600 rounded-full" />
+                                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 uppercase tracking-tight">
                                         {category}
                                     </h3>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    {items.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            onClick={() => handleLinkClick(item as any)}
-                                            className="group cursor-pointer bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-lg transition-all"
-                                        >
-                                            <div className="aspect-video relative bg-gray-100 dark:bg-gray-800">
-                                                {/* YouTube Thumbnail Fallback */}
-                                                <img
-                                                    src={item.thumbnailUrl || `https://img.youtube.com/vi/${item.youtubeUrl.split('/').pop()?.split('?')[0]}/mqdefault.jpg`}
-                                                    alt={item.title}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                                />
-                                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                                                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-transform">
-                                                        <Play size={24} fill="currentColor" />
+                                <div className="relative group/highlights">
+                                    <Splide options={splideOptionsHighlights} className="highlights-splide">
+                                        {items.map((item) => (
+                                            <SplideSlide key={item.id}>
+                                                <div
+                                                    key={item.id}
+                                                    onClick={() => handleLinkClick(item as any)}
+                                                    className="group cursor-pointer bg-white dark:bg-[#111] rounded-2xl overflow-hidden border border-gray-100 dark:border-white/5 hover:shadow-2xl transition-all duration-300"
+                                                >
+                                                    <div className="aspect-video relative bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                                                        <img
+                                                            src={item.thumbnailUrl || `https://img.youtube.com/vi/${item.youtubeUrl.split('/').pop()?.split('?')[0]}/mqdefault.jpg`}
+                                                            alt={item.title}
+                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                                            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-all duration-300">
+                                                                <Play size={20} fill="currentColor" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="p-4">
+                                                        <h4 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 min-h-[40px] group-hover:text-primary-500 transition-colors">
+                                                            {item.title}
+                                                        </h4>
+                                                        <div className="flex items-center justify-between mt-3">
+                                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                                {category}
+                                                            </p>
+                                                            <Tv size={12} className="text-gray-300" />
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div className="p-4">
-                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 min-h-[40px]">
-                                                    {item.title}
-                                                </h4>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1">
-                                                    <Tv size={12} />
-                                                    {category} Highlights
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                            </SplideSlide>
+                                        ))}
+                                    </Splide>
                                 </div>
                             </div>
                         ))}
@@ -164,35 +169,30 @@ export const LiveSection: React.FC = () => {
 
             {/* Ad Interstitial Modal */}
             {showAd && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center max-h-[90vh] overflow-y-auto">
-                        <div className="w-full flex justify-between items-center mb-4">
-                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Advertisement</span>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="relative w-full max-w-xl bg-white dark:bg-[#0a0a0a] rounded-[2rem] p-8 shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col items-center border border-gray-200 dark:border-white/5">
+                        <div className="w-full flex justify-between items-center mb-6">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Advertisement</span>
                             <button
                                 onClick={handleAdClose}
                                 disabled={isProcessing}
-                                className={`transition-colors ${isProcessing
-                                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                                    }`}
-                                title="Close"
+                                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                             >
                                 <X size={20} />
                             </button>
                         </div>
 
                         {/* Ad Container */}
-                        <div className="min-h-[280px] w-full flex items-center justify-center bg-gray-50/30 dark:bg-gray-800/30 rounded-xl mb-6 overflow-hidden relative">
-                            <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-sm pointer-events-none">
-                                Loading advertisement...
+                        <div className="min-h-[280px] w-full flex items-center justify-center bg-gray-50 dark:bg-black/40 rounded-2xl mb-8 overflow-hidden relative border border-gray-100 dark:border-white/5">
+                            <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-xs italic pointer-events-none">
+                                Content Loading...
                             </div>
                             <div className="w-full h-full relative z-10">
                                 <GoogleAdSense
                                     slot="7838572857"
                                     responsive={true}
                                     format="auto"
-                                    minHeight="280px"
-                                    style={{ width: '100%' }}
+                                    style={{ width: '100%', minHeight: '280px' }}
                                 />
                             </div>
                         </div>
@@ -200,84 +200,28 @@ export const LiveSection: React.FC = () => {
                         <button
                             onClick={handleAdClose}
                             disabled={isProcessing}
-                            className={`w-full py-3 font-bold rounded-xl transition-all shadow-lg ${isProcessing
-                                ? 'bg-gray-400 dark:bg-gray-600 text-gray-200 dark:text-gray-400 cursor-not-allowed'
-                                : 'bg-primary-600 hover:bg-primary-700 text-white hover:shadow-primary-500/25'
+                            className={`w-full py-4 font-black rounded-xl transition-all ${isProcessing
+                                ? 'bg-gray-100 dark:bg-white/5 text-gray-400'
+                                : 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20 active:scale-95'
                                 }`}
                         >
-                            {isProcessing ? 'Loading...' : 'Skip to Video'}
+                            {isProcessing ? 'SYNCHRONIZING...' : 'START STREAMING'}
                         </button>
-
-                        {/* Divider */}
-                        <div className="relative my-6 w-full">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-                            </div>
-                            <div className="relative flex justify-center text-sm">
-                                <span className="px-4 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium">
-                                    Our Tools
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Tools Grid Section */}
-                        <div className="w-full grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {tools.map((tool) => {
-                                const Icon = tool.icon;
-                                const content = (
-                                    <>
-                                        <div className={`w-8 h-8 mb-2 rounded-full bg-gradient-to-tr ${tool.color} 
-                                                        flex items-center justify-center shadow-md group-hover:scale-110 transition-transform`}>
-                                            <Icon className="w-4 h-4 text-white" />
-                                        </div>
-                                        <span className="text-xs font-semibold text-gray-900 dark:text-white text-center line-clamp-1">{tool.name}</span>
-                                    </>
-                                );
-
-                                if (tool.external) {
-                                    return (
-                                        <a
-                                            key={tool.name}
-                                            href="https://bigyann.com.np/tools/emi-calculator" // Hardcoded for safety essentially, or use tool.href if absolute
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex flex-col items-center justify-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl 
-                                                     hover:bg-white dark:hover:bg-gray-700 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 
-                                                     transition-all group"
-                                        >
-                                            {content}
-                                        </a>
-                                    );
-                                }
-
-                                return (
-                                    <Link
-                                        key={tool.name}
-                                        href={tool.href}
-                                        className="flex flex-col items-center justify-center p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl 
-                                                 hover:bg-white dark:hover:bg-gray-700 border border-transparent hover:border-gray-200 dark:hover:border-gray-600 
-                                                 transition-all group"
-                                    >
-                                        {content}
-                                    </Link>
-                                );
-                            })}
-                        </div>
                     </div>
                 </div>
             )}
 
             {/* Video Modal */}
             {selectedLink && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-lg animate-in fade-in duration-300">
                     <div
                         className="absolute inset-0"
                         onClick={() => setSelectedLink(null)}
                     />
-                    <div className="relative w-full max-w-5xl bg-black rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 aspect-video">
+                    <div className="relative w-full max-w-5xl bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/5 animate-in zoom-in-95 duration-300 aspect-video">
                         <button
                             onClick={() => setSelectedLink(null)}
-                            className="absolute top-4 right-4 z-10 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors backdrop-blur-md"
+                            className="absolute top-6 right-6 z-10 p-2 bg-black/50 text-white rounded-full hover:bg-white hover:text-black transition-all backdrop-blur-md"
                         >
                             <X size={24} />
                         </button>
@@ -293,6 +237,44 @@ export const LiveSection: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            <style jsx global>{`
+                /* Premium Slider Buttons for Highlights */
+                .highlights-splide .splide__arrow {
+                    background: rgba(255, 255, 255, 0.1) !important;
+                    backdrop-filter: blur(12px) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                    width: 3rem !important;
+                    height: 3rem !important;
+                    opacity: 0 !important;
+                    transition: all 0.4s ease !important;
+                }
+                .highlights-splide .splide__arrow svg {
+                    fill: #fff !important;
+                    width: 1.25rem !important;
+                    height: 1.25rem !important;
+                }
+                .dark .highlights-splide .splide__arrow {
+                    background: rgba(0, 0, 0, 0.5) !important;
+                }
+                .group\/highlights:hover .splide__arrow {
+                    opacity: 1 !important;
+                }
+                .highlights-splide .splide__arrow:hover {
+                    background: #dc2626 !important;
+                    border-color: #dc2626 !important;
+                }
+
+                .splide__pagination__page.is-active {
+                    background: #dc2626 !important;
+                    transform: scale(1.2);
+                }
+                @media (max-width: 640px) {
+                    .splide__pagination {
+                        bottom: -1.5rem !important;
+                    }
+                }
+            `}</style>
         </section>
     );
 };
