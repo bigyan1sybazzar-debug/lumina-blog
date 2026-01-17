@@ -54,7 +54,12 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
     return (
         <div
             className={`ad-container ${className || ''}`}
-            style={{ minHeight: minHeight || 'auto' }}
+            style={{
+                minHeight: minHeight || '100px',
+                display: 'block',
+                overflow: 'hidden',
+                width: '100%'
+            }}
         >
             <ins
                 className="adsbygoogle"

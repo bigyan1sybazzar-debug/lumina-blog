@@ -2,7 +2,7 @@
 import { notifyIndexNow, notifyBingWebmaster } from './indexingService'; // Ensure this is imported
 import firebase from 'firebase/compat/app';
 import { db } from './firebase';
-import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption, LiveLink, Prompt, PromptCategory, PromptSubcategory } from '../types';
+import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption, LiveLink, Prompt, PromptCategory, PromptSubcategory, Highlight } from '../types';
 import { MOCK_POSTS, CATEGORIES } from '../constants';
 import { slugify } from '../lib/slugify'; // <-- NEW IMPORT
 
@@ -16,6 +16,7 @@ const LIVE_LINKS_COLLECTION = 'live_links';
 const KEYWORDS_COLLECTION = 'keywords';
 const LIVE_MATCHES_COLLECTION = 'live_matches';
 const PAGES_COLLECTION = 'pages';
+const HIGHLIGHTS_COLLECTION = 'highlights';
 
 
 // Helper: client-side sort (avoids Firestore composite index requirement)
@@ -1306,6 +1307,42 @@ export const incrementPromptUsage = async (promptId: string): Promise<void> => {
     });
   } catch (error) {
     console.error('Error incrementing prompt usage:', error);
+    throw error;
+  }
+};
+
+// --- HIGHLIGHTS ---
+
+export const getHighlights = async (): Promise<Highlight[]> => {
+  try {
+    const snapshot = await db.collection(HIGHLIGHTS_COLLECTION)
+      .orderBy('createdAt', 'desc')
+      .get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Highlight));
+  } catch (error) {
+    console.error('Error fetching highlights:', error);
+    return [];
+  }
+};
+
+export const addHighlight = async (highlight: Omit<Highlight, 'id' | 'createdAt'>) => {
+  try {
+    const docRef = await db.collection(HIGHLIGHTS_COLLECTION).add({
+      ...highlight,
+      createdAt: new Date().toISOString()
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding highlight:', error);
+    throw error;
+  }
+};
+
+export const deleteHighlight = async (id: string) => {
+  try {
+    await db.collection(HIGHLIGHTS_COLLECTION).doc(id).delete();
+  } catch (error) {
+    console.error('Error deleting highlight:', error);
     throw error;
   }
 };

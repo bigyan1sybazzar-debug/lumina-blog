@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, deleteLiveLink, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, deleteLiveLink, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch, getHighlights, addHighlight, deleteHighlight } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { BlogPost, User, Category, BlogPostComment, BlogPostReview, Poll, LiveLink, Keyword, LiveMatch } from '../types';
+import { BlogPost, User, Category, BlogPostComment, BlogPostReview, Poll, LiveLink, Keyword, LiveMatch, Highlight } from '../types';
 // Removed modular firestore imports for consistency with services/firebase.ts
 import { db } from '../services/firebase';
 import { getAllChats } from '../services/chatService';
@@ -44,7 +44,7 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'keywords' | 'live-matches' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'keywords' | 'live-matches' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section' | 'highlights'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -135,6 +135,12 @@ export const Admin: React.FC = () => {
   const [newLiveHeading, setNewLiveHeading] = useState('');
   const [newLiveIframe, setNewLiveIframe] = useState('');
 
+  // Highlights State
+  const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [newHighlightTitle, setNewHighlightTitle] = useState('');
+  const [newHighlightUrl, setNewHighlightUrl] = useState('');
+  const [newHighlightCategory, setNewHighlightCategory] = useState('');
+
   const logsEndRef = useRef<HTMLDivElement>(null);
   const isAdmin = user?.role === 'admin';
   const isModerator = user?.role === 'moderator' || isAdmin;
@@ -223,6 +229,9 @@ export const Admin: React.FC = () => {
     }
     if (activeTab === 'live-section') {
       getLiveLinks().then(setLiveLinks);
+    }
+    if (activeTab === 'highlights') {
+      getHighlights().then(setHighlights);
     }
   }, [allPosts, activeTab]);
 
@@ -879,6 +888,41 @@ export const Admin: React.FC = () => {
     }
   };
 
+  // Highlights Handlers
+  const handleAddHighlight = async () => {
+    if (!newHighlightTitle || !newHighlightUrl || !newHighlightCategory) {
+      alert('Please fill in Title, URL, and Category');
+      return;
+    }
+    try {
+      await addHighlight({
+        title: newHighlightTitle,
+        youtubeUrl: newHighlightUrl,
+        category: newHighlightCategory
+      });
+      alert('Highlight added!');
+      setNewHighlightTitle('');
+      setNewHighlightUrl('');
+      setNewHighlightCategory('');
+      getHighlights().then(setHighlights);
+    } catch (error) {
+      console.error(error);
+      alert('Failed to add highlight');
+    }
+  };
+
+  const handleDeleteHighlight = async (id: string) => {
+    if (confirm('Are you sure you want to delete this highlight?')) {
+      try {
+        await deleteHighlight(id);
+        getHighlights().then(setHighlights);
+      } catch (error) {
+        console.error(error);
+        alert('Failed to delete highlight');
+      }
+    }
+  };
+
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const setRandomImage = () => setCoverImage(`https://picsum.photos/800/400?random=${Math.floor(Math.random() * 1000)}`);
@@ -1105,6 +1149,16 @@ export const Admin: React.FC = () => {
                       }`}
                   >
                     <Globe size={18} className="mr-3" /> Live Section
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveTab('highlights'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'highlights'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <ImageIcon size={18} className="mr-3" /> Highlights
                   </button>
                 </>
               )}
@@ -1779,6 +1833,100 @@ export const Admin: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               <button
                                 onClick={() => handleDeleteLiveLink(link.id)}
+                                className="text-red-600 hover:text-red-800 transition-colors"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )
+          }
+
+          {/* HIGHLIGHTS MANAGEMENT TAB */}
+          {
+            activeTab === 'highlights' && isAdmin && (
+              <div className="max-w-7xl mx-auto space-y-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                  <ImageIcon className="text-primary-500" />
+                  Highlights Management
+                </h1>
+
+                {/* Add New Highlight */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Add New Highlight</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                      <input
+                        type="text"
+                        value={newHighlightTitle}
+                        onChange={(e) => setNewHighlightTitle(e.target.value)}
+                        placeholder="e.g. India vs Australia Day 1"
+                        className="input-field"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">YouTube Embed URL</label>
+                      <input
+                        type="text"
+                        value={newHighlightUrl}
+                        onChange={(e) => setNewHighlightUrl(e.target.value)}
+                        placeholder="https://www.youtube.com/embed/..."
+                        className="input-field font-mono text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                      <input
+                        type="text"
+                        value={newHighlightCategory}
+                        onChange={(e) => setNewHighlightCategory(e.target.value)}
+                        placeholder="e.g. Cricket, Football"
+                        className="input-field"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        onClick={handleAddHighlight}
+                        className="btn-primary w-full"
+                      >
+                        Add Highlight
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* List of Highlights */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-900/50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {highlights.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No highlights found.</td>
+                        </tr>
+                      ) : (
+                        highlights.map(h => (
+                          <tr key={h.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{h.title}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{h.category}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={h.youtubeUrl}>{h.youtubeUrl}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <button
+                                onClick={() => handleDeleteHighlight(h.id)}
                                 className="text-red-600 hover:text-red-800 transition-colors"
                               >
                                 <Trash2 size={18} />

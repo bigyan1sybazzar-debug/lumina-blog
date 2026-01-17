@@ -286,3 +286,11 @@ export interface Prompt {
   createdAt: string;
   updatedAt: string;
 }
+export interface Highlight {
+  id: string;
+  title: string;
+  youtubeUrl: string;
+  thumbnailUrl?: string;
+  category: string;
+  createdAt: string;
+}

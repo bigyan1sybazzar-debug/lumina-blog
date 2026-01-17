@@ -52,3 +52,8 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-400 dark:bg-gray-600;
 }
+
+.section-lazy {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 500px;
+}

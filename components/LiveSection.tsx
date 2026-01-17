@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getLiveLinks } from '../services/db';
-import { LiveLink } from '../types';
+import { getLiveLinks, getHighlights } from '../services/db';
+import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
 import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv } from 'lucide-react';
 
@@ -11,13 +11,15 @@ import GoogleAdSense from './GoogleAdSense';
 
 export const LiveSection: React.FC = () => {
     const [links, setLinks] = useState<LiveLink[]>([]);
-    const [selectedLink, setSelectedLink] = useState<LiveLink | null>(null);
+    const [highlights, setHighlights] = useState<Highlight[]>([]);
+    const [selectedLink, setSelectedLink] = useState<any>(null);
     const [pendingLink, setPendingLink] = useState<LiveLink | null>(null);
     const [showAd, setShowAd] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false); // Prevent double-clicks
 
     useEffect(() => {
         getLiveLinks().then(setLinks);
+        getHighlights().then(setHighlights);
     }, []);
 
 
@@ -29,21 +31,23 @@ export const LiveSection: React.FC = () => {
     };
 
     const handleAdClose = () => {
-        if (isProcessing) return; // Prevent closing if already processing
-
-        setIsProcessing(true); // Prevent double-clicks
+        if (isProcessing) return;
+        setIsProcessing(true);
         setShowAd(false);
-
         if (pendingLink) {
             setSelectedLink(pendingLink);
             setPendingLink(null);
         }
-
-        // Reset processing state after a short delay
         setTimeout(() => setIsProcessing(false), 500);
     };
 
-    if (links.length === 0) return null;
+    const groupedHighlights = highlights.reduce((acc, h) => {
+        if (!acc[h.category]) acc[h.category] = [];
+        acc[h.category].push(h);
+        return acc;
+    }, {} as Record<string, Highlight[]>);
+
+    if (links.length === 0 && highlights.length === 0) return null;
 
     const tools = [
         { name: 'AI Humanizer', href: '/ai-humanizer', icon: Sparkles, color: 'from-purple-500 to-blue-600' },
@@ -102,6 +106,60 @@ export const LiveSection: React.FC = () => {
                         </div>
                     ))}
                 </div>
+
+                {/* HIGHLIGHTS SECTION */}
+                {highlights.length > 0 && (
+                    <div className="mt-16 space-y-12">
+                        <div className="flex items-center gap-3">
+                            <Sparkles className="w-6 h-6 text-primary-500" />
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                                Match Highlights
+                            </h2>
+                        </div>
+
+                        {Object.entries(groupedHighlights).map(([category, items]) => (
+                            <div key={category} className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 border-l-4 border-primary-500 pl-4">
+                                        {category}
+                                    </h3>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {items.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => handleLinkClick(item as any)}
+                                            className="group cursor-pointer bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-lg transition-all"
+                                        >
+                                            <div className="aspect-video relative bg-gray-100 dark:bg-gray-800">
+                                                {/* YouTube Thumbnail Fallback */}
+                                                <img
+                                                    src={item.thumbnailUrl || `https://img.youtube.com/vi/${item.youtubeUrl.split('/').pop()?.split('?')[0]}/mqdefault.jpg`}
+                                                    alt={item.title}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                />
+                                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-transform">
+                                                        <Play size={24} fill="currentColor" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="p-4">
+                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 min-h-[40px]">
+                                                    {item.title}
+                                                </h4>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1">
+                                                    <Tv size={12} />
+                                                    {category} Highlights
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Ad Interstitial Modal */}
@@ -225,8 +283,8 @@ export const LiveSection: React.FC = () => {
                         </button>
                         <div className="w-full h-full">
                             <iframe
-                                src={selectedLink.iframeUrl}
-                                title={selectedLink.heading}
+                                src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                title={selectedLink.heading || selectedLink.title}
                                 className="w-full h-full border-0"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 allowFullScreen

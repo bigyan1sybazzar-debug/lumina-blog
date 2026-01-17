@@ -3,18 +3,24 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { getPosts, getPolls, getPostById } from '../services/db';
 import { BlogPost, Poll } from '../types';
+import dynamic from 'next/dynamic';
 import { PostCard } from '../components/PostCard';
-import PollCard from '../components/PollCard';
+
+const PollCard = dynamic(() => import('../components/PollCard'), {
+  loading: () => <div className="h-48 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl" />,
+  ssr: false
+});
+
+const LiveMatchPopup = dynamic(() => import('../components/LiveMatchPopup').then(mod => mod.LiveMatchPopup), {
+  ssr: false
+});
+
 import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail, ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen, Vote, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-// Removed modular firestore imports for consistency with services/firebase.ts
 import { db } from '../services/firebase';
-
-import { Calculator, RefreshCw, Tv, Terminal } from 'lucide-react';
-import { LogIn, FileText, Edit } from 'lucide-react';
+import { Calculator, RefreshCw, Tv, Terminal, LogIn, FileText, Edit } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { LiveMatchPopup } from '../components/LiveMatchPopup';
 interface HomeProps {
   initialPosts?: BlogPost[];
   initialHeroFeatured?: BlogPost[];
@@ -194,6 +200,7 @@ export const Home: React.FC<HomeProps> = ({
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                         sizes={index === 0 ? "100vw" : "(max-width: 768px) 50vw, 33vw"}
                         priority={index === 0}
+                        loading={index === 0 ? "eager" : "lazy"}
                       />
                       <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20">
                         <span className="inline-block px-3 py-1 mb-2 rounded-full bg-white/20 backdrop-blur text-xs font-medium text-white">
@@ -217,7 +224,7 @@ export const Home: React.FC<HomeProps> = ({
 
       {/* Hot & Fresh Slider - Latest 8 Posts (Reduced py- from py-16 to py-12) */}
       {editorPicks.length > 0 && (
-        <section id="featured-posts" className="py-12 md:py-12 px-4">
+        <section id="featured-posts" className="py-12 md:py-12 px-4 section-lazy">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-6"> {/* Reduced mb- from mb-8 to mb-6 */}
               <div>
@@ -269,7 +276,7 @@ export const Home: React.FC<HomeProps> = ({
 
 
       {/* AI Tools Section */}
-      <section className="py-8 md:py-10 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+      <section className="py-8 md:py-10 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 section-lazy">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-2xl md:text-3xl font-bold text-left text-gray-900 dark:text-white">
@@ -432,7 +439,7 @@ export const Home: React.FC<HomeProps> = ({
 
       {/* Community Polls Section - Repositioned below AI Tools */}
       {polls.length > 0 && (
-        <section className="py-12 md:py-16 px-4 bg-gray-50/50 dark:bg-gray-900/30">
+        <section className="py-12 md:py-16 px-4 bg-gray-50/50 dark:bg-gray-900/30 section-lazy">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -554,7 +561,7 @@ export const Home: React.FC<HomeProps> = ({
       </section>
 
       {/* Latest Posts Grid (Reduced py- from py-16 to py-12) */}
-      <section className="py-12 md:py-12 px-4 bg-gray-50/50 dark:bg-gray-900/50">
+      <section className="py-12 md:py-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 section-lazy">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6"> {/* Reduced mb- from mb-8 to mb-6 */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-sm font-medium"> {/* Reduced mb- from mb-3 to mb-2 */}
@@ -609,7 +616,7 @@ export const Home: React.FC<HomeProps> = ({
       </section>
 
       {/* CTA Section with conditional authentication buttons */}
-      <section className="py-20 md:py-28 bg-white dark:bg-gray-900">
+      <section className="py-20 md:py-28 bg-white dark:bg-gray-900 section-lazy">
         <div className="max-w-6xl mx-auto px-4">
           <div className="bg-gradient-to-r from-primary-600 to-purple-600 p-8 sm:p-12 md:p-16 rounded-3xl shadow-2xl shadow-primary-500/30 dark:shadow-purple-500/50 text-white transform hover:scale-[1.01] transition-transform duration-500">
             <div className="text-center">
