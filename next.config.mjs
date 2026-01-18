@@ -38,6 +38,7 @@ const nextConfig = {
     ];
   },
   images: {
+    unoptimized: true,
     formats: ['image/avif', 'image/webp'],
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
