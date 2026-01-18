@@ -42,7 +42,8 @@ export const Admin: React.FC = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== 'admin')) {
+    const isUserAdmin = user?.id === 'l2HzKynx5oetUVpNWeMKaQNpkS13' || user?.email === 'admin@lumina.blog';
+    if (!isLoading && (!user || !isUserAdmin)) {
       router.push('/login');
     }
   }, [user, isLoading, router]);
@@ -68,6 +69,10 @@ export const Admin: React.FC = () => {
 
   // Real Analytics State
   const [chartData, setChartData] = useState<any[]>([]);
+  const [trafficStats, setTrafficStats] = useState<any>(null);
+  const [trafficPeriod, setTrafficPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [isTrafficLoading, setIsTrafficLoading] = useState(false);
+  const [realtimeTraffic, setRealtimeTraffic] = useState<{ activeUsers: number, activePages: any[] }>({ activeUsers: 0, activePages: [] });
 
   // Post Data State
   const [title, setTitle] = useState('');
@@ -102,7 +107,8 @@ export const Admin: React.FC = () => {
   const [isSavingFeatured, setIsSavingFeatured] = useState(false);
 
   const logsEndRef = useRef<HTMLDivElement>(null);
-  const isAdmin = user?.role === 'admin';
+  // Use specific UID for admin check as requested
+  const isAdmin = user?.id === 'l2HzKynx5oetUVpNWeMKaQNpkS13' || user?.email === 'admin@lumina.blog';
   const isModerator = user?.role === 'moderator' || isAdmin;
 
   // === Load & Save Featured Posts ===
@@ -218,6 +224,38 @@ export const Admin: React.FC = () => {
       console.error('Error refreshing data:', error);
     }
   };
+
+  const loadTrafficStats = async () => {
+    if (!isAdmin) return;
+    setIsTrafficLoading(true);
+    try {
+      console.log('Fetching traffic stats...');
+      const stats = await import('../services/db').then(m => m.getTrafficStats(trafficPeriod));
+      console.log('Traffic Stats:', stats);
+      setTrafficStats(stats);
+      const realtime = await import('../services/db').then(m => m.getRealtimeTraffic());
+      console.log('Realtime Traffic:', realtime);
+      setRealtimeTraffic(realtime);
+    } catch (err) {
+      console.error('Failed to load traffic stats:', err);
+    } finally {
+      setIsTrafficLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'analytics' || activeTab === 'dashboard') {
+      loadTrafficStats();
+      const interval = setInterval(() => {
+        console.log('Refreshing realtime traffic...');
+        import('../services/db').then(m => m.getRealtimeTraffic().then(rt => {
+          console.log('Realtime update:', rt);
+          setRealtimeTraffic(rt);
+        }));
+      }, 5000); // Reduce to 5s for easier debugging
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, trafficPeriod]);
 
   useEffect(() => {
     refreshData();
@@ -632,6 +670,22 @@ export const Admin: React.FC = () => {
                   }`}
               >
                 <LayoutDashboard size={18} className="mr-3" /> Dashboard
+                {realtimeTraffic.activeUsers > 0 && (
+                  <span className="ml-auto relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={() => { setActiveTab('analytics'); setIsSidebarOpen(false); }}
+                className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'analytics'
+                  ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+              >
+                <TrendingUp size={18} className="mr-3" /> Analytics
               </button>
 
               <button
@@ -656,6 +710,7 @@ export const Admin: React.FC = () => {
               <button onClick={() => { setActiveTab('featured'); setIsSidebarOpen(false); }} className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'featured' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                 <Sparkles size={18} className="mr-3" /> Featured Posts
               </button>
+
 
               {isAdmin && (
                 <>
@@ -708,15 +763,6 @@ export const Admin: React.FC = () => {
                     <Tag size={18} className="mr-3" /> Categories
                   </button>
 
-                  <button
-                    onClick={() => { setActiveTab('analytics'); setIsSidebarOpen(false); }}
-                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'analytics'
-                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      }`}
-                  >
-                    <TrendingUp size={18} className="mr-3" /> Analytics
-                  </button>
 
                   <button
                     onClick={() => { setActiveTab('prompts'); setIsSidebarOpen(false); }}
@@ -773,1079 +819,1400 @@ export const Admin: React.FC = () => {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
           {/* === FEATURED POSTS TAB === */}
-          {activeTab === 'featured' && isAdmin && (
-            <div className="max-w-6xl mx-auto space-y-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                    <Sparkles className="text-yellow-500" />
-                    Featured Posts Manager
-                  </h1>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">Choose and reorder the 3 posts shown in the homepage hero section</p>
+          {
+            activeTab === 'featured' && isAdmin && (
+              <div className="max-w-6xl mx-auto space-y-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                      <Sparkles className="text-yellow-500" />
+                      Featured Posts Manager
+                    </h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">Choose and reorder the 3 posts shown in the homepage hero section</p>
+                  </div>
+                  <button
+                    onClick={saveFeaturedOrder}
+                    disabled={isSavingFeatured}
+                    className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isSavingFeatured ? <Loader2 className="animate-spin" /> : <Save size={18} />}
+                    Save Changes
+                  </button>
                 </div>
-                <button
-                  onClick={saveFeaturedOrder}
-                  disabled={isSavingFeatured}
-                  className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isSavingFeatured ? <Loader2 className="animate-spin" /> : <Save size={18} />}
-                  Save Changes
-                </button>
-              </div>
 
-              <div className="grid lg:grid-cols-2 gap-8">
-                {/* Current Featured */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-                  <h2 className="text-xl font-bold mb-4">Current Featured ({featuredPosts.length}/3)</h2>
-                  {featuredPosts.length === 0 ? (
-                    <p className="text-center py-12 text-gray-500">No posts selected yet</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {featuredPosts.map((post, index) => (
+                <div className="grid lg:grid-cols-2 gap-8">
+                  {/* Current Featured */}
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+                    <h2 className="text-xl font-bold mb-4">Current Featured ({featuredPosts.length}/3)</h2>
+                    {featuredPosts.length === 0 ? (
+                      <p className="text-center py-12 text-gray-500">No posts selected yet</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {featuredPosts.map((post, index) => (
+                          <div
+                            key={post.id}
+                            draggable
+                            onDragStart={(e) => (e.dataTransfer as any).setData('index', index)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const fromIndex = Number((e.dataTransfer as any).getData('index'));
+                              const newPosts = [...featuredPosts];
+                              const [moved] = newPosts.splice(fromIndex, 1);
+                              newPosts.splice(index, 0, moved);
+                              setFeaturedPosts(newPosts);
+                            }}
+                            className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl cursor-move hover:shadow-md border-2 border-dashed border-transparent hover:border-primary-400 transition-all"
+                          >
+                            <GripVertical className="text-gray-400" />
+                            <span className="text-2xl font-bold text-primary-600 w-8">{index + 1}</span>
+                            <img src={post.coverImage} alt="" className="w-16 h-16 object-cover rounded-lg" />
+                            <div className="flex-1">
+                              <h4 className="font-semibold">{post.title}</h4>
+                              <p className="text-sm text-gray-500">{post.category} • {post.date}</p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                // 1. Find the post to remove
+                                const postToRemove = featuredPosts.find(p => p.id === post.id);
+
+                                // 2. Remove it from featured
+                                setFeaturedPosts(featuredPosts.filter(p => p.id !== post.id));
+
+                                // 3. Add it back to available so it can be picked again later
+                                if (postToRemove) {
+                                  setAvailablePosts(prev => [...prev, postToRemove]);
+                                }
+                              }}
+                              className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-lg"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Available Posts */}
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+                    <h2 className="text-xl font-bold mb-4">Add from All Posts</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                      {availablePosts.map(post => (
                         <div
                           key={post.id}
-                          draggable
-                          onDragStart={(e) => (e.dataTransfer as any).setData('index', index)}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            const fromIndex = Number((e.dataTransfer as any).getData('index'));
-                            const newPosts = [...featuredPosts];
-                            const [moved] = newPosts.splice(fromIndex, 1);
-                            newPosts.splice(index, 0, moved);
-                            setFeaturedPosts(newPosts);
+                          onClick={() => {
+                            if (featuredPosts.length < 3) {
+                              setFeaturedPosts([...featuredPosts, post]);
+                              setAvailablePosts(availablePosts.filter(p => p.id !== post.id));
+                            } else {
+                              alert('Maximum 3 featured posts allowed');
+                            }
                           }}
-                          className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl cursor-move hover:shadow-md border-2 border-dashed border-transparent hover:border-primary-400 transition-all"
+                          className="group relative bg-gray-50 dark:bg-gray-700 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all"
                         >
-                          <GripVertical className="text-gray-400" />
-                          <span className="text-2xl font-bold text-primary-600 w-8">{index + 1}</span>
-                          <img src={post.coverImage} alt="" className="w-16 h-16 object-cover rounded-lg" />
-                          <div className="flex-1">
-                            <h4 className="font-semibold">{post.title}</h4>
-                            <p className="text-sm text-gray-500">{post.category} • {post.date}</p>
+                          <img src={post.coverImage} alt="" className="w-full h-32 object-cover" />
+                          <div className="p-3">
+                            <h4 className="font-medium text-sm line-clamp-2">{post.title}</h4>
+                            <p className="text-xs text-gray-500 mt-1">{post.category}</p>
                           </div>
-                          <button
-                            onClick={() => {
-                              // 1. Find the post to remove
-                              const postToRemove = featuredPosts.find(p => p.id === post.id);
-
-                              // 2. Remove it from featured
-                              setFeaturedPosts(featuredPosts.filter(p => p.id !== post.id));
-
-                              // 3. Add it back to available so it can be picked again later
-                              if (postToRemove) {
-                                setAvailablePosts(prev => [...prev, postToRemove]);
-                              }
-                            }}
-                            className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-2 rounded-lg"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Available Posts */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-                  <h2 className="text-xl font-bold mb-4">Add from All Posts</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
-                    {availablePosts.map(post => (
-                      <div
-                        key={post.id}
-                        onClick={() => {
-                          if (featuredPosts.length < 3) {
-                            setFeaturedPosts([...featuredPosts, post]);
-                            setAvailablePosts(availablePosts.filter(p => p.id !== post.id));
-                          } else {
-                            alert('Maximum 3 featured posts allowed');
-                          }
-                        }}
-                        className="group relative bg-gray-50 dark:bg-gray-700 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all"
-                      >
-                        <img src={post.coverImage} alt="" className="w-full h-32 object-cover" />
-                        <div className="p-3">
-                          <h4 className="font-medium text-sm line-clamp-2">{post.title}</h4>
-                          <p className="text-xs text-gray-500 mt-1">{post.category}</p>
-                        </div>
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <div className="bg-primary-600 text-white px-5 py-2 rounded-lg text-sm font-medium">
-                            + Add to Featured
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          {/* DASHBOARD TAB */}
-          {activeTab === 'dashboard' && (
-            <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Hello, {user?.name}</h1>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">
-                    {isAdmin ? "Here's what's happening across the platform." : "Manage your stories and create something new."}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => goToEditor('manual')}
-                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm active:scale-95 transform duration-100"
-                  >
-                    <Plus size={16} />
-                    <span>Write New Story</span>
-                  </button>
-                  {isAdmin && (
-                    <>
-                      <button
-                        onClick={async () => { if (confirm("Seed database with sample data?")) await seedDatabase(); refreshData(); }}
-                        className="flex items-center justify-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
-                      >
-                        <Database size={16} />
-                        <span className="hidden sm:inline">Seed Data</span>
-                      </button>
-                      <button
-                        onClick={handleRegenerateSitemap}
-                        disabled={isGeneratingSitemap}
-                        className="flex items-center justify-center space-x-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium disabled:opacity-50"
-                      >
-                        <Globe size={16} />
-                        <span className="hidden sm:inline">Update Sitemap</span>
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Views</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.views.toLocaleString()}</p>
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Posts</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.posts}</p>
-                </div>
-                {isAdmin && (
-                  <>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Review</p>
-                      <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">{pendingPosts.length}</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
-                      <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">{stats.users}</p>
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Engagement Rate</p>
-                      <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">{stats.engagement}</p>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Sitemap Card for Admin */}
-              {isAdmin && sitemapUrl && (
-                <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl shadow-sm border border-gray-700 text-white">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <Globe size={24} className="text-emerald-400" />
-                      <div>
-                        <h3 className="font-bold text-lg">Sitemap</h3>
-                        <p className="text-sm text-gray-300">Last updated automatically</p>
-                      </div>
-                    </div>
-                    <a
-                      href={sitemapUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center space-x-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
-                    >
-                      <ExternalLink size={16} />
-                      <span>View XML</span>
-                    </a>
-                  </div>
-                  <div className="flex justify-between items-center mt-4">
-                    <p className="text-sm text-gray-400">Updates automatically on publish. Force update if needed.</p>
-                    <button
-                      onClick={handleRegenerateSitemap}
-                      disabled={isGeneratingSitemap}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center space-x-2"
-                    >
-                      {isGeneratingSitemap ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <RefreshCw size={16} />
-                      )}
-                      <span>Update Now</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Quick Actions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  onClick={() => goToEditor('manual')}
-                  className="p-6 bg-gradient-to-br from-indigo-500 to-primary-600 rounded-2xl text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 flex flex-col items-start"
-                >
-                  <Edit3 size={32} className="mb-4 bg-white/20 p-1.5 rounded-lg" />
-                  <h3 className="text-xl font-bold">Write Manually</h3>
-                  <p className="text-indigo-100 text-sm mt-1">Draft a new post from scratch using the Markdown editor.</p>
-                </button>
-                <button
-                  onClick={() => goToEditor('ai')}
-                  className="p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 flex flex-col items-start group"
-                >
-                  <Wand2 size={32} className="mb-4 text-purple-500 bg-purple-50 dark:bg-purple-900/20 p-1.5 rounded-lg" />
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-purple-600 transition-colors">BIGGS</h3>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Generate outlines and full articles using Gemini AI.</p>
-                </button>
-              </div>
-
-              {/* My Posts Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">My Recent Stories</h3>
-                  <button
-                    onClick={() => setActiveTab('posts')}
-                    className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
-                  >
-                    View All →
-                  </button>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-700 text-left">
-                        <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Title</th>
-                        <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Date</th>
-                        <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                        <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Views</th>
-                        <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {myPosts.slice(0, 5).map(post => (
-                        <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                          <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white max-w-xs truncate">{post.title}</td>
-                          <td className="py-3 px-4 text-sm text-gray-500">{post.date}</td>
-                          <td className="py-3 px-4">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${post.status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                              post.status === 'pending' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
-                                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                              }`}>
-                              {post.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-500">{post.views?.toLocaleString() || 0}</td>
-                          <td className="py-3 px-4">
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => handleEditPost(post.id)}
-                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
-                                title="Edit"
-                              >
-                                <Edit3 size={16} />
-                              </button>
-                              <button
-                                onClick={() => window.open(`/${post.slug}`, '_blank')}
-                                className="text-gray-600 hover:text-gray-800 dark:text-gray-400"
-                                title="Preview"
-                              >
-                                <Eye size={16} />
-                              </button>
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="bg-primary-600 text-white px-5 py-2 rounded-lg text-sm font-medium">
+                              + Add to Featured
                             </div>
-                          </td>
-                        </tr>
+                          </div>
+                        </div>
                       ))}
-                      {myPosts.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="py-4 text-center text-sm text-gray-500">
-                            You haven't written any posts yet.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {/* Admin Analytics Chart */}
-              {isAdmin && (
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Real-Time Content Performance (Views by Category)</h3>
-                  <div className="h-64 md:h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.1} />
-                        <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                        <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} dx={-10} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#F3F4F6', borderRadius: '8px' }}
-                          itemStyle={{ color: '#F3F4F6' }}
-                          cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
-                        />
-                        <Bar dataKey="views" name="Total Views" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={32} />
-                        <Bar dataKey="posts" name="Total Posts" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={32} />
-                      </BarChart>
-                    </ResponsiveContainer>
+            )
+          }
+          {/* DASHBOARD TAB */}
+          {
+            activeTab === 'dashboard' && (
+              <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Hello, {user?.name}</h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">
+                      {isAdmin ? "Here's what's happening across the platform." : "Manage your stories and create something new."}
+                    </p>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* AUTOMATION TAB */}
-          {activeTab === 'automation' && isAdmin && (
-            <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <Bot size={28} className="text-primary-600" />
-                    Auto-Pilot Automation
-                  </h1>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">
-                    Automatically fetch news, generate articles, create images, and publish 4 times a day.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg text-sm">
-                    <span className="text-gray-500 mr-2">Posts Today:</span>
-                    <span className="font-bold text-gray-900 dark:text-white">{postsGeneratedToday}/4</span>
-                  </div>
-
-                  <button
-                    onClick={toggleAutoPilot}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all shadow-sm ${isAutoPilotOn
-                      ? 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800'
-                      : 'bg-green-600 text-white hover:bg-green-700 shadow-lg hover:shadow-green-500/20'
-                      }`}
-                  >
-                    {isAutoPilotOn ? <Pause size={18} /> : <Play size={18} />}
-                    {isAutoPilotOn ? 'Stop Auto-Pilot' : 'Start Auto-Pilot'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Status Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden">
-                  <div className={`absolute top-0 right-0 p-4 opacity-10 ${isAutoPilotOn ? 'text-green-500' : 'text-gray-400'}`}>
-                    <Zap size={64} />
-                  </div>
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h3>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className={`w-3 h-3 rounded-full ${isAutoPilotOn ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></span>
-                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {isAutoPilotOn ? 'Running' : 'Stopped'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2">
-                    {isAutoPilotOn ? 'Scheduled to run 4 times/day' : 'Click start to begin'}
-                  </p>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Next Scheduled Run</h3>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Clock size={24} className="text-blue-500" />
-                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {nextRunTime ? new Date(nextRunTime).toLocaleTimeString() : '--:--'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-orange-500 mt-2 flex items-center gap-1">
-                    <AlertTriangle size={12} />
-                    Keep this tab open for automation to work
-                  </p>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Target Categories</h3>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {categories.slice(0, 5).map(c => (
-                      <span key={c.id} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300">
-                        {c.name}
-                      </span>
-                    ))}
-                    {categories.length > 5 && (
-                      <span className="text-xs text-gray-400 self-center">+{categories.length - 5} more</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => goToEditor('manual')}
+                      className="flex items-center justify-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-sm active:scale-95 transform duration-100"
+                    >
+                      <Plus size={16} />
+                      <span>Write New Story</span>
+                    </button>
+                    {isAdmin && (
+                      <>
+                        <button
+                          onClick={async () => { if (confirm("Seed database with sample data?")) await seedDatabase(); refreshData(); }}
+                          className="flex items-center justify-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+                        >
+                          <Database size={16} />
+                          <span className="hidden sm:inline">Seed Data</span>
+                        </button>
+                        <button
+                          onClick={handleRegenerateSitemap}
+                          disabled={isGeneratingSitemap}
+                          className="flex items-center justify-center space-x-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium disabled:opacity-50"
+                        >
+                          <Globe size={16} />
+                          <span className="hidden sm:inline">Update Sitemap</span>
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Console Log Area */}
-              <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-700 shadow-2xl flex flex-col h-[400px]">
-                <div className="bg-gray-800 px-4 py-2 flex items-center justify-between border-b border-gray-700">
-                  <div className="flex items-center gap-2">
-                    <Terminal size={16} className="text-gray-400" />
-                    <span className="text-sm font-mono text-gray-300">Automation Logs</span>
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Views</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.views.toLocaleString()}</p>
                   </div>
-                  <button
-                    onClick={() => setAutoLogs([])}
-                    className="text-xs text-gray-400 hover:text-white hover:underline"
-                  >
-                    Clear Logs
-                  </button>
-                </div>
-                <div className="flex-1 p-4 overflow-y-auto font-mono text-sm space-y-2">
-                  {autoLogs.length === 0 && (
-                    <div className="text-gray-600 italic text-center mt-10">No activity logs yet...</div>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Posts</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.posts}</p>
+                  </div>
+                  {isAdmin && (
+                    <>
+                      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Review</p>
+                        <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">{pendingPosts.length}</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
+                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">{stats.users}</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Engagement Rate</p>
+                        <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">{stats.engagement}</p>
+                      </div>
+                    </>
                   )}
-                  {autoLogs.map((log) => (
-                    <div key={log.id} className="flex gap-3">
-                      <span className="text-gray-500 shrink-0">[{log.timestamp}]</span>
-                      <span className={`break-all ${log.type === 'error' ? 'text-red-400' :
-                        log.type === 'success' ? 'text-green-400' :
-                          log.type === 'warning' ? 'text-yellow-400' :
-                            'text-blue-300'
-                        }`}>
-                        {log.type === 'success' && '✓ '}
-                        {log.type === 'error' && '✕ '}
-                        {log.message}
-                      </span>
-                    </div>
-                  ))}
-                  <div ref={logsEndRef} />
                 </div>
-              </div>
 
-              {/* Manual Trigger for Testing */}
-              <div className="flex justify-end">
-                <button
-                  onClick={runAutomationCycle}
-                  disabled={isAutoPilotOn}
-                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50"
-                >
-                  Trigger Single Run (Test)
-                </button>
-              </div>
-            </div>
-          )}
+                {/* Sitemap Card for Admin */}
+                {isAdmin && sitemapUrl && (
+                  <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl shadow-sm border border-gray-700 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <Globe size={24} className="text-emerald-400" />
+                        <div>
+                          <h3 className="font-bold text-lg">Sitemap</h3>
+                          <p className="text-sm text-gray-300">Last updated automatically</p>
+                        </div>
+                      </div>
+                      <a
+                        href={sitemapUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center space-x-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                      >
+                        <ExternalLink size={16} />
+                        <span>View XML</span>
+                      </a>
+                    </div>
+                    <div className="flex justify-between items-center mt-4">
+                      <p className="text-sm text-gray-400">Updates automatically on publish. Force update if needed.</p>
+                      <button
+                        onClick={handleRegenerateSitemap}
+                        disabled={isGeneratingSitemap}
+                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center space-x-2"
+                      >
+                        {isGeneratingSitemap ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <RefreshCw size={16} />
+                        )}
+                        <span>Update Now</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-          {/* ALL POSTS TAB */}
-          {activeTab === 'posts' && (
-            <div className="max-w-7xl mx-auto space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">All Posts</h1>
-                <div className="flex gap-2">
+                {/* Quick Actions */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button
                     onClick={() => goToEditor('manual')}
-                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+                    className="p-6 bg-gradient-to-br from-indigo-500 to-primary-600 rounded-2xl text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 flex flex-col items-start"
                   >
-                    <Plus size={16} />
-                    <span>New Post</span>
+                    <Edit3 size={32} className="mb-4 bg-white/20 p-1.5 rounded-lg" />
+                    <h3 className="text-xl font-bold">Write Manually</h3>
+                    <p className="text-indigo-100 text-sm mt-1">Draft a new post from scratch using the Markdown editor.</p>
+                  </button>
+                  <button
+                    onClick={() => goToEditor('ai')}
+                    className="p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-1 flex flex-col items-start group"
+                  >
+                    <Wand2 size={32} className="mb-4 text-purple-500 bg-purple-50 dark:bg-purple-900/20 p-1.5 rounded-lg" />
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-purple-600 transition-colors">BIGGS</h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Generate outlines and full articles using Gemini AI.</p>
+                  </button>
+                </div>
+
+                {/* My Posts Section */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">My Recent Stories</h3>
+                    <button
+                      onClick={() => setActiveTab('posts')}
+                      className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                    >
+                      View All →
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-gray-700 text-left">
+                          <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Title</th>
+                          <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Date</th>
+                          <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                          <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Views</th>
+                          <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {myPosts.slice(0, 5).map(post => (
+                          <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white max-w-xs truncate">{post.title}</td>
+                            <td className="py-3 px-4 text-sm text-gray-500">{post.date}</td>
+                            <td className="py-3 px-4">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${post.status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                                post.status === 'pending' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
+                                  'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                }`}>
+                                {post.status}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-500">{post.views?.toLocaleString() || 0}</td>
+                            <td className="py-3 px-4">
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleEditPost(post.id)}
+                                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                                  title="Edit"
+                                >
+                                  <Edit3 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => window.open(`/${post.slug}`, '_blank')}
+                                  className="text-gray-600 hover:text-gray-800 dark:text-gray-400"
+                                  title="Preview"
+                                >
+                                  <Eye size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {myPosts.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="py-4 text-center text-sm text-gray-500">
+                              You haven't written any posts yet.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Admin Analytics Chart */}
+                {isAdmin && (
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Real-Time Content Performance (Views by Category)</h3>
+                    <div className="h-64 md:h-80 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.1} />
+                          <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                          <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} dx={-10} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#F3F4F6', borderRadius: '8px' }}
+                            itemStyle={{ color: '#F3F4F6' }}
+                            cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                          />
+                          <Bar dataKey="views" name="Total Views" fill="#0ea5e9" radius={[4, 4, 0, 0]} barSize={32} />
+                          <Bar dataKey="posts" name="Total Posts" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={32} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          }
+
+          {/* AUTOMATION TAB */}
+          {
+            activeTab === 'automation' && isAdmin && (
+              <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Bot size={28} className="text-primary-600" />
+                      Auto-Pilot Automation
+                    </h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">
+                      Automatically fetch news, generate articles, create images, and publish 4 times a day.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg text-sm">
+                      <span className="text-gray-500 mr-2">Posts Today:</span>
+                      <span className="font-bold text-gray-900 dark:text-white">{postsGeneratedToday}/4</span>
+                    </div>
+
+                    <button
+                      onClick={toggleAutoPilot}
+                      className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all shadow-sm ${isAutoPilotOn
+                        ? 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800'
+                        : 'bg-green-600 text-white hover:bg-green-700 shadow-lg hover:shadow-green-500/20'
+                        }`}
+                    >
+                      {isAutoPilotOn ? <Pause size={18} /> : <Play size={18} />}
+                      {isAutoPilotOn ? 'Stop Auto-Pilot' : 'Start Auto-Pilot'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Status Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden">
+                    <div className={`absolute top-0 right-0 p-4 opacity-10 ${isAutoPilotOn ? 'text-green-500' : 'text-gray-400'}`}>
+                      <Zap size={64} />
+                    </div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h3>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`w-3 h-3 rounded-full ${isAutoPilotOn ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></span>
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {isAutoPilotOn ? 'Running' : 'Stopped'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2">
+                      {isAutoPilotOn ? 'Scheduled to run 4 times/day' : 'Click start to begin'}
+                    </p>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Next Scheduled Run</h3>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Clock size={24} className="text-blue-500" />
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {nextRunTime ? new Date(nextRunTime).toLocaleTimeString() : '--:--'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-orange-500 mt-2 flex items-center gap-1">
+                      <AlertTriangle size={12} />
+                      Keep this tab open for automation to work
+                    </p>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Target Categories</h3>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {categories.slice(0, 5).map(c => (
+                        <span key={c.id} className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs text-gray-600 dark:text-gray-300">
+                          {c.name}
+                        </span>
+                      ))}
+                      {categories.length > 5 && (
+                        <span className="text-xs text-gray-400 self-center">+{categories.length - 5} more</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Console Log Area */}
+                <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-700 shadow-2xl flex flex-col h-[400px]">
+                  <div className="bg-gray-800 px-4 py-2 flex items-center justify-between border-b border-gray-700">
+                    <div className="flex items-center gap-2">
+                      <Terminal size={16} className="text-gray-400" />
+                      <span className="text-sm font-mono text-gray-300">Automation Logs</span>
+                    </div>
+                    <button
+                      onClick={() => setAutoLogs([])}
+                      className="text-xs text-gray-400 hover:text-white hover:underline"
+                    >
+                      Clear Logs
+                    </button>
+                  </div>
+                  <div className="flex-1 p-4 overflow-y-auto font-mono text-sm space-y-2">
+                    {autoLogs.length === 0 && (
+                      <div className="text-gray-600 italic text-center mt-10">No activity logs yet...</div>
+                    )}
+                    {autoLogs.map((log) => (
+                      <div key={log.id} className="flex gap-3">
+                        <span className="text-gray-500 shrink-0">[{log.timestamp}]</span>
+                        <span className={`break-all ${log.type === 'error' ? 'text-red-400' :
+                          log.type === 'success' ? 'text-green-400' :
+                            log.type === 'warning' ? 'text-yellow-400' :
+                              'text-blue-300'
+                          }`}>
+                          {log.type === 'success' && '✓ '}
+                          {log.type === 'error' && '✕ '}
+                          {log.message}
+                        </span>
+                      </div>
+                    ))}
+                    <div ref={logsEndRef} />
+                  </div>
+                </div>
+
+                {/* Manual Trigger for Testing */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={runAutomationCycle}
+                    disabled={isAutoPilotOn}
+                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50"
+                  >
+                    Trigger Single Run (Test)
                   </button>
                 </div>
               </div>
+            )
+          }
 
-              {/* Search and Filter */}
-              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                    <input
-                      type="text"
-                      placeholder="Search posts..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
+          {/* ALL POSTS TAB */}
+          {
+            activeTab === 'posts' && (
+              <div className="max-w-7xl mx-auto space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">All Posts</h1>
                   <div className="flex gap-2">
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
-                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    <button
+                      onClick={() => goToEditor('manual')}
+                      className="flex items-center justify-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
                     >
-                      <option value="all">All Status</option>
-                      <option value="published">Published</option>
-                      <option value="pending">Pending</option>
-                      <option value="draft">Draft</option>
-                    </select>
+                      <Plus size={16} />
+                      <span>New Post</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Search and Filter */}
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                      <input
+                        type="text"
+                        placeholder="Search posts..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <select
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="published">Published</option>
+                        <option value="pending">Pending</option>
+                        <option value="draft">Draft</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Posts Table */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-900/50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {filteredPosts.map(post => (
+                          <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <img
+                                  src={post.coverImage}
+                                  alt={post.title}
+                                  className="w-10 h-10 rounded-lg object-cover mr-3"
+                                />
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-xs">
+                                    {post.title}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {post.tags?.slice(0, 2).map(tag => `#${tag}`).join(', ')}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <img src={post.author.avatar} alt={post.author.name} className="w-6 h-6 rounded-full mr-2" />
+                                <span className="text-sm text-gray-900 dark:text-white">{post.author.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                              {post.category}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${post.status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                                post.status === 'pending' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
+                                  'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                }`}>
+                                {post.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                              {post.views?.toLocaleString() || 0}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {post.date}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleEditPost(post.id)}
+                                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 p-1"
+                                  title="Edit"
+                                >
+                                  <Edit3 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => window.open(`/${post.slug}`, '_blank')}
+                                  className="text-gray-600 hover:text-gray-800 dark:text-gray-400 p-1"
+                                  title="Preview"
+                                >
+                                  <Eye size={16} />
+                                </button>
+                                {isAdmin && (
+                                  <button
+                                    onClick={() => handleDeletePost(post.id)}
+                                    className="text-red-600 hover:text-red-800 dark:text-red-400 p-1"
+                                    title="Delete"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {filteredPosts.length === 0 && (
+                          <tr>
+                            <td colSpan={7} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                              No posts found. {searchQuery && 'Try a different search term.'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
+            )
+          }
 
-              {/* Posts Table */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-900/50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {filteredPosts.map(post => (
-                        <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
+          {/* APPROVALS TAB */}
+          {
+            activeTab === 'approvals' && isAdmin && (
+              <div className="max-w-7xl mx-auto space-y-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pending Approvals</h1>
+
+                {pendingPosts.length > 0 ? (
+                  <div className="space-y-4">
+                    {pendingPosts.map(post => (
+                      <div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <div className="flex flex-col md:flex-row justify-between gap-6">
+                          <div className="flex-1">
+                            <div className="flex items-start gap-4">
                               <img
                                 src={post.coverImage}
                                 alt={post.title}
-                                className="w-10 h-10 rounded-lg object-cover mr-3"
+                                className="w-24 h-24 rounded-lg object-cover"
                               />
                               <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-xs">
-                                  {post.title}
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{post.title}</h3>
+                                <div className="flex items-center gap-3 mb-3">
+                                  <div className="flex items-center">
+                                    <img src={post.author.avatar} alt={post.author.name} className="w-5 h-5 rounded-full mr-2" />
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">{post.author.name}</span>
+                                  </div>
+                                  <span className="text-sm text-gray-500">•</span>
+                                  <span className="text-sm text-gray-500">{post.date}</span>
+                                  <span className="text-sm text-gray-500">•</span>
+                                  <span className="text-sm font-medium text-gray-900 dark:text-white">{post.category}</span>
                                 </div>
-                                <div className="text-xs text-gray-500">
-                                  {post.tags?.slice(0, 2).map(tag => `#${tag}`).join(', ')}
+                                <p className="text-gray-600 dark:text-gray-300 mb-3">{post.excerpt}</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {post.tags?.map(tag => (
+                                    <span key={tag} className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
+                                      #{tag}
+                                    </span>
+                                  ))}
                                 </div>
                               </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <img src={post.author.avatar} alt={post.author.name} className="w-6 h-6 rounded-full mr-2" />
-                              <span className="text-sm text-gray-900 dark:text-white">{post.author.name}</span>
+                          </div>
+                          <div className="flex flex-col gap-2 md:w-48">
+                            <button
+                              onClick={() => window.open(`/${post.slug}`, '_blank')}
+                              className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <Eye size={16} />
+                              Preview
+                            </button>
+                            <button
+                              onClick={() => handleApprovePost(post.id)}
+                              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <CheckCircle size={16} />
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleRejectPost(post.id)}
+                              className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <X size={16} />
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No pending approvals</h3>
+                    <p className="text-gray-500 dark:text-gray-400">All posts have been reviewed and approved.</p>
+                  </div>
+                )}
+              </div>
+            )
+          }
+
+          {/* USERS TAB */}
+          {
+            activeTab === 'users' && isAdmin && (
+              <div className="max-w-7xl mx-auto space-y-6">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
+
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-900/50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posts</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {usersList.map(u => {
+                          const userPosts = allPosts.filter(p => p.author.id === u.id);
+                          return (
+                            <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <img className="h-10 w-10 rounded-full" src={u.avatar} alt="" />
+                                  <div className="ml-4">
+                                    <div className="text-sm font-medium text-gray-900 dark:text-white">{u.name}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                {u.email}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${u.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
+                                  u.role === 'moderator' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                                    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                  }`}>
+                                  {u.role}
+                                </span>
+                              </td>
+
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                {userPosts.length}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <select
+                                  value={u.role}
+                                  onChange={(e) => handleChangeRole(u.id, e.target.value)}
+                                  className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:text-white"
+                                >
+                                  <option value="user">User</option>
+                                  <option value="moderator">Moderator</option>
+                                  <option value="admin">Admin</option>
+                                </select>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          {/* CATEGORIES TAB */}
+          {
+            activeTab === 'categories' && isAdmin && (
+              <div className="max-w-7xl mx-auto space-y-8">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Categories</h1>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Create Category Form */}
+                  <div className="lg:col-span-1">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4 sticky top-6">
+                      <h3 className="font-bold text-lg text-gray-900 dark:text-white">Add New Category</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., AI Trends"
+                            value={newCatName}
+                            onChange={(e) => setNewCatName(e.target.value)}
+                            className="input-field"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icon Name</label>
+                          <input
+                            type="text"
+                            placeholder="Lucide icon name"
+                            value={newCatIcon}
+                            onChange={(e) => setNewCatIcon(e.target.value)}
+                            className="input-field"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Use icon names from Lucide React Icons</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                          <textarea
+                            placeholder="Brief description of this category"
+                            value={newCatDesc}
+                            onChange={(e) => setNewCatDesc(e.target.value)}
+                            className="input-field min-h-[100px]"
+                          />
+                        </div>
+                        <button
+                          onClick={handleCreateCategory}
+                          className="w-full btn-primary flex items-center justify-center gap-2"
+                        >
+                          <Plus size={18} />
+                          Create Category
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Categories List */}
+                  <div className="lg:col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {categories.map(cat => (
+                        <div key={cat.id} className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex justify-between items-start hover:shadow-md transition-shadow">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center">
+                                <Tag size={20} className="text-primary-600 dark:text-primary-400" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-lg text-gray-900 dark:text-white">{cat.name}</h4>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{cat.description || 'No description'}</p>
+                              </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {post.category}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${post.status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                              post.status === 'pending' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
-                                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                              }`}>
-                              {post.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {post.views?.toLocaleString() || 0}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {post.date}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => handleEditPost(post.id)}
-                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 p-1"
-                                title="Edit"
-                              >
-                                <Edit3 size={16} />
-                              </button>
-                              <button
-                                onClick={() => window.open(`/${post.slug}`, '_blank')}
-                                className="text-gray-600 hover:text-gray-800 dark:text-gray-400 p-1"
-                                title="Preview"
-                              >
-                                <Eye size={16} />
-                              </button>
-                              {isAdmin && (
+                            <div className="flex items-center justify-between mt-4">
+                              <span className="text-xs font-medium bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-gray-700 dark:text-gray-300">
+                                {cat.count || 0} posts
+                              </span>
+                              <div className="flex gap-2">
                                 <button
-                                  onClick={() => handleDeletePost(post.id)}
+                                  onClick={() => handleDeleteCategory(cat.id)}
                                   className="text-red-600 hover:text-red-800 dark:text-red-400 p-1"
                                   title="Delete"
                                 >
                                   <Trash2 size={16} />
                                 </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                      {filteredPosts.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                            No posts found. {searchQuery && 'Try a different search term.'}
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* APPROVALS TAB */}
-          {activeTab === 'approvals' && isAdmin && (
-            <div className="max-w-7xl mx-auto space-y-6">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pending Approvals</h1>
-
-              {pendingPosts.length > 0 ? (
-                <div className="space-y-4">
-                  {pendingPosts.map(post => (
-                    <div key={post.id} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                      <div className="flex flex-col md:flex-row justify-between gap-6">
-                        <div className="flex-1">
-                          <div className="flex items-start gap-4">
-                            <img
-                              src={post.coverImage}
-                              alt={post.title}
-                              className="w-24 h-24 rounded-lg object-cover"
-                            />
-                            <div>
-                              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{post.title}</h3>
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="flex items-center">
-                                  <img src={post.author.avatar} alt={post.author.name} className="w-5 h-5 rounded-full mr-2" />
-                                  <span className="text-sm text-gray-600 dark:text-gray-400">{post.author.name}</span>
-                                </div>
-                                <span className="text-sm text-gray-500">•</span>
-                                <span className="text-sm text-gray-500">{post.date}</span>
-                                <span className="text-sm text-gray-500">•</span>
-                                <span className="text-sm font-medium text-gray-900 dark:text-white">{post.category}</span>
-                              </div>
-                              <p className="text-gray-600 dark:text-gray-300 mb-3">{post.excerpt}</p>
-                              <div className="flex flex-wrap gap-2">
-                                {post.tags?.map(tag => (
-                                  <span key={tag} className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
-                                    #{tag}
-                                  </span>
-                                ))}
                               </div>
                             </div>
                           </div>
                         </div>
-                        <div className="flex flex-col gap-2 md:w-48">
-                          <button
-                            onClick={() => window.open(`/${post.slug}`, '_blank')}
-                            className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-                          >
-                            <Eye size={16} />
-                            Preview
-                          </button>
-                          <button
-                            onClick={() => handleApprovePost(post.id)}
-                            className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                          >
-                            <CheckCircle size={16} />
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleRejectPost(post.id)}
-                            className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
-                          >
-                            <X size={16} />
-                            Reject
-                          </button>
+                      ))}
+
+                      {categories.length === 0 && (
+                        <div className="col-span-2 text-center py-12">
+                          <Tag size={48} className="mx-auto text-gray-400 mb-4" />
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No categories yet</h3>
+                          <p className="text-gray-500 dark:text-gray-400">Create your first category to organize posts.</p>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No pending approvals</h3>
-                  <p className="text-gray-500 dark:text-gray-400">All posts have been reviewed and approved.</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* USERS TAB */}
-          {activeTab === 'users' && isAdmin && (
-            <div className="max-w-7xl mx-auto space-y-6">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
-
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-900/50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posts</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {usersList.map(u => {
-                        const userPosts = allPosts.filter(p => p.author.id === u.id);
-                        return (
-                          <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <img className="h-10 w-10 rounded-full" src={u.avatar} alt="" />
-                                <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900 dark:text-white">{u.name}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {u.email}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${u.role === 'admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
-                                u.role === 'moderator' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                                  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                }`}>
-                                {u.role}
-                              </span>
-                            </td>
-
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {userPosts.length}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <select
-                                value={u.role}
-                                onChange={(e) => handleChangeRole(u.id, e.target.value)}
-                                className="w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:ring-primary-500 focus:border-primary-500 text-gray-900 dark:text-white"
-                              >
-                                <option value="user">User</option>
-                                <option value="moderator">Moderator</option>
-                                <option value="admin">Admin</option>
-                              </select>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
-          {/* CATEGORIES TAB */}
-          {activeTab === 'categories' && isAdmin && (
-            <div className="max-w-7xl mx-auto space-y-8">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Categories</h1>
+          {/* ANALYTICS TAB */}
+          {
+            activeTab === 'analytics' && isAdmin && (
+              <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                      <TrendingUp className="text-primary-500" />
+                      Traffic & Performance
+                    </h1>
+                    <p className="text-gray-500 dark:text-gray-400">Monitor real-time visitors and historical traffic data</p>
+                  </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Create Category Form */}
-                <div className="lg:col-span-1">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4 sticky top-6">
-                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">Add New Category</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
-                        <input
-                          type="text"
-                          placeholder="e.g., AI Trends"
-                          value={newCatName}
-                          onChange={(e) => setNewCatName(e.target.value)}
-                          className="input-field"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icon Name</label>
-                        <input
-                          type="text"
-                          placeholder="Lucide icon name"
-                          value={newCatIcon}
-                          onChange={(e) => setNewCatIcon(e.target.value)}
-                          className="input-field"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Use icon names from Lucide React Icons</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                        <textarea
-                          placeholder="Brief description of this category"
-                          value={newCatDesc}
-                          onChange={(e) => setNewCatDesc(e.target.value)}
-                          className="input-field min-h-[100px]"
-                        />
-                      </div>
+                  <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
+                    {(['daily', 'weekly', 'monthly'] as const).map((p) => (
                       <button
-                        onClick={handleCreateCategory}
-                        className="w-full btn-primary flex items-center justify-center gap-2"
+                        key={p}
+                        onClick={() => setTrafficPeriod(p)}
+                        className={`px-4 py-2 text-sm font-medium rounded-lg transition-all capitalize ${trafficPeriod === p
+                          ? 'bg-white dark:bg-gray-700 shadow-sm text-primary-600 dark:text-primary-400'
+                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                          }`}
                       >
-                        <Plus size={18} />
-                        Create Category
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Real-time Indicator */}
+                <div className="bg-gradient-to-r from-primary-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-primary-500/20">
+                  <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="relative flex h-4 w-4">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-4 w-4 bg-green-400"></span>
+                      </div>
+                      <div>
+                        <div className="text-primary-100 text-sm font-medium uppercase tracking-wider">Active Users Now</div>
+                        <div className="text-4xl font-black mt-1">{realtimeTraffic.activeUsers}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 max-w-md w-full">
+                      <div className="text-primary-100 text-xs font-medium mb-3 uppercase tracking-wider">Currently Viewed Pages</div>
+                      <div className="space-y-2">
+                        {realtimeTraffic.activePages.slice(0, 3).map((p, i) => (
+                          <div key={i} className="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2 text-sm backdrop-blur-sm border border-white/5">
+                            <span className="truncate max-w-[200px]">{p.title}</span>
+                            <span className="font-bold bg-white/20 px-2 py-0.5 rounded text-xs">{p.count}</span>
+                          </div>
+                        ))}
+                        {realtimeTraffic.activePages.length === 0 && (
+                          <div className="text-white/60 text-sm italic">No active visitors right now</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-primary-500/50 transition-colors">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
+                        <Eye size={20} />
+                      </div>
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Page Views</div>
+                    <div className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
+                      {trafficStats?.totalViews?.toLocaleString() || 0}
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-primary-500/50 transition-colors">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-600 dark:text-green-400">
+                        <Clock size={20} />
+                      </div>
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Session Time</div>
+                    <div className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
+                      {Math.floor((trafficStats?.totalDuration || 0) / 60)}m {(trafficStats?.totalDuration || 0) % 60}s
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-primary-500/50 transition-colors">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-purple-600 dark:text-purple-400">
+                        <Zap size={20} />
+                      </div>
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Avg. Time on Page</div>
+                    <div className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">
+                      {Math.floor((trafficStats?.averageTime || 0) / 60)}m {Math.floor(trafficStats?.averageTime || 0) % 60}s
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-primary-500/50 transition-colors">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-orange-600 dark:text-orange-400">
+                        <FileText size={20} />
+                      </div>
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Posts</div>
+                    <div className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">{stats.posts}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Top Performing Pages</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="text-left text-xs text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                            <th className="pb-3 font-medium">PAGE TITLE</th>
+                            <th className="pb-3 font-medium">VIEWS</th>
+                            <th className="pb-3 font-medium text-right">TOTAL TIME</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                          {trafficStats?.topPages?.map((page: any, i: number) => (
+                            <tr key={i} className="group hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                              <td className="py-4">
+                                <div className="font-medium text-gray-900 dark:text-white text-sm truncate max-w-sm" title={page.title}>{page.title}</div>
+                                <div className="text-xs text-gray-500 font-mono mt-1">{page.slug}</div>
+                              </td>
+                              <td className="py-4 text-sm text-gray-600 dark:text-gray-400">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-gray-900 dark:text-white">{page.views}</span>
+                                  <div className="w-24 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-primary-500"
+                                      style={{ width: `${(page.views / (trafficStats.topPages[0].views || 1)) * 100}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-4 text-sm text-right text-gray-600 dark:text-gray-400 font-mono">
+                                {Math.floor(page.duration / 60)}m {page.duration % 60}s
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Device Distribution</h3>
+                    {/* Mock data for now as we just started collecting, but structure is here */}
+                    <div className="space-y-6">
+                      <div className="flex flex-col gap-4">
+                        <div className="flex justify-between items-center text-sm">
+                          <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full" />
+                            Desktop
+                          </div>
+                          <span className="font-bold">72%</span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500" style={{ width: '72%' }} />
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm">
+                          <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                            <div className="w-3 h-3 bg-indigo-500 rounded-full" />
+                            Mobile
+                          </div>
+                          <span className="font-bold">28%</span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-500" style={{ width: '28%' }} />
+                        </div>
+                      </div>
+
+                      <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
+                        <div className="flex items-center gap-3 text-orange-600 dark:text-orange-400 mb-2">
+                          <AlertTriangle size={18} />
+                          <span className="text-sm font-bold">Insights</span>
+                        </div>
+                        <p className="text-xs text-gray-500 leading-relaxed">
+                          Most visitors are currently viewing your content from Desktop. Consider optimizing your "Write Post" editor for better desktop experience.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          {/* PROMPTS TAB */}
+          {
+            activeTab === 'prompts' && isAdmin && (
+              <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+                <PromptManager />
+              </div>
+            )
+          }
+
+          {/* EDITOR TAB */}
+          {
+            activeTab === 'editor' && (
+              <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
+
+                {/* Editor Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                      {editorMode === 'ai' ? <Sparkles className="text-primary-500" /> : <PenTool className="text-green-500" />}
+                      {editorMode === 'ai' ? 'BIGGS' : 'Post Editor'}
+                      {editingPostId && <span className="text-sm font-normal text-gray-500">(Editing)</span>}
+                    </h1>
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">
+                      {editorMode === 'ai' ? 'Let AI help you write amazing content' : 'Create and edit your blog posts'}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setActiveTab('posts')}
+                      className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <div className="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-lg">
+                      <button
+                        onClick={() => { setEditorMode('manual'); setStep(3) }}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${editorMode === 'manual'
+                          ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white'
+                          : 'text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                          }`}
+                      >
+                        Manual
+                      </button>
+                      <button
+                        onClick={() => { setEditorMode('ai'); setStep(1) }}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${editorMode === 'ai'
+                          ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white'
+                          : 'text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                          }`}
+                      >
+                        AI Write
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Categories List */}
-                <div className="lg:col-span-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {categories.map(cat => (
-                      <div key={cat.id} className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex justify-between items-start hover:shadow-md transition-shadow">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center">
-                              <Tag size={20} className="text-primary-600 dark:text-primary-400" />
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-lg text-gray-900 dark:text-white">{cat.name}</h4>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">{cat.description || 'No description'}</p>
-                            </div>
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8">
+
+                  {/* === AI FLOW === */}
+                  {editorMode === 'ai' && (
+                    <>
+                      {/* Step 1: Topic */}
+                      <div className={`space-y-6 ${step !== 1 ? 'hidden' : ''}`}>
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">What should we write about?</h2>
+                          <p className="text-gray-500 dark:text-gray-400">
+                            Enter a topic or prompt and let AI generate an outline for you.
+                          </p>
+                        </div>
+
+                        <div className="space-y-4">
+                          <label className="block text-base font-medium text-gray-700 dark:text-gray-200">
+                            Topic or Prompt *
+                          </label>
+                          <div className="flex flex-col md:flex-row gap-3">
+                            <input
+                              type="text"
+                              value={topic}
+                              onChange={(e) => setTopic(e.target.value)}
+                              placeholder="e.g., The future of JavaScript frameworks, How to learn React in 2024, Benefits of TypeScript..."
+                              className="input-field flex-1"
+                            />
+                            <button
+                              onClick={handleGenerateOutline}
+                              disabled={isGenerating || !topic.trim()}
+                              className="btn-primary flex items-center justify-center min-w-[180px] h-[42px]"
+                            >
+                              {isGenerating ? (
+                                <Loader2 size={20} className="animate-spin mr-2" />
+                              ) : (
+                                <Wand2 size={20} className="mr-2" />
+                              )}
+                              {isGenerating ? 'Generating...' : 'Generate Outline'}
+                            </button>
                           </div>
-                          <div className="flex items-center justify-between mt-4">
-                            <span className="text-xs font-medium bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-gray-700 dark:text-gray-300">
-                              {cat.count || 0} posts
-                            </span>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleDeleteCategory(cat.id)}
-                                className="text-red-600 hover:text-red-800 dark:text-red-400 p-1"
-                                title="Delete"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
+                          <p className="text-sm text-gray-500">
+                            Be specific for better results. Include keywords and target audience if possible.
+                          </p>
                         </div>
                       </div>
-                    ))}
 
-                    {categories.length === 0 && (
-                      <div className="col-span-2 text-center py-12">
-                        <Tag size={48} className="mx-auto text-gray-400 mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No categories yet</h3>
-                        <p className="text-gray-500 dark:text-gray-400">Create your first category to organize posts.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+                      {/* Step 2: Outline */}
+                      <div className={`space-y-6 ${step !== 2 ? 'hidden' : ''}`}>
+                        <button
+                          onClick={() => setStep(1)}
+                          className="text-sm flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600"
+                        >
+                          <ArrowLeft size={16} className="mr-1" /> Back to Topic
+                        </button>
 
-          {/* ANALYTICS TAB */}
-          {activeTab === 'analytics' && isAdmin && (
-            <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                <TrendingUp className="text-primary-500" />
-                Performance Analytics
-              </h1>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Posts</div>
-                  <div className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">{stats.posts}</div>
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total Views</div>
-                  <div className="text-3xl font-bold mt-2 text-blue-600 dark:text-blue-400">{stats.views.toLocaleString()}</div>
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Registered Users</div>
-                  <div className="text-3xl font-bold mt-2 text-gray-900 dark:text-white">{stats.users}</div>
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <div className="text-gray-500 dark:text-gray-400 text-sm font-medium">Avg. Engagement</div>
-                  <div className="text-3xl font-bold mt-2 text-green-600 dark:text-green-400">{stats.engagement}</div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Views by Category</h3>
-                <div className="h-80 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.1} />
-                      <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                      <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} dx={-10} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#F3F4F6', borderRadius: '8px' }}
-                        itemStyle={{ color: '#F3F4F6' }}
-                        cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
-                      />
-                      <Bar dataKey="posts" name="Total Posts" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={32} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* PROMPTS TAB */}
-          {activeTab === 'prompts' && isAdmin && (
-            <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
-              <PromptManager />
-            </div>
-          )}
-
-          {/* EDITOR TAB */}
-          {activeTab === 'editor' && (
-            <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
-
-              {/* Editor Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                    {editorMode === 'ai' ? <Sparkles className="text-primary-500" /> : <PenTool className="text-green-500" />}
-                    {editorMode === 'ai' ? 'BIGGS' : 'Post Editor'}
-                    {editingPostId && <span className="text-sm font-normal text-gray-500">(Editing)</span>}
-                  </h1>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">
-                    {editorMode === 'ai' ? 'Let AI help you write amazing content' : 'Create and edit your blog posts'}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setActiveTab('posts')}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <div className="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-lg">
-                    <button
-                      onClick={() => { setEditorMode('manual'); setStep(3) }}
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${editorMode === 'manual'
-                        ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white'
-                        : 'text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                        }`}
-                    >
-                      Manual
-                    </button>
-                    <button
-                      onClick={() => { setEditorMode('ai'); setStep(1) }}
-                      className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${editorMode === 'ai'
-                        ? 'bg-white dark:bg-gray-600 shadow-sm text-gray-900 dark:text-white'
-                        : 'text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                        }`}
-                    >
-                      AI Write
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-8">
-
-                {/* === AI FLOW === */}
-                {editorMode === 'ai' && (
-                  <>
-                    {/* Step 1: Topic */}
-                    <div className={`space-y-6 ${step !== 1 ? 'hidden' : ''}`}>
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">What should we write about?</h2>
-                        <p className="text-gray-500 dark:text-gray-400">
-                          Enter a topic or prompt and let AI generate an outline for you.
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Outline & Title</h2>
+                        <p className="text-gray-500 dark:text-gray-400 mb-4">
+                          Review and refine the AI-generated outline. A good outline leads to better content.
                         </p>
-                      </div>
 
-                      <div className="space-y-4">
-                        <label className="block text-base font-medium text-gray-700 dark:text-gray-200">
-                          Topic or Prompt *
-                        </label>
-                        <div className="flex flex-col md:flex-row gap-3">
-                          <input
-                            type="text"
-                            value={topic}
-                            onChange={(e) => setTopic(e.target.value)}
-                            placeholder="e.g., The future of JavaScript frameworks, How to learn React in 2024, Benefits of TypeScript..."
-                            className="input-field flex-1"
-                          />
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Post Title</label>
+                            <input
+                              type="text"
+                              value={title}
+                              onChange={(e) => setTitle(e.target.value)}
+                              placeholder="Enter a compelling title..."
+                              className="input-field text-lg font-bold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Outline (Markdown)
+                              <span className="text-xs text-gray-500 ml-2">Edit as needed before generating full content</span>
+                            </label>
+                            <textarea
+                              value={outline}
+                              onChange={(e) => setOutline(e.target.value)}
+                              placeholder="The AI-generated outline will appear here..."
+                              className="input-field min-h-[300px] font-mono text-sm"
+                            />
+                          </div>
+
                           <button
-                            onClick={handleGenerateOutline}
-                            disabled={isGenerating || !topic.trim()}
-                            className="btn-primary flex items-center justify-center min-w-[180px] h-[42px]"
+                            onClick={handleGenerateFull}
+                            disabled={isGenerating || !outline.trim()}
+                            className="btn-primary w-full flex items-center justify-center"
                           >
                             {isGenerating ? (
                               <Loader2 size={20} className="animate-spin mr-2" />
                             ) : (
-                              <Wand2 size={20} className="mr-2" />
+                              <Sparkles size={20} className="mr-2" />
                             )}
-                            {isGenerating ? 'Generating...' : 'Generate Outline'}
+                            {isGenerating ? 'Generating Full Post...' : 'Generate Full Post from Outline'}
                           </button>
                         </div>
-                        <p className="text-sm text-gray-500">
-                          Be specific for better results. Include keywords and target audience if possible.
-                        </p>
                       </div>
-                    </div>
 
-                    {/* Step 2: Outline */}
-                    <div className={`space-y-6 ${step !== 2 ? 'hidden' : ''}`}>
-                      <button
-                        onClick={() => setStep(1)}
-                        className="text-sm flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600"
-                      >
-                        <ArrowLeft size={16} className="mr-1" /> Back to Topic
-                      </button>
+                      {/* Step 3: Final Review (AI) */}
+                      <div className={`space-y-6 ${step !== 3 ? 'hidden' : ''}`}>
+                        <button
+                          onClick={() => setStep(2)}
+                          className="text-sm flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600"
+                        >
+                          <ArrowLeft size={16} className="mr-1" /> Back to Outline
+                        </button>
 
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Outline & Title</h2>
-                      <p className="text-gray-500 dark:text-gray-400 mb-4">
-                        Review and refine the AI-generated outline. A good outline leads to better content.
-                      </p>
-
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Post Title</label>
-                          <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Enter a compelling title..."
-                            className="input-field text-lg font-bold"
-                          />
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Final Review</h2>
+                            <p className="text-gray-500 dark:text-gray-400">
+                              Review and refine the AI-generated content before publishing.
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              if (confirm('Generate new cover image?')) {
+                                setRandomImage();
+                              }
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                          >
+                            <RefreshCw size={16} />
+                            New Cover
+                          </button>
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Outline (Markdown)
-                            <span className="text-xs text-gray-500 ml-2">Edit as needed before generating full content</span>
-                          </label>
-                          <textarea
-                            value={outline}
-                            onChange={(e) => setOutline(e.target.value)}
-                            placeholder="The AI-generated outline will appear here..."
-                            className="input-field min-h-[300px] font-mono text-sm"
-                          />
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          {/* Left Column - Form */}
+                          <div className="space-y-6">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Post Title *</label>
+                              <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="Enter a compelling title..."
+                                className="input-field text-xl font-bold"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category *</label>
+                                <select
+                                  value={category}
+                                  onChange={(e) => setCategory(e.target.value)}
+                                  className="input-field"
+                                >
+                                  {categories.map(c => (
+                                    <option key={c.id} value={c.name}>{c.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+                                <input
+                                  type="text"
+                                  value={tagsInput}
+                                  onChange={(e) => setTagsInput(e.target.value)}
+                                  placeholder="react, webdev, tutorial"
+                                  className="input-field"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Comma-separated keywords</p>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Cover Image URL
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={coverImage}
+                                  onChange={(e) => setCoverImage(e.target.value)}
+                                  placeholder="https://example.com/image.jpg"
+                                  className="input-field flex-1"
+                                />
+                                <button
+                                  onClick={setRandomImage}
+                                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                >
+                                  Random
+                                </button>
+                              </div>
+                              {coverImage && (
+                                <div className="mt-2 space-y-2">
+                                  <img
+                                    src={coverImage}
+                                    alt="Cover preview"
+                                    className="w-full h-40 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                  />
+                                  <input
+                                    type="text"
+                                    value={coverImageAlt}
+                                    onChange={(e) => setCoverImageAlt(e.target.value)}
+                                    placeholder="Image Alt Text (for SEO)"
+                                    className="input-field text-sm"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom Slug (Optional)</label>
+                              <input
+                                type="text"
+                                value={slug}
+                                onChange={(e) => setSlug(e.target.value)}
+                                placeholder="custom-url-path"
+                                className="input-field font-mono text-sm"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">Leave empty to auto-generate from title</p>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Short Description / Excerpt
+                                <span className="text-xs text-gray-500 ml-2">(Supports Markdown/HTML for backlinks)</span>
+                              </label>
+                              <textarea
+                                value={excerpt}
+                                onChange={(e) => setExcerpt(e.target.value)}
+                                placeholder="Brief summary for search results and social cards..."
+                                className="input-field min-h-[100px]"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">Shown in post listings and SEO previews</p>
+                            </div>
+                          </div>
+
+                          {/* Right Column - Preview */}
+                          <div className="space-y-6">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Content Preview
+                              </label>
+                              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900 max-h-[500px] overflow-y-auto">
+                                <div className="prose dark:prose-invert max-w-none">
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    rehypePlugins={[rehypeRaw]}
+                                  >
+                                    {fullContent || '*Your content will appear here...*'}
+                                  </ReactMarkdown>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-4">
+                              <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
+                                <Sparkles size={16} />
+                                AI-Generated Content
+                              </h4>
+                              <p className="text-sm text-blue-700 dark:text-blue-400">
+                                This content was generated by AI. Please review carefully for accuracy, tone, and relevance before publishing.
+                              </p>
+                            </div>
+                          </div>
                         </div>
 
                         <button
-                          onClick={handleGenerateFull}
-                          disabled={isGenerating || !outline.trim()}
-                          className="btn-primary w-full flex items-center justify-center"
+                          onClick={handleSavePost}
+                          disabled={isSaving || !title || !fullContent}
+                          className="btn-primary w-full flex items-center justify-center mt-6"
                         >
-                          {isGenerating ? (
+                          {isSaving ? (
                             <Loader2 size={20} className="animate-spin mr-2" />
                           ) : (
-                            <Sparkles size={20} className="mr-2" />
+                            <Save size={20} className="mr-2" />
                           )}
-                          {isGenerating ? 'Generating Full Post...' : 'Generate Full Post from Outline'}
+                          {isSaving ? 'Saving...' : editingPostId ? 'Update Post' : isAdmin ? 'Publish Post' : 'Submit for Review'}
                         </button>
                       </div>
-                    </div>
+                    </>
+                  )}
 
-                    {/* Step 3: Final Review (AI) */}
-                    <div className={`space-y-6 ${step !== 3 ? 'hidden' : ''}`}>
-                      <button
-                        onClick={() => setStep(2)}
-                        className="text-sm flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-600"
-                      >
-                        <ArrowLeft size={16} className="mr-1" /> Back to Outline
-                      </button>
-
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Final Review</h2>
-                          <p className="text-gray-500 dark:text-gray-400">
-                            Review and refine the AI-generated content before publishing.
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (confirm('Generate new cover image?')) {
-                              setRandomImage();
-                            }
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        >
-                          <RefreshCw size={16} />
-                          New Cover
-                        </button>
-                      </div>
+                  {/* === MANUAL FLOW === */}
+                  {editorMode === 'manual' && (
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {editingPostId ? 'Edit Post' : 'Create New Post'}
+                      </h2>
 
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Left Column - Form */}
@@ -1911,7 +2278,7 @@ export const Admin: React.FC = () => {
                                 <img
                                   src={coverImage}
                                   alt="Cover preview"
-                                  className="w-full h-40 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                                  className="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = 'none';
                                   }}
@@ -1942,7 +2309,7 @@ export const Admin: React.FC = () => {
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                               Short Description / Excerpt
-                              <span className="text-xs text-gray-500 ml-2">(Supports Markdown/HTML for backlinks)</span>
+                              <span className="text-xs text-gray-500 ml-2">(Supports Markdown/HTML)</span>
                             </label>
                             <textarea
                               value={excerpt}
@@ -1952,254 +2319,95 @@ export const Admin: React.FC = () => {
                             />
                             <p className="text-xs text-gray-500 mt-1">Shown in post listings and SEO previews</p>
                           </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Content (Markdown & HTML) *
+                            </label>
+                            <textarea
+                              value={fullContent}
+                              onChange={(e) => setFullContent(e.target.value)}
+                              placeholder="Start writing your post using Markdown. You can also use HTML tags..."
+                              className="input-field min-h-[400px] font-mono text-sm"
+                            />
+                            <div className="flex justify-between items-center mt-2">
+                              <p className="text-xs text-gray-500">
+                                Supports: # Headers, **bold**, *italic*, `code`, ```code blocks```, &lt;html&gt;
+                              </p>
+                              <span className="text-xs text-gray-500">
+                                {fullContent.split(' ').length} words
+                              </span>
+                            </div>
+                          </div>
                         </div>
 
                         {/* Right Column - Preview */}
                         <div className="space-y-6">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Content Preview
+                              Live Preview
                             </label>
-                            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900 max-h-[500px] overflow-y-auto">
+                            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-900 max-h-[600px] overflow-y-auto">
+                              {coverImage && (
+                                <img
+                                  src={coverImage}
+                                  alt="Cover"
+                                  className="w-full h-48 object-cover rounded-lg mb-6"
+                                />
+                              )}
                               <div className="prose dark:prose-invert max-w-none">
+                                <h1 className="text-3xl font-bold mb-4">{title || 'Post Title'}</h1>
+                                <div className="flex items-center gap-4 text-sm text-gray-500 mb-6">
+                                  <span>By {user?.name}</span>
+                                  <span>•</span>
+                                  <span>{new Date().toLocaleDateString()}</span>
+                                  <span>•</span>
+                                  <span>{Math.ceil((fullContent || '').split(' ').length / 200)} min read</span>
+                                </div>
+                                {excerpt && (
+                                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
+                                    <p className="text-gray-600 dark:text-gray-300 italic">{excerpt}</p>
+                                  </div>
+                                )}
                                 <ReactMarkdown
                                   remarkPlugins={[remarkGfm]}
                                   rehypePlugins={[rehypeRaw]}
                                 >
-                                  {fullContent || '*Your content will appear here...*'}
+                                  {fullContent || '*Start writing your content...*'}
                                 </ReactMarkdown>
                               </div>
                             </div>
                           </div>
-
-                          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-4">
-                            <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
-                              <Sparkles size={16} />
-                              AI-Generated Content
-                            </h4>
-                            <p className="text-sm text-blue-700 dark:text-blue-400">
-                              This content was generated by AI. Please review carefully for accuracy, tone, and relevance before publishing.
-                            </p>
-                          </div>
                         </div>
                       </div>
 
-                      <button
-                        onClick={handleSavePost}
-                        disabled={isSaving || !title || !fullContent}
-                        className="btn-primary w-full flex items-center justify-center mt-6"
-                      >
-                        {isSaving ? (
-                          <Loader2 size={20} className="animate-spin mr-2" />
-                        ) : (
-                          <Save size={20} className="mr-2" />
-                        )}
-                        {isSaving ? 'Saving...' : editingPostId ? 'Update Post' : isAdmin ? 'Publish Post' : 'Submit for Review'}
-                      </button>
-                    </div>
-                  </>
-                )}
+                      <div className="flex justify-between items-center pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <button
+                          onClick={() => setActiveTab('posts')}
+                          className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        >
+                          Cancel
+                        </button>
 
-                {/* === MANUAL FLOW === */}
-                {editorMode === 'manual' && (
-                  <div className="space-y-6">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {editingPostId ? 'Edit Post' : 'Create New Post'}
-                    </h2>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Left Column - Form */}
-                      <div className="space-y-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Post Title *</label>
-                          <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Enter a compelling title..."
-                            className="input-field text-xl font-bold"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category *</label>
-                            <select
-                              value={category}
-                              onChange={(e) => setCategory(e.target.value)}
-                              className="input-field"
-                            >
-                              {categories.map(c => (
-                                <option key={c.id} value={c.name}>{c.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
-                            <input
-                              type="text"
-                              value={tagsInput}
-                              onChange={(e) => setTagsInput(e.target.value)}
-                              placeholder="react, webdev, tutorial"
-                              className="input-field"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Comma-separated keywords</p>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Cover Image URL
-                          </label>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={coverImage}
-                              onChange={(e) => setCoverImage(e.target.value)}
-                              placeholder="https://example.com/image.jpg"
-                              className="input-field flex-1"
-                            />
-                            <button
-                              onClick={setRandomImage}
-                              className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                            >
-                              Random
-                            </button>
-                          </div>
-                          {coverImage && (
-                            <div className="mt-2 space-y-2">
-                              <img
-                                src={coverImage}
-                                alt="Cover preview"
-                                className="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                              <input
-                                type="text"
-                                value={coverImageAlt}
-                                onChange={(e) => setCoverImageAlt(e.target.value)}
-                                placeholder="Image Alt Text (for SEO)"
-                                className="input-field text-sm"
-                              />
-                            </div>
+                        <button
+                          onClick={handleSavePost}
+                          disabled={isSaving || !title || !fullContent || !category}
+                          className="btn-primary flex items-center justify-center px-6"
+                        >
+                          {isSaving ? (
+                            <Loader2 size={20} className="animate-spin mr-2" />
+                          ) : (
+                            <Save size={20} className="mr-2" />
                           )}
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom Slug (Optional)</label>
-                          <input
-                            type="text"
-                            value={slug}
-                            onChange={(e) => setSlug(e.target.value)}
-                            placeholder="custom-url-path"
-                            className="input-field font-mono text-sm"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">Leave empty to auto-generate from title</p>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Short Description / Excerpt
-                            <span className="text-xs text-gray-500 ml-2">(Supports Markdown/HTML)</span>
-                          </label>
-                          <textarea
-                            value={excerpt}
-                            onChange={(e) => setExcerpt(e.target.value)}
-                            placeholder="Brief summary for search results and social cards..."
-                            className="input-field min-h-[100px]"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">Shown in post listings and SEO previews</p>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Content (Markdown & HTML) *
-                          </label>
-                          <textarea
-                            value={fullContent}
-                            onChange={(e) => setFullContent(e.target.value)}
-                            placeholder="Start writing your post using Markdown. You can also use HTML tags..."
-                            className="input-field min-h-[400px] font-mono text-sm"
-                          />
-                          <div className="flex justify-between items-center mt-2">
-                            <p className="text-xs text-gray-500">
-                              Supports: # Headers, **bold**, *italic*, `code`, ```code blocks```, &lt;html&gt;
-                            </p>
-                            <span className="text-xs text-gray-500">
-                              {fullContent.split(' ').length} words
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right Column - Preview */}
-                      <div className="space-y-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Live Preview
-                          </label>
-                          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-900 max-h-[600px] overflow-y-auto">
-                            {coverImage && (
-                              <img
-                                src={coverImage}
-                                alt="Cover"
-                                className="w-full h-48 object-cover rounded-lg mb-6"
-                              />
-                            )}
-                            <div className="prose dark:prose-invert max-w-none">
-                              <h1 className="text-3xl font-bold mb-4">{title || 'Post Title'}</h1>
-                              <div className="flex items-center gap-4 text-sm text-gray-500 mb-6">
-                                <span>By {user?.name}</span>
-                                <span>•</span>
-                                <span>{new Date().toLocaleDateString()}</span>
-                                <span>•</span>
-                                <span>{Math.ceil((fullContent || '').split(' ').length / 200)} min read</span>
-                              </div>
-                              {excerpt && (
-                                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
-                                  <p className="text-gray-600 dark:text-gray-300 italic">{excerpt}</p>
-                                </div>
-                              )}
-                              <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                rehypePlugins={[rehypeRaw]}
-                              >
-                                {fullContent || '*Start writing your content...*'}
-                              </ReactMarkdown>
-                            </div>
-                          </div>
-                        </div>
+                          {isSaving ? 'Saving...' : editingPostId ? 'Update Post' : isAdmin ? 'Publish Post' : 'Submit for Review'}
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex justify-between items-center pt-6 border-t border-gray-200 dark:border-gray-700">
-                      <button
-                        onClick={() => setActiveTab('posts')}
-                        className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                      >
-                        Cancel
-                      </button>
-
-                      <button
-                        onClick={handleSavePost}
-                        disabled={isSaving || !title || !fullContent || !category}
-                        className="btn-primary flex items-center justify-center px-6"
-                      >
-                        {isSaving ? (
-                          <Loader2 size={20} className="animate-spin mr-2" />
-                        ) : (
-                          <Save size={20} className="mr-2" />
-                        )}
-                        {isSaving ? 'Saving...' : editingPostId ? 'Update Post' : isAdmin ? 'Publish Post' : 'Submit for Review'}
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          }
         </div>
       </main>
     </div>

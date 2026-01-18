@@ -294,3 +294,35 @@ export interface Highlight {
   category: string;
   createdAt: string;
 }
+
+export interface TrafficSession {
+  id: string;
+  slug: string;
+  title: string;
+  postId?: string;
+  userId?: string;
+  device?: string;
+  startTime: string; // ISO string
+  lastHeartbeat: string; // ISO string
+  duration: number; // in seconds
+  isActive: boolean;
+  date: string; // YYYY-MM-DD for easy filtering
+}
+
+export interface TrafficStats {
+  totalViews: number;
+  totalDuration: number;
+  averageTime: number;
+  topPages: {
+    slug: string;
+    title: string;
+    views: number;
+    duration: number;
+  }[];
+  realTimeActive: number;
+  activePages: {
+    slug: string;
+    title: string;
+    count: number;
+  }[];
+}

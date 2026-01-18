@@ -2,7 +2,7 @@
 import { notifyIndexNow, notifyBingWebmaster } from './indexingService'; // Ensure this is imported
 import firebase from 'firebase/compat/app';
 import { db } from './firebase';
-import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption, LiveLink, Prompt, PromptCategory, PromptSubcategory, Highlight } from '../types';
+import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption, LiveLink, Prompt, PromptCategory, PromptSubcategory, Highlight, TrafficSession, TrafficStats } from '../types';
 import { MOCK_POSTS, CATEGORIES } from '../constants';
 import { slugify } from '../lib/slugify'; // <-- NEW IMPORT
 
@@ -17,6 +17,8 @@ const KEYWORDS_COLLECTION = 'keywords';
 const LIVE_MATCHES_COLLECTION = 'live_matches';
 const PAGES_COLLECTION = 'pages';
 const HIGHLIGHTS_COLLECTION = 'highlights';
+const TRAFFIC_COLLECTION = 'traffic';
+
 
 
 // Helper: client-side sort (avoids Firestore composite index requirement)
@@ -704,6 +706,157 @@ export const seedDatabase = async () => {
   await generateAndUploadSitemap();
   console.log('Database seeded + sitemap generated');
 };
+
+// --- TRAFFIC TRACKING ---
+
+export const recordPageView = async (data: {
+  slug: string;
+  title: string;
+  postId?: string;
+  userId?: string;
+  device?: string;
+}): Promise<string> => {
+  try {
+    const now = new Date();
+    const sessionId = Math.random().toString(36).substring(2, 15);
+    const session: any = {
+      slug: data.slug,
+      title: data.title,
+      postId: data.postId || null, // Use null instead of undefined for Firestore
+      userId: data.userId || null,
+      device: data.device || 'desktop',
+      startTime: now.toISOString(),
+      lastHeartbeat: now.toISOString(),
+      duration: 0,
+      isActive: true,
+      date: now.toISOString().split('T')[0]
+    };
+
+    // Remove undefined fields just in case
+    Object.keys(session).forEach(key => session[key] === undefined && delete session[key]);
+
+    await db.collection(TRAFFIC_COLLECTION).doc(sessionId).set(session);
+
+    // Also increment global post views if it's a post
+    if (data.postId) {
+      await incrementViewCount(data.postId);
+    }
+
+    return sessionId;
+  } catch (error) {
+    console.error('Error recording page view:', error);
+    return '';
+  }
+};
+
+export const updatePageHeartbeat = async (sessionId: string, duration: number, isActive: boolean = true) => {
+  try {
+    await db.collection(TRAFFIC_COLLECTION).doc(sessionId).update({
+      lastHeartbeat: new Date().toISOString(),
+      duration: duration,
+      isActive: isActive
+    });
+  } catch (error) {
+    console.error('Error updating heartbeat:', error);
+  }
+};
+
+export const getRealtimeTraffic = async (): Promise<{ activeUsers: number; activePages: any[] }> => {
+  try {
+    const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
+    const snapshot = await db.collection(TRAFFIC_COLLECTION)
+      .where('lastHeartbeat', '>', oneMinuteAgo)
+      .get();
+
+    const sessions = snapshot.docs.map(doc => doc.data() as TrafficSession);
+    const pageCounts: Record<string, { title: string, count: number }> = {};
+
+    sessions.forEach(s => {
+      if (!pageCounts[s.slug]) {
+        pageCounts[s.slug] = { title: s.title, count: 0 };
+      }
+      pageCounts[s.slug].count += 1;
+    });
+
+    return {
+      activeUsers: sessions.length,
+      activePages: Object.entries(pageCounts).map(([slug, data]) => ({
+        slug,
+        title: data.title,
+        count: data.count
+      })).sort((a, b) => b.count - a.count)
+    };
+  } catch (error) {
+    console.error('Error fetching realtime traffic:', error);
+    return { activeUsers: 0, activePages: [] };
+  }
+};
+
+export const getTrafficStats = async (period: 'daily' | 'weekly' | 'monthly'): Promise<TrafficStats> => {
+  try {
+    const now = new Date();
+    let startDate = new Date();
+
+    if (period === 'daily') {
+      startDate.setHours(0, 0, 0, 0);
+    } else if (period === 'weekly') {
+      startDate.setDate(now.getDate() - 7);
+    } else if (period === 'monthly') {
+      startDate.setMonth(now.getMonth() - 1);
+    }
+
+    const snapshot = await db.collection(TRAFFIC_COLLECTION)
+      .where('startTime', '>=', startDate.toISOString())
+      .get();
+
+    const sessions = snapshot.docs.map(doc => doc.data() as TrafficSession);
+
+    const stats: TrafficStats = {
+      totalViews: sessions.length,
+      totalDuration: sessions.reduce((acc, s) => acc + s.duration, 0),
+      averageTime: 0,
+      topPages: [],
+      realTimeActive: 0,
+      activePages: []
+    };
+
+    stats.averageTime = stats.totalViews > 0 ? stats.totalDuration / stats.totalViews : 0;
+
+    const pageAgg: Record<string, { title: string, views: number, duration: number }> = {};
+    sessions.forEach(s => {
+      if (!pageAgg[s.slug]) {
+        pageAgg[s.slug] = { title: s.title, views: 0, duration: 0 };
+      }
+      pageAgg[s.slug].views += 1;
+      pageAgg[s.slug].duration += s.duration;
+    });
+
+    stats.topPages = Object.entries(pageAgg).map(([slug, data]) => ({
+      slug,
+      title: data.title,
+      views: data.views,
+      duration: data.duration
+    })).sort((a, b) => b.views - a.views).slice(0, 10);
+
+    // Realtime part (last 5 mins for dashboard summary)
+    const realtime = await getRealtimeTraffic();
+    stats.realTimeActive = realtime.activeUsers;
+    stats.activePages = realtime.activePages;
+
+    return stats;
+  } catch (error) {
+    console.error('Error fetching traffic stats:', error);
+    return {
+      totalViews: 0,
+      totalDuration: 0,
+      averageTime: 0,
+      topPages: [],
+      realTimeActive: 0,
+      activePages: []
+    };
+  }
+};
+
 
 // --- POLLS ---
 

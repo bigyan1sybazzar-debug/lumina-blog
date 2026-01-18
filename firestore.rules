@@ -15,6 +15,49 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // --- NEW: HIGHLIGHTS (Fixed AdminDashboard.tsx:909) ---
+    match /highlights/{highlightId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- PROMPT LIBRARY (Fixed db.ts Errors) ---
+    match /prompt_categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /prompt_subcategories/{subcategoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /prompts/{promptId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- LIVE & ADMIN DATA ---
+    match /live_matches/{matchId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /keywords/{keywordId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /live_links/{linkId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /live_streams/{streamId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // --- USERS ---
     match /users/{userId} {
       allow read: if true; 
@@ -37,43 +80,44 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // --- OTHER CORES ---
+    // --- CONTENT & POLLS ---
     match /polls/{pollId} {
       allow read: if true;
       allow create, update: if isSignedIn();
       allow delete: if isAdmin();
     }
 
-    // --- VIDEO CALLS ---
-    match /calls/{callId} {
-      // Allow participants to read/write their own call docs
-      allow get: if isSignedIn();
-      allow list: if isSignedIn() && (resource.data.receiverId == request.auth.uid || resource.data.callerId == request.auth.uid);
-      allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
-      allow update: if isSignedIn() && (resource.data.receiverId == request.auth.uid || resource.data.callerId == request.auth.uid);
-      
-      // Allow subcollections (ICE candidates)
-      match /callerCandidates/{candidateId} {
-        allow read, write: if isSignedIn();
-      }
-      match /receiverCandidates/{candidateId} {
-        allow read, write: if isSignedIn();
-      }
-    }
-
-    match /chats/{chatId} {
-      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create, update, delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-    }
-
     match /posts/{postId} { allow read: if true; allow write: if isAdmin(); }
     match /categories/{categoryId} { allow read: if true; allow write: if isAdmin(); }
+    
     match /comments/{commentId} { 
       allow read: if true; 
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
-    match /reviews/{reviewId} { allow read: if true; allow create: if isSignedIn(); allow update, delete: if isAdmin(); }
+    
+    match /reviews/{reviewId} { 
+      allow read: if true; 
+      allow create: if isSignedIn(); 
+      allow update, delete: if isAdmin(); 
+    }
+
+    // --- INFRASTRUCTURE & SETTINGS ---
+    match /calls/{callId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (resource.data.receiverId == request.auth.uid || resource.data.callerId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.callerId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.receiverId == request.auth.uid || resource.data.callerId == request.auth.uid);
+      
+      match /callerCandidates/{candidateId} { allow read, write: if isSignedIn(); }
+      match /receiverCandidates/{candidateId} { allow read, write: if isSignedIn(); }
+    }
+
+    match /chats/{chatId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin() || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
+    }
+
     match /config/{configId} { allow read: if true; allow write: if isAdmin(); }
     match /settings/{docId} { allow read: if true; allow write: if isAdmin(); }
 
@@ -90,6 +134,14 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.buyerId == request.auth.uid);
     }
 
+    // --- ANALYTICS & TRAFFIC ---
+    match /traffic/{sessionId} {
+      allow create, update: if true;
+      allow get, list: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    // --- FALLBACK ---
     match /{document=**} {
       allow read, write: if false;
     }
