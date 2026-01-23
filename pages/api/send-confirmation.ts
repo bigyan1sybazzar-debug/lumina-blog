@@ -38,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await transporter.sendMail({
             from: `"${smtpSettings?.fromName || 'Bigyann Blog'}" <${smtpSettings?.username}>`,
             to: email,
-            subject: 'Welcome to Our Newsletter! 🎉',
+            subject: 'Welcome to Bigyann Newsletter 🎉',
             html: `
         <!DOCTYPE html>
         <html>
@@ -59,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             </div>
             <div class="content">
               <p>Hi there,</p>
-              <p>Welcome to the Bigyann Blog newsletter! 🎉</p>
+              <p>Welcome to Bigyann Newsletter! 🎉</p>
               <p>We're thrilled to have you as part of our community. You'll now receive:</p>
               <ul>
                 <li>📰 Latest blog posts and articles</li>
