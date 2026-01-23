@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const smtpSettings = smtpDoc.data();
 
         // Create transporter with SMTP settings
-        const transporter = nodemailer.createTransporter({
+        const transporter = nodemailer.createTransport({
             host: smtpSettings?.host || 'smtp.zoho.com',
             port: smtpSettings?.port || 465,
             secure: true,
