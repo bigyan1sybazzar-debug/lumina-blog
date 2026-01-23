@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, deleteLiveLink, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch, getHighlights, addHighlight, deleteHighlight } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, deleteLiveLink, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch, getHighlights, addHighlight, deleteHighlight, getSubscribers } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
@@ -17,7 +17,7 @@ import {
   PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw,
   Users, CheckCircle, Shield, Tag, Globe, ExternalLink, Trash2, Eye,
   Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter,
-  Bot, Vote, Hash, Trophy
+  Bot, Vote, Hash, Trophy, Send
 } from 'lucide-react';
 import { AnalyticsDashboard } from './admin/AnalyticsDashboard';
 import { UserManagement } from './admin/UserManagement';
@@ -30,6 +30,7 @@ import { LiveMatchManager } from './admin/LiveMatchManager';
 
 import { ANALYTICS_DATA } from '../constants';
 import { deleteCategory, updatePost, deletePost, getPostById } from '../services/db';
+import { SubscriberManager } from './admin/SubscriberManager';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -44,7 +45,7 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'keywords' | 'live-matches' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section' | 'highlights'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'keywords' | 'live-matches' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section' | 'highlights' | 'subscribers'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -56,7 +57,7 @@ export const Admin: React.FC = () => {
   }, [user, isLoading, router]);
 
   // Data State
-  const [stats, setStats] = useState({ posts: 0, views: 0, users: 0, comments: 0, engagement: 0 });
+  const [stats, setStats] = useState({ posts: 0, views: 0, users: 0, comments: 0, engagement: 0, subscribers: 0 });
   const [usersList, setUsersList] = useState<User[]>([]);
   const [pendingPosts, setPendingPosts] = useState<BlogPost[]>([]);
   const [myPosts, setMyPosts] = useState<BlogPost[]>([]);
@@ -241,12 +242,14 @@ export const Admin: React.FC = () => {
         const allPostsData = await getAllPostsAdmin();
         const totalViews = allPostsData.reduce((acc, curr) => acc + (curr.views || 0), 0);
         setAllPosts(allPostsData);
+        const subs = await getSubscribers();
         setStats({
           posts: allPostsData.length,
           views: totalViews,
           users: usersList.length,
           comments: 0,
-          engagement: Math.round((totalViews / Math.max(allPostsData.length, 1)) * 100) / 100
+          engagement: Math.round((totalViews / Math.max(allPostsData.length, 1)) * 100) / 100,
+          subscribers: subs.length
         });
 
         const pPending = await getPendingPosts();
@@ -1160,6 +1163,16 @@ export const Admin: React.FC = () => {
                   >
                     <ImageIcon size={18} className="mr-3" /> Highlights
                   </button>
+
+                  <button
+                    onClick={() => { setActiveTab('subscribers'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'subscribers'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <Send size={18} className="mr-3" /> Subscribers
+                  </button>
                 </>
               )}
             </nav>
@@ -1938,6 +1951,15 @@ export const Admin: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )
+          }
+
+          {/* SUBSCRIBERS TAB */}
+          {
+            activeTab === 'subscribers' && isAdmin && (
+              <div className="max-w-7xl mx-auto space-y-6">
+                <SubscriberManager />
               </div>
             )
           }

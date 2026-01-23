@@ -326,3 +326,10 @@ export interface TrafficStats {
     count: number;
   }[];
 }
+
+export interface Subscriber {
+  id: string;
+  email: string;
+  subscribedAt: string; // ISO string
+  status: 'active' | 'unsubscribed';
+}

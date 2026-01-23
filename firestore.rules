@@ -7,7 +7,8 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null && (
         request.auth.uid == 'l2HzKynx5oetUVpNWeMKaQNpkS13' || 
-        request.auth.token.email == 'admin@lumina.blog'
+        request.auth.token.email == 'admin@lumina.blog' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
       );
     }
 
@@ -139,6 +140,12 @@ service cloud.firestore {
       allow create, update: if true;
       allow get, list: if isSignedIn();
       allow delete: if isAdmin();
+    }
+
+    // --- NEWSLETTER SUBSCRIBERS ---
+    match /subscribers/{subscriberId} {
+      allow get, create, update: if true;
+      allow list, delete: if isAdmin();
     }
 
     // --- FALLBACK ---

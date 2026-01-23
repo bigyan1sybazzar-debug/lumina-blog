@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getPages } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getPages, getSubscribers } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
@@ -16,12 +16,13 @@ import {
   PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw,
   Users, CheckCircle, Clock, Shield, Tag, Globe, ExternalLink, Trash2, Eye,
   Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter,
-  Bot, Zap, Play, Pause, AlertTriangle, Terminal, GripVertical
+  Bot, Zap, Play, Pause, AlertTriangle, Terminal, GripVertical, Send
 } from 'lucide-react';
 
 import { ANALYTICS_DATA } from '../constants';
 import { deleteCategory, updatePost, deletePost, getPostById } from '../services/db';
 import { PromptManager } from '../components/admin/PromptManager';
+import { SubscriberManager } from '../components/admin/SubscriberManager';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -36,7 +37,7 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'prompts'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'prompts' | 'subscribers'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -49,7 +50,7 @@ export const Admin: React.FC = () => {
   }, [user, isLoading, router]);
 
   // Data State
-  const [stats, setStats] = useState({ posts: 0, views: 0, users: 0, comments: 0, engagement: 0 });
+  const [stats, setStats] = useState({ posts: 0, views: 0, users: 0, comments: 0, engagement: 0, subscribers: 0 });
   const [usersList, setUsersList] = useState<User[]>([]);
   const [pendingPosts, setPendingPosts] = useState<BlogPost[]>([]);
   const [myPosts, setMyPosts] = useState<BlogPost[]>([]);
@@ -162,12 +163,14 @@ export const Admin: React.FC = () => {
         const allPostsData = await getPosts();
         const totalViews = allPostsData.reduce((acc, curr) => acc + (curr.views || 0), 0);
         setAllPosts(allPostsData);
+        const subs = await getSubscribers();
         setStats({
           posts: allPostsData.length,
           views: totalViews,
           users: usersList.length,
           comments: 0,
-          engagement: Math.round((totalViews / Math.max(allPostsData.length, 1)) * 100) / 100
+          engagement: Math.round((totalViews / Math.max(allPostsData.length, 1)) * 100) / 100,
+          subscribers: subs.length
         });
 
         const pPending = await getPendingPosts();
@@ -773,6 +776,16 @@ export const Admin: React.FC = () => {
                   >
                     <Sparkles size={18} className="mr-3" /> Prompts Manager
                   </button>
+
+                  <button
+                    onClick={() => { setActiveTab('subscribers'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'subscribers'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <Send size={18} className="mr-3" /> Subscribers
+                  </button>
                 </>
               )}
             </nav>
@@ -971,7 +984,7 @@ export const Admin: React.FC = () => {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 md:gap-6">
                   <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Views</p>
                     <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.views.toLocaleString()}</p>
@@ -991,7 +1004,11 @@ export const Admin: React.FC = () => {
                         <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">{stats.users}</p>
                       </div>
                       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Engagement Rate</p>
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Subscribers</p>
+                        <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">{stats.subscribers}</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Engagement</p>
                         <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">{stats.engagement}</p>
                       </div>
                     </>
@@ -1874,6 +1891,15 @@ export const Admin: React.FC = () => {
             activeTab === 'prompts' && isAdmin && (
               <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
                 <PromptManager />
+              </div>
+            )
+          }
+
+          {/* SUBSCRIBERS TAB */}
+          {
+            activeTab === 'subscribers' && isAdmin && (
+              <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+                <SubscriberManager />
               </div>
             )
           }

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getLiveLinks, getHighlights } from '../services/db';
+import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/db';
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
@@ -17,12 +17,31 @@ export const LiveSection: React.FC = () => {
     const [selectedLink, setSelectedLink] = useState<any>(null);
     const [pendingLink, setPendingLink] = useState<LiveLink | null>(null);
     const [showAd, setShowAd] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false); // Prevent double-clicks
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [newsletterEmail, setNewsletterEmail] = useState('');
+    const [isSubscribed, setIsSubscribed] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         getLiveLinks().then(setLinks);
         getHighlights().then(setHighlights);
     }, []);
+
+    const handleSubscribe = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newsletterEmail) return;
+        setSubmitting(true);
+        try {
+            await subscribeToNewsletter(newsletterEmail);
+            setIsSubscribed(true);
+            setNewsletterEmail('');
+        } catch (error) {
+            console.error('Subscription failed:', error);
+            alert('Subscription failed. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     const handleLinkClick = (link: LiveLink) => {
         setPendingLink(link);
@@ -165,6 +184,80 @@ export const LiveSection: React.FC = () => {
                         ))}
                     </div>
                 )}
+
+                {/* NEWSLETTER SECTION */}
+                <div className="mt-24 relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-600/10 to-primary-600/10 blur-[120px] rounded-full" />
+                    <div className="relative bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-[2.5rem] p-8 md:p-12 overflow-hidden backdrop-blur-xl">
+                        <div className="max-w-3xl mx-auto text-center space-y-8">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-xs font-black uppercase tracking-widest">
+                                <Send size={14} />
+                                Stay Updated
+                            </div>
+
+                            <div className="space-y-4">
+                                <h2 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight">
+                                    Join the <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-primary-500">Live Coverage</span> Inner Circle
+                                </h2>
+                                <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
+                                    Get instant notifications for live match starts, breaking highlights, and exclusive streaming links delivered straight to your inbox.
+                                </p>
+                            </div>
+
+                            {isSubscribed ? (
+                                <div className="flex flex-col items-center gap-4 animate-in zoom-in duration-500">
+                                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-500/20">
+                                        <CheckCircle size={32} />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">You're on the list!</h3>
+                                    <p className="text-gray-500">Welcome to the Lumina Blog newsletter.</p>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleSubscribe} className="flex flex-col md:flex-row gap-4 max-w-lg mx-auto transform hover:scale-[1.02] transition-transform duration-300">
+                                    <div className="flex-1 relative group">
+                                        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-red-500 transition-colors">
+                                            <Radio size={20} />
+                                        </div>
+                                        <input
+                                            type="email"
+                                            value={newsletterEmail}
+                                            onChange={(e) => setNewsletterEmail(e.target.value)}
+                                            placeholder="Enter your email address"
+                                            className="w-full pl-14 pr-6 py-5 bg-gray-100 dark:bg-white/5 border-2 border-transparent focus:border-red-500/50 rounded-2xl outline-none text-gray-900 dark:text-white font-medium transition-all"
+                                            required
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="px-8 py-5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-xl shadow-red-600/20 hover:shadow-red-600/40 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                    >
+                                        {submitting ? (
+                                            <RefreshCw className="animate-spin" size={20} />
+                                        ) : (
+                                            <>
+                                                Subscribe Now
+                                                <ChevronRight size={20} />
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
+                            )}
+
+                            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-[0.2em]">
+                                Protected by secure Zoho Infrastructure
+                            </p>
+                        </div>
+
+                        {/* Background Deco Widgets */}
+                        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                            <Sparkles size={120} className="text-red-500" />
+                        </div>
+                        <div className="absolute bottom-0 left-0 p-8 opacity-10 pointer-events-none">
+                            <Radio size={120} className="text-primary-500" />
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Ad Interstitial Modal */}

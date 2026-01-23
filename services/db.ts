@@ -18,6 +18,7 @@ const LIVE_MATCHES_COLLECTION = 'live_matches';
 const PAGES_COLLECTION = 'pages';
 const HIGHLIGHTS_COLLECTION = 'highlights';
 const TRAFFIC_COLLECTION = 'traffic';
+const SUBSCRIBERS_COLLECTION = 'subscribers';
 
 
 
@@ -1496,6 +1497,104 @@ export const deleteHighlight = async (id: string) => {
     await db.collection(HIGHLIGHTS_COLLECTION).doc(id).delete();
   } catch (error) {
     console.error('Error deleting highlight:', error);
+    throw error;
+  }
+};
+
+// --- SUBSCRIPTIONS ---
+export const subscribeToNewsletter = async (email: string) => {
+  try {
+    const subscriberRef = db.collection(SUBSCRIBERS_COLLECTION).doc(email.toLowerCase());
+    const doc = await subscriberRef.get();
+
+    if (doc.exists) {
+      if (doc.data()?.status === 'unsubscribed') {
+        await subscriberRef.update({
+          status: 'active',
+          subscribedAt: new Date().toISOString()
+        });
+        // Send re-subscription email
+        try {
+          await fetch('/api/send-confirmation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email.toLowerCase() })
+          });
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError);
+        }
+      }
+      return;
+    }
+
+    await subscriberRef.set({
+      email: email.toLowerCase(),
+      subscribedAt: new Date().toISOString(),
+      status: 'active'
+    });
+
+    // Send confirmation email
+    try {
+      await fetch('/api/send-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase() })
+      });
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Don't throw - subscription was successful even if email fails
+    }
+  } catch (error) {
+    console.error('Error subscribing to newsletter:', error);
+    throw error;
+  }
+};
+
+export const getSubscribers = async (): Promise<any[]> => {
+  try {
+    const snapshot = await db.collection(SUBSCRIBERS_COLLECTION)
+      .orderBy('subscribedAt', 'desc')
+      .get();
+
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching subscribers:', error);
+    return [];
+  }
+};
+
+export const unsubscribeFromNewsletter = async (id: string) => {
+  try {
+    await db.collection(SUBSCRIBERS_COLLECTION).doc(id).update({
+      status: 'unsubscribed'
+    });
+  } catch (error) {
+    console.error('Error unsubscribing:', error);
+    throw error;
+  }
+};
+
+export const getSmtpSettings = async () => {
+  try {
+    const doc = await db.collection('config').doc('smtp').get();
+    return doc.exists ? doc.data() : null;
+  } catch (error) {
+    console.error('Error fetching SMTP settings:', error);
+    return null;
+  }
+};
+
+export const updateSmtpSettings = async (settings: any) => {
+  try {
+    await db.collection('config').doc('smtp').set({
+      ...settings,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error updating SMTP settings:', error);
     throw error;
   }
 };
