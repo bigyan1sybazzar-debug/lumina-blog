@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Script from 'next/script';
 import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/db';
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
@@ -190,6 +191,36 @@ export const LiveSection: React.FC = () => {
                                 </p>
                             </div>
                         )}
+                    </div>
+                </div>
+
+                {/* VIDEO FEED SECTION */}
+                <div className="mt-20">
+                    <div className="flex items-center gap-3 mb-8">
+                        <Tv className="w-6 h-6 text-red-500" />
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                            Match <span className="text-gray-400 font-medium text-lg italic">Videos</span>
+                        </h2>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-white/5 rounded-[2.5rem] p-4 md:p-8 border border-gray-100 dark:border-white/10 overflow-hidden backdrop-blur-sm relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-primary-500/5 pointer-events-none" />
+                        <div className="relative z-10 w-full h-[760px] rounded-3xl overflow-hidden bg-white dark:bg-neutral-900 shadow-inner">
+                            <iframe
+                                src="https://www.scorebat.com/embed/videofeed/?token=MjcyNDk5XzE3NjkyNjMwNDVfYWZiZmRlOWE1NDcxNjVkYWI1NGEyOGMxZjBkNGVkZDE4YjFhYTU2ZQ=="
+                                frameBorder="0"
+                                width="600"
+                                height="760"
+                                allowFullScreen
+                                allow='autoplay; fullscreen'
+                                style={{ width: '100%', height: '760px', overflow: 'hidden', display: 'block' }}
+                                className="_scorebatEmbeddedPlayer_"
+                            />
+                            <Script
+                                id="scorebat-jssdk"
+                                src="https://www.scorebat.com/embed/embed.js?v=arrv"
+                                strategy="lazyOnload"
+                            />
+                        </div>
                     </div>
                 </div>
 
