@@ -10,6 +10,7 @@ import '@splidejs/react-splide/css';
 
 import GoogleAdSense from './GoogleAdSense';
 
+// CricketScoreWidget removed as it is replaced by an iframe source
 
 export const LiveSection: React.FC = () => {
     const [links, setLinks] = useState<LiveLink[]>([]);
@@ -21,6 +22,7 @@ export const LiveSection: React.FC = () => {
     const [newsletterEmail, setNewsletterEmail] = useState('');
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [activeScoreTab, setActiveScoreTab] = useState<'football' | 'cricket'>('football');
 
     useEffect(() => {
         getLiveLinks().then(setLinks);
@@ -66,7 +68,8 @@ export const LiveSection: React.FC = () => {
         return acc;
     }, {} as Record<string, Highlight[]>);
 
-    if (links.length === 0 && highlights.length === 0) return null;
+    // Removed early return to ensure Live Scores Tabs are always visible when component is rendered
+    // if (links.length === 0 && highlights.length === 0) return null;
 
     const splideOptionsHighlights = {
         perPage: 4,
@@ -101,28 +104,93 @@ export const LiveSection: React.FC = () => {
                 </div>
 
                 {/* CONSISTENT 2-COLUMN GRID ON ALL PLATFORMS FOR LIVE STREAMS */}
-                <div className="grid grid-cols-2 gap-3 md:gap-6">
-                    {links.map((link) => (
-                        <div
-                            key={link.id}
-                            onClick={() => handleLinkClick(link)}
-                            className="group cursor-pointer flex flex-col sm:flex-row items-center sm:items-center gap-3 md:gap-4 bg-gray-50 dark:bg-white/5 p-3 md:p-6 rounded-2xl border border-gray-100 dark:border-white/5 hover:border-red-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-red-500/5"
-                        >
-                            <div className="flex-shrink-0 w-10 h-10 md:w-14 md:h-14 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform shadow-inner">
-                                <Play size={18} fill="currentColor" className="ml-0.5 md:size-[24px]" />
+                {links.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3 md:gap-6">
+                        {links.map((link) => (
+                            <div
+                                key={link.id}
+                                onClick={() => handleLinkClick(link)}
+                                className="group cursor-pointer flex flex-col sm:flex-row items-center sm:items-center gap-3 md:gap-4 bg-gray-50 dark:bg-white/5 p-3 md:p-6 rounded-2xl border border-gray-100 dark:border-white/5 hover:border-red-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-red-500/5"
+                            >
+                                <div className="flex-shrink-0 w-10 h-10 md:w-14 md:h-14 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform shadow-inner">
+                                    <Play size={18} fill="currentColor" className="ml-0.5 md:size-[24px]" />
+                                </div>
+                                <div className="flex-1 min-w-0 text-center sm:text-left">
+                                    <h3 className="font-bold text-[10px] md:text-base lg:text-lg text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-1">
+                                        {link.heading}
+                                    </h3>
+                                    <p className="text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center sm:justify-start gap-1 uppercase tracking-widest">
+                                        <Activity size={10} className="text-red-500" />
+                                        Live Stream
+                                    </p>
+                                </div>
+                                <ChevronRight size={14} className="hidden md:block text-gray-300 group-hover:translate-x-1 transition-transform ml-auto" />
                             </div>
-                            <div className="flex-1 min-w-0 text-center sm:text-left">
-                                <h3 className="font-bold text-[10px] md:text-base lg:text-lg text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-1">
-                                    {link.heading}
-                                </h3>
-                                <p className="text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center sm:justify-start gap-1 uppercase tracking-widest">
-                                    <Activity size={10} className="text-red-500" />
-                                    Live Stream
+                        ))}
+                    </div>
+                )}
+
+                {/* LIVE SCORES TABS */}
+                <div className="mt-20">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <div className="flex items-center gap-3">
+                            <Activity className="w-6 h-6 text-red-500" />
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                                Live Match <span className="text-gray-400 font-medium text-lg italic">Scores</span>
+                            </h2>
+                        </div>
+                        <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-2xl self-start md:self-auto">
+                            <button
+                                onClick={() => setActiveScoreTab('football')}
+                                className={`px-6 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${activeScoreTab === 'football'
+                                    ? 'bg-white dark:bg-red-600 text-red-600 dark:text-white shadow-xl shadow-red-500/10 scale-105'
+                                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                                    }`}
+                            >
+                                Football
+                            </button>
+                            <button
+                                onClick={() => setActiveScoreTab('cricket')}
+                                className={`px-6 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${activeScoreTab === 'cricket'
+                                    ? 'bg-white dark:bg-red-600 text-red-600 dark:text-white shadow-xl shadow-red-500/10 scale-105'
+                                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                                    }`}
+                            >
+                                Cricket
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-white/5 rounded-[2.5rem] p-4 md:p-8 border border-gray-100 dark:border-white/10 min-h-[400px] overflow-hidden backdrop-blur-sm relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-primary-500/5 pointer-events-none" />
+
+                        {activeScoreTab === 'football' ? (
+                            <div className="relative z-10 w-full h-[650px] rounded-3xl overflow-hidden bg-white dark:bg-neutral-900 shadow-inner">
+                                <iframe
+                                    src="https://www.scorebat.com/embed/livescore/"
+                                    className="w-full h-full border-0"
+                                    title="Live Football Scores"
+                                />
+                            </div>
+                        ) : (
+                            <div className="relative z-10 flex flex-col items-center justify-center py-10 min-h-[400px]">
+                                <div className="w-full max-w-7xl bg-white dark:bg-neutral-800 p-2 md:p-6 rounded-3xl shadow-2xl border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center min-h-[350px] overflow-hidden">
+                                    <iframe
+                                        src="https://cricketstance.com/widgets/live-scores-widget.html"
+                                        width="100%"
+                                        height="350"
+                                        frameBorder="0"
+                                        title="Live Cricket Scores"
+                                        className="rounded-xl"
+                                    />
+                                </div>
+                                <p className="mt-6 text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] flex items-center gap-2">
+                                    <span className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                                    Real-time Cricket Data
                                 </p>
                             </div>
-                            <ChevronRight size={14} className="hidden md:block text-gray-300 group-hover:translate-x-1 transition-transform ml-auto" />
-                        </div>
-                    ))}
+                        )}
+                    </div>
                 </div>
 
                 {/* HIGHLIGHTS SECTION */}
