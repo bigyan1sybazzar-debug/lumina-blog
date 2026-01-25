@@ -297,6 +297,15 @@ export const BlogPostPage: React.FC = () => {
                   </ReactMarkdown>
                 </div>
 
+                {/* AdSense: After Excerpt */}
+                <div className="my-8">
+                  <GoogleAdSense
+                    slot="7838572857"
+                    format="auto"
+                    responsive={true}
+                  />
+                </div>
+
                 <div className="font-sans text-lg leading-relaxed text-gray-800 dark:text-gray-200">
                   {/* First part of content would go here, but since it's one block, we place ad above/below common breakpoints or just here */}
                   <div className="my-8">
