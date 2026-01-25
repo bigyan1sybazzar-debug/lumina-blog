@@ -604,6 +604,16 @@ export const Home: React.FC<HomeProps> = ({
                     increasedTitle={false}
                     alignLeft={true}
                   />
+                  {/* Insert AdSense ad after every 12 posts */}
+                  {(index + 1) % 12 === 0 && index !== filteredPosts.length - 1 && (
+                    <div className="col-span-2 sm:col-span-2 lg:col-span-3 xl:col-span-4 my-4">
+                      <GoogleAdSense
+                        slot="7838572857"
+                        format="auto"
+                        responsive={true}
+                      />
+                    </div>
+                  )}
                 </React.Fragment>
               ))}
             </div>
