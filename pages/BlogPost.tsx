@@ -197,7 +197,7 @@ export const BlogPostPage: React.FC = () => {
         {/* AdSense: Top of Article */}
         <div className="max-w-4xl mx-auto px-4 py-6">
           <GoogleAdSense
-            slot="ARTICLE_TOP"
+            slot="7838572857"
             format="auto"
             responsive={true}
           />
@@ -301,7 +301,7 @@ export const BlogPostPage: React.FC = () => {
                   {/* First part of content would go here, but since it's one block, we place ad above/below common breakpoints or just here */}
                   <div className="my-8">
                     <GoogleAdSense
-                      slot="ARTICLE_MID"
+                      slot="7838572857"
                       format="fluid"
                       layout="in-article"
                     />
@@ -392,7 +392,7 @@ export const BlogPostPage: React.FC = () => {
             {/* AdSense: Before Related Posts */}
             <div className="lg:col-span-12 my-8">
               <GoogleAdSense
-                slot="ARTICLE_BEFORE_RELATED"
+                slot="7838572857"
                 format="auto"
                 responsive={true}
               />

@@ -276,8 +276,8 @@ export const Home: React.FC<HomeProps> = ({
       {/* AdSense: Home Page Top - Between Featured and AI Tools */}
       <div className="max-w-7xl mx-auto px-4 my-8 text-center">
         <GoogleAdSense
-          slot="HOME_BETWEEN_FEATURED_LATEST"
-          format="rectangle"
+          slot="7838572857"
+          format="auto"
           responsive={true}
         />
       </div>
@@ -514,7 +514,7 @@ export const Home: React.FC<HomeProps> = ({
       {/* AdSense: Home Page Mid - Between Polls and Latest Articles */}
       <div className="max-w-7xl mx-auto px-4 my-8">
         <GoogleAdSense
-          slot="HOME_BETWEEN_POLLS_ARTICLES"
+          slot="7838572857"
           format="auto"
           responsive={true}
         />

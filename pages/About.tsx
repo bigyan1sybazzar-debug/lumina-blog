@@ -558,7 +558,7 @@ export const About: React.FC = () => {
           {/* AdSense: Page Bottom */}
           <div className="max-w-7xl mx-auto px-4 py-12 flex justify-center">
             <GoogleAdSense
-              slot="PAGE_BOTTOM_ABOUT"
+              slot="7838572857"
               format="auto"
               responsive={true}
             />

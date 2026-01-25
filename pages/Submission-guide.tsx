@@ -157,7 +157,7 @@ export const SubmissionGuidePage: React.FC = () => {
             {/* AdSense: Page Bottom */}
             <div className="max-w-4xl mx-auto px-4 py-12 flex justify-center text-center">
                 <GoogleAdSense
-                    slot="PAGE_BOTTOM_GUIDE"
+                    slot="7838572857"
                     format="auto"
                     responsive={true}
                 />
