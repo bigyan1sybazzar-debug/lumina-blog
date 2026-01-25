@@ -84,7 +84,7 @@ const LiveFootball: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#050505] py-12 px-2 md:px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 py-12 px-2 md:px-4 relative overflow-hidden">
       {/* Subtle Background deco */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary-600/5 rounded-full blur-[100px] -mr-48 -mt-48" />
 

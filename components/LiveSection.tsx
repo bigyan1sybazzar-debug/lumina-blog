@@ -109,7 +109,7 @@ export const LiveSection: React.FC = () => {
     };
 
     return (
-        <section id="live-section" className="py-12 bg-white dark:bg-[#050505] relative overflow-hidden">
+        <section id="live-section" className="py-12 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 relative overflow-hidden">
             {/* Minimalist Background Deco */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-red-500/5 rounded-full blur-[100px] -mr-64 -mt-64" />
             <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-[100px] -ml-64 -mb-64" />

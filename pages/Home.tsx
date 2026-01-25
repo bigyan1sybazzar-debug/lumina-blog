@@ -15,7 +15,7 @@ const LiveMatchPopup = dynamic(() => import('../components/LiveMatchPopup').then
   ssr: false
 });
 
-import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail, ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen, Vote, ShoppingBag } from 'lucide-react';
+import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail, ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen, Vote, ShoppingBag, Clock, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { db } from '../services/firebase';
@@ -161,58 +161,199 @@ export const Home: React.FC<HomeProps> = ({
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
 
 
-      {/* Hero Section - Admin Chosen Posts (Reduced pb- from pb-20 to pb-10) */}
-      <section className="relative overflow-hidden px-4 pt-20 pb-10 md:pt-24 md:pb-16">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-50/30 to-transparent dark:from-primary-900/10"></div>
-        <div className="max-w-7xl mx-auto relative">
-          <div className="grid lg:grid-cols-2 gap-8 md:gap-10 items-center">
-            <div className="space-y-4 md:space-y-6"> {/* Reduced general space-y */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-medium">
-                <Sparkles className="w-4 h-4" />
-                Welcome to the Bigyann
+      {/* Hero Section - Modern Premium Design */}
+      <section className="relative overflow-hidden px-4 pt-20 pb-12 md:pt-32 md:pb-24">
+        {/* Animated Background Gradients */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-gray-900"></div>
+        <div className="absolute top-0 right-0 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-gradient-to-br from-primary-400/20 md:from-primary-400/30 to-purple-600/20 md:to-purple-600/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-[250px] h-[250px] md:w-[500px] md:h-[500px] bg-gradient-to-tr from-pink-400/15 to-primary-500/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid lg:grid-cols-2 gap-10 md:gap-12 items-center">
+            {/* Left Content */}
+            <div className="space-y-6 md:space-y-8 text-center lg:text-left">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-primary-100 dark:border-primary-800 shadow-lg">
+                <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-primary-600 animate-pulse" />
+                <span className="text-xs md:text-sm font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
+                  Welcome to Bigyann
+                </span>
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
-                Confused About <span className="bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">New Gadgets?</span> Ask Our AI & Read Real Reviews
+
+              {/* Main Heading */}
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-gray-900 dark:text-white leading-[1.1] md:leading-tight">
+                Confused About{' '}
+                <span className="relative inline-block">
+                  <span className="bg-gradient-to-r from-primary-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient">
+                    New Gadgets?
+                  </span>
+                  <svg className="absolute -bottom-1 md:-bottom-2 left-0 w-full" height="8 md:12" viewBox="0 0 200 12" fill="none">
+                    <path d="M2 10C60 2 140 2 198 10" stroke="url(#gradient-hero)" strokeWidth="3" strokeLinecap="round" />
+                    <defs>
+                      <linearGradient id="gradient-hero" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#8b5cf6" />
+                        <stop offset="50%" stopColor="#ec4899" />
+                        <stop offset="100%" stopColor="#8b5cf6" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </span>
               </h1>
-              <div className="flex flex-wrap gap-3 pt-2"> {/* Reduced pt- from pt-4 to pt-2 */}
+
+              {/* Subheading */}
+              <p className="text-lg md:text-2xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                Ask Our AI & Read <span className="font-bold text-primary-600 dark:text-primary-400">Real Reviews</span> from Tech Enthusiasts
+              </p>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start">
                 <button
                   onClick={() => document.getElementById('featured-posts')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  className="group relative px-6 py-3.5 md:px-8 md:py-4 bg-gradient-to-r from-primary-600 to-purple-600 text-white font-bold rounded-xl md:rounded-2xl overflow-hidden shadow-xl shadow-primary-500/30 hover:shadow-primary-500/50 transition-all hover:scale-105"
                 >
-                  Explore Articles
+                  <span className="relative z-10 flex items-center justify-center gap-2 text-sm md:text-base">
+                    Explore Articles
+                    <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </button>
-                <Link href='https://bigyann.com.np/chat'
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-black dark:bg-gray-800 dark:hover:bg-gray-700 text-white font-semibold rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5">
-                  <Send className="w-4 h-4" /> Ask AI
+
+                <Link
+                  href='https://bigyann.com.np/chat'
+                  className="group px-6 py-3.5 md:px-8 md:py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold rounded-xl md:rounded-2xl border-2 border-gray-100 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-2 text-sm md:text-base"
+                >
+                  <Send className="w-4 h-4 md:w-5 md:h-5 group-hover:rotate-12 transition-transform" />
+                  Ask AI Assistant
                 </Link>
+              </div>
+
+              {/* Stats with Animated Counters - Responsive Grid/Flex */}
+              <div className="grid grid-cols-3 gap-4 md:gap-8 justify-center lg:justify-start pt-4 mb-2">
+                <div className="text-center lg:text-left group cursor-pointer">
+                  <div className="text-2xl md:text-3xl font-black bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
+                    {posts.length > 0 ? `${posts.length}+` : '100+'}
+                  </div>
+                  <div className="text-[10px] md:text-sm text-gray-600 dark:text-gray-400 font-medium">Articles</div>
+                  <div className="mt-1 h-0.5 md:h-1 w-0 group-hover:w-full bg-gradient-to-r from-primary-600 to-purple-600 transition-all duration-300 rounded-full"></div>
+                </div>
+                <div className="text-center lg:text-left group cursor-pointer">
+                  <div className="text-2xl md:text-3xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
+                    20K+
+                  </div>
+                  <div className="text-[10px] md:text-sm text-gray-600 dark:text-gray-400 font-medium">Monthly Views</div>
+                  <div className="mt-1 h-0.5 md:h-1 w-0 group-hover:w-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-300 rounded-full"></div>
+                </div>
+                <div className="text-center lg:text-left group cursor-pointer">
+                  <div className="text-2xl md:text-3xl font-black bg-gradient-to-r from-pink-600 to-primary-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform">
+                    24/7
+                  </div>
+                  <div className="text-[10px] md:text-sm text-gray-600 dark:text-gray-400 font-medium">AI Help</div>
+                  <div className="mt-1 h-0.5 md:h-1 w-0 group-hover:w-full bg-gradient-to-r from-pink-600 to-primary-600 transition-all duration-300 rounded-full"></div>
+                </div>
+              </div>
+
+              {/* Floating Tools Showcase - Responsive Flow */}
+              <div className="mt-6 md:mt-8 p-3 md:p-4 rounded-2xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl border border-gray-200 dark:border-gray-700 shadow-lg max-w-full overflow-hidden">
+                <div className="flex items-center gap-2 md:gap-3 text-[10px] md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+                  <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-primary-600" />
+                  <span className="font-semibold">Featured Tools</span>
+                </div>
+                <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  <Link href="/ai-humanizer" className="group flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 border border-purple-200/50 dark:border-purple-800/50 transition-all hover:scale-105 shrink-0">
+                    <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-purple-600 group-hover:rotate-12 transition-transform" />
+                    <span className="text-[9px] md:text-xs font-bold text-gray-700 dark:text-gray-300">AI Humanizer</span>
+                  </Link>
+                  <Link href="/price/my-phone-price" className="group flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl bg-gradient-to-r from-primary-500/10 to-purple-500/10 hover:from-primary-500/20 hover:to-purple-500/20 border border-primary-200/50 dark:border-primary-800/50 transition-all hover:scale-105 shrink-0">
+                    <Send className="w-3 h-3 md:w-4 md:h-4 text-primary-600 group-hover:rotate-12 transition-transform" />
+                    <span className="text-[9px] md:text-xs font-bold text-gray-700 dark:text-gray-300">Phone Price</span>
+                  </Link>
+                  <Link href="/tools/live-tv" className="group flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl bg-gradient-to-r from-red-500/10 to-orange-500/10 hover:from-red-500/20 hover:to-orange-500/20 border border-red-200/50 dark:border-red-800/50 transition-all hover:scale-105 shrink-0">
+                    <div className="relative">
+                      <div className="absolute -top-1 -right-1 w-1.5 md:w-2 h-1.5 md:h-2 bg-red-500 rounded-full animate-ping"></div>
+                      <div className="w-3 h-3 md:w-4 md:h-4 flex items-center justify-center">🔴</div>
+                    </div>
+                    <span className="text-[9px] md:text-xs font-bold text-gray-700 dark:text-gray-300">Live Sports</span>
+                  </Link>
+                  <Link href="/chat" className="group flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl bg-gradient-to-r from-green-500/10 to-teal-500/10 hover:from-green-500/20 hover:to-teal-500/20 border border-green-200/50 dark:border-green-800/50 transition-all hover:scale-105 shrink-0">
+                    <span className="text-xs md:text-base">🤖</span>
+                    <span className="text-[9px] md:text-xs font-bold text-gray-700 dark:text-gray-300">AI Chat</span>
+                  </Link>
+                </div>
               </div>
             </div>
 
-            <div className="relative">
-              <div className="grid grid-cols-2 gap-4">
+            {/* Right Content - Modern Featured Grid */}
+            <div className="relative group/grid">
+              {/* Decorative Floating Blurs */}
+              <div className="absolute -top-10 -right-10 w-80 h-80 bg-primary-500/20 rounded-full blur-[100px] animate-pulse"></div>
+              <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-purple-500/20 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+
+              <div className="relative grid grid-cols-2 gap-3 md:gap-5">
                 {heroFeatured.map((post, index) => {
                   return (
-                    <div key={post.id} className={`relative rounded-2xl overflow-hidden group ${index === 0 ? 'col-span-2 aspect-[16/9]' : 'aspect-square'}`}>
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent z-10"></div>
+                    <div
+                      key={post.id}
+                      className={`group relative rounded-[2rem] overflow-hidden shadow-lg transition-all duration-700 hover:shadow-primary-500/5 hover:-translate-y-2 ${index === 0 ? 'col-span-2 aspect-[16/9] md:aspect-[21/10]' : 'aspect-square'
+                        }`}
+                      style={{
+                        animation: `fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) ${index * 0.15}s both`
+                      }}
+                    >
+                      {/* Premium Dynamic Overlay - Highly Transparent */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 via-gray-900/5 to-transparent z-10 transition-opacity duration-500"></div>
+
+                      {/* Shine Effect on Hover */}
+                      <div className="absolute inset-0 z-20 opacity-0 group-hover:opacity-20 transition-opacity duration-700 pointer-events-none bg-gradient-to-tr from-transparent via-white to-transparent -translate-x-full group-hover:translate-x-full transform transition-transform" style={{ transitionDuration: '1.5s' }}></div>
+
+                      {/* Image */}
                       <Image
                         src={post.coverImage}
                         alt={post.title}
                         fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        sizes={index === 0 ? "100vw" : "(max-width: 768px) 50vw, 33vw"}
+                        className="object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
+                        sizes={index === 0 ? "(max-width: 1280px) 100vw, 800px" : "(max-width: 768px) 50vw, 400px"}
                         priority={index === 0}
                         loading={index === 0 ? "eager" : "lazy"}
                       />
-                      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20">
-                        <span className="inline-block px-3 py-1 mb-2 rounded-full bg-white/20 backdrop-blur text-xs font-medium text-white">
-                          {post.category}
-                        </span>
-                        <h3 className="text-white font-bold text-sm md:text-base line-clamp-2">
-                          <Link href={`${post.slug ?? post.id}`} className="hover:text-primary-200 transition-colors">
+
+                      {/* Content */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 z-30 transform transition-transform duration-500">
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <span className="px-3 py-1 rounded-full bg-primary-600/90 backdrop-blur-md text-[10px] font-black text-white uppercase tracking-[0.15em] border border-white/20">
+                            {post.category}
+                          </span>
+                          {index === 0 && (
+                            <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-black text-white uppercase tracking-[0.15em] border border-white/10 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                              Trending
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className={`text-white font-black leading-tight group-hover:text-primary-300 transition-all duration-300 ${index === 0 ? 'text-2xl md:text-4xl' : 'text-sm md:text-xl'
+                          }`}>
+                          <Link href={`${post.slug ?? post.id}`} className="hover:underline decoration-primary-500/50 decoration-2 underline-offset-4">
                             {post.title}
                           </Link>
                         </h3>
+
+                        {/* Metadata - Only on large/first card or on hover */}
+                        <div className={`flex items-center gap-4 mt-3 text-white/60 text-xs font-medium transition-all duration-500 ${index === 0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          }`}>
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} />
+                            {post.readTime || '5 min read'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar size={12} />
+                            {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        </div>
                       </div>
+
+                      {/* Premium Inner Border Shadow */}
+                      <div className="absolute inset-0 border border-white/10 rounded-[2rem] z-40 pointer-events-none"></div>
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent z-40 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[2rem]"></div>
                     </div>
                   );
                 })}
@@ -220,6 +361,34 @@ export const Home: React.FC<HomeProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Custom Animations */}
+        <style jsx>{`
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          @keyframes gradient {
+            0%, 100% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+          }
+          
+          .animate-gradient {
+            background-size: 200% auto;
+            animation: gradient 3s ease infinite;
+          }
+        `}</style>
       </section>
 
 
