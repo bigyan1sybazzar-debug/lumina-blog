@@ -299,8 +299,8 @@ export const Home: React.FC<HomeProps> = ({
                         animation: `fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) ${index * 0.15}s both`
                       }}
                     >
-                      {/* Premium Dynamic Overlay - Highly Transparent */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 via-gray-900/5 to-transparent z-10 transition-opacity duration-500"></div>
+                      {/* Premium Dynamic Overlay - Balanced Transparency & Legibility */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/30 to-transparent z-10 transition-all duration-500"></div>
 
                       {/* Shine Effect on Hover */}
                       <div className="absolute inset-0 z-20 opacity-0 group-hover:opacity-20 transition-opacity duration-700 pointer-events-none bg-gradient-to-tr from-transparent via-white to-transparent -translate-x-full group-hover:translate-x-full transform transition-transform" style={{ transitionDuration: '1.5s' }}></div>
@@ -317,35 +317,35 @@ export const Home: React.FC<HomeProps> = ({
                       />
 
                       {/* Content */}
-                      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 z-30 transform transition-transform duration-500">
+                      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 z-30 transform transition-transform duration-500 drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
                         <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <span className="px-3 py-1 rounded-full bg-primary-600/90 backdrop-blur-md text-[10px] font-black text-white uppercase tracking-[0.15em] border border-white/20">
+                          <span className="px-3 py-1 rounded-full bg-primary-600/90 backdrop-blur-md text-[10px] font-black text-white uppercase tracking-[0.15em] border border-white/20 shadow-lg">
                             {post.category}
                           </span>
                           {index === 0 && (
-                            <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-black text-white uppercase tracking-[0.15em] border border-white/10 flex items-center gap-1">
+                            <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-black text-white uppercase tracking-[0.15em] border border-white/10 flex items-center gap-1 shadow-lg">
                               <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
                               Trending
                             </span>
                           )}
                         </div>
 
-                        <h3 className={`text-white font-black leading-tight group-hover:text-primary-300 transition-all duration-300 ${index === 0 ? 'text-2xl md:text-4xl' : 'text-sm md:text-xl'
+                        <h3 className={`text-white font-black leading-tight group-hover:text-primary-300 transition-all duration-300 drop-shadow-xl ${index === 0 ? 'text-2xl md:text-4xl' : 'text-sm md:text-xl'
                           }`}>
                           <Link href={`${post.slug ?? post.id}`} className="hover:underline decoration-primary-500/50 decoration-2 underline-offset-4">
                             {post.title}
                           </Link>
                         </h3>
 
-                        {/* Metadata - Only on large/first card or on hover */}
-                        <div className={`flex items-center gap-4 mt-3 text-white/60 text-xs font-medium transition-all duration-500 ${index === 0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        {/* Metadata - Improved visibility with white/80 */}
+                        <div className={`flex items-center gap-4 mt-3 text-white/80 text-xs font-bold transition-all duration-500 drop-shadow-md ${index === 0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                           }`}>
-                          <span className="flex items-center gap-1">
-                            <Clock size={12} />
+                          <span className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded-md backdrop-blur-sm">
+                            <Clock size={12} className="text-primary-400" />
                             {post.readTime || '5 min read'}
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar size={12} />
+                          <span className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded-md backdrop-blur-sm">
+                            <Calendar size={12} className="text-primary-400" />
                             {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </span>
                         </div>
