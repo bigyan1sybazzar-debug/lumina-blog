@@ -631,6 +631,15 @@ export const Home: React.FC<HomeProps> = ({
         </div>
       </section>
 
+      {/* AdSense: Before CTA Section */}
+      <div className="max-w-7xl mx-auto px-4 my-12">
+        <GoogleAdSense
+          slot="7838572857"
+          format="auto"
+          responsive={true}
+        />
+      </div>
+
       {/* CTA Section with conditional authentication buttons */}
       <section className="py-20 md:py-28 bg-white dark:bg-gray-900 section-lazy">
         <div className="max-w-6xl mx-auto px-4">
