@@ -126,6 +126,12 @@ export const LiveSection: React.FC = () => {
                         </h2>
                     </div>
                 </div>
+                <p className="text-lg md:text-xl font-bold italic text-gray-900 dark:text-white flex items-center gap-2 mb-[8px]">
+                    ⏳ Please keep patience
+                    <span className="text-gray-400 font-medium text-base italic">
+                        HD channels may take a moment to load
+                    </span>
+                </p>
 
                 {/* TAGS FILTER RIBBON */}
                 {links.length > 0 && allTags.length > 1 && (
@@ -172,16 +178,21 @@ export const LiveSection: React.FC = () => {
                                                 <Activity size={10} className="text-red-500" />
                                                 Live Stream
                                             </p>
+
+
                                         )}
                                     </div>
                                 </div>
                                 <ChevronRight size={14} className="hidden md:block text-gray-300 group-hover:translate-x-1 transition-transform ml-auto" />
                             </div>
+
                         ))}
                     </div>
                 )}
 
                 {/* LIVE SCORES TABS */}
+                <p>Please Keep patience, It will take to Load HD channels</p>
+
                 <div className="mt-20">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                         <div className="flex items-center gap-3">

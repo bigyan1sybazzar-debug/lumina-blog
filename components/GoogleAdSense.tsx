@@ -9,7 +9,7 @@ declare global {
 interface GoogleAdSenseProps {
     client?: string;
     slot: string;
-    format?: 'auto' | 'fluid' | 'autorelaxed' | 'rectangle';
+    format?: 'auto' | 'fluid' | 'autorelaxed' | 'rectangle' | 'horizontal' | 'vertical';
     layoutKey?: string;
     layout?: 'in-article';
     responsive?: boolean;
