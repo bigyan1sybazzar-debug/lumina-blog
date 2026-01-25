@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import PollList from '../PollList';
+import GoogleAdSense from '../GoogleAdSense';
 import PollCreationForm from '../PollCreationForm';
 import { Vote, Zap, ShieldCheck, Sparkles, Plus, Send } from 'lucide-react';
 import { db, auth } from '../../services/firebase';
@@ -75,6 +76,15 @@ const VotingPage: React.FC = () => {
                             </div>
 
                             <PollList userId={user?.uid} key={refreshKey} />
+
+                            {/* AdSense: After Polls List */}
+                            <div className="my-12 flex justify-center">
+                                <GoogleAdSense
+                                    slot="VOTING_AFTER_POLLS"
+                                    format="auto"
+                                    responsive={true}
+                                />
+                            </div>
                         </section>
                     )}
 

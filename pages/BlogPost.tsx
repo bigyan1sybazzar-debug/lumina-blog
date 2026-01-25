@@ -194,6 +194,15 @@ export const BlogPostPage: React.FC = () => {
 
 
       <div className="bg-white dark:bg-gray-900 min-h-screen pb-20">
+        {/* AdSense: Top of Article */}
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <GoogleAdSense
+            slot="ARTICLE_TOP"
+            format="auto"
+            responsive={true}
+          />
+        </div>
+
         <div className="h-[50vh] w-full relative">
           <Image
             src={post.coverImage}
@@ -289,6 +298,15 @@ export const BlogPostPage: React.FC = () => {
                 </div>
 
                 <div className="font-sans text-lg leading-relaxed text-gray-800 dark:text-gray-200">
+                  {/* First part of content would go here, but since it's one block, we place ad above/below common breakpoints or just here */}
+                  <div className="my-8">
+                    <GoogleAdSense
+                      slot="ARTICLE_MID"
+                      format="fluid"
+                      layout="in-article"
+                    />
+                  </div>
+
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeRaw]}
@@ -368,6 +386,15 @@ export const BlogPostPage: React.FC = () => {
               <GoogleAdSense
                 slot="7539189957"
                 format="autorelaxed"
+              />
+            </div>
+
+            {/* AdSense: Before Related Posts */}
+            <div className="lg:col-span-12 my-8">
+              <GoogleAdSense
+                slot="ARTICLE_BEFORE_RELATED"
+                format="auto"
+                responsive={true}
               />
             </div>
 

@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import { saveChat } from '../services/chatService';
 import Link from 'next/link';
 import { ChatMessage } from '../types';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 
 interface Message {
@@ -430,12 +431,16 @@ export default function ChatAssistant() {
               )}
             </div>
 
-            {/* Quick Tips */}
+            {/* AdSense: Below Chat Input */}
             <div className="flex justify-center mt-3">
-              <p className="text-center text-xs text-gray-400">
-                Powered by BIGGS
-              </p>
+              <GoogleAdSense
+                slot="CHAT_BELOW_INPUT"
+                format="horizontal"
+                style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
+              />
             </div>
+
+            {/* Quick Tips */}
           </div>
         </div>
       </div>

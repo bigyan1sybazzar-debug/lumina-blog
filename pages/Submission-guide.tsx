@@ -3,6 +3,7 @@
 import React from 'react';
 import { LogIn, Send, CheckCircle, Zap, Code, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 
 export const SubmissionGuidePage: React.FC = () => {
@@ -151,6 +152,15 @@ export const SubmissionGuidePage: React.FC = () => {
                     </section>
 
                 </div>
+            </div>
+
+            {/* AdSense: Page Bottom */}
+            <div className="max-w-4xl mx-auto px-4 py-12 flex justify-center text-center">
+                <GoogleAdSense
+                    slot="PAGE_BOTTOM_GUIDE"
+                    format="auto"
+                    responsive={true}
+                />
             </div>
         </>
     );

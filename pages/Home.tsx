@@ -21,6 +21,7 @@ import Image from 'next/image';
 import { db } from '../services/firebase';
 import { Calculator, RefreshCw, Tv, Terminal, LogIn, FileText, Edit } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import GoogleAdSense from '../components/GoogleAdSense';
 interface HomeProps {
   initialPosts?: BlogPost[];
   initialHeroFeatured?: BlogPost[];
@@ -272,8 +273,14 @@ export const Home: React.FC<HomeProps> = ({
           </div>
         </section>
       )}
-      {/* Live Section */}
-
+      {/* AdSense: Home Page Top - Between Featured and AI Tools */}
+      <div className="max-w-7xl mx-auto px-4 my-8 text-center">
+        <GoogleAdSense
+          slot="HOME_BETWEEN_FEATURED_LATEST"
+          format="rectangle"
+          responsive={true}
+        />
+      </div>
 
       {/* AI Tools Section */}
       <section className="py-8 md:py-10 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 section-lazy">
@@ -503,6 +510,15 @@ export const Home: React.FC<HomeProps> = ({
           </div>
         </section>
       )}
+
+      {/* AdSense: Home Page Mid - Between Polls and Latest Articles */}
+      <div className="max-w-7xl mx-auto px-4 my-8">
+        <GoogleAdSense
+          slot="HOME_BETWEEN_POLLS_ARTICLES"
+          format="auto"
+          responsive={true}
+        />
+      </div>
 
       {/* Category Filter Section (Removed py- from parent, added py- to inner div) */}
       <section className="sticky top-16 md:top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">

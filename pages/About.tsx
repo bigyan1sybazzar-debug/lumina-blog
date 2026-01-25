@@ -6,6 +6,7 @@ import {
   Award, Trophy, Target, Code, Globe, TrendingUp,
   Laptop, Palette, Sparkles, CheckCircle
 } from "lucide-react";
+import GoogleAdSense from '../components/GoogleAdSense';
 
 
 // Define an interface for type safety (optional but good practice)
@@ -553,6 +554,14 @@ export const About: React.FC = () => {
               Hire Me on WhatsApp
             </a>
             <p className="mt-3 md:mt-4 text-gray-500 font-medium text-sm md:text-base">Replies in under 30 mins</p>
+          </div>
+          {/* AdSense: Page Bottom */}
+          <div className="max-w-7xl mx-auto px-4 py-12 flex justify-center">
+            <GoogleAdSense
+              slot="PAGE_BOTTOM_ABOUT"
+              format="auto"
+              responsive={true}
+            />
           </div>
         </div>
       </div>

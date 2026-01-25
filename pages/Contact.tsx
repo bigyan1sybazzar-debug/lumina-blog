@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Mail, MapPin, Phone } from 'lucide-react';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 export const Contact: React.FC = () => {
     // 1. State to capture form inputs
@@ -112,6 +113,14 @@ export const Contact: React.FC = () => {
                     </div>
 
                 </div>
+            </div>
+            {/* AdSense: Page Bottom */}
+            <div className="max-w-4xl mx-auto px-4 py-12 flex justify-center">
+                <GoogleAdSense
+                    slot="PAGE_BOTTOM_CONTACT"
+                    format="auto"
+                    responsive={true}
+                />
             </div>
         </div>
     );

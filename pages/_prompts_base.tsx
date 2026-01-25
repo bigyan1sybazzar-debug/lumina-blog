@@ -3,6 +3,7 @@
 import React from 'react';
 import PromptLibrary from '../components/PromptLibrary';
 import { Sparkles } from 'lucide-react';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 const PromptsPage: React.FC = () => {
     return (
@@ -25,6 +26,15 @@ const PromptsPage: React.FC = () => {
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 py-12">
                 <PromptLibrary />
+            </div>
+
+            {/* AdSense: Page Bottom */}
+            <div className="max-w-7xl mx-auto px-4 py-12 flex justify-center">
+                <GoogleAdSense
+                    slot="PAGE_BOTTOM_PROMPTS"
+                    format="auto"
+                    responsive={true}
+                />
             </div>
         </div>
     );
