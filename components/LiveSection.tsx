@@ -204,6 +204,13 @@ export const LiveSection: React.FC = () => {
                     </div>
                 )}
 
+                {/* Support Message */}
+                <div className="text-center mb-12">
+                    <p className="text-sm md:text-base font-bold text-primary-600 dark:text-primary-400 animate-pulse">
+                        🙏 Please click some ads, it will help us to generate revenue and keep this service free!
+                    </p>
+                </div>
+
                 {/* CONSISTENT 2-COLUMN GRID ON ALL PLATFORMS FOR LIVE STREAMS */}
                 {filteredLinks.length > 0 && (
                     <div className="grid grid-cols-2 gap-3 md:gap-6">
@@ -252,12 +259,6 @@ export const LiveSection: React.FC = () => {
                     />
                 </div>
 
-                {/* Support Message */}
-                <div className="text-center mb-12">
-                    <p className="text-sm md:text-base font-bold text-primary-600 dark:text-primary-400 animate-pulse">
-                        🙏 Please click some ads, it will help us to generate revenue and keep this service free!
-                    </p>
-                </div>
 
                 {/* LIVE SCORES TABS */}
 
