@@ -51,7 +51,7 @@ service cloud.firestore {
 
     match /live_links/{linkId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
     
     match /live_streams/{streamId} {

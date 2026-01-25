@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, deleteLiveLink, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch, getHighlights, addHighlight, deleteHighlight, getSubscribers } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, updateLiveLink, deleteLiveLink, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch, getHighlights, addHighlight, deleteHighlight, getSubscribers } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
@@ -135,6 +135,8 @@ export const Admin: React.FC = () => {
   const [liveLinks, setLiveLinks] = useState<LiveLink[]>([]);
   const [newLiveHeading, setNewLiveHeading] = useState('');
   const [newLiveIframe, setNewLiveIframe] = useState('');
+  const [newLiveTags, setNewLiveTags] = useState('');
+  const [editingLiveLink, setEditingLiveLink] = useState<LiveLink | null>(null);
 
   // Highlights State
   const [highlights, setHighlights] = useState<Highlight[]>([]);
@@ -863,19 +865,46 @@ export const Admin: React.FC = () => {
       return;
     }
     try {
+      const tags = newLiveTags.split(',').map(t => t.trim()).filter(t => t.length > 0);
       await addLiveLink({
         heading: newLiveHeading,
         iframeUrl: newLiveIframe,
         status: 'active',
+        tags,
         createdAt: new Date().toISOString()
       });
       alert('Live Link added!');
       setNewLiveHeading('');
       setNewLiveIframe('');
+      setNewLiveTags('');
       getLiveLinks().then(setLiveLinks);
     } catch (error) {
       console.error(error);
       alert('Failed to add live link');
+    }
+  };
+
+  const handleUpdateLiveLink = async () => {
+    if (!editingLiveLink || !newLiveHeading || !newLiveIframe) {
+      alert('Please fill in both Heading and Iframe URL');
+      return;
+    }
+    try {
+      const tags = newLiveTags.split(',').map(t => t.trim()).filter(t => t.length > 0);
+      await updateLiveLink(editingLiveLink.id, {
+        heading: newLiveHeading,
+        iframeUrl: newLiveIframe,
+        tags
+      });
+      alert('Live Link updated!');
+      setEditingLiveLink(null);
+      setNewLiveHeading('');
+      setNewLiveIframe('');
+      setNewLiveTags('');
+      getLiveLinks().then(setLiveLinks);
+    } catch (error) {
+      console.error(error);
+      alert('Failed to update live link');
     }
   };
 
@@ -1788,19 +1817,33 @@ export const Admin: React.FC = () => {
                   Live Section Management
                 </h1>
 
-                {/* Add New Live Link */}
+                {/* Add/Edit Live Link */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Add New Live Link</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                    {editingLiveLink ? 'Edit Live Link' : 'Add New Live Link'}
+                  </h3>
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Heading</label>
-                      <input
-                        type="text"
-                        value={newLiveHeading}
-                        onChange={(e) => setNewLiveHeading(e.target.value)}
-                        placeholder="e.g. Latest News Coverage"
-                        className="input-field"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Heading</label>
+                        <input
+                          type="text"
+                          value={newLiveHeading}
+                          onChange={(e) => setNewLiveHeading(e.target.value)}
+                          placeholder="e.g. Latest News Coverage"
+                          className="input-field"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags (comma separated)</label>
+                        <input
+                          type="text"
+                          value={newLiveTags}
+                          onChange={(e) => setNewLiveTags(e.target.value)}
+                          placeholder="e.g. Cricket, Highlights, Live"
+                          className="input-field"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Iframe URL</label>
@@ -1812,12 +1855,36 @@ export const Admin: React.FC = () => {
                         className="input-field font-mono text-sm"
                       />
                     </div>
-                    <button
-                      onClick={handleAddLiveLink}
-                      className="btn-primary"
-                    >
-                      Add Live Link
-                    </button>
+                    <div className="flex gap-2">
+                      {editingLiveLink ? (
+                        <>
+                          <button
+                            onClick={handleUpdateLiveLink}
+                            className="btn-primary"
+                          >
+                            Update Live Link
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingLiveLink(null);
+                              setNewLiveHeading('');
+                              setNewLiveIframe('');
+                              setNewLiveTags('');
+                            }}
+                            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={handleAddLiveLink}
+                          className="btn-primary"
+                        >
+                          Add Live Link
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1827,6 +1894,7 @@ export const Admin: React.FC = () => {
                     <thead className="bg-gray-50 dark:bg-gray-900/50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heading</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Iframe URL</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -1835,21 +1903,44 @@ export const Admin: React.FC = () => {
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                       {liveLinks.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No live links found.</td>
+                          <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No live links found.</td>
                         </tr>
                       ) : (
                         liveLinks.map(link => (
                           <tr key={link.id}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{link.heading}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <div className="flex flex-wrap gap-1">
+                                {link.tags?.map((tag, i) => (
+                                  <span key={i} className="text-[10px] bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 px-1.5 py-0.5 rounded-md border border-primary-100 dark:border-primary-800/30">#{tag}</span>
+                                ))}
+                              </div>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={link.iframeUrl}>{link.iframeUrl}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(link.createdAt).toLocaleDateString()}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <button
-                                onClick={() => handleDeleteLiveLink(link.id)}
-                                className="text-red-600 hover:text-red-800 transition-colors"
-                              >
-                                <Trash2 size={18} />
-                              </button>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingLiveLink(link);
+                                    setNewLiveHeading(link.heading);
+                                    setNewLiveIframe(link.iframeUrl);
+                                    setNewLiveTags(link.tags?.join(', ') || '');
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }}
+                                  className="text-primary-600 hover:text-primary-800 transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit3 size={18} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteLiveLink(link.id)}
+                                  className="text-red-600 hover:text-red-800 transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))

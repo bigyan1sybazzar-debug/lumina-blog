@@ -1016,6 +1016,18 @@ export const addLiveLink = async (link: Omit<LiveLink, 'id'>) => {
   }
 };
 
+export const updateLiveLink = async (id: string, data: Partial<Omit<LiveLink, 'id' | 'createdAt'>>) => {
+  try {
+    await db.collection(LIVE_LINKS_COLLECTION).doc(id).update({
+      ...data,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error updating live link:', error);
+    throw error;
+  }
+};
+
 export const deleteLiveLink = async (id: string) => {
   try {
     await db.collection(LIVE_LINKS_COLLECTION).doc(id).delete();

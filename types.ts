@@ -217,7 +217,9 @@ export interface LiveLink {
   heading: string;
   iframeUrl: string;
   createdAt: string;
+  updatedAt?: string;
   status: 'active' | 'inactive';
+  tags?: string[];
 }
 
 export interface Keyword {

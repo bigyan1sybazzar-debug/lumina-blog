@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Script from 'next/script';
 import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/db';
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
@@ -24,11 +23,30 @@ export const LiveSection: React.FC = () => {
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [activeScoreTab, setActiveScoreTab] = useState<'football' | 'cricket'>('football');
+    const [cricketScores, setCricketScores] = useState<any[]>([]);
+    const [loadingCricket, setLoadingCricket] = useState(false);
+    const [selectedTag, setSelectedTag] = useState<string>('All');
 
     useEffect(() => {
         getLiveLinks().then(setLinks);
         getHighlights().then(setHighlights);
     }, []);
+
+    useEffect(() => {
+        if (activeScoreTab === 'cricket' && cricketScores.length === 0) {
+            setLoadingCricket(true);
+            fetch('/api/cricket-scores')
+                .then(res => res.json())
+                .then(data => {
+                    setCricketScores(data);
+                    setLoadingCricket(false);
+                })
+                .catch(err => {
+                    console.error('Failed to fetch cricket scores:', err);
+                    setLoadingCricket(false);
+                });
+        }
+    }, [activeScoreTab, cricketScores.length]);
 
     const handleSubscribe = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,6 +87,11 @@ export const LiveSection: React.FC = () => {
         return acc;
     }, {} as Record<string, Highlight[]>);
 
+    const allTags = ['All', ...Array.from(new Set(links.flatMap(link => link.tags || [])))];
+    const filteredLinks = selectedTag === 'All'
+        ? links
+        : links.filter(link => link.tags?.includes(selectedTag));
+
     // Removed early return to ensure Live Scores Tabs are always visible when component is rendered
     // if (links.length === 0 && highlights.length === 0) return null;
 
@@ -104,10 +127,28 @@ export const LiveSection: React.FC = () => {
                     </div>
                 </div>
 
+                {/* TAGS FILTER RIBBON */}
+                {links.length > 0 && allTags.length > 1 && (
+                    <div className="flex flex-wrap gap-2 mb-8">
+                        {allTags.map(tag => (
+                            <button
+                                key={tag}
+                                onClick={() => setSelectedTag(tag)}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${selectedTag === tag
+                                    ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
+                                    : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
+                                    }`}
+                            >
+                                {tag === 'All' ? 'All Coverage' : tag}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 {/* CONSISTENT 2-COLUMN GRID ON ALL PLATFORMS FOR LIVE STREAMS */}
-                {links.length > 0 && (
+                {filteredLinks.length > 0 && (
                     <div className="grid grid-cols-2 gap-3 md:gap-6">
-                        {links.map((link) => (
+                        {filteredLinks.map((link) => (
                             <div
                                 key={link.id}
                                 onClick={() => handleLinkClick(link)}
@@ -120,10 +161,19 @@ export const LiveSection: React.FC = () => {
                                     <h3 className="font-bold text-[10px] md:text-base lg:text-lg text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-1">
                                         {link.heading}
                                     </h3>
-                                    <p className="text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center sm:justify-start gap-1 uppercase tracking-widest">
-                                        <Activity size={10} className="text-red-500" />
-                                        Live Stream
-                                    </p>
+                                    <div className="flex flex-wrap justify-center sm:justify-start gap-1 mt-1">
+                                        {link.tags?.map((tag, i) => (
+                                            <span key={i} className="text-[7px] md:text-[9px] bg-red-500/10 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">
+                                                {tag}
+                                            </span>
+                                        ))}
+                                        {!link.tags?.length && (
+                                            <p className="text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center sm:justify-start gap-1 uppercase tracking-widest">
+                                                <Activity size={10} className="text-red-500" />
+                                                Live Stream
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                                 <ChevronRight size={14} className="hidden md:block text-gray-300 group-hover:translate-x-1 transition-transform ml-auto" />
                             </div>
@@ -174,53 +224,51 @@ export const LiveSection: React.FC = () => {
                                 />
                             </div>
                         ) : (
-                            <div className="relative z-10 flex flex-col items-center justify-center py-10 min-h-[400px]">
-                                <div className="w-full max-w-7xl bg-white dark:bg-neutral-800 p-2 md:p-6 rounded-3xl shadow-2xl border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center min-h-[350px] overflow-hidden">
-                                    <iframe
-                                        src="https://cricketstance.com/widgets/live-scores-widget.html"
-                                        width="100%"
-                                        height="350"
-                                        frameBorder="0"
-                                        title="Live Cricket Scores"
-                                        className="rounded-xl"
-                                    />
-                                </div>
-                                <p className="mt-6 text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
-                                    Real-time Cricket Data
+                            <div className="relative z-10 w-full min-h-[400px]">
+                                {loadingCricket ? (
+                                    <div className="flex flex-col items-center justify-center py-20">
+                                        <RefreshCw className="animate-spin text-red-500 mb-4" size={32} />
+                                        <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Fetching Live Scores...</p>
+                                    </div>
+                                ) : cricketScores.length > 0 ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {cricketScores.map((match) => (
+                                            <a
+                                                key={match.id}
+                                                href={match.link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="group bg-white dark:bg-white/5 p-5 rounded-2xl border border-gray-100 dark:border-white/5 hover:border-red-500/30 transition-all hover:shadow-lg flex flex-col justify-between"
+                                            >
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <span className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                                                        <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Live Now</span>
+                                                    </div>
+                                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors leading-relaxed">
+                                                        {match.title}
+                                                    </h3>
+                                                </div>
+                                                <div className="mt-4 pt-4 border-t border-gray-50 dark:border-white/5 flex items-center justify-between">
+                                                    <span className="text-[10px] text-gray-400 font-medium italic">Click for details</span>
+                                                    <ChevronRight size={14} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
+                                                </div>
+                                            </a>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                                        <Activity className="text-gray-300 mb-4" size={48} />
+                                        <p className="text-gray-500 font-bold">No active matches found at the moment.</p>
+                                        <p className="text-xs text-gray-400 mt-2">Please check back later for live updates.</p>
+                                    </div>
+                                )}
+                                <p className="mt-8 text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] flex items-center justify-center gap-2">
+                                    <span className="w-2 h-2 bg-red-500 rounded-full" />
+                                    Data provided by ESPNCricinfo
                                 </p>
                             </div>
                         )}
-                    </div>
-                </div>
-
-                {/* VIDEO FEED SECTION */}
-                <div className="mt-20">
-                    <div className="flex items-center gap-3 mb-8">
-                        <Tv className="w-6 h-6 text-red-500" />
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                            Match <span className="text-gray-400 font-medium text-lg italic">Videos</span>
-                        </h2>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-white/5 rounded-[2.5rem] p-4 md:p-8 border border-gray-100 dark:border-white/10 overflow-hidden backdrop-blur-sm relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-primary-500/5 pointer-events-none" />
-                        <div className="relative z-10 w-full h-[760px] rounded-3xl overflow-hidden bg-white dark:bg-neutral-900 shadow-inner">
-                            <iframe
-                                src="https://www.scorebat.com/embed/videofeed/?token=MjcyNDk5XzE3NjkyNjMwNDVfYWZiZmRlOWE1NDcxNjVkYWI1NGEyOGMxZjBkNGVkZDE4YjFhYTU2ZQ=="
-                                frameBorder="0"
-                                width="600"
-                                height="760"
-                                allowFullScreen
-                                allow='autoplay; fullscreen'
-                                style={{ width: '100%', height: '760px', overflow: 'hidden', display: 'block' }}
-                                className="_scorebatEmbeddedPlayer_"
-                            />
-                            <Script
-                                id="scorebat-jssdk"
-                                src="https://www.scorebat.com/embed/embed.js?v=arrv"
-                                strategy="lazyOnload"
-                            />
-                        </div>
                     </div>
                 </div>
 
