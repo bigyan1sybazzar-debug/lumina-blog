@@ -131,12 +131,15 @@ export const Home: React.FC<HomeProps> = ({
 
   const categories = useMemo(() => {
     const cats = new Set<string>(posts.map(p => p.category).filter(Boolean) as string[]);
-    return ['All', ...Array.from(cats).sort()];
-  }, [posts]);
+    const sortedCats = Array.from(cats).sort();
+    return heroFeatured.length > 0 ? ['All', 'Featured', ...sortedCats] : ['All', ...sortedCats];
+  }, [posts, heroFeatured]);
 
   const filteredPosts = useMemo(() => {
-    return selectedCategory === 'All' ? posts : posts.filter(p => p.category === selectedCategory);
-  }, [posts, selectedCategory]);
+    if (selectedCategory === 'All') return posts;
+    if (selectedCategory === 'Featured') return heroFeatured;
+    return posts.filter(p => p.category === selectedCategory);
+  }, [posts, selectedCategory, heroFeatured]);
 
   const scrollSlider = (direction: 'left' | 'right') => {
     if (!sliderRef.current) return;

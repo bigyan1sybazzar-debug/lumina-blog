@@ -710,13 +710,11 @@ export const Admin: React.FC = () => {
               >
                 <FileText size={18} className="mr-3" /> All Posts
               </button>
-              <button onClick={() => { setActiveTab('featured'); setIsSidebarOpen(false); }} className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'featured' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
-                <Sparkles size={18} className="mr-3" /> Featured Posts
-              </button>
-
-
               {isAdmin && (
                 <>
+                  <button onClick={() => { setActiveTab('featured'); setIsSidebarOpen(false); }} className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'featured' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                    <Sparkles size={18} className="mr-3" /> Featured Posts
+                  </button>
                   <button
                     onClick={() => { setActiveTab('automation'); setIsSidebarOpen(false); }}
                     className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'automation'
