@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/db';
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
@@ -115,15 +115,68 @@ export const LiveSection: React.FC = () => {
             <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-[100px] -ml-64 -mb-64" />
 
             <div className="max-w-7xl mx-auto px-4 relative z-10">
-                <div className="flex items-center gap-3 mb-10">
-                    <div className="flex items-center gap-2">
-                        <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                        </span>
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                            Live Stream <span className="text-gray-400 font-medium text-lg">Coverage</span>
-                        </h2>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                            </span>
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                                Live Stream <span className="text-gray-400 font-medium text-lg">Coverage</span>
+                            </h2>
+                        </div>
+                    </div>
+
+                    {/* Social Sharing Icons */}
+                    <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden sm:block">Share Now:</span>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => {
+                                    const url = window.location.href;
+                                    const text = "Watch Live Sports and TV on Bigyann!";
+                                    if (navigator.share) {
+                                        navigator.share({ title: 'Bigyann Live', text, url });
+                                    } else {
+                                        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                                    }
+                                }}
+                                className="p-2.5 rounded-full bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-600/20 transition-all hover:scale-110 shadow-sm"
+                                title="Share on Facebook"
+                            >
+                                <Facebook size={18} />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const url = window.location.href;
+                                    const text = "Watch Live Sports and TV on Bigyann! " + url;
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                }}
+                                className="p-2.5 rounded-full bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 text-green-600 hover:bg-green-50 dark:hover:bg-green-600/20 transition-all hover:scale-110 shadow-sm"
+                                title="Share on WhatsApp"
+                            >
+                                <MessageCircle size={18} />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (navigator.share) {
+                                        navigator.share({
+                                            title: 'Bigyann Live',
+                                            text: 'Watch Live Sports and TV on Bigyann!',
+                                            url: window.location.href
+                                        });
+                                    } else {
+                                        navigator.clipboard.writeText(window.location.href);
+                                        alert("Link copied to clipboard!");
+                                    }
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary-600 text-white font-bold text-xs hover:bg-primary-700 transition-all hover:scale-105 shadow-lg shadow-primary-500/20"
+                            >
+                                <Share2 size={16} />
+                                <span>Share</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <p className="text-lg md:text-xl font-bold italic text-gray-900 dark:text-white flex items-center gap-2 mb-[8px]">
