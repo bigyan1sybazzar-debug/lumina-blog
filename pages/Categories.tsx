@@ -7,7 +7,8 @@ import { getCategories, getPosts } from '../services/db';
 import { Category, BlogPost } from '../types';
 import * as Icons from 'lucide-react';
 import { PostCard } from '../components/PostCard';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Hash, Globe } from 'lucide-react';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 export const Categories: React.FC = () => {
   const searchParams = useSearchParams();
@@ -100,7 +101,7 @@ export const Categories: React.FC = () => {
   }, [selectedCategory, allPosts, searchQuery]);
 
   const getIcon = (iconName: string) => {
-    const Icon = (Icons as any)[iconName] || Icons.Hash;
+    const Icon = (Icons as any)[iconName] || Hash;
     return <Icon size={20} />;
   };
 
@@ -223,6 +224,15 @@ export const Categories: React.FC = () => {
           )}
         </div>
 
+        {/* AdSense: After Categories Section */}
+        <div className="max-w-7xl mx-auto px-4 my-12">
+          <GoogleAdSense
+            slot="7838572857"
+            format="auto"
+            responsive={true}
+          />
+        </div>
+
         {/* Posts Grid – 2 columns from 480px */}
         {loadingPosts ? (
           <div className="flex justify-center py-20">
@@ -234,8 +244,20 @@ export const Categories: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-8">
-            {displayedPosts.map((post) => (
-              <PostCard key={post.id} post={post} categoryName={selectedCategory?.name} />
+            {displayedPosts.map((post, index) => (
+              <React.Fragment key={post.id}>
+                <PostCard post={post} categoryName={selectedCategory?.name} />
+                {/* Insert AdSense ad after every 12 posts */}
+                {(index + 1) % 12 === 0 && index !== displayedPosts.length - 1 && (
+                  <div className="col-span-1 min-[480px]:col-span-2 lg:col-span-3 my-4">
+                    <GoogleAdSense
+                      slot="7838572857"
+                      format="auto"
+                      responsive={true}
+                    />
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </div>
         )}
