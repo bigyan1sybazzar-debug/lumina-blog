@@ -15,6 +15,7 @@ import {
     ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 // --- Data Definitions ---
 const BRANDS = ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi/Redmi', 'Oppo/Realme', 'Vivo', 'Motorola', 'Other/Local'];
@@ -139,8 +140,8 @@ export default function MyPhonePricePage() {
             type="button"
             onClick={() => handleInputChange(setState, value)}
             className={`py-3 px-4 text-sm font-semibold rounded-xl transition-all border flex items-center justify-center gap-2 w-full
-                ${state === value 
-                    ? 'bg-blue-600 text-white border-blue-700 shadow-lg' 
+                ${state === value
+                    ? 'bg-blue-600 text-white border-blue-700 shadow-lg'
                     : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50'}`}
         >
             {icon} {label}
@@ -154,6 +155,15 @@ export default function MyPhonePricePage() {
                     <Calculator className="w-10 h-10 text-blue-600 mx-auto mb-2" />
                     <h1 className="text-3xl font-bold dark:text-white text-gray-900">Phone Resale Estimator</h1>
                     <p className="text-gray-500">Step {step} of 3</p>
+                </div>
+
+                {/* AdSense: After Header */}
+                <div className="mb-8">
+                    <GoogleAdSense
+                        slot="7838572857"
+                        format="auto"
+                        responsive={true}
+                    />
                 </div>
 
                 {step === 1 && (
@@ -209,6 +219,17 @@ export default function MyPhonePricePage() {
                             {Object.keys(CONDITION_MULTIPLIERS).map(c => <RadioButton key={c} label={c} state={deviceCondition} setState={setDeviceCondition} value={c} />)}
                         </div>
                         <button onClick={calculatePrice} className="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-lg">Calculate Price</button>
+                    </div>
+                )}
+
+                {/* AdSense: Before Result */}
+                {showResult && (
+                    <div className="my-8">
+                        <GoogleAdSense
+                            slot="7838572857"
+                            format="auto"
+                            responsive={true}
+                        />
                     </div>
                 )}
 

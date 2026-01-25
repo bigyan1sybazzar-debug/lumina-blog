@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Loader2, RefreshCw, Trophy, Calendar, History, ChevronRight, Activity, ChevronLeft } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 import { footballApi } from '../api/football';
 
@@ -117,6 +118,15 @@ const LiveFootball: React.FC = () => {
           </div>
         </div>
 
+        {/* AdSense: After Header/Tabs */}
+        <div className="max-w-7xl mx-auto px-4 my-12">
+          <GoogleAdSense
+            slot="7838572857"
+            format="auto"
+            responsive={true}
+          />
+        </div>
+
         {loading && (
           <div className="flex flex-col items-center py-20">
             <Loader2 className="animate-spin text-primary-600 mb-4" size={32} />
@@ -186,6 +196,17 @@ const LiveFootball: React.FC = () => {
                 </SplideSlide>
               ))}
             </Splide>
+          </div>
+        )}
+
+        {/* AdSense: After Matches Slider */}
+        {!loading && matches.length > 0 && (
+          <div className="max-w-7xl mx-auto px-4 my-12">
+            <GoogleAdSense
+              slot="7838572857"
+              format="auto"
+              responsive={true}
+            />
           </div>
         )}
       </div>
