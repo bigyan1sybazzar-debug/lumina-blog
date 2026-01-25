@@ -199,8 +199,14 @@ export const LiveSection: React.FC = () => {
                     />
                 </div>
 
+                {/* Support Message */}
+                <div className="text-center mb-12">
+                    <p className="text-sm md:text-base font-bold text-primary-600 dark:text-primary-400 animate-pulse">
+                        🙏 Please click some ads, it will help us to generate revenue and keep this service free!
+                    </p>
+                </div>
+
                 {/* LIVE SCORES TABS */}
-                <p>Please Keep patience, It will take to Load HD channels</p>
 
                 <div className="mt-20">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
