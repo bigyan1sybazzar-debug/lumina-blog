@@ -190,6 +190,15 @@ export const LiveSection: React.FC = () => {
                     </div>
                 )}
 
+                {/* AdSense: After Live Streams Grid */}
+                <div className="max-w-7xl mx-auto px-4 my-12">
+                    <GoogleAdSense
+                        slot="7838572857"
+                        format="auto"
+                        responsive={true}
+                    />
+                </div>
+
                 {/* LIVE SCORES TABS */}
                 <p>Please Keep patience, It will take to Load HD channels</p>
 
@@ -281,6 +290,15 @@ export const LiveSection: React.FC = () => {
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* AdSense: After Live Scores Section */}
+                <div className="max-w-7xl mx-auto px-4 my-12">
+                    <GoogleAdSense
+                        slot="7838572857"
+                        format="auto"
+                        responsive={true}
+                    />
                 </div>
 
                 {/* HIGHLIGHTS SECTION */}
@@ -415,6 +433,15 @@ export const LiveSection: React.FC = () => {
                             <Radio size={120} className="text-primary-500" />
                         </div>
                     </div>
+                </div>
+
+                {/* AdSense: After Newsletter Section */}
+                <div className="max-w-7xl mx-auto px-4 my-12">
+                    <GoogleAdSense
+                        slot="7838572857"
+                        format="auto"
+                        responsive={true}
+                    />
                 </div>
             </div>
 

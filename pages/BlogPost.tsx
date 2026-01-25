@@ -371,6 +371,15 @@ export const BlogPostPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* AdSense: After Author Box, Before Comments */}
+              <div className="my-12">
+                <GoogleAdSense
+                  slot="7838572857"
+                  format="auto"
+                  responsive={true}
+                />
+              </div>
+
               {/* COMMENTS SECTION */}
               <div id="comments-section" className="mt-16">
                 <div className="flex items-center gap-4 mb-8">
