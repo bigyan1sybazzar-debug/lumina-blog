@@ -296,67 +296,49 @@ export const Home: React.FC<HomeProps> = ({
                   return (
                     <div
                       key={post.id}
-                      className={`group relative rounded-[2rem] overflow-hidden shadow-lg transition-all duration-700 hover:shadow-primary-500/5 hover:-translate-y-2 ${index === 0 ? 'col-span-2 aspect-[16/9] md:aspect-[21/10]' : 'aspect-square'
+                      className={`group flex flex-col rounded-3xl overflow-hidden bg-white dark:bg-gray-800 shadow-xl transition-all duration-500 hover:shadow-primary-500/10 hover:-translate-y-2 ${index === 0 ? 'col-span-2' : ''
                         }`}
                       style={{
                         animation: `fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) ${index * 0.15}s both`
                       }}
                     >
-                      {/* Premium Dynamic Overlay - Balanced Transparency & Legibility */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-900/30 to-transparent z-10 transition-all duration-500"></div>
-
-                      {/* Shine Effect on Hover */}
-                      <div className="absolute inset-0 z-20 opacity-0 group-hover:opacity-20 transition-opacity duration-700 pointer-events-none bg-gradient-to-tr from-transparent via-white to-transparent -translate-x-full group-hover:translate-x-full transform transition-transform" style={{ transitionDuration: '1.5s' }}></div>
-
-                      {/* Image */}
-                      <Image
-                        src={post.coverImage}
-                        alt={post.title}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
-                        sizes={index === 0 ? "(max-width: 1280px) 100vw, 800px" : "(max-width: 768px) 50vw, 400px"}
-                        priority={index === 0}
-                        loading={index === 0 ? "eager" : "lazy"}
-                      />
-
-                      {/* Content */}
-                      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 z-30 transform transition-transform duration-500 drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <span className="px-3 py-1 rounded-full bg-primary-600/90 backdrop-blur-md text-[10px] font-black text-white uppercase tracking-[0.15em] border border-white/20 shadow-lg">
+                      {/* Image Container with fixed aspect ratio */}
+                      <div className={`relative overflow-hidden ${index === 0 ? 'aspect-[21/9]' : 'aspect-[4/3]'}`}>
+                        <Image
+                          src={post.coverImage}
+                          alt={post.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                          sizes={index === 0 ? "(max-width: 1280px) 100vw, 800px" : "(max-width: 768px) 50vw, 400px"}
+                          priority={index === 0}
+                        />
+                        <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10">
+                          <span className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg bg-primary-600/90 backdrop-blur-md text-[8px] sm:text-[10px] font-black text-white uppercase tracking-wider shadow-lg">
                             {post.category}
-                          </span>
-                          {index === 0 && (
-                            <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-black text-white uppercase tracking-[0.15em] border border-white/10 flex items-center gap-1 shadow-lg">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                              Trending
-                            </span>
-                          )}
-                        </div>
-
-                        <h3 className={`text-white font-black leading-tight group-hover:text-primary-300 transition-all duration-300 drop-shadow-xl ${index === 0 ? 'text-2xl md:text-4xl' : 'text-sm md:text-xl'
-                          }`}>
-                          <Link href={`${post.slug ?? post.id}`} className="hover:underline decoration-primary-500/50 decoration-2 underline-offset-4">
-                            {post.title}
-                          </Link>
-                        </h3>
-
-                        {/* Metadata - Improved visibility with white/80 */}
-                        <div className={`flex items-center gap-4 mt-3 text-white/80 text-xs font-bold transition-all duration-500 drop-shadow-md ${index === 0 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                          }`}>
-                          <span className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded-md backdrop-blur-sm">
-                            <Clock size={12} className="text-primary-400" />
-                            {post.readTime || '5 min read'}
-                          </span>
-                          <span className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded-md backdrop-blur-sm">
-                            <Calendar size={12} className="text-primary-400" />
-                            {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </span>
                         </div>
                       </div>
 
-                      {/* Premium Inner Border Shadow */}
-                      <div className="absolute inset-0 border border-white/10 rounded-[2rem] z-40 pointer-events-none"></div>
-                      <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent z-40 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-[2rem]"></div>
+                      {/* Content below image ("Name Down") */}
+                      <div className="px-2.5 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4 flex flex-col">
+                        <h3 className={`font-black text-gray-900 dark:text-white leading-[1.2] group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2 ${index === 0 ? 'text-sm sm:text-xl md:text-2xl' : 'text-[11px] sm:text-sm md:text-base'
+                          }`}>
+                          <Link href={`${post.slug ?? post.id}`} className="hover:underline decoration-primary-500 decoration-2 underline-offset-4">
+                            {post.title}
+                          </Link>
+                        </h3>
+
+                        <div className="flex items-center gap-2 mt-1.5 text-gray-500 dark:text-gray-400 text-[8px] sm:text-[10px] font-bold">
+                          <span className="flex items-center gap-1 shrink-0">
+                            <Clock size={10} className="text-primary-500 sm:w-3 sm:h-3" />
+                            {post.readTime || '5 min'}
+                          </span>
+                          <span className="flex items-center gap-1 shrink-0">
+                            <Calendar size={10} className="text-primary-500 sm:w-3 sm:h-3" />
+                            {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
@@ -367,17 +349,6 @@ export const Home: React.FC<HomeProps> = ({
 
         {/* Custom Animations */}
         <style jsx>{`
-          @keyframes fadeInUp {
-            from {
-              opacity: 0;
-              transform: translateY(30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          
           @keyframes gradient {
             0%, 100% {
               background-position: 0% 50%;
@@ -422,7 +393,7 @@ export const Home: React.FC<HomeProps> = ({
               <div ref={sliderRef} className="flex overflow-x-auto scrollbar-hide gap-6 pb-4 scroll-smooth">
                 {editorPicks.map((post) => (
                   <div key={post.id} className="flex-shrink-0 w-[calc(100%-2rem)] sm:w-[calc(50%-1rem)] md:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1rem)]">
-                    <PostCard post={post} variant="vertical" textSizeClass="text-lg" />
+                    <PostCard post={post} variant="vertical" textSizeClass="text-[11px] sm:text-base md:text-lg" />
                   </div>
                 ))}
               </div>
@@ -772,7 +743,7 @@ export const Home: React.FC<HomeProps> = ({
                     post={post}
                     categoryName={post.category}
                     variant="vertical"
-                    textSizeClass="text-base"
+                    textSizeClass="text-[11px] sm:text-base md:text-lg"
                     increasedTitle={false}
                     alignLeft={true}
                   />
