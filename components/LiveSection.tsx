@@ -5,7 +5,7 @@ import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
 import GoogleAdSense from './GoogleAdSense';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2 } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
@@ -253,6 +253,25 @@ export const LiveSection: React.FC = () => {
                                                         title="Share on WhatsApp"
                                                     >
                                                         <MessageCircle size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(window.location.href);
+                                                            alert("Link copied to clipboard!");
+                                                        }}
+                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-primary-600 hover:bg-primary-500 hover:text-white transition-all shadow-sm"
+                                                        title="Copy Page Link"
+                                                    >
+                                                        <Link2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            alert("To bookmark this page, press Ctrl+D (Windows) or Cmd+D (Mac) on your keyboard.");
+                                                        }}
+                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-all shadow-sm"
+                                                        title="How to Bookmark"
+                                                    >
+                                                        <Bookmark size={16} />
                                                     </button>
                                                     <button
                                                         onClick={() => setSelectedLink(null)}
