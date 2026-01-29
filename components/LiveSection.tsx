@@ -5,7 +5,7 @@ import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
 import GoogleAdSense from './GoogleAdSense';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2 } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
@@ -138,6 +138,22 @@ export const LiveSection: React.FC = () => {
         },
     };
 
+    const splideOptionsTrending = {
+        perPage: 6,
+        perMove: 1,
+        gap: '0.75rem',
+        arrows: false,
+        pagination: false,
+        drag: 'free',
+        snap: true,
+        breakpoints: {
+            1024: { perPage: 5 },
+            768: { perPage: 4.5 },
+            640: { perPage: 3.5 },
+            480: { perPage: 3.5, gap: '0.5rem' },
+        },
+    };
+
     return (
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 relative overflow-hidden p-0 m-0">
 
@@ -148,12 +164,58 @@ export const LiveSection: React.FC = () => {
                 <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary-500/10 rounded-full blur-[120px] -ml-64 -mb-64 animate-pulse" style={{ animationDelay: '1s' }} />
 
                 <div className="max-w-7xl mx-auto px-4 relative z-10">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30 border rounded-2xl p-3 mb-4 shadow-sm">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30 border rounded-2xl p-3 mb-6 shadow-sm">
                         <p className="text-[10px] md:text-xs font-bold text-blue-900 dark:text-blue-300 flex items-center gap-2">
                             <span className="text-base">⏳</span>
                             <span>Please be patient — HD channels may take a moment to load</span>
                         </p>
                     </div>
+
+                    {/* Trending Channels Slider */}
+                    {links.filter(l => l.isTrending).length > 0 && (
+                        <div className="mb-10">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Radio size={16} className="text-red-500 animate-pulse" />
+                                <h2 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-900 dark:text-white">Trending Channels</h2>
+                            </div>
+                            <Splide options={splideOptionsTrending}>
+                                {links.filter(l => l.isTrending).map((link) => (
+                                    <SplideSlide key={link.id}>
+                                        <button
+                                            onClick={() => handleLinkClick(link)}
+                                            className={`w-full block group text-left ${selectedLink?.id === link.id ? 'scale-95 transition-transform' : ''}`}
+                                        >
+                                            <div className={`flex items-center gap-2 p-2 bg-white/50 dark:bg-white/5 rounded-xl border transition-all ${selectedLink?.id === link.id
+                                                ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
+                                                : 'border-gray-100 dark:border-white/5 group-hover:border-red-500/30'}`}
+                                            >
+                                                <div className={`w-10 h-10 md:w-12 md:h-12 flex-shrink-0 relative rounded-lg overflow-hidden flex flex-col items-center justify-center transition-colors shadow-inner ${selectedLink?.id === link.id
+                                                    ? 'bg-red-600 text-white'
+                                                    : 'bg-white dark:bg-red-950/20 border border-red-500/20 text-red-600'}`}
+                                                >
+                                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-tighter leading-none mb-1">LIVE</span>
+                                                    <div className="relative flex items-center justify-center">
+                                                        <span className={`flex h-1.5 w-1.5 md:h-2 md:w-2 ${selectedLink?.id === link.id ? 'text-white' : 'text-red-500'}`}>
+                                                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-red-500'}`}></span>
+                                                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 md:h-2 md:w-2 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-red-500'}`}></span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className={`text-[9px] md:text-[11px] font-bold line-clamp-2 leading-tight transition-colors ${selectedLink?.id === link.id
+                                                        ? 'text-red-700 dark:text-red-400'
+                                                        : 'text-gray-900 dark:text-gray-100 group-hover:text-red-500'}`}
+                                                    >
+                                                        {link.heading}
+                                                    </h3>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </SplideSlide>
+                                ))}
+                            </Splide>
+                        </div>
+                    )}
 
                     {/* VIDEO PLAYER AND CHANNEL LIST LAYOUT */}
                     {links.length > 0 && (

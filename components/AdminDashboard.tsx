@@ -136,6 +136,7 @@ export const Admin: React.FC = () => {
   const [newLiveHeading, setNewLiveHeading] = useState('');
   const [newLiveIframe, setNewLiveIframe] = useState('');
   const [newLiveTags, setNewLiveTags] = useState('');
+  const [newLiveIsTrending, setNewLiveIsTrending] = useState(false);
   const [editingLiveLink, setEditingLiveLink] = useState<LiveLink | null>(null);
 
   // Highlights State
@@ -871,12 +872,14 @@ export const Admin: React.FC = () => {
         iframeUrl: newLiveIframe,
         status: 'active',
         tags,
+        isTrending: newLiveIsTrending,
         createdAt: new Date().toISOString()
       });
       alert('Live Link added!');
       setNewLiveHeading('');
       setNewLiveIframe('');
       setNewLiveTags('');
+      setNewLiveIsTrending(false);
       getLiveLinks().then(setLiveLinks);
     } catch (error) {
       console.error(error);
@@ -894,13 +897,15 @@ export const Admin: React.FC = () => {
       await updateLiveLink(editingLiveLink.id, {
         heading: newLiveHeading,
         iframeUrl: newLiveIframe,
-        tags
+        tags,
+        isTrending: newLiveIsTrending
       });
       alert('Live Link updated!');
       setEditingLiveLink(null);
       setNewLiveHeading('');
       setNewLiveIframe('');
       setNewLiveTags('');
+      setNewLiveIsTrending(false);
       getLiveLinks().then(setLiveLinks);
     } catch (error) {
       console.error(error);
@@ -1865,6 +1870,17 @@ export const Admin: React.FC = () => {
                         className="input-field font-mono text-sm"
                       />
                     </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setNewLiveIsTrending(!newLiveIsTrending)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${newLiveIsTrending
+                          ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
+                      >
+                        <TrendingUp size={16} />
+                        {newLiveIsTrending ? 'Trending Enabled' : 'Mark as Trending'}
+                      </button>
+                    </div>
                     <div className="flex gap-2">
                       {editingLiveLink ? (
                         <>
@@ -1908,6 +1924,7 @@ export const Admin: React.FC = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Iframe URL</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Default</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trending</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
@@ -1939,6 +1956,19 @@ export const Admin: React.FC = () => {
                                 {link.isDefault && <span className="text-[10px] font-black uppercase tracking-tight">Main</span>}
                               </button>
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <button
+                                onClick={async () => {
+                                  await updateLiveLink(link.id, { isTrending: !link.isTrending });
+                                  getLiveLinks().then(setLiveLinks);
+                                }}
+                                className={`p-1.5 rounded-lg transition-all flex items-center gap-1.5 ${link.isTrending ? 'text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 shadow-sm' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                                title={link.isTrending ? "Remove from Trending" : "Add to Trending"}
+                              >
+                                <TrendingUp size={16} />
+                                {link.isTrending && <span className="text-[10px] font-black uppercase tracking-tight">Hot</span>}
+                              </button>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               <div className="flex gap-2">
                                 <button
@@ -1947,6 +1977,7 @@ export const Admin: React.FC = () => {
                                     setNewLiveHeading(link.heading);
                                     setNewLiveIframe(link.iframeUrl);
                                     setNewLiveTags(link.tags?.join(', ') || '');
+                                    setNewLiveIsTrending(!!link.isTrending);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                   }}
                                   className="text-primary-600 hover:text-primary-800 transition-colors"

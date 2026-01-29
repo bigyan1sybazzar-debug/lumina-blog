@@ -221,6 +221,7 @@ export interface LiveLink {
   status: 'active' | 'inactive';
   tags?: string[];
   isDefault?: boolean;
+  isTrending?: boolean;
 }
 
 export interface Keyword {
