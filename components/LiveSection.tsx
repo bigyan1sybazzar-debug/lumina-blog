@@ -126,20 +126,9 @@ export const LiveSection: React.FC = () => {
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-2xl bg-gradient-to-br from-red-500/10 to-primary-500/10 border border-red-500/20">
-                                <Tv className="w-7 h-7 text-red-500" />
-                            </div>
+
                             <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                    </span>
-                                    <span className="text-xs font-black text-red-500 uppercase tracking-wider">Live Now</span>
-                                </div>
-                                <h2 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white">
-                                    Live Stream <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-primary-500">Coverage</span>
-                                </h2>
+
                             </div>
                         </div>
 
