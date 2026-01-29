@@ -257,8 +257,13 @@ export const LiveSection: React.FC = () => {
                                     <div className="aspect-video w-full relative">
                                         {showAd ? (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 group">
-                                                <div className="w-full h-full max-w-4xl mx-auto p-4 flex flex-col justify-center">
-                                                    <GoogleAdSense slot="7838572857" className="h-full" />
+                                                <div className="w-full h-full max-w-4xl mx-auto p-4 flex flex-col justify-center overflow-hidden">
+                                                    <GoogleAdSense
+                                                        slot="7838572857"
+                                                        className="w-full h-full"
+                                                        minHeight="250px"
+                                                        format="rectangle"
+                                                    />
                                                 </div>
 
                                                 <div className="absolute bottom-6 right-6 flex items-center gap-4 z-20">
