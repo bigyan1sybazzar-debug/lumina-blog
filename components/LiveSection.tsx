@@ -33,6 +33,9 @@ export const LiveSection: React.FC = () => {
             interval = setInterval(() => {
                 setAdTimer((prev) => prev - 1);
             }, 1000);
+        } else if (showAd && adTimer === 0) {
+            // Auto-skip when timer hits 0
+            skipAd();
         }
         return () => clearInterval(interval);
     }, [showAd, adTimer]);
@@ -92,6 +95,9 @@ export const LiveSection: React.FC = () => {
         setPendingLink(link);
         setShowAd(true);
         setAdTimer(5);
+
+        // Scroll to top so user sees the player
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const skipAd = () => {
@@ -136,118 +142,18 @@ export const LiveSection: React.FC = () => {
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 relative overflow-hidden p-0 m-0">
 
 
-            <div className="py-12">
+            <div className="py-4">
                 {/* Animated Background Deco */}
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-red-500/10 rounded-full blur-[120px] -mr-64 -mt-64 animate-pulse" />
                 <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary-500/10 rounded-full blur-[120px] -ml-64 -mb-64 animate-pulse" style={{ animationDelay: '1s' }} />
 
                 <div className="max-w-7xl mx-auto px-4 relative z-10">
-                    <div className="flex items-center justify-between gap-4 mb-8">
-                        <Link
-                            href="/"
-                            className="inline-flex items-center text-xs font-bold text-gray-500 hover:text-red-500 transition-colors uppercase tracking-widest whitespace-nowrap"
-                        >
-                            <ArrowLeft className="w-3 h-3 mr-2" />
-                            Back to Home
-                        </Link>
-
-                        {/* Social Sharing Icons */}
-                        <div className="flex items-center gap-3">
-                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden sm:block">Share Now:</span>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => {
-                                        const url = window.location.href;
-                                        const text = "Watch Live Sports and TV on Bigyann!";
-                                        if (navigator.share) {
-                                            navigator.share({ title: 'Bigyann Live', text, url });
-                                        } else {
-                                            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-                                        }
-                                    }}
-                                    className="p-2.5 rounded-full bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-600/20 transition-all hover:scale-110 shadow-sm"
-                                    title="Share on Facebook"
-                                >
-                                    <Facebook size={18} />
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        const url = window.location.href;
-                                        const text = "Watch Live Sports and TV on Bigyann! " + url;
-                                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                                    }}
-                                    className="p-2.5 rounded-full bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 text-green-600 hover:bg-green-50 dark:hover:bg-green-600/20 transition-all hover:scale-110 shadow-sm"
-                                    title="Share on WhatsApp"
-                                >
-                                    <MessageCircle size={18} />
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        if (navigator.share) {
-                                            navigator.share({
-                                                title: 'Bigyann Live',
-                                                text: 'Watch Live Sports and TV on Bigyann!',
-                                                url: window.location.href
-                                            });
-                                        } else {
-                                            navigator.clipboard.writeText(window.location.href);
-                                            alert("Link copied to clipboard!");
-                                        }
-                                    }}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary-600 text-white font-bold text-xs hover:bg-primary-700 transition-all hover:scale-105 shadow-lg shadow-primary-500/20"
-                                >
-                                    <Share2 size={16} />
-                                    <span>Share</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-2xl p-4 mb-8">
-                        <p className="text-sm md:text-base font-bold text-blue-900 dark:text-blue-300 flex items-center gap-2">
-                            <span className="text-xl">⏳</span>
-                            <span>Please keep patience — HD channels may take a moment to load</span>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30 border rounded-2xl p-3 mb-4 shadow-sm">
+                        <p className="text-[10px] md:text-xs font-bold text-blue-900 dark:text-blue-300 flex items-center gap-2">
+                            <span className="text-base">⏳</span>
+                            <span>Please be patient — HD channels may take a moment to load</span>
                         </p>
                     </div>
-
-                    {/* TAGS FILTER - Dropdown on Mobile, Buttons on Desktop */}
-                    {links.length > 0 && allTags.length > 1 && (
-                        <>
-                            {/* Mobile Dropdown */}
-                            <div className="md:hidden mb-6">
-                                <select
-                                    value={selectedTag}
-                                    onChange={(e) => setSelectedTag(e.target.value)}
-                                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
-                                >
-                                    {allTags.map(tag => (
-                                        <option key={tag} value={tag}>
-                                            {tag === 'All' ? 'All Coverage' : tag}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Desktop Buttons */}
-                            <div className="hidden md:flex flex-wrap gap-2 mb-8">
-                                {allTags.map(tag => (
-                                    <button
-                                        key={tag}
-                                        onClick={() => setSelectedTag(tag)}
-                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${selectedTag === tag
-                                            ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
-                                            : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
-                                            }`}
-                                    >
-                                        {tag === 'All' ? 'All Coverage' : tag}
-                                    </button>
-                                ))}
-                            </div>
-                        </>
-                    )}
-
-
-
-
 
                     {/* VIDEO PLAYER AND CHANNEL LIST LAYOUT */}
                     {links.length > 0 && (
@@ -305,26 +211,57 @@ export const LiveSection: React.FC = () => {
                                     </div>
                                     {!showAd && selectedLink && (
                                         <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-4 md:p-6 border-t border-gray-200 dark:border-white/10">
+                                            {/* Top Metadata Row */}
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
-                                                    <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2">
-                                                        {selectedLink.heading || selectedLink.title}
-                                                    </h3>
-                                                    <div className="flex flex-wrap gap-2">
+                                                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                        <Link
+                                                            href="/"
+                                                            className="inline-flex items-center text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md"
+                                                        >
+                                                            <ArrowLeft className="w-2.5 h-2.5 mr-1" />
+                                                            Home
+                                                        </Link>
                                                         {selectedLink.tags?.map((tag: string, i: number) => (
-                                                            <span key={i} className="text-xs bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-lg font-bold uppercase tracking-wider border border-red-500/20">
+                                                            <span key={i} className="text-[10px] bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-1 rounded-md font-bold uppercase tracking-wider border border-red-500/20">
                                                                 {tag}
                                                             </span>
                                                         ))}
                                                     </div>
+                                                    <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white leading-tight">
+                                                        {selectedLink.heading || selectedLink.title}
+                                                    </h3>
                                                 </div>
-                                                <button
-                                                    onClick={() => setSelectedLink(null)}
-                                                    className="p-2 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-xl hover:bg-red-500 hover:text-white transition-all transition-all"
-                                                    title="Close player"
-                                                >
-                                                    <X size={20} />
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            const url = window.location.href;
+                                                            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                                                        }}
+                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
+                                                        title="Share on Facebook"
+                                                    >
+                                                        <Facebook size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            const url = window.location.href;
+                                                            const text = "Watch Live on Bigyann! " + url;
+                                                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                                        }}
+                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-green-600 hover:bg-green-500 hover:text-white transition-all shadow-sm"
+                                                        title="Share on WhatsApp"
+                                                    >
+                                                        <MessageCircle size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setSelectedLink(null)}
+                                                        className="p-2.5 bg-gray-100 dark:bg-white/5 text-gray-400 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm"
+                                                        title="Close player"
+                                                    >
+                                                        <X size={20} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -715,6 +652,6 @@ export const LiveSection: React.FC = () => {
                     }
                 }
             `}</style>
-        </section>
+        </section >
     );
 };
