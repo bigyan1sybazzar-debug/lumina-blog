@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/db';
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
+import GoogleAdSense from './GoogleAdSense';
 import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
@@ -22,13 +23,28 @@ export const LiveSection: React.FC = () => {
     const [cricketScores, setCricketScores] = useState<any[]>([]);
     const [loadingCricket, setLoadingCricket] = useState(false);
     const [selectedTag, setSelectedTag] = useState<string>('All');
+    const [adTimer, setAdTimer] = useState(0);
+    const [showAd, setShowAd] = useState(false);
+    const [pendingLink, setPendingLink] = useState<LiveLink | null>(null);
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (showAd && adTimer > 0) {
+            interval = setInterval(() => {
+                setAdTimer((prev) => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [showAd, adTimer]);
 
     useEffect(() => {
         getLiveLinks().then((fetchedLinks) => {
             setLinks(fetchedLinks);
-            // Auto-select first link if available (without ad on initial load)
+            // Show ad for the first link on initial load
             if (fetchedLinks.length > 0 && !selectedLink) {
-                setSelectedLink(fetchedLinks[0]);
+                setPendingLink(fetchedLinks[0]);
+                setShowAd(true);
+                setAdTimer(5);
             }
         });
         getHighlights().then(setHighlights);
@@ -72,7 +88,18 @@ export const LiveSection: React.FC = () => {
         // Don't show ad if clicking the same link
         if (selectedLink?.id === link.id) return;
 
-        setSelectedLink(link);
+        setPendingLink(link);
+        setShowAd(true);
+        setAdTimer(5);
+    };
+
+    const skipAd = () => {
+        if (pendingLink) {
+            setSelectedLink(pendingLink);
+            setPendingLink(null);
+        }
+        setShowAd(false);
+        setAdTimer(0);
     };
 
 
@@ -114,23 +141,14 @@ export const LiveSection: React.FC = () => {
                 <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary-500/10 rounded-full blur-[120px] -ml-64 -mb-64 animate-pulse" style={{ animationDelay: '1s' }} />
 
                 <div className="max-w-7xl mx-auto px-4 relative z-10">
-                    <div className="mb-6">
+                    <div className="flex items-center justify-between gap-4 mb-8">
                         <Link
                             href="/"
-                            className="inline-flex items-center text-xs font-bold text-gray-500 hover:text-red-500 transition-colors uppercase tracking-widest"
+                            className="inline-flex items-center text-xs font-bold text-gray-500 hover:text-red-500 transition-colors uppercase tracking-widest whitespace-nowrap"
                         >
                             <ArrowLeft className="w-3 h-3 mr-2" />
                             Back to Home
                         </Link>
-                    </div>
-
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-                        <div className="flex items-center gap-4">
-
-                            <div>
-
-                            </div>
-                        </div>
 
                         {/* Social Sharing Icons */}
                         <div className="flex items-center gap-3">
@@ -234,40 +252,76 @@ export const LiveSection: React.FC = () => {
                     {links.length > 0 && (
                         <div className="flex flex-col gap-6">
                             {/* Video Player Section - Always on top */}
-                            {selectedLink && (
+                            {(selectedLink || showAd) && (
                                 <div className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10">
-                                    <div className="aspect-video w-full">
-                                        <iframe
-                                            src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                            title={selectedLink.heading || selectedLink.title}
-                                            className="w-full h-full border-0"
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                                            allowFullScreen
-                                        />
-                                    </div>
-                                    <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-4 md:p-6 border-t border-gray-200 dark:border-white/10">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="flex-1">
-                                                <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2">
-                                                    {selectedLink.heading || selectedLink.title}
-                                                </h3>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {selectedLink.tags?.map((tag: string, i: number) => (
-                                                        <span key={i} className="text-xs bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-lg font-bold uppercase tracking-wider border border-red-500/20">
-                                                            {tag}
-                                                        </span>
-                                                    ))}
+                                    <div className="aspect-video w-full relative">
+                                        {showAd ? (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 group">
+                                                <div className="w-full h-full max-w-4xl mx-auto p-4 flex flex-col justify-center">
+                                                    <GoogleAdSense slot="7838572857" className="h-full" />
                                                 </div>
+
+                                                <div className="absolute bottom-6 right-6 flex items-center gap-4 z-20">
+                                                    {adTimer > 0 ? (
+                                                        <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-lg text-white text-sm font-bold border border-white/10">
+                                                            Ad can be skipped in {adTimer}s...
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={skipAd}
+                                                            className="bg-white text-black hover:bg-red-600 hover:text-white px-6 py-2 rounded-lg text-sm font-black transition-all transform hover:scale-105 flex items-center gap-2 shadow-xl"
+                                                        >
+                                                            Skip Ad <ChevronRight size={18} />
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                <div className="absolute top-6 left-6 flex items-center gap-2 z-20">
+                                                    <span className="bg-yellow-500 text-black text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">ADVERTISEMENT</span>
+                                                </div>
+
+                                                {pendingLink && (
+                                                    <div className="absolute top-6 right-6 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/10 z-20">
+                                                        <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Up Next:</p>
+                                                        <p className="text-white text-xs font-black truncate max-w-[150px]">{pendingLink.heading}</p>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <button
-                                                onClick={() => setSelectedLink(null)}
-                                                className="p-2 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-xl hover:bg-red-500 hover:text-white transition-all"
-                                                title="Close player"
-                                            >
-                                                <X size={20} />
-                                            </button>
-                                        </div>
+                                        ) : selectedLink && (
+                                            <iframe
+                                                src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                                title={selectedLink.heading || selectedLink.title}
+                                                className="w-full h-full border-0"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                                                allowFullScreen
+                                            />
+                                        )}
                                     </div>
+                                    {!showAd && selectedLink && (
+                                        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-4 md:p-6 border-t border-gray-200 dark:border-white/10">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex-1">
+                                                    <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2">
+                                                        {selectedLink.heading || selectedLink.title}
+                                                    </h3>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {selectedLink.tags?.map((tag: string, i: number) => (
+                                                            <span key={i} className="text-xs bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-lg font-bold uppercase tracking-wider border border-red-500/20">
+                                                                {tag}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => setSelectedLink(null)}
+                                                    className="p-2 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-xl hover:bg-red-500 hover:text-white transition-all transition-all"
+                                                    title="Close player"
+                                                >
+                                                    <X size={20} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
