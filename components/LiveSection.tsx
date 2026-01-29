@@ -5,6 +5,7 @@ import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
 import GoogleAdSense from './GoogleAdSense';
+import IMAAdPlayer from './IMAAdPlayer';
 import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
@@ -258,12 +259,13 @@ export const LiveSection: React.FC = () => {
                                     <div className="aspect-video w-full relative">
                                         {showAd ? (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 group">
-                                                <div className="w-full h-full max-w-4xl mx-auto p-4 flex flex-col justify-center overflow-hidden">
-                                                    <GoogleAdSense
-                                                        slot="7838572857"
-                                                        className="w-full h-full"
-                                                        minHeight="250px"
-                                                        format="rectangle"
+                                                <div className="w-full h-full max-w-4xl mx-auto p-0 flex flex-col justify-center overflow-hidden bg-black">
+                                                    <IMAAdPlayer
+                                                        adTagUrl={`https://googleads.g.doubleclick.net/pagead/ads?ad_type=video&client=ca-pub-8714969386201280&video_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&description_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&max_ad_duration=30000&vpa=click&vpmute=0`}
+                                                        onAdEnded={skipAd}
+                                                        onAdError={() => {
+                                                            console.log("IMA failed, falling back");
+                                                        }}
                                                     />
                                                 </div>
 
