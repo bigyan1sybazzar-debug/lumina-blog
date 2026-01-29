@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, updateLiveLink, deleteLiveLink, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch, getHighlights, addHighlight, deleteHighlight, getSubscribers } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, updateLiveLink, deleteLiveLink, setLiveLinkDefault, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch, getHighlights, addHighlight, deleteHighlight, getSubscribers } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
@@ -917,6 +917,17 @@ export const Admin: React.FC = () => {
         console.error(error);
         alert('Failed to delete live link');
       }
+    }
+  };
+
+  const handleSetLiveLinkDefault = async (id: string, isDefault: boolean) => {
+    try {
+      await setLiveLinkDefault(id, isDefault);
+      alert(isDefault ? 'Link set as default!' : 'Default status removed.');
+      getLiveLinks().then(setLiveLinks);
+    } catch (error) {
+      console.error(error);
+      alert('Failed to update default status');
     }
   };
 
@@ -1896,6 +1907,7 @@ export const Admin: React.FC = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Iframe URL</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Default</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
@@ -1917,6 +1929,16 @@ export const Admin: React.FC = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={link.iframeUrl}>{link.iframeUrl}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(link.createdAt).toLocaleDateString()}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <button
+                                onClick={() => handleSetLiveLinkDefault(link.id, !link.isDefault)}
+                                className={`p-1.5 rounded-lg transition-all flex items-center gap-1.5 ${link.isDefault ? 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 shadow-sm' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                                title={link.isDefault ? "Remove Default" : "Set as Default"}
+                              >
+                                <Sparkles size={16} fill={link.isDefault ? "currentColor" : "none"} />
+                                {link.isDefault && <span className="text-[10px] font-black uppercase tracking-tight">Main</span>}
+                              </button>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               <div className="flex gap-2">
                                 <button

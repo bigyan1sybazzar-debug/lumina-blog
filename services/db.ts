@@ -1037,6 +1037,30 @@ export const deleteLiveLink = async (id: string) => {
   }
 };
 
+export const setLiveLinkDefault = async (id: string, isDefault: boolean) => {
+  try {
+    const batch = db.batch();
+
+    if (isDefault) {
+      // Unset all other defaults first
+      const snapshot = await db.collection(LIVE_LINKS_COLLECTION).where('isDefault', '==', true).get();
+      snapshot.docs.forEach(doc => {
+        batch.update(doc.ref, { isDefault: false });
+      });
+    }
+
+    batch.update(db.collection(LIVE_LINKS_COLLECTION).doc(id), {
+      isDefault: isDefault,
+      updatedAt: new Date().toISOString()
+    });
+
+    await batch.commit();
+  } catch (error) {
+    console.error('Error setting live link default:', error);
+    throw error;
+  }
+};
+
 
 
 export const createPoll = async (poll: Omit<Poll, 'id' | 'createdAt' | 'totalVotes' | 'votedUserIds' | 'slug' | 'status'>) => {

@@ -40,9 +40,10 @@ export const LiveSection: React.FC = () => {
     useEffect(() => {
         getLiveLinks().then((fetchedLinks) => {
             setLinks(fetchedLinks);
-            // Show ad for the first link on initial load
+            // Show ad for the default link (or first link) on initial load
             if (fetchedLinks.length > 0 && !selectedLink) {
-                setPendingLink(fetchedLinks[0]);
+                const defaultLink = fetchedLinks.find(link => link.isDefault) || fetchedLinks[0];
+                setPendingLink(defaultLink);
                 setShowAd(true);
                 setAdTimer(5);
             }
