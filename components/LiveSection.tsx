@@ -8,17 +8,13 @@ import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Termi
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
-import GoogleAdSense from './GoogleAdSense';
-
 // CricketScoreWidget removed as it is replaced by an iframe source
 
 export const LiveSection: React.FC = () => {
     const [links, setLinks] = useState<LiveLink[]>([]);
     const [highlights, setHighlights] = useState<Highlight[]>([]);
     const [selectedLink, setSelectedLink] = useState<any>(null);
-    const [pendingLink, setPendingLink] = useState<LiveLink | null>(null);
-    const [showAd, setShowAd] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
+
     const [newsletterEmail, setNewsletterEmail] = useState('');
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -28,9 +24,17 @@ export const LiveSection: React.FC = () => {
     const [selectedTag, setSelectedTag] = useState<string>('All');
 
     useEffect(() => {
-        getLiveLinks().then(setLinks);
+        getLiveLinks().then((fetchedLinks) => {
+            setLinks(fetchedLinks);
+            // Auto-select first link if available (without ad on initial load)
+            if (fetchedLinks.length > 0 && !selectedLink) {
+                setSelectedLink(fetchedLinks[0]);
+            }
+        });
         getHighlights().then(setHighlights);
     }, []);
+
+
 
     useEffect(() => {
         if (activeScoreTab === 'cricket' && cricketScores.length === 0) {
@@ -65,21 +69,13 @@ export const LiveSection: React.FC = () => {
     };
 
     const handleLinkClick = (link: LiveLink) => {
-        setPendingLink(link);
-        setShowAd(true);
-        setIsProcessing(false); // Reset processing state
+        // Don't show ad if clicking the same link
+        if (selectedLink?.id === link.id) return;
+
+        setSelectedLink(link);
     };
 
-    const handleAdClose = () => {
-        if (isProcessing) return;
-        setIsProcessing(true);
-        setShowAd(false);
-        if (pendingLink) {
-            setSelectedLink(pendingLink);
-            setPendingLink(null);
-        }
-        setTimeout(() => setIsProcessing(false), 500);
-    };
+
 
     const groupedHighlights = highlights.reduce((acc, h) => {
         if (!acc[h.category]) acc[h.category] = [];
@@ -110,22 +106,12 @@ export const LiveSection: React.FC = () => {
 
     return (
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 relative overflow-hidden p-0 m-0">
-            {/* Bigyann Cover Image - 1200x300 optimized resolution, No Cropping */}
-            <img
-                src="https://smoyjtogaiu8cxbm.public.blob.vercel-storage.com/BIGYANN%20COVER.png"
-                alt="Bigyann Live Cover"
-                className="w-full h-auto block select-none border-none outline-none p-0 m-0"
-                style={{
-                    aspectRatio: '1200 / 300',
-                    objectFit: 'cover',
-                    imageRendering: 'auto'
-                }}
-            />
+
 
             <div className="py-12">
-                {/* Minimalist Background Deco */}
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-red-500/5 rounded-full blur-[100px] -mr-64 -mt-64" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-[100px] -ml-64 -mb-64" />
+                {/* Animated Background Deco */}
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-red-500/10 rounded-full blur-[120px] -mr-64 -mt-64 animate-pulse" />
+                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary-500/10 rounded-full blur-[120px] -ml-64 -mb-64 animate-pulse" style={{ animationDelay: '1s' }} />
 
                 <div className="max-w-7xl mx-auto px-4 relative z-10">
                     <div className="mb-6">
@@ -139,14 +125,20 @@ export const LiveSection: React.FC = () => {
                     </div>
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                </span>
-                                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                                    Live Stream <span className="text-gray-400 font-medium text-lg">Coverage</span>
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-2xl bg-gradient-to-br from-red-500/10 to-primary-500/10 border border-red-500/20">
+                                <Tv className="w-7 h-7 text-red-500" />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                    </span>
+                                    <span className="text-xs font-black text-red-500 uppercase tracking-wider">Live Now</span>
+                                </div>
+                                <h2 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white">
+                                    Live Stream <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-primary-500">Coverage</span>
                                 </h2>
                             </div>
                         </div>
@@ -202,121 +194,234 @@ export const LiveSection: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    <p className="text-lg md:text-xl font-bold italic text-gray-900 dark:text-white flex items-center gap-2 mb-[8px]">
-                        ⏳ Please keep patience
-                        <span className="text-gray-400 font-medium text-base italic">
-                            HD channels may take a moment to load
-                        </span>
-                    </p>
-
-                    {/* TAGS FILTER RIBBON */}
-                    {links.length > 0 && allTags.length > 1 && (
-                        <div className="flex flex-wrap gap-2 mb-8">
-                            {allTags.map(tag => (
-                                <button
-                                    key={tag}
-                                    onClick={() => setSelectedTag(tag)}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${selectedTag === tag
-                                        ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
-                                        : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
-                                        }`}
-                                >
-                                    {tag === 'All' ? 'All Coverage' : tag}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Support Message */}
-                    <div className="text-center mb-12">
-                        <p className="text-sm md:text-base font-bold text-primary-600 dark:text-primary-400 animate-pulse">
-                            🙏 Please click some ads, it will help us to generate revenue and keep this service free!
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-2xl p-4 mb-8">
+                        <p className="text-sm md:text-base font-bold text-blue-900 dark:text-blue-300 flex items-center gap-2">
+                            <span className="text-xl">⏳</span>
+                            <span>Please keep patience — HD channels may take a moment to load</span>
                         </p>
                     </div>
 
-                    {/* CONSISTENT 2-COLUMN GRID ON ALL PLATFORMS FOR LIVE STREAMS */}
-                    {filteredLinks.length > 0 && (
-                        <div className="grid grid-cols-2 gap-3 md:gap-6">
-                            {filteredLinks.map((link) => (
-                                <div
-                                    key={link.id}
-                                    onClick={() => handleLinkClick(link)}
-                                    className="group cursor-pointer flex flex-col sm:flex-row items-center sm:items-center gap-3 md:gap-4 bg-gray-50 dark:bg-white/5 p-3 md:p-6 rounded-2xl border border-gray-100 dark:border-white/5 hover:border-red-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-red-500/5"
+                    {/* TAGS FILTER - Dropdown on Mobile, Buttons on Desktop */}
+                    {links.length > 0 && allTags.length > 1 && (
+                        <>
+                            {/* Mobile Dropdown */}
+                            <div className="md:hidden mb-6">
+                                <select
+                                    value={selectedTag}
+                                    onChange={(e) => setSelectedTag(e.target.value)}
+                                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
                                 >
-                                    <div className="flex-shrink-0 w-10 h-10 md:w-14 md:h-14 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform shadow-inner">
-                                        <Play size={18} fill="currentColor" className="ml-0.5 md:size-[24px]" />
+                                    {allTags.map(tag => (
+                                        <option key={tag} value={tag}>
+                                            {tag === 'All' ? 'All Coverage' : tag}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Desktop Buttons */}
+                            <div className="hidden md:flex flex-wrap gap-2 mb-8">
+                                {allTags.map(tag => (
+                                    <button
+                                        key={tag}
+                                        onClick={() => setSelectedTag(tag)}
+                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${selectedTag === tag
+                                            ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
+                                            : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
+                                            }`}
+                                    >
+                                        {tag === 'All' ? 'All Coverage' : tag}
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
+
+
+
+
+                    {/* VIDEO PLAYER AND CHANNEL LIST LAYOUT */}
+                    {links.length > 0 && (
+                        <div className="flex flex-col gap-6">
+                            {/* Video Player Section - Always on top */}
+                            {selectedLink && (
+                                <div className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10">
+                                    <div className="aspect-video w-full">
+                                        <iframe
+                                            src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                            title={selectedLink.heading || selectedLink.title}
+                                            className="w-full h-full border-0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                                            allowFullScreen
+                                        />
                                     </div>
-                                    <div className="flex-1 min-w-0 text-center sm:text-left">
-                                        <h3 className="font-bold text-[10px] md:text-base lg:text-lg text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-1">
-                                            {link.heading}
-                                        </h3>
-                                        <div className="flex flex-wrap justify-center sm:justify-start gap-1 mt-1">
-                                            {link.tags?.map((tag, i) => (
-                                                <span key={i} className="text-[7px] md:text-[9px] bg-red-500/10 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider">
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                            {!link.tags?.length && (
-                                                <p className="text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center sm:justify-start gap-1 uppercase tracking-widest">
-                                                    <Activity size={10} className="text-red-500" />
-                                                    Live Stream
-                                                </p>
-
-
-                                            )}
+                                    <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-4 md:p-6 border-t border-gray-200 dark:border-white/10">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1">
+                                                <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white mb-2">
+                                                    {selectedLink.heading || selectedLink.title}
+                                                </h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {selectedLink.tags?.map((tag: string, i: number) => (
+                                                        <span key={i} className="text-xs bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-lg font-bold uppercase tracking-wider border border-red-500/20">
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setSelectedLink(null)}
+                                                className="p-2 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-xl hover:bg-red-500 hover:text-white transition-all"
+                                                title="Close player"
+                                            >
+                                                <X size={20} />
+                                            </button>
                                         </div>
                                     </div>
-                                    <ChevronRight size={14} className="hidden md:block text-gray-300 group-hover:translate-x-1 transition-transform ml-auto" />
                                 </div>
+                            )}
 
-                            ))}
+                            {/* TAGS FILTER - Moved below video */}
+                            {allTags.length > 1 && (
+                                <div className="z-10 relative">
+                                    {/* Mobile Dropdown */}
+                                    <div className="md:hidden mb-2">
+                                        <select
+                                            value={selectedTag}
+                                            onChange={(e) => setSelectedTag(e.target.value)}
+                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
+                                        >
+                                            {allTags.map(tag => (
+                                                <option key={tag} value={tag}>
+                                                    {tag === 'All' ? 'All Coverage' : tag}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Desktop Buttons */}
+                                    <div className="hidden md:flex flex-wrap gap-2 mb-4">
+                                        {allTags.map(tag => (
+                                            <button
+                                                key={tag}
+                                                onClick={() => setSelectedTag(tag)}
+                                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${selectedTag === tag
+                                                    ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
+                                                    : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
+                                                    }`}
+                                            >
+                                                {tag === 'All' ? 'All Coverage' : tag}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Channel List - Always below video */}
+                            <div>
+                                <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <Tv size={20} className="text-red-500 hidden md:block" />
+                                    Available Channels
+                                </h3>
+                                {/* Mobile now uses grid-cols-2 for 2 items per row */}
+                                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                                    {filteredLinks.map((link) => (
+                                        <button
+                                            key={link.id}
+                                            onClick={() => handleLinkClick(link)}
+                                            className={`group text-left relative overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/50 dark:to-gray-900/50 backdrop-blur-xl p-4 rounded-2xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${selectedLink?.id === link.id
+                                                ? 'border-red-500 shadow-lg shadow-red-500/20'
+                                                : 'border-gray-200/50 dark:border-white/10 hover:border-red-500/50'
+                                                }`}
+                                        >
+                                            {/* Active indicator */}
+                                            {selectedLink?.id === link.id && (
+                                                <div className="absolute top-2 right-2 flex items-center gap-1">
+                                                    <span className="relative flex h-2 w-2">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            <div className="flex flex-col items-center text-center gap-2 md:flex-row md:text-left md:gap-3">
+                                                <div className={`flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${selectedLink?.id === link.id
+                                                    ? 'bg-gradient-to-br from-red-500 to-red-600 text-white scale-110'
+                                                    : 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 group-hover:scale-110'
+                                                    }`}>
+                                                    <Play size={18} fill="currentColor" className="ml-0.5 md:w-5 md:h-5" />
+                                                </div>
+                                                <div className="flex-1 min-w-0 w-full">
+                                                    <h4 className={`font-bold text-xs md:text-sm line-clamp-2 transition-colors ${selectedLink?.id === link.id
+                                                        ? 'text-red-600 dark:text-red-400'
+                                                        : 'text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400'
+                                                        }`}>
+                                                        {link.heading}
+                                                    </h4>
+                                                    {link.tags && link.tags.length > 0 && (
+                                                        <div className="flex flex-wrap justify-center md:justify-start gap-1 mt-1">
+                                                            {link.tags.slice(0, 1).map((tag, i) => (
+                                                                <span key={i} className="text-[7px] md:text-[8px] bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-bold uppercase">
+                                                                    {tag}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     )}
 
-                    {/* AdSense: After Live Streams Grid */}
-                    <div className="max-w-7xl mx-auto px-4 my-12">
-                        <GoogleAdSense
-                            slot="7838572857"
-                            format="auto"
-                            responsive={true}
-                        />
-                    </div>
+
 
 
                     {/* LIVE SCORES TABS */}
-
-                    <div className="mt-20">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                            <div className="flex items-center gap-3">
-                                <Activity className="w-6 h-6 text-red-500" />
-                                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                                    Live Match <span className="text-gray-400 font-medium text-lg italic">Scores</span>
-                                </h2>
+                    <div className="mt-24">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary-500/10 to-red-500/10 border border-primary-500/20">
+                                    <Activity className="w-7 h-7 text-primary-500" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-xs font-black text-primary-500 uppercase tracking-wider">Real-Time Updates</span>
+                                    </div>
+                                    <h2 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white">
+                                        Live Match <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-500 to-red-500">Scores</span>
+                                    </h2>
+                                </div>
                             </div>
-                            <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-2xl self-start md:self-auto">
+                            <div className="flex bg-white dark:bg-gray-800/50 p-1.5 rounded-2xl shadow-lg border border-gray-200 dark:border-white/10 self-start md:self-auto">
                                 <button
                                     onClick={() => setActiveScoreTab('football')}
-                                    className={`px-6 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${activeScoreTab === 'football'
-                                        ? 'bg-white dark:bg-red-600 text-red-600 dark:text-white shadow-xl shadow-red-500/10 scale-105'
-                                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                                    className={`px-6 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${activeScoreTab === 'football'
+                                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-xl shadow-red-500/30 scale-105'
+                                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                         }`}
                                 >
-                                    Football
+                                    ⚽ Football
                                 </button>
                                 <button
                                     onClick={() => setActiveScoreTab('cricket')}
-                                    className={`px-6 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${activeScoreTab === 'cricket'
-                                        ? 'bg-white dark:bg-red-600 text-red-600 dark:text-white shadow-xl shadow-red-500/10 scale-105'
-                                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                                    className={`px-6 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${activeScoreTab === 'cricket'
+                                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-xl shadow-primary-500/30 scale-105'
+                                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                         }`}
                                 >
-                                    Cricket
+                                    🏏 Cricket
                                 </button>
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 dark:bg-white/5 rounded-[2.5rem] p-4 md:p-8 border border-gray-100 dark:border-white/10 min-h-[400px] overflow-hidden backdrop-blur-sm relative">
-                            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-primary-500/5 pointer-events-none" />
+                        <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-[2.5rem] p-6 md:p-10 border border-gray-200/50 dark:border-white/10 min-h-[400px] overflow-hidden backdrop-blur-xl shadow-2xl">
+                            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-primary-500/5 to-red-500/5 pointer-events-none" />
+                            <div className="absolute top-0 right-0 w-96 h-96 bg-red-500/10 rounded-full blur-3xl" />
+                            <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl" />
 
                             {activeScoreTab === 'football' ? (
                                 <div className="relative z-10 w-full h-[650px] rounded-3xl overflow-hidden bg-white dark:bg-neutral-900 shadow-inner">
@@ -375,23 +480,23 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* AdSense: After Live Scores Section */}
-                    <div className="max-w-7xl mx-auto px-4 my-12">
-                        <GoogleAdSense
-                            slot="7838572857"
-                            format="auto"
-                            responsive={true}
-                        />
-                    </div>
+
 
                     {/* HIGHLIGHTS SECTION */}
                     {highlights.length > 0 && (
-                        <div className="mt-20 space-y-12">
-                            <div className="flex items-center gap-3">
-                                <Sparkles className="w-6 h-6 text-primary-500" />
-                                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                                    Match Highlights
-                                </h2>
+                        <div className="mt-24 space-y-12">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-2xl bg-gradient-to-br from-yellow-500/10 to-primary-500/10 border border-yellow-500/20">
+                                    <Sparkles className="w-7 h-7 text-yellow-500" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-xs font-black text-yellow-500 uppercase tracking-wider">Best Moments</span>
+                                    </div>
+                                    <h2 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white">
+                                        Match <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-primary-500">Highlights</span>
+                                    </h2>
+                                </div>
                             </div>
 
                             {Object.entries(groupedHighlights).map(([category, items]) => (
@@ -445,9 +550,9 @@ export const LiveSection: React.FC = () => {
                     )}
 
                     {/* NEWSLETTER SECTION */}
-                    <div className="mt-24 relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-red-600/10 to-primary-600/10 blur-[120px] rounded-full" />
-                        <div className="relative bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-[2.5rem] p-8 md:p-12 overflow-hidden backdrop-blur-xl">
+                    <div className="mt-32 relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-red-600/10 via-primary-600/10 to-red-600/10 blur-[150px] rounded-full" />
+                        <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/50 dark:to-gray-900/50 border border-gray-200/50 dark:border-white/10 rounded-[2.5rem] p-10 md:p-16 overflow-hidden backdrop-blur-xl shadow-2xl">
                             <div className="max-w-3xl mx-auto text-center space-y-8">
                                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-xs font-black uppercase tracking-widest">
                                     <Send size={14} />
@@ -518,87 +623,11 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* AdSense: After Newsletter Section */}
-                    <div className="max-w-7xl mx-auto px-4 my-12">
-                        <GoogleAdSense
-                            slot="7838572857"
-                            format="auto"
-                            responsive={true}
-                        />
-                    </div>
+
                 </div>
             </div>
 
-            {/* Ad Interstitial Modal */}
-            {showAd && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="relative w-full max-w-xl bg-white dark:bg-[#0a0a0a] rounded-[2rem] p-8 shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col items-center border border-gray-200 dark:border-white/5">
-                        <div className="w-full flex justify-between items-center mb-6">
-                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Advertisement</span>
-                            <button
-                                onClick={handleAdClose}
-                                disabled={isProcessing}
-                                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
 
-                        {/* Ad Container */}
-                        <div className="min-h-[280px] w-full flex items-center justify-center bg-gray-50 dark:bg-black/40 rounded-2xl mb-8 overflow-hidden relative border border-gray-100 dark:border-white/5">
-                            <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-xs italic pointer-events-none">
-                                Content Loading...
-                            </div>
-                            <div className="w-full h-full relative z-10">
-                                <GoogleAdSense
-                                    slot="7838572857"
-                                    responsive={true}
-                                    format="auto"
-                                    style={{ width: '100%', minHeight: '280px' }}
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={handleAdClose}
-                            disabled={isProcessing}
-                            className={`w-full py-4 font-black rounded-xl transition-all ${isProcessing
-                                ? 'bg-gray-100 dark:bg-white/5 text-gray-400'
-                                : 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20 active:scale-95'
-                                }`}
-                        >
-                            {isProcessing ? 'SYNCHRONIZING...' : 'START STREAMING'}
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Video Modal */}
-            {selectedLink && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-lg animate-in fade-in duration-300">
-                    <div
-                        className="absolute inset-0"
-                        onClick={() => setSelectedLink(null)}
-                    />
-                    <div className="relative w-full max-w-5xl bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/5 animate-in zoom-in-95 duration-300 aspect-video">
-                        <button
-                            onClick={() => setSelectedLink(null)}
-                            className="absolute top-6 right-6 z-10 p-2 bg-black/50 text-white rounded-full hover:bg-white hover:text-black transition-all backdrop-blur-md"
-                        >
-                            <X size={24} />
-                        </button>
-                        <div className="w-full h-full">
-                            <iframe
-                                src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                title={selectedLink.heading || selectedLink.title}
-                                className="w-full h-full border-0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
 
             <style jsx global>{`
                 /* Premium Slider Buttons for Highlights */
