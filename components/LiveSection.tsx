@@ -5,7 +5,7 @@ import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
 import GoogleAdSense from './GoogleAdSense';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
@@ -26,6 +26,10 @@ export const LiveSection: React.FC = () => {
     const [adTimer, setAdTimer] = useState(0);
     const [showAd, setShowAd] = useState(false);
     const [pendingLink, setPendingLink] = useState<LiveLink | null>(null);
+    const [onDemandName, setOnDemandName] = useState('');
+    const [onDemandMessage, setOnDemandMessage] = useState('');
+    const [playerKey, setPlayerKey] = useState(0);
+    const playerRef = React.useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -109,6 +113,34 @@ export const LiveSection: React.FC = () => {
         setAdTimer(0);
     };
 
+    const handleOnDemandSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const whatsappNumber = '9779805671898';
+        const prefilledMessage = `*ON DEMAND REQUEST*%0A%0A*Name:* ${onDemandName}%0A*Channel Name:* ${onDemandMessage}`;
+        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(prefilledMessage)}`;
+        window.open(whatsappUrl, '_blank');
+
+        // Reset form
+        setOnDemandName('');
+        setOnDemandMessage('');
+    };
+
+    const handleRefresh = () => {
+        setPlayerKey(prev => prev + 1);
+    };
+
+    const toggleFullscreen = () => {
+        if (playerRef.current) {
+            if (!document.fullscreenElement) {
+                playerRef.current.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+    };
+
 
 
     const groupedHighlights = highlights.reduce((acc, h) => {
@@ -173,8 +205,8 @@ export const LiveSection: React.FC = () => {
 
                     {/* Trending Channels Slider */}
                     {links.filter(l => l.isTrending).length > 0 && (
-                        <div className="mb-10">
-                            <div className="flex items-center gap-2 mb-4">
+                        <div className="mb-4 md:mb-8">
+                            <div className="flex items-center gap-2 mb-2 md:mb-4">
                                 <Radio size={16} className="text-red-500 animate-pulse" />
                                 <h2 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-900 dark:text-white">Trending Channels</h2>
                             </div>
@@ -185,15 +217,15 @@ export const LiveSection: React.FC = () => {
                                             onClick={() => handleLinkClick(link)}
                                             className={`w-full block group text-left ${selectedLink?.id === link.id ? 'scale-95 transition-transform' : ''}`}
                                         >
-                                            <div className={`flex items-center gap-2 p-2 bg-white/50 dark:bg-white/5 rounded-xl border transition-all ${selectedLink?.id === link.id
+                                            <div className={`flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 bg-white/50 dark:bg-white/5 rounded-xl border transition-all ${selectedLink?.id === link.id
                                                 ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
                                                 : 'border-gray-100 dark:border-white/5 group-hover:border-red-500/30'}`}
                                             >
-                                                <div className={`w-10 h-10 md:w-12 md:h-12 flex-shrink-0 relative rounded-lg overflow-hidden flex flex-col items-center justify-center transition-colors shadow-inner ${selectedLink?.id === link.id
+                                                <div className={`w-8 h-8 md:w-12 md:h-12 flex-shrink-0 relative rounded-lg overflow-hidden flex flex-col items-center justify-center transition-colors shadow-inner ${selectedLink?.id === link.id
                                                     ? 'bg-red-600 text-white'
                                                     : 'bg-white dark:bg-red-950/20 border border-red-500/20 text-red-600'}`}
                                                 >
-                                                    <span className="text-[7px] md:text-[9px] font-black uppercase tracking-tighter leading-none mb-1">LIVE</span>
+                                                    <span className="text-[6px] md:text-[9px] font-black uppercase tracking-tighter leading-none mb-0.5 md:mb-1">LIVE</span>
                                                     <div className="relative flex items-center justify-center">
                                                         <span className={`flex h-1.5 w-1.5 md:h-2 md:w-2 ${selectedLink?.id === link.id ? 'text-white' : 'text-red-500'}`}>
                                                             <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-red-500'}`}></span>
@@ -202,7 +234,7 @@ export const LiveSection: React.FC = () => {
                                                     </div>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <h3 className={`text-[9px] md:text-[11px] font-bold line-clamp-2 leading-tight transition-colors ${selectedLink?.id === link.id
+                                                    <h3 className={`text-[8px] md:text-[11px] font-bold line-clamp-2 leading-tight transition-colors ${selectedLink?.id === link.id
                                                         ? 'text-red-700 dark:text-red-400'
                                                         : 'text-gray-900 dark:text-gray-100 group-hover:text-red-500'}`}
                                                     >
@@ -222,7 +254,10 @@ export const LiveSection: React.FC = () => {
                         <div className="flex flex-col gap-6">
                             {/* Video Player Section - Always on top */}
                             {(selectedLink || showAd) && (
-                                <div className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10">
+                                <div
+                                    ref={playerRef}
+                                    className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10 w-full"
+                                >
                                     <div className="aspect-video w-full relative">
                                         {showAd ? (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 group">
@@ -263,19 +298,42 @@ export const LiveSection: React.FC = () => {
                                             </div>
                                         ) : selectedLink && (
                                             <iframe
+                                                key={playerKey}
                                                 src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
                                                 title={selectedLink.heading || selectedLink.title}
                                                 className="w-full h-full border-0"
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; bluetooth 'none'; camera 'none'; microphone 'none'; geolocation 'none'; display-capture 'none'; payment 'none'"
+                                                referrerPolicy="no-referrer"
                                                 allowFullScreen
                                             />
                                         )}
                                     </div>
                                     {!showAd && selectedLink && (
                                         <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-4 md:p-6 border-t border-gray-200 dark:border-white/10">
+                                            {/* External Player Controls */}
+                                            <div className="flex flex-wrap items-center gap-2 mb-6 p-2 bg-gray-100/50 dark:bg-white/5 rounded-2xl border border-gray-200/50 dark:border-white/5">
+                                                <button
+                                                    onClick={handleRefresh}
+                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-500 transition-all shadow-sm border border-gray-200 dark:border-white/5 group"
+                                                >
+                                                    <RefreshCw size={14} className="group-active:rotate-180 transition-transform duration-500" />
+                                                    Refresh Player
+                                                </button>
+                                                <button
+                                                    onClick={toggleFullscreen}
+                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
+                                                >
+                                                    <Maximize size={14} />
+                                                    Fullscreen
+                                                </button>
+                                                <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-white/10 mx-2" />
+                                                <p className="hidden md:block text-[9px] font-bold text-gray-400 uppercase italic">
+                                                    Use these controls to avoid clicking ads inside the video
+                                                </p>
+                                            </div>
                                             {/* Top Metadata Row */}
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="flex-1">
+                                            <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                                                <div className="w-full md:flex-1">
                                                     <div className="flex flex-wrap items-center gap-2 mb-2">
                                                         <Link
                                                             href="/"
@@ -290,7 +348,7 @@ export const LiveSection: React.FC = () => {
                                                             </span>
                                                         ))}
                                                     </div>
-                                                    <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white leading-tight">
+                                                    <h3 className="text-base sm:text-lg md:text-2xl font-black text-gray-900 dark:text-white leading-tight">
                                                         {selectedLink.heading || selectedLink.title}
                                                     </h3>
                                                 </div>
@@ -439,6 +497,71 @@ export const LiveSection: React.FC = () => {
                                             </div>
                                         </button>
                                     ))}
+                                </div>
+                            </div>
+
+                            {/* ON DEMAND SECTION */}
+                            <div className="mt-12 bg-white dark:bg-gray-800/50 rounded-3xl p-6 md:p-10 border border-gray-200 dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
+                                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none group-hover/ondemand:scale-110 transition-transform duration-500">
+                                    <MessageCircle size={120} className="text-red-500" />
+                                </div>
+                                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                                    <div>
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                                            <Sparkles size={12} />
+                                            Request Live Channels
+                                        </div>
+                                        <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-4">
+                                            On <span className="text-red-600">Demand</span> Request
+                                        </h2>
+                                        <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base leading-relaxed mb-6">
+                                            Can't find your match? Send us a request! Tell us which channel or match you want to watch, and we'll try to add it for you instantly.
+                                        </p>
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg">
+                                                    <CheckCircle size={16} />
+                                                </div>
+                                                <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fast Support</p>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg">
+                                                    <CheckCircle size={16} />
+                                                </div>
+                                                <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">24/7 Monitoring</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <form onSubmit={handleOnDemandSubmit} className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-2xl border border-gray-100 dark:border-white/5 shadow-2xl space-y-4">
+                                        <div>
+                                            <input
+                                                type="text"
+                                                placeholder="Your Name"
+                                                value={onDemandName}
+                                                onChange={(e) => setOnDemandName(e.target.value)}
+                                                className="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 outline-none focus:border-red-500/50 text-gray-900 dark:text-white text-sm transition-all"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <textarea
+                                                placeholder="Name of Match or Channel  (e.g. Star Sports HD 1, IPL Match)"
+                                                value={onDemandMessage}
+                                                onChange={(e) => setOnDemandMessage(e.target.value)}
+                                                rows={3}
+                                                className="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 outline-none focus:border-red-500/50 text-gray-900 dark:text-white text-sm transition-all"
+                                                required
+                                            ></textarea>
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl shadow-lg shadow-red-600/20 hover:shadow-red-600/40 active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
+                                        >
+                                            Send Request
+                                            <MessageCircle size={16} />
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
