@@ -52,6 +52,52 @@ export const LiveSection: React.FC = () => {
             }
         });
         getHighlights().then(setHighlights);
+
+        // Aggressively remove third-party social bars and branding
+        const removeThirdPartyElements = () => {
+            // 1. Target by known IDs and classes
+            document.querySelectorAll('[id*="yosin"], [class*="yosin"], [href*="yosintv"], #text, .yosin-bar-shared, .yosin-close-btn').forEach(el => el.remove());
+
+            // 2. Scan for specific branding text in any element
+            const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+            let node;
+            const nodesToRemove: Node[] = [];
+
+            while (node = walkers.nextNode()) {
+                if (node.textContent && (
+                    node.textContent.includes('yosin-tv.net') ||
+                    node.textContent.includes('yosintv') ||
+                    node.textContent.includes('YoSinTV')
+                )) {
+                    nodesToRemove.push(node);
+                }
+            }
+
+            nodesToRemove.forEach(textNode => {
+                if (textNode.parentElement && textNode.parentElement !== document.body) {
+                    textNode.parentElement.remove();
+                }
+            });
+
+            // 3. Check for specific watermark container
+            document.querySelectorAll('div').forEach(div => {
+                if (div.textContent?.includes('yosin-tv.net')) {
+                    div.remove();
+                }
+            });
+        };
+
+        const observer = new MutationObserver(removeThirdPartyElements);
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Initial and periodic checks
+        removeThirdPartyElements();
+        const interval = setInterval(removeThirdPartyElements, 1000);
+
+        return () => {
+            observer.disconnect();
+            clearInterval(interval);
+        };
     }, []);
 
     useEffect(() => {
@@ -271,15 +317,27 @@ export const LiveSection: React.FC = () => {
                                 >
                                     <div className="aspect-video w-full relative">
                                         {showAd ? (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 group">
-                                                <div className="w-full h-full flex items-center justify-center p-4 md:p-8">
-                                                    <div className="w-full max-w-5xl aspect-video bg-black/20 rounded-2xl overflow-hidden border border-white/5 flex items-center justify-center">
-                                                        <GoogleAdSense
-                                                            slot="7838572857"
-                                                            className="w-full h-full"
-                                                            format="auto"
-                                                            responsive={true}
-                                                        />
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/95 backdrop-blur-sm group z-50">
+                                                <div className="w-full h-full flex items-center justify-center p-4 md:p-12">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 w-full max-w-5xl">
+                                                        {/* Ad Unit 1 */}
+                                                        <div className="aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl">
+                                                            <GoogleAdSense
+                                                                slot="7838572857"
+                                                                className="w-full h-full"
+                                                                format="rectangle"
+                                                                responsive={true}
+                                                            />
+                                                        </div>
+                                                        {/* Ad Unit 2 */}
+                                                        <div className="aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl">
+                                                            <GoogleAdSense
+                                                                slot="7838572857"
+                                                                className="w-full h-full"
+                                                                format="rectangle"
+                                                                responsive={true}
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -310,15 +368,22 @@ export const LiveSection: React.FC = () => {
                                                 )}
                                             </div>
                                         ) : selectedLink && (
-                                            <iframe
-                                                key={playerKey}
-                                                src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                                title={selectedLink.heading || selectedLink.title}
-                                                className="w-full h-full border-0"
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
-                                                allowFullScreen
-                                                referrerPolicy="no-referrer"
-                                            />
+                                            <div className="absolute inset-0 overflow-hidden bg-black flex items-center justify-center">
+                                                <div className="relative w-full h-[calc(100%+100px)] -top-[50px]">
+                                                    <iframe
+                                                        key={playerKey}
+                                                        src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                                        title={selectedLink.heading || selectedLink.title}
+                                                        className="w-full h-full border-0 pointer-events-auto"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
+                                                        allowFullScreen
+                                                        referrerPolicy="no-referrer"
+                                                    />
+                                                </div>
+                                                {/* Thick anti-branding overlays */}
+                                                <div className="absolute top-0 left-0 right-0 h-2 bg-black z-30" />
+                                                <div className="absolute bottom-0 left-0 right-0 h-4 bg-black z-30" />
+                                            </div>
                                         )}
                                     </div>
                                     {!showAd && selectedLink && (
