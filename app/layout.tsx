@@ -121,9 +121,9 @@ export default function RootLayout({
                         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
                     />
                     <Script
-                        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8714969386201280"
+                        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8714969386201280`}
+                        strategy="afterInteractive"
                         crossOrigin="anonymous"
-                        strategy="lazyOnload"
                     />
                     <main className="flex-grow">
                         {children}

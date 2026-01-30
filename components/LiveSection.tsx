@@ -149,6 +149,8 @@ export const LiveSection: React.FC = () => {
         gap: '1rem',
         arrows: true,
         pagination: false,
+        drag: true,
+        snap: true,
         breakpoints: {
             1024: { perPage: 3 },
             768: { perPage: 2 },
@@ -158,12 +160,15 @@ export const LiveSection: React.FC = () => {
 
     const splideOptionsTrending = {
         type: 'loop',
-        drag: 'free',
+        drag: true,
+        snap: true,
         focus: 'center',
         perPage: 6,
         gap: '1.5rem',
         arrows: false,
         pagination: false,
+        trimSpace: false,
+        flickPower: 300,
         breakpoints: {
             1280: { perPage: 5 },
             1024: { perPage: 4 },
@@ -189,36 +194,57 @@ export const LiveSection: React.FC = () => {
                         </p>
                     </div>
 
+                    <div className="flex justify-center">
+                        <GoogleAdSense
+                            slot="7838572857"
+                            format="horizontal"
+                            responsive={true}
+                            minHeight={90}
+                        />
+                    </div>
+
                     {links.filter(l => l.isTrending).length > 0 && (
                         <div className="space-y-4">
                             <div className="flex items-center gap-3">
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-bold uppercase tracking-wider">
+                                <button
+                                    onClick={() => document.getElementById('trending-slider')?.scrollIntoView({ behavior: 'smooth' })}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-bold uppercase tracking-wider hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors cursor-pointer"
+                                >
                                     <TrendingUp size={16} className="animate-pulse" />
                                     Trending Now
-                                </div>
+                                </button>
                             </div>
-                            <Splide options={splideOptionsTrending}>
+                            <Splide id="trending-slider" options={splideOptionsTrending}>
                                 {links.filter(l => l.isTrending).map((link) => (
                                     <SplideSlide key={link.id}>
                                         <button
                                             onClick={() => handleLinkClick(link)}
                                             className={`w-full block group text-left ${selectedLink?.id === link.id ? 'scale-95 transition-transform' : ''}`}
                                         >
-                                            <div className={`flex items-center gap-4 p-3 bg-white dark:bg-surface-dark-900 rounded-card border transition-all ${selectedLink?.id === link.id
-                                                ? 'border-primary-light ring-2 ring-primary-light/20'
-                                                : 'border-slate-200 dark:border-slate-800 group-hover:border-primary-light/50'}`}
+                                            <div className={`flex items-center gap-4 p-3 bg-white dark:bg-surface-dark-900 rounded-card border transition-all active:scale-[0.97] cursor-pointer ${selectedLink?.id === link.id
+                                                ? 'border-primary-light ring-2 ring-primary-light/20 bg-primary-50/10'
+                                                : 'border-slate-200 dark:border-slate-800 group-hover:border-primary-light/50 shadow-sm hover:shadow-md'}`}
                                             >
-                                                <div className={`flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${selectedLink?.id === link.id
-                                                    ? 'bg-gradient-to-br from-primary-light to-primary-dark text-white scale-110'
-                                                    : 'bg-slate-100 dark:bg-slate-800 text-primary-light group-hover:scale-110'
-                                                    }`}>
-                                                    <span className="label-micro !text-[8px] mb-1">LIVE</span>
-                                                    <div className="relative flex items-center justify-center">
-                                                        <span className={`flex h-2 w-2 ${selectedLink?.id === link.id ? 'text-white' : 'text-primary-light'}`}>
-                                                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-light'}`}></span>
-                                                            <span className={`relative inline-flex rounded-full h-2 w-2 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-light'}`}></span>
-                                                        </span>
+                                                <div className="relative group/icon">
+                                                    <div className={`flex-shrink-0 w-14 h-14 rounded-2xl flex flex-col items-center justify-center transition-all duration-500 relative z-10 overflow-hidden ${selectedLink?.id === link.id
+                                                        ? 'bg-gradient-to-br from-primary-600 via-primary-dark to-orange-500 text-white shadow-lg shadow-primary-500/40 ring-2 ring-white/20'
+                                                        : 'bg-gray-100 dark:bg-white/5 text-primary-light group-hover/icon:bg-primary-50 dark:group-hover/icon:bg-primary-900/20'
+                                                        }`}>
+                                                        {/* Glow effect for selected state */}
+                                                        {selectedLink?.id === link.id && (
+                                                            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent animate-pulse" />
+                                                        )}
+
+                                                        <span className={`text-[8px] font-black tracking-[0.2em] mb-1 transition-colors ${selectedLink?.id === link.id ? 'text-white/90' : 'text-gray-400 group-hover/icon:text-primary-600'}`}>LIVE</span>
+                                                        <div className="relative">
+                                                            <div className={`h-3 w-3 rounded-full flex items-center justify-center ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`}>
+                                                                <div className={`absolute h-full w-full rounded-full animate-ping opacity-75 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`} />
+                                                                <div className={`h-1.5 w-1.5 rounded-full ${selectedLink?.id === link.id ? 'bg-primary-600' : 'bg-white'}`} />
+                                                            </div>
+                                                        </div>
                                                     </div>
+                                                    {/* Decorative ring */}
+                                                    <div className={`absolute -inset-1 rounded-[1.25rem] opacity-0 group-hover/icon:opacity-100 transition-opacity duration-500 border border-primary-light/30 ${selectedLink?.id === link.id ? 'opacity-100 animate-pulse' : ''}`} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <h3 className={`text-[8px] md:text-[11px] font-bold line-clamp-2 leading-tight transition-colors ${selectedLink?.id === link.id
@@ -422,6 +448,13 @@ export const LiveSection: React.FC = () => {
                                             </button>
                                         ))}
                                     </div>
+                                    <div className="flex justify-center mt-6">
+                                        <GoogleAdSense
+                                            slot="7838572857"
+                                            format="horizontal"
+                                            responsive={true}
+                                        />
+                                    </div>
                                 </div>
                             )}
 
@@ -442,20 +475,24 @@ export const LiveSection: React.FC = () => {
                                                     }`}
                                             >
                                                 {selectedLink?.id === link.id && (
-                                                    <div className="absolute top-4 right-4 flex items-center gap-1">
-                                                        <span className="relative flex h-2 w-2">
-                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-light opacity-75"></span>
-                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-light"></span>
+                                                    <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
+                                                        <span className="relative flex h-1.5 w-1.5">
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
+                                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
                                                         </span>
+                                                        <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
                                                     </div>
                                                 )}
 
                                                 <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
-                                                    <div className={`flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${selectedLink?.id === link.id
-                                                        ? 'bg-gradient-to-br from-primary-light to-primary-dark text-white scale-110'
-                                                        : 'bg-slate-100 dark:bg-slate-800 text-primary-light group-hover:scale-110'
+                                                    <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
+                                                        ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
+                                                        : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
                                                         }`}>
-                                                        <Play size={20} fill="currentColor" className="ml-1" />
+                                                        {selectedLink?.id === link.id && (
+                                                            <div className="absolute inset-0 bg-white/10 animate-pulse" />
+                                                        )}
+                                                        <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
                                                     </div>
                                                     <div className="flex-1 min-w-0 w-full">
                                                         <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
@@ -547,6 +584,14 @@ export const LiveSection: React.FC = () => {
                         </div>
                     )}
 
+                    <div className="flex justify-center my-4">
+                        <GoogleAdSense
+                            slot="7838572857"
+                            format="auto"
+                            responsive={true}
+                        />
+                    </div>
+
                     <div className="space-y-4">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div className="flex items-center gap-4">
@@ -615,8 +660,13 @@ export const LiveSection: React.FC = () => {
                                                 >
                                                     <div>
                                                         <div className="flex items-center gap-2 mb-3">
-                                                            <span className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
-                                                            <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Live Now</span>
+                                                            <div className="flex items-center gap-2 px-2.5 py-1 bg-red-50 dark:bg-red-950/30 rounded-full border border-red-100 dark:border-red-900/20">
+                                                                <span className="relative flex h-1.5 w-1.5">
+                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span>
+                                                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-600"></span>
+                                                                </span>
+                                                                <span className="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest">Live Now</span>
+                                                            </div>
                                                         </div>
                                                         <h3 className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-red-600 transition-colors leading-relaxed">
                                                             {match.title}
@@ -674,7 +724,7 @@ export const LiveSection: React.FC = () => {
                                                     <div
                                                         key={item.id}
                                                         onClick={() => handleLinkClick(item as any)}
-                                                        className="group cursor-pointer bg-white dark:bg-surface-dark-900 rounded-card overflow-hidden border border-slate-200 dark:border-slate-800 hover:shadow-2xl transition-all duration-300"
+                                                        className="group cursor-pointer bg-white dark:bg-surface-dark-900 rounded-card overflow-hidden border border-slate-200 dark:border-slate-800 hover:shadow-2xl transition-all duration-300 active:scale-[0.98]"
                                                     >
                                                         <div className="aspect-video relative bg-slate-100 dark:bg-slate-800 overflow-hidden">
                                                             <img
@@ -708,6 +758,14 @@ export const LiveSection: React.FC = () => {
                             ))}
                         </div>
                     )}
+
+                    <div className="flex justify-center my-8">
+                        <GoogleAdSense
+                            slot="7838572857"
+                            format="horizontal"
+                            responsive={true}
+                        />
+                    </div>
 
                     <div className="relative group/cta">
                         <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-secondary-600/20 blur-[100px] rounded-full group-hover:scale-110 transition-transform duration-1000" />
