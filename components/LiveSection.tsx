@@ -196,12 +196,12 @@ export const LiveSection: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="flex justify-center">
+                    <div className="w-full flex justify-center min-h-[100px] my-4 bg-gray-50 dark:bg-white/5 rounded-xl items-center overflow-hidden">
                         <GoogleAdSense
                             slot="7838572857"
                             format="horizontal"
                             responsive={true}
-                            minHeight={90}
+                            style={{ display: 'block', width: '100%' }}
                         />
                     </div>
 
@@ -274,10 +274,11 @@ export const LiveSection: React.FC = () => {
                                     <div className="aspect-video w-full relative">
                                         {showAd ? (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/95 backdrop-blur-sm group z-50">
-                                                <div className="w-full h-full flex items-center justify-center p-4 md:p-12">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 w-full max-w-5xl px-4">
-                                                        {/* Ad Unit 1 */}
-                                                        <div className="aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl">
+                                                <div className="w-full h-full flex items-center justify-center p-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl place-items-center">
+                                                        {/* Ad Unit 1 - Centered Square */}
+                                                        <div className="aspect-square w-full max-w-[336px] bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
+                                                            <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-4xl select-none pointer-events-none">ADS</div>
                                                             <GoogleAdSense
                                                                 slot="7838572857"
                                                                 className="w-full h-full"
@@ -285,8 +286,9 @@ export const LiveSection: React.FC = () => {
                                                                 responsive={true}
                                                             />
                                                         </div>
-                                                        {/* Ad Unit 2 - Hidden on Mobile */}
-                                                        <div className="hidden md:flex aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 items-center justify-center shadow-2xl">
+                                                        {/* Ad Unit 2 - Hidden on Mobile, Side-by-Side on Desktop */}
+                                                        <div className="hidden md:flex aspect-square w-full max-w-[336px] bg-black/40 rounded-2xl overflow-hidden border border-white/10 items-center justify-center shadow-2xl relative">
+                                                            <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-4xl select-none pointer-events-none">ADS</div>
                                                             <GoogleAdSense
                                                                 slot="7838572857"
                                                                 className="w-full h-full"
@@ -462,11 +464,12 @@ export const LiveSection: React.FC = () => {
                                             </button>
                                         ))}
                                     </div>
-                                    <div className="flex justify-center mt-6">
+                                    <div className="w-full flex justify-center min-h-[100px] mt-8 mb-4 bg-gray-50 dark:bg-white/5 rounded-xl items-center overflow-hidden">
                                         <GoogleAdSense
                                             slot="7838572857"
                                             format="horizontal"
                                             responsive={true}
+                                            style={{ display: 'block', width: '100%' }}
                                         />
                                     </div>
                                 </div>
