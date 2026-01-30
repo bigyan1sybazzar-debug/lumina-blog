@@ -73,26 +73,3 @@
   content-visibility: auto;
   contain-intrinsic-size: 1px 500px;
 }
-
-/* Hard-hide third-party injected branding */
-[id*="yosin"],
-[class*="yosin"],
-[href*="yosintv"],
-#yosin-social-container,
-#yosin-tg-bar,
-#yosin-wa-bar,
-.yosin-bar-shared,
-.yosin-close-btn,
-#text {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  height: 0 !important;
-  width: 0 !important;
-  position: fixed !important;
-  top: -9999px !important;
-  left: -9999px !important;
-  z-index: -9999 !important;
-  transform: scale(0) !important;
-}
