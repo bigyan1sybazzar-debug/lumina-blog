@@ -5,7 +5,7 @@ import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
 import GoogleAdSense from './GoogleAdSense';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
@@ -157,41 +157,45 @@ export const LiveSection: React.FC = () => {
     };
 
     const splideOptionsTrending = {
+        type: 'loop',
+        drag: 'free',
+        focus: 'center',
         perPage: 6,
-        perMove: 1,
-        gap: '0.75rem',
+        gap: '1.5rem',
         arrows: false,
         pagination: false,
-        drag: 'free',
-        snap: true,
         breakpoints: {
-            1024: { perPage: 5 },
-            768: { perPage: 4.5 },
-            640: { perPage: 3.5 },
-            480: { perPage: 3.5, gap: '0.5rem' },
+            1280: { perPage: 5 },
+            1024: { perPage: 4 },
+            768: { perPage: 3 },
+            640: { perPage: 2.2 },
+            480: { perPage: 1.8, gap: '1rem' },
         },
     };
 
     return (
-        <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 relative overflow-hidden p-0 m-0">
+        <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen relative overflow-hidden">
+            {/* Design System Background Gradients */}
+            <div className="absolute inset-0 bg-gradient-to-b from-primary-light/5 via-transparent to-primary-light/5 opacity-50 pointer-events-none" />
 
-            <div className="py-4">
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-red-500/10 rounded-full blur-[120px] -mr-64 -mt-64 animate-pulse" />
-                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary-500/10 rounded-full blur-[120px] -ml-64 -mb-64 animate-pulse" style={{ animationDelay: '1s' }} />
-
-                <div className="max-w-7xl mx-auto px-4 relative z-10">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30 border rounded-2xl p-3 mb-6 shadow-sm">
-                        <p className="text-[10px] md:text-xs font-bold text-blue-900 dark:text-blue-300 flex items-center gap-2">
-                            <span className="text-base">⏳</span>
-                            <span>Please be patient — HD channels may take a moment to load</span>
+            <div className="py-6 md:py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="space-y-4 md:space-y-8">
+                    <div className="bg-accent-success/5 border-accent-success/20 border rounded-card p-4 shadow-sm flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-accent-success/20 flex items-center justify-center text-accent-success">
+                            <Clock size={20} />
+                        </div>
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                            Please be patient — HD channels may take a moment to load
                         </p>
                     </div>
 
                     {links.filter(l => l.isTrending).length > 0 && (
-                        <div className="mb-4 md:mb-8">
-                            <div className="flex items-center gap-2 mb-2 md:mb-4">
-                                <Radio size={16} className="text-red-500 animate-pulse" />
-                                <h2 className="text-[10px] md:text-xs font-black uppercase tracking-widest text-gray-900 dark:text-white">Trending Channels</h2>
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-bold uppercase tracking-wider">
+                                    <TrendingUp size={16} className="animate-pulse" />
+                                    Trending Now
+                                </div>
                             </div>
                             <Splide options={splideOptionsTrending}>
                                 {links.filter(l => l.isTrending).map((link) => (
@@ -200,19 +204,19 @@ export const LiveSection: React.FC = () => {
                                             onClick={() => handleLinkClick(link)}
                                             className={`w-full block group text-left ${selectedLink?.id === link.id ? 'scale-95 transition-transform' : ''}`}
                                         >
-                                            <div className={`flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 bg-white/50 dark:bg-white/5 rounded-xl border transition-all ${selectedLink?.id === link.id
-                                                ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
-                                                : 'border-gray-100 dark:border-white/5 group-hover:border-red-500/30'}`}
+                                            <div className={`flex items-center gap-4 p-3 bg-white dark:bg-surface-dark-900 rounded-card border transition-all ${selectedLink?.id === link.id
+                                                ? 'border-primary-light ring-2 ring-primary-light/20'
+                                                : 'border-slate-200 dark:border-slate-800 group-hover:border-primary-light/50'}`}
                                             >
-                                                <div className={`w-8 h-8 md:w-12 md:h-12 flex-shrink-0 relative rounded-lg overflow-hidden flex flex-col items-center justify-center transition-colors shadow-inner ${selectedLink?.id === link.id
-                                                    ? 'bg-red-600 text-white'
-                                                    : 'bg-white dark:bg-red-950/20 border border-red-500/20 text-red-600'}`}
-                                                >
-                                                    <span className="text-[6px] md:text-[9px] font-black uppercase tracking-tighter leading-none mb-0.5 md:mb-1">LIVE</span>
+                                                <div className={`flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${selectedLink?.id === link.id
+                                                    ? 'bg-gradient-to-br from-primary-light to-primary-dark text-white scale-110'
+                                                    : 'bg-slate-100 dark:bg-slate-800 text-primary-light group-hover:scale-110'
+                                                    }`}>
+                                                    <span className="label-micro !text-[8px] mb-1">LIVE</span>
                                                     <div className="relative flex items-center justify-center">
-                                                        <span className={`flex h-1.5 w-1.5 md:h-2 md:w-2 ${selectedLink?.id === link.id ? 'text-white' : 'text-red-500'}`}>
-                                                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-red-500'}`}></span>
-                                                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 md:h-2 md:w-2 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-red-500'}`}></span>
+                                                        <span className={`flex h-2 w-2 ${selectedLink?.id === link.id ? 'text-white' : 'text-primary-light'}`}>
+                                                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-light'}`}></span>
+                                                            <span className={`relative inline-flex rounded-full h-2 w-2 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-light'}`}></span>
                                                         </span>
                                                     </div>
                                                 </div>
@@ -233,7 +237,7 @@ export const LiveSection: React.FC = () => {
                     )}
 
                     {links.length > 0 && (
-                        <div className="flex flex-col gap-6">
+                        <div className="flex flex-col gap-4 md:gap-6">
                             {(selectedLink || showAd) && (
                                 <div
                                     ref={playerRef}
@@ -292,7 +296,7 @@ export const LiveSection: React.FC = () => {
                                         )}
                                     </div>
                                     {!showAd && selectedLink && (
-                                        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-4 md:p-6 border-t border-gray-200 dark:border-white/10">
+                                        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-4 md:p-5 border-t border-gray-200 dark:border-white/10">
                                             <div className="flex flex-wrap items-center gap-2 mb-6 p-2 bg-gray-100/50 dark:bg-white/5 rounded-2xl border border-gray-200/50 dark:border-white/5">
                                                 <button
                                                     onClick={handleRefresh}
@@ -422,118 +426,120 @@ export const LiveSection: React.FC = () => {
                             )}
 
                             <div>
-                                <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                    <Tv size={20} className="text-red-500 hidden md:block" />
-                                    Available Channels
-                                </h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                                    {filteredLinks.map((link) => (
-                                        <button
-                                            key={link.id}
-                                            onClick={() => handleLinkClick(link)}
-                                            className={`group text-left relative overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/50 dark:to-gray-900/50 backdrop-blur-xl p-4 rounded-2xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${selectedLink?.id === link.id
-                                                ? 'border-red-500 shadow-lg shadow-red-500/20'
-                                                : 'border-gray-200/50 dark:border-white/10 hover:border-red-500/50'
-                                                }`}
-                                        >
-                                            {selectedLink?.id === link.id && (
-                                                <div className="absolute top-2 right-2 flex items-center gap-1">
-                                                    <span className="relative flex h-2 w-2">
-                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                                    </span>
-                                                </div>
-                                            )}
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3">
+                                        <Tv size={24} className="text-secondary-light" />
+                                        <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {filteredLinks.map((link) => (
+                                            <button
+                                                key={link.id}
+                                                onClick={() => handleLinkClick(link)}
+                                                className={`group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
+                                                    ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
+                                                    : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                    }`}
+                                            >
+                                                {selectedLink?.id === link.id && (
+                                                    <div className="absolute top-4 right-4 flex items-center gap-1">
+                                                        <span className="relative flex h-2 w-2">
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-light opacity-75"></span>
+                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-light"></span>
+                                                        </span>
+                                                    </div>
+                                                )}
 
-                                            <div className="flex flex-col items-center text-center gap-2 md:flex-row md:text-left md:gap-3">
-                                                <div className={`flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${selectedLink?.id === link.id
-                                                    ? 'bg-gradient-to-br from-red-500 to-red-600 text-white scale-110'
-                                                    : 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 group-hover:scale-110'
-                                                    }`}>
-                                                    <Play size={18} fill="currentColor" className="ml-0.5 md:w-5 md:h-5" />
-                                                </div>
-                                                <div className="flex-1 min-w-0 w-full">
-                                                    <h4 className={`font-bold text-xs md:text-sm line-clamp-2 transition-colors ${selectedLink?.id === link.id
-                                                        ? 'text-red-600 dark:text-red-400'
-                                                        : 'text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400'
+                                                <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
+                                                    <div className={`flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${selectedLink?.id === link.id
+                                                        ? 'bg-gradient-to-br from-primary-light to-primary-dark text-white scale-110'
+                                                        : 'bg-slate-100 dark:bg-slate-800 text-primary-light group-hover:scale-110'
                                                         }`}>
-                                                        {link.heading}
-                                                    </h4>
-                                                    {link.tags && link.tags.length > 0 && (
-                                                        <div className="flex flex-wrap justify-center md:justify-start gap-1 mt-1">
-                                                            {link.tags.slice(0, 1).map((tag, i) => (
-                                                                <span key={i} className="text-[7px] md:text-[8px] bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-bold uppercase">
-                                                                    {tag}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    )}
+                                                        <Play size={20} fill="currentColor" className="ml-1" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 w-full">
+                                                        <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
+                                                            ? 'text-primary-dark'
+                                                            : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                            }`}>
+                                                            {link.heading}
+                                                        </h4>
+                                                        {link.tags && link.tags.length > 0 && (
+                                                            <div className="flex flex-wrap justify-center md:justify-start gap-1 mt-2">
+                                                                {link.tags.slice(0, 1).map((tag, i) => (
+                                                                    <span key={i} className="label-micro px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">
+                                                                        {tag}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </button>
-                                    ))}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="mt-12 bg-white dark:bg-gray-800/50 rounded-3xl p-6 md:p-10 border border-gray-200 dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
+                            <div className="mt-4 bg-white dark:bg-gray-800/50 rounded-3xl p-6 md:p-10 border border-gray-200 dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
                                 <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none group-hover/ondemand:scale-110 transition-transform duration-500">
                                     <MessageCircle size={120} className="text-red-500" />
                                 </div>
                                 <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
                                     <div>
-                                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-light/10 text-primary-light rounded-full label-micro !text-[10px] mb-4">
                                             <Sparkles size={12} />
                                             Request Live Channels
                                         </div>
-                                        <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-4">
-                                            On <span className="text-red-600">Demand</span> Request
+                                        <h2 className="text-gray-900 dark:text-white mb-4">
+                                            On <span className="gradient-text">Demand</span> Request
                                         </h2>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base leading-relaxed mb-6">
+                                        <p className="text-gray-500 dark:text-gray-400 mb-6">
                                             Can't find your match? Send us a request! Tell us which channel or match you want to watch, and we'll try to add it for you instantly.
                                         </p>
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg">
+                                                <div className="p-2 bg-accent-success/10 text-accent-success rounded-lg">
                                                     <CheckCircle size={16} />
                                                 </div>
-                                                <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fast Support</p>
+                                                <p className="label-micro !text-xs">Fast Support</p>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg">
+                                                <div className="p-2 bg-accent-success/10 text-accent-success rounded-lg">
                                                     <CheckCircle size={16} />
                                                 </div>
-                                                <p className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">24/7 Monitoring</p>
+                                                <p className="label-micro !text-xs">24/7 Monitoring</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <form onSubmit={handleOnDemandSubmit} className="bg-white dark:bg-gray-900 p-6 md:p-8 rounded-2xl border border-gray-100 dark:border-white/5 shadow-2xl space-y-4">
+                                    <form onSubmit={handleOnDemandSubmit} className="bg-white dark:bg-surface-dark-900 p-8 rounded-card border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
                                         <div>
                                             <input
                                                 type="text"
                                                 placeholder="Your Name"
                                                 value={onDemandName}
                                                 onChange={(e) => setOnDemandName(e.target.value)}
-                                                className="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 outline-none focus:border-red-500/50 text-gray-900 dark:text-white text-sm transition-all"
+                                                className="input-field"
                                                 required
                                             />
                                         </div>
                                         <div>
                                             <textarea
-                                                placeholder="Name of Match or Channel  (e.g. Star Sports HD 1, IPL Match)"
+                                                placeholder="Name of Match or Channel (e.g. Star Sports HD 1, IPL Match)"
                                                 value={onDemandMessage}
                                                 onChange={(e) => setOnDemandMessage(e.target.value)}
                                                 rows={3}
-                                                className="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 outline-none focus:border-red-500/50 text-gray-900 dark:text-white text-sm transition-all"
+                                                className="input-field"
                                                 required
                                             ></textarea>
                                         </div>
                                         <button
                                             type="submit"
-                                            className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl shadow-lg shadow-red-600/20 hover:shadow-red-600/40 active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs"
+                                            className="w-full btn-primary"
                                         >
                                             Send Request
-                                            <MessageCircle size={16} />
+                                            <MessageCircle size={16} className="ml-2 inline" />
                                         </button>
                                     </form>
                                 </div>
@@ -541,26 +547,24 @@ export const LiveSection: React.FC = () => {
                         </div>
                     )}
 
-                    <div className="mt-24">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                    <div className="space-y-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-2xl bg-gradient-to-br from-primary-500/10 to-red-500/10 border border-primary-500/20">
-                                    <Activity className="w-7 h-7 text-primary-500" />
+                                <div className="p-3 rounded-2xl bg-primary-light/10 border border-primary-light/20">
+                                    <Activity className="w-7 h-7 text-primary-light" />
                                 </div>
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-xs font-black text-primary-500 uppercase tracking-wider">Real-Time Updates</span>
-                                    </div>
-                                    <h2 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white">
-                                        Live Match <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-500 to-red-500">Scores</span>
+                                <div className="space-y-1">
+                                    <span className="label-micro !text-primary-light">Real-Time Updates</span>
+                                    <h2 className="text-gray-900 dark:text-white">
+                                        Live Match <span className="gradient-text">Scores</span>
                                     </h2>
                                 </div>
                             </div>
-                            <div className="flex bg-white dark:bg-gray-800/50 p-1.5 rounded-2xl shadow-lg border border-gray-200 dark:border-white/10 self-start md:self-auto">
+                            <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl shadow-inner self-start md:self-auto">
                                 <button
                                     onClick={() => setActiveScoreTab('football')}
-                                    className={`px-6 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${activeScoreTab === 'football'
-                                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-xl shadow-red-500/30 scale-105'
+                                    className={`px-6 py-3 rounded-xl label-micro !text-[11px] transition-all duration-300 ${activeScoreTab === 'football'
+                                        ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
                                         : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                         }`}
                                 >
@@ -568,8 +572,8 @@ export const LiveSection: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setActiveScoreTab('cricket')}
-                                    className={`px-6 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${activeScoreTab === 'cricket'
-                                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-xl shadow-primary-500/30 scale-105'
+                                    className={`px-6 py-3 rounded-xl label-micro !text-[11px] transition-all duration-300 ${activeScoreTab === 'cricket'
+                                        ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
                                         : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                         }`}
                                 >
@@ -578,7 +582,7 @@ export const LiveSection: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-[2.5rem] p-6 md:p-10 border border-gray-200/50 dark:border-white/10 min-h-[400px] overflow-hidden backdrop-blur-xl shadow-2xl">
+                        <div className="relative bg-white dark:bg-surface-dark-900 rounded-card p-6 md:p-10 border border-slate-200 dark:border-slate-800 min-h-[400px] overflow-hidden shadow-sm">
                             <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-primary-500/5 to-red-500/5 pointer-events-none" />
                             <div className="absolute top-0 right-0 w-96 h-96 bg-red-500/10 rounded-full blur-3xl" />
                             <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl" />
@@ -642,23 +646,21 @@ export const LiveSection: React.FC = () => {
                     </div>
 
                     {highlights.length > 0 && (
-                        <div className="mt-24 space-y-12">
+                        <div className="space-y-8">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-2xl bg-gradient-to-br from-yellow-500/10 to-primary-500/10 border border-yellow-500/20">
-                                    <Sparkles className="w-7 h-7 text-yellow-500" />
+                                <div className="p-3 rounded-2xl bg-accent-premium/10 border border-accent-premium/20">
+                                    <Sparkles className="w-7 h-7 text-accent-premium" />
                                 </div>
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-xs font-black text-yellow-500 uppercase tracking-wider">Best Moments</span>
-                                    </div>
-                                    <h2 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white">
-                                        Match <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-primary-500">Highlights</span>
+                                <div className="space-y-1">
+                                    <span className="label-micro !text-accent-premium">Best Moments</span>
+                                    <h2 className="text-gray-900 dark:text-white">
+                                        Match <span className="text-accent-premium">Highlights</span>
                                     </h2>
                                 </div>
                             </div>
 
                             {Object.entries(groupedHighlights).map(([category, items]) => (
-                                <div key={category} className="space-y-6">
+                                <div key={category} className="space-y-4">
                                     <div className="flex items-center gap-3">
                                         <div className="w-1 h-6 bg-primary-600 rounded-full" />
                                         <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 uppercase tracking-tight">
@@ -672,29 +674,29 @@ export const LiveSection: React.FC = () => {
                                                     <div
                                                         key={item.id}
                                                         onClick={() => handleLinkClick(item as any)}
-                                                        className="group cursor-pointer bg-white dark:bg-[#111] rounded-2xl overflow-hidden border border-gray-100 dark:border-white/5 hover:shadow-2xl transition-all duration-300"
+                                                        className="group cursor-pointer bg-white dark:bg-surface-dark-900 rounded-card overflow-hidden border border-slate-200 dark:border-slate-800 hover:shadow-2xl transition-all duration-300"
                                                     >
-                                                        <div className="aspect-video relative bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                                                        <div className="aspect-video relative bg-slate-100 dark:bg-slate-800 overflow-hidden">
                                                             <img
                                                                 src={item.thumbnailUrl || `https://img.youtube.com/vi/${item.youtubeUrl.split('/').pop()?.split('?')[0]}/mqdefault.jpg`}
                                                                 alt={item.title}
                                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                             />
                                                             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                                                                <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-all duration-300">
-                                                                    <Play size={20} fill="currentColor" />
+                                                                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-all duration-300">
+                                                                    <Play size={24} fill="currentColor" />
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div className="p-4">
-                                                            <h4 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 min-h-[40px] group-hover:text-primary-500 transition-colors">
+                                                        <div className="p-5">
+                                                            <h4 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 min-h-[40px] group-hover:text-primary-light transition-colors">
                                                                 {item.title}
                                                             </h4>
-                                                            <div className="flex items-center justify-between mt-3">
-                                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                                            <div className="flex items-center justify-between mt-4 uppercase">
+                                                                <span className="label-micro !text-[9px]">
                                                                     {category}
-                                                                </p>
-                                                                <Tv size={12} className="text-gray-300" />
+                                                                </span>
+                                                                <Tv size={14} className="text-slate-300" />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -707,36 +709,40 @@ export const LiveSection: React.FC = () => {
                         </div>
                     )}
 
-                    <div className="mt-32 relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-red-600/10 via-primary-600/10 to-red-600/10 blur-[150px] rounded-full" />
-                        <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/50 dark:to-gray-900/50 border border-gray-200/50 dark:border-white/10 rounded-[2.5rem] p-10 md:p-16 overflow-hidden backdrop-blur-xl shadow-2xl">
-                            <div className="max-w-3xl mx-auto text-center space-y-8">
-                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-xs font-black uppercase tracking-widest">
+                    <div className="relative group/cta">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-secondary-600/20 blur-[100px] rounded-full group-hover:scale-110 transition-transform duration-1000" />
+                        <div className="relative bg-gradient-to-br from-primary-600 to-primary-dark md:to-secondary-600 rounded-[2.5rem] p-10 md:p-16 overflow-hidden shadow-2xl text-white transform hover:scale-[1.01] transition-all duration-500">
+                            {/* Decorative elements */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32 animate-pulse" />
+                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-2xl -ml-24 -mb-24 animate-pulse" />
+
+                            <div className="max-w-3xl mx-auto text-center space-y-8 relative z-10">
+                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md text-white rounded-full label-micro !text-[11px] border border-white/30">
                                     <Send size={14} />
                                     Stay Updated
                                 </div>
 
                                 <div className="space-y-4">
-                                    <h2 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight">
-                                        Join the <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-primary-500">Live Coverage</span> Inner Circle
+                                    <h2 className="text-white text-3xl md:text-5xl font-black tracking-tight leading-tight">
+                                        Join the <span className="text-yellow-300">Live Coverage</span> Inner Circle
                                     </h2>
-                                    <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
+                                    <p className="text-white/80 text-lg max-w-2xl mx-auto">
                                         Get instant notifications for live match starts, breaking highlights, and exclusive streaming links delivered straight to your inbox.
                                     </p>
                                 </div>
 
                                 {isSubscribed ? (
                                     <div className="flex flex-col items-center gap-4 animate-in zoom-in duration-500">
-                                        <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-500/20">
+                                        <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/30 shadow-lg">
                                             <CheckCircle size={32} />
                                         </div>
-                                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">You're on the list!</h3>
-                                        <p className="text-gray-500">Welcome to the Lumina Blog newsletter.</p>
+                                        <h3 className="text-white font-bold text-xl">You're on the list!</h3>
+                                        <p className="text-white/70">Welcome to the Bigyann community.</p>
                                     </div>
                                 ) : (
-                                    <form onSubmit={handleSubscribe} className="flex flex-col md:flex-row gap-4 max-w-lg mx-auto transform hover:scale-[1.02] transition-transform duration-300">
+                                    <form onSubmit={handleSubscribe} className="flex flex-col md:flex-row gap-4 max-w-lg mx-auto">
                                         <div className="flex-1 relative group">
-                                            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-red-500 transition-colors">
+                                            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-white/50 group-focus-within:text-white transition-colors">
                                                 <Radio size={20} />
                                             </div>
                                             <input
@@ -744,37 +750,30 @@ export const LiveSection: React.FC = () => {
                                                 value={newsletterEmail}
                                                 onChange={(e) => setNewsletterEmail(e.target.value)}
                                                 placeholder="Enter your email address"
-                                                className="w-full pl-14 pr-6 py-5 bg-gray-100 dark:bg-white/5 border-2 border-transparent focus:border-red-500/50 rounded-2xl outline-none text-gray-900 dark:text-white font-medium transition-all"
+                                                className="w-full px-5 py-4 pl-14 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm transition-all"
                                                 required
                                             />
                                         </div>
                                         <button
                                             type="submit"
                                             disabled={submitting}
-                                            className="px-8 py-5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-xl shadow-red-600/20 hover:shadow-red-600/40 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                            className="px-8 py-4 bg-white text-primary-600 font-black rounded-2xl hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all shadow-xl disabled:opacity-50"
                                         >
                                             {submitting ? (
                                                 <RefreshCw className="animate-spin" size={20} />
                                             ) : (
-                                                <>
+                                                <div className="flex items-center gap-2">
                                                     Subscribe Now
                                                     <ChevronRight size={20} />
-                                                </>
+                                                </div>
                                             )}
                                         </button>
                                     </form>
                                 )}
 
-                                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-[0.2em]">
+                                <p className="label-micro !text-[11px] tracking-[0.2em] text-white/50">
                                     Protected by secure Zoho Infrastructure
                                 </p>
-                            </div>
-
-                            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                                <Sparkles size={120} className="text-red-500" />
-                            </div>
-                            <div className="absolute bottom-0 left-0 p-8 opacity-10 pointer-events-none">
-                                <Radio size={120} className="text-primary-500" />
                             </div>
                         </div>
                     </div>

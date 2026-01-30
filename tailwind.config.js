@@ -2,12 +2,13 @@
 export default {
   content: [
     "./index.html",
+    "./app/**/*.{js,ts,jsx,tsx}",
     "./pages/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
     "./layouts/**/*.{js,ts,jsx,tsx}",
     "./services/**/*.{js,ts,jsx,tsx}",
     "./lib/**/*.{js,ts,jsx,tsx}",
-    "./src/**/*.{js,ts,jsx,tsx}", // Extra safety net
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
 
   darkMode: 'class',
@@ -16,28 +17,62 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#f5f3ff',
-          100: '#ede9fe',
-          200: '#ddd6fe',
-          300: '#c4b5fd',
-          400: '#a78bfa',
-          500: '#8b5cf6', // Vibrant Violet
-          600: '#7c3aed', // Rich Purple-Indigo
-          700: '#6d28d9',
-          800: '#5b21b6',
-          900: '#4c1d95',
-          950: '#2e1065',
+          light: '#EF4444',
+          dark: '#F97316',
+          50: '#FEF2F2',
+          100: '#FEE2E2',
+          200: '#FECACA',
+          300: '#FCA5A5',
+          400: '#F87171',
+          500: '#EF4444', // Red-500
+          600: '#DC2626', // Red-600
+          700: '#B91C1C',
+          800: '#991B1B',
+          900: '#7F1D1D',
+          950: '#450A0A',
+          DEFAULT: '#EF4444',
+        },
+        secondary: {
+          light: '#3B82F6',
+          dark: '#8B5CF6',
+          50: '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA',
+          500: '#3B82F6', // Blue-500
+          600: '#2563EB',
+          700: '#1D4ED8',
+          800: '#1E40AF',
+          900: '#1E3A8A',
+          950: '#172554',
+          DEFAULT: '#3B82F6',
+        },
+        accent: {
+          success: '#10B981', // Emerald
+          warning: '#F59E0B', // Amber
+          premium: '#EAB308', // Yellow
         },
         surface: {
-          light: '#f8fafc', // Clean Slate/Stone
-          dark: '#020617',  // Deep Midnight
-          darkElevated: '#0f172a', // Subtle depth for cards
+          light: {
+            50: '#FFFFFF',
+            100: '#F9FAFB',
+            200: '#F3F4F6',
+          },
+          dark: {
+            950: '#030712',
+            900: '#111827',
+            800: '#1F2937',
+          }
         }
       },
-
+      borderRadius: {
+        'card': '1.5rem',
+        '2xl': '1.5rem',
+        '3xl': '2rem',
+      },
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
-        serif: ['var(--font-merriweather)', 'Georgia', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
 
       // Optional: nicer transitions & spacing
