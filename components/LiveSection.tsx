@@ -9,8 +9,6 @@ import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Termi
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
-// CricketScoreWidget removed as it is replaced by an iframe source
-
 export const LiveSection: React.FC = () => {
     const [links, setLinks] = useState<LiveLink[]>([]);
     const [highlights, setHighlights] = useState<Highlight[]>([]);
@@ -38,7 +36,6 @@ export const LiveSection: React.FC = () => {
                 setAdTimer((prev) => prev - 1);
             }, 1000);
         } else if (showAd && adTimer === 0) {
-            // Auto-skip when timer hits 0
             skipAd();
         }
         return () => clearInterval(interval);
@@ -47,7 +44,6 @@ export const LiveSection: React.FC = () => {
     useEffect(() => {
         getLiveLinks().then((fetchedLinks) => {
             setLinks(fetchedLinks);
-            // Show ad for the default link (or first link) on initial load
             if (fetchedLinks.length > 0 && !selectedLink) {
                 const defaultLink = fetchedLinks.find(link => link.isDefault) || fetchedLinks[0];
                 setPendingLink(defaultLink);
@@ -57,8 +53,6 @@ export const LiveSection: React.FC = () => {
         });
         getHighlights().then(setHighlights);
     }, []);
-
-
 
     useEffect(() => {
         if (activeScoreTab === 'cricket' && cricketScores.length === 0) {
@@ -93,14 +87,12 @@ export const LiveSection: React.FC = () => {
     };
 
     const handleLinkClick = (link: LiveLink) => {
-        // Don't show ad if clicking the same link
         if (selectedLink?.id === link.id) return;
 
         setPendingLink(link);
         setShowAd(true);
         setAdTimer(5);
 
-        // Scroll to top so user sees the player
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -120,7 +112,6 @@ export const LiveSection: React.FC = () => {
         const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(prefilledMessage)}`;
         window.open(whatsappUrl, '_blank');
 
-        // Reset form
         setOnDemandName('');
         setOnDemandMessage('');
     };
@@ -141,8 +132,6 @@ export const LiveSection: React.FC = () => {
         }
     };
 
-
-
     const groupedHighlights = highlights.reduce((acc, h) => {
         if (!acc[h.category]) acc[h.category] = [];
         acc[h.category].push(h);
@@ -153,9 +142,6 @@ export const LiveSection: React.FC = () => {
     const filteredLinks = selectedTag === 'All'
         ? links
         : links.filter(link => link.tags?.includes(selectedTag));
-
-    // Removed early return to ensure Live Scores Tabs are always visible when component is rendered
-    // if (links.length === 0 && highlights.length === 0) return null;
 
     const splideOptionsHighlights = {
         perPage: 4,
@@ -189,9 +175,7 @@ export const LiveSection: React.FC = () => {
     return (
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 relative overflow-hidden p-0 m-0">
 
-
             <div className="py-4">
-                {/* Animated Background Deco */}
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-red-500/10 rounded-full blur-[120px] -mr-64 -mt-64 animate-pulse" />
                 <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary-500/10 rounded-full blur-[120px] -ml-64 -mb-64 animate-pulse" style={{ animationDelay: '1s' }} />
 
@@ -203,7 +187,6 @@ export const LiveSection: React.FC = () => {
                         </p>
                     </div>
 
-                    {/* Trending Channels Slider */}
                     {links.filter(l => l.isTrending).length > 0 && (
                         <div className="mb-4 md:mb-8">
                             <div className="flex items-center gap-2 mb-2 md:mb-4">
@@ -249,10 +232,8 @@ export const LiveSection: React.FC = () => {
                         </div>
                     )}
 
-                    {/* VIDEO PLAYER AND CHANNEL LIST LAYOUT */}
                     {links.length > 0 && (
                         <div className="flex flex-col gap-6">
-                            {/* Video Player Section - Always on top */}
                             {(selectedLink || showAd) && (
                                 <div
                                     ref={playerRef}
@@ -261,13 +242,15 @@ export const LiveSection: React.FC = () => {
                                     <div className="aspect-video w-full relative">
                                         {showAd ? (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 group">
-                                                <div className="w-full h-full max-w-4xl mx-auto p-4 flex flex-col justify-center overflow-hidden">
-                                                    <GoogleAdSense
-                                                        slot="7838572857"
-                                                        className="w-full h-full"
-                                                        minHeight="250px"
-                                                        format="rectangle"
-                                                    />
+                                                <div className="w-full h-full flex items-center justify-center p-4 md:p-8">
+                                                    <div className="w-full max-w-5xl aspect-video bg-black/20 rounded-2xl overflow-hidden border border-white/5 flex items-center justify-center">
+                                                        <GoogleAdSense
+                                                            slot="7838572857"
+                                                            className="w-full h-full"
+                                                            format="auto"
+                                                            responsive={true}
+                                                        />
+                                                    </div>
                                                 </div>
 
                                                 <div className="absolute bottom-6 right-6 flex items-center gap-4 z-20">
@@ -302,15 +285,14 @@ export const LiveSection: React.FC = () => {
                                                 src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
                                                 title={selectedLink.heading || selectedLink.title}
                                                 className="w-full h-full border-0"
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; bluetooth 'none'; camera 'none'; microphone 'none'; geolocation 'none'; display-capture 'none'; payment 'none'"
-                                                referrerPolicy="no-referrer"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
                                                 allowFullScreen
+                                                referrerPolicy="no-referrer"
                                             />
                                         )}
                                     </div>
                                     {!showAd && selectedLink && (
                                         <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-4 md:p-6 border-t border-gray-200 dark:border-white/10">
-                                            {/* External Player Controls */}
                                             <div className="flex flex-wrap items-center gap-2 mb-6 p-2 bg-gray-100/50 dark:bg-white/5 rounded-2xl border border-gray-200/50 dark:border-white/5">
                                                 <button
                                                     onClick={handleRefresh}
@@ -331,7 +313,6 @@ export const LiveSection: React.FC = () => {
                                                     Use these controls to avoid clicking ads inside the video
                                                 </p>
                                             </div>
-                                            {/* Top Metadata Row */}
                                             <div className="flex flex-col md:flex-row items-start justify-between gap-4">
                                                 <div className="w-full md:flex-1">
                                                     <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -407,10 +388,8 @@ export const LiveSection: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* TAGS FILTER - Moved below video */}
                             {allTags.length > 1 && (
                                 <div className="z-10 relative">
-                                    {/* Mobile Dropdown */}
                                     <div className="md:hidden mb-2">
                                         <select
                                             value={selectedTag}
@@ -425,7 +404,6 @@ export const LiveSection: React.FC = () => {
                                         </select>
                                     </div>
 
-                                    {/* Desktop Buttons */}
                                     <div className="hidden md:flex flex-wrap gap-2 mb-4">
                                         {allTags.map(tag => (
                                             <button
@@ -443,13 +421,11 @@ export const LiveSection: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Channel List - Always below video */}
                             <div>
                                 <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                                     <Tv size={20} className="text-red-500 hidden md:block" />
                                     Available Channels
                                 </h3>
-                                {/* Mobile now uses grid-cols-2 for 2 items per row */}
                                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                                     {filteredLinks.map((link) => (
                                         <button
@@ -460,7 +436,6 @@ export const LiveSection: React.FC = () => {
                                                 : 'border-gray-200/50 dark:border-white/10 hover:border-red-500/50'
                                                 }`}
                                         >
-                                            {/* Active indicator */}
                                             {selectedLink?.id === link.id && (
                                                 <div className="absolute top-2 right-2 flex items-center gap-1">
                                                     <span className="relative flex h-2 w-2">
@@ -500,7 +475,6 @@ export const LiveSection: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* ON DEMAND SECTION */}
                             <div className="mt-12 bg-white dark:bg-gray-800/50 rounded-3xl p-6 md:p-10 border border-gray-200 dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
                                 <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none group-hover/ondemand:scale-110 transition-transform duration-500">
                                     <MessageCircle size={120} className="text-red-500" />
@@ -567,10 +541,6 @@ export const LiveSection: React.FC = () => {
                         </div>
                     )}
 
-
-
-
-                    {/* LIVE SCORES TABS */}
                     <div className="mt-24">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                             <div className="flex items-center gap-4">
@@ -619,6 +589,7 @@ export const LiveSection: React.FC = () => {
                                         src="https://www.scorebat.com/embed/livescore/"
                                         className="w-full h-full border-0"
                                         title="Live Football Scores"
+                                        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                                     />
                                 </div>
                             ) : (
@@ -670,9 +641,6 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-
-
-                    {/* HIGHLIGHTS SECTION */}
                     {highlights.length > 0 && (
                         <div className="mt-24 space-y-12">
                             <div className="flex items-center gap-4">
@@ -739,7 +707,6 @@ export const LiveSection: React.FC = () => {
                         </div>
                     )}
 
-                    {/* NEWSLETTER SECTION */}
                     <div className="mt-32 relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-red-600/10 via-primary-600/10 to-red-600/10 blur-[150px] rounded-full" />
                         <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/50 dark:to-gray-900/50 border border-gray-200/50 dark:border-white/10 rounded-[2.5rem] p-10 md:p-16 overflow-hidden backdrop-blur-xl shadow-2xl">
@@ -803,7 +770,6 @@ export const LiveSection: React.FC = () => {
                                 </p>
                             </div>
 
-                            {/* Background Deco Widgets */}
                             <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
                                 <Sparkles size={120} className="text-red-500" />
                             </div>
@@ -813,14 +779,10 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-
                 </div>
             </div>
 
-
-
             <style jsx global>{`
-                /* Premium Slider Buttons for Highlights */
                 .highlights-splide .splide__arrow {
                     background: rgba(255, 255, 255, 0.1) !important;
                     backdrop-filter: blur(12px) !important;
@@ -856,6 +818,6 @@ export const LiveSection: React.FC = () => {
                     }
                 }
             `}</style>
-        </section >
+        </section>
     );
 };
