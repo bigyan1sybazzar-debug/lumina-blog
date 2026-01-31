@@ -9,6 +9,42 @@ import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Termi
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
+
+const splideOptionsHighlights = {
+    perPage: 4,
+    perMove: 1,
+    gap: '1rem',
+    arrows: true,
+    pagination: false,
+    drag: true,
+    snap: true,
+    breakpoints: {
+        1024: { perPage: 3 },
+        768: { perPage: 2 },
+        480: { perPage: 1.5, gap: '0.75rem', arrows: false, pagination: true },
+    },
+};
+
+const splideOptionsTrending = {
+    type: 'loop',
+    drag: true,
+    snap: true,
+    focus: 'center',
+    perPage: 6,
+    gap: '1.5rem',
+    arrows: false,
+    pagination: false,
+    trimSpace: false,
+    flickPower: 300,
+    breakpoints: {
+        1280: { perPage: 5 },
+        1024: { perPage: 4 },
+        768: { perPage: 3 },
+        640: { perPage: 2.2 },
+        480: { perPage: 1.8, gap: '1rem' },
+    },
+};
+
 export const LiveSection: React.FC = () => {
     const [links, setLinks] = useState<LiveLink[]>([]);
     const [highlights, setHighlights] = useState<Highlight[]>([]);
@@ -145,41 +181,6 @@ export const LiveSection: React.FC = () => {
         ? links
         : links.filter(link => link.tags?.includes(selectedTag));
 
-    const splideOptionsHighlights = {
-        perPage: 4,
-        perMove: 1,
-        gap: '1rem',
-        arrows: true,
-        pagination: false,
-        drag: true,
-        snap: true,
-        breakpoints: {
-            1024: { perPage: 3 },
-            768: { perPage: 2 },
-            480: { perPage: 1.5, gap: '0.75rem', arrows: false, pagination: true },
-        },
-    };
-
-    const splideOptionsTrending = {
-        type: 'loop',
-        drag: true,
-        snap: true,
-        focus: 'center',
-        perPage: 6,
-        gap: '1.5rem',
-        arrows: false,
-        pagination: false,
-        trimSpace: false,
-        flickPower: 300,
-        breakpoints: {
-            1280: { perPage: 5 },
-            1024: { perPage: 4 },
-            768: { perPage: 3 },
-            640: { perPage: 2.2 },
-            480: { perPage: 1.8, gap: '1rem' },
-        },
-    };
-
     return (
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen relative overflow-hidden">
             {/* Design System Background Gradients */}
@@ -277,7 +278,7 @@ export const LiveSection: React.FC = () => {
                                                 <div className="w-full h-full flex items-center justify-center p-4">
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl place-items-center">
                                                         {/* Ad Unit 1 - Centered Square */}
-                                                        <div className="aspect-square w-full max-w-[336px] bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
+                                                        <div className="w-full max-w-[336px] h-64 md:h-auto md:aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
                                                             <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-4xl select-none pointer-events-none">ADS</div>
                                                             <GoogleAdSense
                                                                 slot="7838572857"
