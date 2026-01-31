@@ -12,27 +12,29 @@ import '@splidejs/react-splide/css';
 
 // Custom styles to remove Splide padding on mobile
 const splideCustomStyles = `
+  #trending-slider .splide__track {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  #trending-slider .splide__list {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  
+  /* Mobile specific adjustments */
   @media (max-width: 767px) {
-    #trending-slider .splide__track {
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-    }
-    #trending-slider .splide__list {
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-    }
     #trending-slider .splide__slide:first-child {
       margin-left: 1rem !important;
     }
-  }
-  @media (min-width: 768px) {
-    #trending-slider .splide__track {
-      padding-left: 0 !important;
-      padding-right: 0 !important;
+    #trending-slider .splide__slide:last-child {
+      margin-right: 1rem !important;
     }
-    #trending-slider .splide__list {
-      padding-left: 0 !important;
-      padding-right: 0 !important;
+  }
+  
+  /* Desktop specific adjustments */
+  @media (min-width: 768px) {
+    #trending-slider .splide__slide:first-child {
+      margin-left: 0 !important;
     }
   }
 `;
@@ -58,7 +60,7 @@ const splideOptionsTrending = {
     rewind: true,
     drag: 'free',
     snap: true,
-    focus: 'center',
+    focus: 0,
     perPage: 5,
     gap: '0.75rem',
     arrows: false,
@@ -68,12 +70,13 @@ const splideOptionsTrending = {
     dragMinThreshold: 10,
     flickMaxPages: 1,
     updateOnMove: true,
+    padding: { left: 0, right: 0 },
     breakpoints: {
-        1280: { perPage: 5, gap: '0.75rem' },
-        1024: { perPage: 4, gap: '0.75rem' },
-        768: { perPage: 2.25, gap: '0.375rem', snap: true },
-        640: { perPage: 2.25, gap: '0.375rem', snap: true },
-        480: { perPage: 2.25, gap: '0.375rem', snap: true },
+        1280: { perPage: 5, gap: '0.75rem', focus: 0 },
+        1024: { perPage: 4, gap: '0.75rem', focus: 0 },
+        768: { perPage: 3, gap: '0.5rem', focus: 0, snap: true },
+        640: { perPage: 2.5, gap: '0.5rem', focus: 0, snap: true },
+        480: { perPage: 2.25, gap: '0.5rem', focus: 0, snap: true },
     },
 };
 
@@ -242,8 +245,8 @@ export const LiveSection: React.FC = () => {
                     </div>
 
                     {links.filter(l => l.isTrending).length > 0 && (
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3">
+                        <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+                            <div className="shrink-0">
                                 <button
                                     onClick={() => document.getElementById('trending-slider')?.scrollIntoView({ behavior: 'smooth' })}
                                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-bold uppercase tracking-wider hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors cursor-pointer"
@@ -252,7 +255,7 @@ export const LiveSection: React.FC = () => {
                                     Trending Now
                                 </button>
                             </div>
-                            <div className="-mx-4 sm:-mx-6 lg:-mx-8 md:mx-0">
+                            <div className="w-full md:flex-1 min-w-0 -mx-4 sm:-mx-6 lg:-mx-8 md:mx-0">
                                 <Splide
                                     id="trending-slider"
                                     options={splideOptionsTrending}
