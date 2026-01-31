@@ -16,8 +16,8 @@ const splideOptionsHighlights = {
     gap: '1rem',
     arrows: true,
     pagination: false,
-    drag: true,
-    snap: true,
+    drag: 'free',
+    snap: false,
     breakpoints: {
         1024: { perPage: 3 },
         768: { perPage: 2 },
@@ -27,15 +27,15 @@ const splideOptionsHighlights = {
 
 const splideOptionsTrending = {
     type: 'loop',
-    drag: true,
-    snap: true,
+    drag: 'free',
+    snap: false,
     focus: 'center',
     perPage: 6,
     gap: '1.5rem',
     arrows: false,
     pagination: false,
     trimSpace: false,
-    flickPower: 300,
+    flickPower: 500,
     breakpoints: {
         1280: { perPage: 5 },
         1024: { perPage: 4 },
@@ -278,7 +278,7 @@ export const LiveSection: React.FC = () => {
                                                 <div className="w-full h-full flex items-center justify-center p-4">
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl place-items-center">
                                                         {/* Ad Unit 1 - Centered Square */}
-                                                        <div className="w-full max-w-[336px] h-64 md:h-auto md:aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
+                                                        <div className="w-full max-w-[336px] h-auto aspect-video md:aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
                                                             <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-4xl select-none pointer-events-none">ADS</div>
                                                             <GoogleAdSense
                                                                 slot="7838572857"
