@@ -10,6 +10,33 @@ import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Termi
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
+// Custom styles to remove Splide padding on mobile
+const splideCustomStyles = `
+  @media (max-width: 767px) {
+    #trending-slider .splide__track {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+    #trending-slider .splide__list {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+    #trending-slider .splide__slide:first-child {
+      margin-left: 1rem !important;
+    }
+  }
+  @media (min-width: 768px) {
+    #trending-slider .splide__track {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+    #trending-slider .splide__list {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+  }
+`;
+
 
 const splideOptionsHighlights = {
     perPage: 4,
@@ -27,22 +54,26 @@ const splideOptionsHighlights = {
 };
 
 const splideOptionsTrending = {
-    type: 'loop',
+    type: 'slide',
+    rewind: true,
     drag: 'free',
-    snap: false,
+    snap: true,
     focus: 'center',
-    perPage: 6,
-    gap: '1.5rem',
+    perPage: 5,
+    gap: '0.75rem',
     arrows: false,
     pagination: false,
     trimSpace: false,
-    flickPower: 500,
+    flickPower: 300,
+    dragMinThreshold: 10,
+    flickMaxPages: 1,
+    updateOnMove: true,
     breakpoints: {
-        1280: { perPage: 5 },
-        1024: { perPage: 4 },
-        768: { perPage: 3 },
-        640: { perPage: 2.2 },
-        480: { perPage: 1.8, gap: '1rem' },
+        1280: { perPage: 5, gap: '0.75rem' },
+        1024: { perPage: 4, gap: '0.75rem' },
+        768: { perPage: 2.25, gap: '0.375rem', snap: true },
+        640: { perPage: 2.25, gap: '0.375rem', snap: true },
+        480: { perPage: 2.25, gap: '0.375rem', snap: true },
     },
 };
 
@@ -184,6 +215,9 @@ export const LiveSection: React.FC = () => {
 
     return (
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen relative overflow-hidden">
+            {/* Custom Splide Styles */}
+            <style dangerouslySetInnerHTML={{ __html: splideCustomStyles }} />
+
             {/* Design System Background Gradients */}
             <div className="absolute inset-0 bg-gradient-to-b from-primary-light/5 via-transparent to-primary-light/5 opacity-50 pointer-events-none" />
 
@@ -218,60 +252,76 @@ export const LiveSection: React.FC = () => {
                                     Trending Now
                                 </button>
                             </div>
-                            <Splide id="trending-slider" options={splideOptionsTrending}>
-                                {links.filter(l => l.isTrending).map((link) => (
-                                    <SplideSlide key={link.id}>
-                                        <button
-                                            onClick={() => handleLinkClick(link)}
-                                            className={`w-full block group text-left ${selectedLink?.id === link.id ? 'scale-95 transition-transform' : ''}`}
-                                        >
-                                            <div className={`flex items-center gap-4 p-3 bg-white dark:bg-surface-dark-900 rounded-card border transition-all active:scale-[0.97] cursor-pointer ${selectedLink?.id === link.id
-                                                ? 'border-primary-light ring-2 ring-primary-light/20 bg-primary-50/10'
-                                                : 'border-slate-200 dark:border-slate-800 group-hover:border-primary-light/50 shadow-sm hover:shadow-md'}`}
+                            <div className="-mx-4 sm:-mx-6 lg:-mx-8 md:mx-0">
+                                <Splide
+                                    id="trending-slider"
+                                    options={splideOptionsTrending}
+                                    className="!pl-4 sm:!pl-6 lg:!pl-8 md:!pl-0"
+                                >
+                                    {links.filter(l => l.isTrending).map((link) => (
+                                        <SplideSlide key={link.id}>
+                                            <button
+                                                onClick={() => handleLinkClick(link)}
+                                                className={`w-full block group text-left ${selectedLink?.id === link.id ? 'scale-[0.98] transition-transform' : ''}`}
                                             >
-                                                <div className="relative group/icon">
-                                                    <div className={`flex-shrink-0 w-14 h-14 rounded-2xl flex flex-col items-center justify-center transition-all duration-500 relative z-10 overflow-hidden ${selectedLink?.id === link.id
-                                                        ? 'bg-gradient-to-br from-primary-600 via-primary-dark to-orange-500 text-white shadow-lg shadow-primary-500/40 ring-2 ring-white/20'
-                                                        : 'bg-gray-100 dark:bg-white/5 text-primary-light group-hover/icon:bg-primary-50 dark:group-hover/icon:bg-primary-900/20'
-                                                        }`}>
-                                                        {/* Glow effect for selected state */}
-                                                        {selectedLink?.id === link.id && (
-                                                            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent animate-pulse" />
-                                                        )}
+                                                <div className={`relative flex items-center gap-2 md:gap-3 p-2 md:p-2.5 bg-white dark:bg-surface-dark-900 rounded-xl md:rounded-2xl border transition-all active:scale-[0.97] cursor-pointer ${selectedLink?.id === link.id
+                                                    ? 'border-primary-light ring-2 ring-primary-light/20 bg-primary-50/10 shadow-md'
+                                                    : 'border-slate-200 dark:border-slate-800 group-hover:border-primary-light/50 shadow-sm hover:shadow-md'}`}
+                                                >
+                                                    {selectedLink?.id === link.id && (
+                                                        <div className="absolute top-1 right-1 md:top-2 md:right-2 flex items-center gap-1 md:gap-1.5 px-1.5 py-0.5 md:px-2 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50 z-10">
+                                                            <span className="relative flex h-1 w-1 md:h-1.5 md:w-1.5">
+                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
+                                                                <span className="relative inline-flex rounded-full h-1 w-1 md:h-1.5 md:w-1.5 bg-primary-600"></span>
+                                                            </span>
+                                                            <span className="text-[7px] md:text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
+                                                        </div>
+                                                    )}
 
-                                                        <span className={`text-[8px] font-black tracking-[0.2em] mb-1 transition-colors ${selectedLink?.id === link.id ? 'text-white/90' : 'text-gray-400 group-hover/icon:text-primary-600'}`}>LIVE</span>
-                                                        <div className="relative">
-                                                            <div className={`h-3 w-3 rounded-full flex items-center justify-center ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`}>
-                                                                <div className={`absolute h-full w-full rounded-full animate-ping opacity-75 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`} />
-                                                                <div className={`h-1.5 w-1.5 rounded-full ${selectedLink?.id === link.id ? 'bg-primary-600' : 'bg-white'}`} />
+                                                    <div className="relative group/icon flex-shrink-0">
+                                                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex flex-col items-center justify-center transition-all duration-300 relative z-10 overflow-hidden ${selectedLink?.id === link.id
+                                                            ? 'bg-gradient-to-br from-primary-600 via-primary-dark to-orange-500 text-white shadow-lg shadow-primary-500/30 ring-2 ring-white/20'
+                                                            : 'bg-gray-100 dark:bg-white/5 text-primary-light group-hover/icon:bg-primary-50 dark:group-hover/icon:bg-primary-900/20'
+                                                            }`}>
+                                                            {/* Glow effect for selected state */}
+                                                            {selectedLink?.id === link.id && (
+                                                                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent animate-pulse" />
+                                                            )}
+
+                                                            <span className={`text-[5px] md:text-[6px] font-black tracking-[0.2em] mb-0.5 transition-colors ${selectedLink?.id === link.id ? 'text-white/90' : 'text-gray-400 group-hover/icon:text-primary-600'}`}>LIVE</span>
+                                                            <div className="relative">
+                                                                <div className={`h-1.5 w-1.5 md:h-2 md:w-2 rounded-full flex items-center justify-center ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`}>
+                                                                    <div className={`absolute h-full w-full rounded-full animate-ping opacity-75 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`} />
+                                                                    <div className={`h-0.5 w-0.5 md:h-1 md:w-1 rounded-full ${selectedLink?.id === link.id ? 'bg-primary-600' : 'bg-white'}`} />
+                                                                </div>
                                                             </div>
                                                         </div>
+                                                        {/* Decorative ring */}
+                                                        <div className={`absolute -inset-0.5 md:-inset-1 rounded-lg md:rounded-xl opacity-0 group-hover/icon:opacity-100 transition-opacity duration-300 border border-primary-light/30 ${selectedLink?.id === link.id ? 'opacity-100 animate-pulse' : ''}`} />
                                                     </div>
-                                                    {/* Decorative ring */}
-                                                    <div className={`absolute -inset-1 rounded-[1.25rem] opacity-0 group-hover/icon:opacity-100 transition-opacity duration-500 border border-primary-light/30 ${selectedLink?.id === link.id ? 'opacity-100 animate-pulse' : ''}`} />
+                                                    <div className="flex-1 min-w-0 pr-8 md:pr-0">
+                                                        <h3 className={`text-[10px] md:text-[11px] font-bold line-clamp-2 leading-tight transition-colors ${selectedLink?.id === link.id
+                                                            ? 'text-red-700 dark:text-red-400'
+                                                            : 'text-gray-900 dark:text-gray-100 group-hover:text-red-500'}`}
+                                                        >
+                                                            {link.heading}
+                                                        </h3>
+                                                    </div>
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className={`text-[8px] md:text-[11px] font-bold line-clamp-2 leading-tight transition-colors ${selectedLink?.id === link.id
-                                                        ? 'text-red-700 dark:text-red-400'
-                                                        : 'text-gray-900 dark:text-gray-100 group-hover:text-red-500'}`}
-                                                    >
-                                                        {link.heading}
-                                                    </h3>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    </SplideSlide>
-                                ))}
-                            </Splide>
+                                            </button>
+                                        </SplideSlide>
+                                    ))}
+                                </Splide>
+                            </div>
                         </div>
                     )}
 
                     {links.length > 0 && (
-                        <div className="flex flex-col gap-4 md:gap-6">
+                        <div className="flex flex-col gap-3 md:gap-6">
                             {(selectedLink || showAd) && (
                                 <div
                                     ref={playerRef}
-                                    className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10 w-full"
+                                    className="relative bg-black rounded-none md:rounded-3xl overflow-hidden shadow-xl md:shadow-2xl border-y md:border border-gray-200/50 dark:border-white/10 w-screen md:w-full -ml-4 sm:-ml-6 lg:-ml-8 md:ml-0"
                                 >
                                     <div className="aspect-video w-full relative">
                                         {showAd ? (
@@ -301,29 +351,29 @@ export const LiveSection: React.FC = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="absolute bottom-6 right-6 flex items-center gap-4 z-20">
+                                                <div className="absolute bottom-4 md:bottom-6 right-4 md:right-6 flex items-center gap-4 z-20">
                                                     {adTimer > 0 ? (
-                                                        <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-lg text-white text-sm font-bold border border-white/10">
+                                                        <div className="bg-black/60 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-white text-xs md:text-sm font-bold border border-white/10">
                                                             Ad can be skipped in {adTimer}s...
                                                         </div>
                                                     ) : (
                                                         <button
                                                             onClick={skipAd}
-                                                            className="bg-white text-black hover:bg-red-600 hover:text-white px-6 py-2 rounded-lg text-sm font-black transition-all transform hover:scale-105 flex items-center gap-2 shadow-xl"
+                                                            className="bg-white text-black hover:bg-red-600 hover:text-white px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-black transition-all transform hover:scale-105 flex items-center gap-2 shadow-xl"
                                                         >
                                                             Skip Ad <ChevronRight size={18} />
                                                         </button>
                                                     )}
                                                 </div>
 
-                                                <div className="absolute top-6 left-6 flex items-center gap-2 z-20">
-                                                    <span className="bg-yellow-500 text-black text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">ADVERTISEMENT</span>
+                                                <div className="absolute top-4 md:top-6 left-4 md:left-6 flex items-center gap-2 z-20">
+                                                    <span className="bg-yellow-500 text-black text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">ADVERTISEMENT</span>
                                                 </div>
 
                                                 {pendingLink && (
-                                                    <div className="absolute top-6 right-6 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/10 z-20">
-                                                        <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Up Next:</p>
-                                                        <p className="text-white text-xs font-black truncate max-w-[150px]">{pendingLink.heading}</p>
+                                                    <div className="absolute top-4 md:top-6 right-4 md:right-6 bg-black/40 backdrop-blur-sm px-3 md:px-4 py-2 rounded-lg border border-white/10 z-20">
+                                                        <p className="text-[9px] md:text-[10px] text-gray-400 font-bold uppercase mb-1">Up Next:</p>
+                                                        <p className="text-white text-[10px] md:text-xs font-black truncate max-w-[120px] md:max-w-[150px]">{pendingLink.heading}</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -340,7 +390,7 @@ export const LiveSection: React.FC = () => {
                                         )}
                                     </div>
                                     {!showAd && selectedLink && (
-                                        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-4 md:p-5 border-t border-gray-200 dark:border-white/10">
+                                        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-3 md:p-5 border-t border-gray-200 dark:border-white/10">
                                             <div className="flex flex-wrap items-center gap-2 mb-6 p-2 bg-gray-100/50 dark:bg-white/5 rounded-2xl border border-gray-200/50 dark:border-white/5">
                                                 <button
                                                     onClick={handleRefresh}
