@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/db';
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
+import Image from 'next/image';
 import GoogleAdSense from './GoogleAdSense';
 import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
@@ -278,7 +279,7 @@ export const LiveSection: React.FC = () => {
                                                 <div className="w-full h-full flex items-center justify-center p-4">
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl place-items-center">
                                                         {/* Ad Unit 1 - Centered Square */}
-                                                        <div className="w-full max-w-[336px] h-auto aspect-video md:aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
+                                                        <div className="w-[300px] h-[250px] md:w-full md:max-w-[336px] md:h-auto md:aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
                                                             <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-4xl select-none pointer-events-none">ADS</div>
                                                             <GoogleAdSense
                                                                 slot="7838572857"
@@ -745,10 +746,12 @@ export const LiveSection: React.FC = () => {
                                                         className="group cursor-pointer bg-white dark:bg-surface-dark-900 rounded-card overflow-hidden border border-slate-200 dark:border-slate-800 hover:shadow-2xl transition-all duration-300 active:scale-[0.98]"
                                                     >
                                                         <div className="aspect-video relative bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                                                            <img
+                                                            <Image
                                                                 src={item.thumbnailUrl || `https://img.youtube.com/vi/${item.youtubeUrl.split('/').pop()?.split('?')[0]}/mqdefault.jpg`}
                                                                 alt={item.title}
-                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                                fill
+                                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                                className="object-cover group-hover:scale-105 transition-transform duration-500"
                                                             />
                                                             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
                                                                 <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-all duration-300">
