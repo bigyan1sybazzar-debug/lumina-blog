@@ -7,14 +7,15 @@ import { parseM3U, M3UChannel } from '../../lib/m3uParser';
 interface IPTVManagerProps {
     channels: IPTVChannel[];
     categories: IPTVCategory[];
-    onCreateChannel: (channel: Omit<IPTVChannel, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+    onCreateChannel: (channel: Omit<IPTVChannel, 'id' | 'createdAt' | 'updatedAt'>, silent?: boolean) => Promise<void>;
     onUpdateChannel: (id: string, updates: Partial<IPTVChannel>) => Promise<void>;
     onDeleteChannel: (id: string) => Promise<void>;
     onCreateCategory: (name: string) => Promise<void>;
     onDeleteCategory: (id: string) => Promise<void>;
+    onRefresh: () => Promise<void>;
 }
 
-export const IPTVManager: React.FC<IPTVManagerProps> = ({ channels, categories, onCreateChannel, onUpdateChannel, onDeleteChannel, onCreateCategory, onDeleteCategory }) => {
+export const IPTVManager: React.FC<IPTVManagerProps> = ({ channels, categories, onCreateChannel, onUpdateChannel, onDeleteChannel, onCreateCategory, onDeleteCategory, onRefresh }) => {
     const [name, setName] = useState('');
     const [url, setUrl] = useState('');
     const [category, setCategory] = useState('Entertainment');
@@ -35,6 +36,7 @@ export const IPTVManager: React.FC<IPTVManagerProps> = ({ channels, categories, 
     const [isFetchingImport, setIsFetchingImport] = useState(false);
     const [showManageCategories, setShowManageCategories] = useState(false);
     const [newCatName, setNewCatName] = useState('');
+    const [importProgress, setImportProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
 
     const categoriesList = ['All', ...Array.from(new Set(channels.map(c => c.category)))];
 
@@ -77,27 +79,43 @@ export const IPTVManager: React.FC<IPTVManagerProps> = ({ channels, categories, 
     const handleConfirmImport = async () => {
         if (importPreview.length === 0) return;
         setIsImporting(true);
+        setImportProgress({ current: 0, total: importPreview.length, success: 0, failed: 0 });
+
         try {
-            let count = 0;
-            for (const item of importPreview) {
-                // To avoid overloading, we could batch but let's do sequential for simplicity (Firebase handles well)
-                await onCreateChannel({
-                    name: item.name,
-                    url: item.url,
-                    category: item.group || 'Imported',
-                    logo: item.logo || '',
-                    status: 'active'
-                });
-                count++;
+            for (let i = 0; i < importPreview.length; i++) {
+                const item = importPreview[i];
+                setImportProgress(prev => ({ ...prev, current: i + 1 }));
+
+                try {
+                    await onCreateChannel({
+                        name: item.name,
+                        url: item.url,
+                        category: item.group || 'Imported',
+                        logo: item.logo || '',
+                        status: 'active'
+                    }, true); // silent = true
+                    setImportProgress(prev => ({ ...prev, success: prev.success + 1 }));
+                } catch (error) {
+                    console.error(`Failed to import ${item.name}:`, error);
+                    setImportProgress(prev => ({ ...prev, failed: prev.failed + 1 }));
+                }
             }
-            alert(`Successfully imported ${count} channels!`);
-            setShowImportModal(false);
-            setImportPreview([]);
-            setImportUrl('');
+            // Final refresh to see new channels
+            await onRefresh();
+            // Final summary alert (optional, since UI shows it now)
+            // alert(`Import completed! Success: ${importProgress.success}, Failed: ${importProgress.failed}`);
         } catch (error) {
             alert('Error during import process.');
         } finally {
             setIsImporting(false);
+            // Optionally clear after some delay or keep for summary
+            setTimeout(() => {
+                if (!isImporting) {
+                    // setShowImportModal(false);
+                    // setImportPreview([]);
+                    // setImportUrl('');
+                }
+            }, 3000);
         }
     };
 
@@ -268,17 +286,49 @@ export const IPTVManager: React.FC<IPTVManagerProps> = ({ channels, categories, 
 
                         {importPreview.length > 0 && (
                             <div className="flex-1 flex flex-col min-h-0">
-                                <div className="flex items-center justify-between mb-4">
-                                    <span className="text-sm font-bold text-gray-500">
-                                        Detected {importPreview.length} items
-                                    </span>
-                                    <button
-                                        onClick={handleConfirmImport}
-                                        disabled={isImporting}
-                                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-lg active:scale-95 disabled:opacity-50"
-                                    >
-                                        {isImporting ? <Loader2 className="animate-spin" /> : <><Check size={16} /> Import All Into DB</>}
-                                    </button>
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <span className="text-sm font-bold text-gray-500">
+                                            Detected {importPreview.length} items
+                                        </span>
+                                        {!isImporting ? (
+                                            <button
+                                                onClick={handleConfirmImport}
+                                                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-lg active:scale-95"
+                                            >
+                                                <Check size={16} /> Import All Into DB
+                                            </button>
+                                        ) : (
+                                            <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-700/50 px-4 py-2 rounded-xl">
+                                                <Loader2 className="animate-spin text-primary-500" size={16} />
+                                                <span className="text-xs font-black uppercase tracking-tight text-gray-600 dark:text-gray-300">
+                                                    Importing {importProgress.current} / {importProgress.total}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {isImporting && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg flex items-center justify-between">
+                                                <span className="text-[10px] font-black text-emerald-600 uppercase">Success</span>
+                                                <span className="text-xs font-bold text-emerald-600">{importProgress.success}</span>
+                                            </div>
+                                            <div className="bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg flex items-center justify-between">
+                                                <span className="text-[10px] font-black text-red-600 uppercase">Failed</span>
+                                                <span className="text-xs font-bold text-red-600">{importProgress.failed}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {importProgress.total > 0 && (
+                                        <div className="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden mt-1">
+                                            <div
+                                                className="bg-primary-500 h-full transition-all duration-300"
+                                                style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="overflow-y-auto pr-2 space-y-2 border border-gray-100 dark:border-gray-700/50 rounded-2xl p-4 bg-gray-50 dark:bg-gray-900/30">
                                     {importPreview.map((item, idx) => (

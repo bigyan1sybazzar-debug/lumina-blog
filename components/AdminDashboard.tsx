@@ -723,13 +723,16 @@ export const Admin: React.FC = () => {
     }
   };
 
-  const handleCreateIPTVChannel = async (channel: Omit<IPTVChannel, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleCreateIPTVChannel = async (channel: Omit<IPTVChannel, 'id' | 'createdAt' | 'updatedAt'>, silent: boolean = false) => {
     try {
       await addIPTVChannel(channel);
-      alert('Channel added successfully!');
-      refreshData();
+      if (!silent) {
+        alert('Channel added successfully!');
+        refreshData();
+      }
     } catch (error) {
-      alert('Failed to add channel.');
+      if (!silent) alert('Failed to add channel.');
+      throw error; // Re-throw to handle in bulk import
     }
   };
 
@@ -2246,6 +2249,7 @@ export const Admin: React.FC = () => {
                   onDeleteChannel={handleDeleteIPTVChannel}
                   onCreateCategory={handleCreateIPTVCategory}
                   onDeleteCategory={handleDeleteIPTVCategory}
+                  onRefresh={refreshData}
                 />
               </div>
             )
