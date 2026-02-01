@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels } from '../services/db';
+import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels, getIPTVConfig } from '../services/db';
+import { useAuth } from '../context/AuthContext';
+import { parseM3U } from '../lib/m3uParser';
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
 import Image from 'next/image';
 import GoogleAdSense from './GoogleAdSense';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search, User } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 import HLSPlayer from './HLSPlayer';
@@ -91,6 +93,9 @@ export const LiveSection: React.FC = () => {
     const [isIPTVMode, setIsIPTVMode] = useState(false);
     const [iptvTag, setIptvTag] = useState<string>('All');
     const [iptvSearch, setIptvSearch] = useState('');
+    const [iptvWatchTime, setIptvWatchTime] = useState(0);
+    const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+    const { user } = useAuth();
     const playerRef = React.useRef<HTMLDivElement>(null);
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
@@ -118,16 +123,31 @@ export const LiveSection: React.FC = () => {
         });
         getHighlights().then(setHighlights);
 
-        getIPTVChannels().then(channels => {
-            const mapped = channels.map(c => ({
-                id: c.id,
-                name: c.name,
-                url: c.url,
-                logo: c.logo || '',
-                group: c.category
-            }));
-            setIptvChannels(mapped);
-        }).catch(err => console.error('Failed to load IPTV channels:', err));
+        getIPTVConfig().then(async config => {
+            if (config?.m3uUrl) {
+                try {
+                    const proxyUrl = `/api/proxy?url=${encodeURIComponent(config.m3uUrl)}`;
+                    const res = await fetch(proxyUrl);
+                    const content = await res.text();
+                    const channels = parseM3U(content);
+                    setIptvChannels(channels);
+                } catch (err) {
+                    console.error('Failed to load/parse remote IPTV M3U:', err);
+                }
+            } else {
+                // Fallback to DB if no remote URL is set (optional, or just empty)
+                getIPTVChannels().then(channels => {
+                    const mapped = channels.map(c => ({
+                        id: c.id,
+                        name: c.name,
+                        url: c.url,
+                        logo: c.logo || '',
+                        group: c.category
+                    }));
+                    setIptvChannels(mapped);
+                });
+            }
+        });
     }, []);
 
     useEffect(() => {
@@ -145,6 +165,28 @@ export const LiveSection: React.FC = () => {
                 });
         }
     }, [activeScoreTab, cricketScores.length]);
+
+    // IPTV Watch Time and Login Prompt logic
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        // Check if selected link is IPTV and user is NOT logged in
+        if (selectedLink?.isIPTV && !user && !showAd) {
+            interval = setInterval(() => {
+                setIptvWatchTime(prev => {
+                    const newTime = prev + 1;
+                    if (newTime >= 300) { // 300 seconds = 5 minutes
+                        setShowLoginPrompt(true);
+                    }
+                    return newTime;
+                });
+            }, 1000);
+        } else {
+            // Reset if they are logged in, switches to sports, or closes player
+            setIptvWatchTime(0);
+            setShowLoginPrompt(false);
+        }
+        return () => clearInterval(interval);
+    }, [selectedLink, user, showAd]);
 
     // Auto-block ads when iframe loads
     useEffect(() => {
@@ -241,7 +283,8 @@ export const LiveSection: React.FC = () => {
             heading: channel.name,
             iframeUrl: channel.url,
             isHLS: channel.url.includes('.m3u8'),
-            tags: [channel.group]
+            tags: [channel.group],
+            isIPTV: true // Flag to distinguish for limit logic
         };
         handleLinkClick(liveLink);
     };
@@ -562,25 +605,65 @@ export const LiveSection: React.FC = () => {
                                                 )}
                                             </div>
                                         ) : selectedLink && (
-                                            selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
-                                                <HLSPlayer
-                                                    src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                                    className="w-full h-full"
-                                                    autoPlay={true}
-                                                    muted={isMuted}
-                                                />
-                                            ) : (
-                                                <iframe
-                                                    ref={iframeRef}
-                                                    key={playerKey}
-                                                    src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                                    title={selectedLink.heading || selectedLink.title}
-                                                    className="w-full h-full border-0"
-                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
-                                                    allowFullScreen
-                                                    referrerPolicy="no-referrer"
-                                                />
-                                            )
+                                            <>
+                                                {showLoginPrompt && !user && (
+                                                    <div className="absolute inset-0 z-[60] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+                                                        <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-primary-600/40 animate-bounce">
+                                                            <User size={40} className="text-white" />
+                                                        </div>
+                                                        <h2 className="text-2xl md:text-3xl font-black text-white mb-4">Login Required</h2>
+
+                                                        {/* Added Ad to Popup */}
+                                                        <div className="w-full max-w-sm mb-6 bg-white/5 rounded-xl overflow-hidden border border-white/10">
+                                                            <GoogleAdSense
+                                                                slot="7838572857"
+                                                                format="rectangle"
+                                                                responsive={true}
+                                                            />
+                                                        </div>
+
+                                                        <p className="text-gray-400 max-w-sm mb-8 font-medium">
+                                                            To continue watching <span className="text-white font-bold">{selectedLink.heading}</span> and enjoy unlimited IPTV streaming, please sign in to your account.
+                                                        </p>
+                                                        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
+                                                            <Link
+                                                                href="/login"
+                                                                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg hover:shadow-primary-600/25 active:scale-95 text-center"
+                                                            >
+                                                                Log In
+                                                            </Link>
+                                                            <Link
+                                                                href="/signup"
+                                                                className="flex-1 bg-white/10 hover:bg-white/20 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition-all backdrop-blur-sm active:scale-95 text-center"
+                                                            >
+                                                                Sign Up
+                                                            </Link>
+                                                        </div>
+                                                        <p className="mt-8 text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">
+                                                            Free 5-minute preview finished
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
+                                                    <HLSPlayer
+                                                        src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                                        className="w-full h-full"
+                                                        autoPlay={true}
+                                                        muted={isMuted}
+                                                    />
+                                                ) : (
+                                                    <iframe
+                                                        ref={iframeRef}
+                                                        key={playerKey}
+                                                        src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                                        title={selectedLink.heading || selectedLink.title}
+                                                        className="w-full h-full border-0"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
+                                                        allowFullScreen
+                                                        referrerPolicy="no-referrer"
+                                                    />
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                     {!showAd && selectedLink && (
@@ -884,49 +967,7 @@ export const LiveSection: React.FC = () => {
                                         </div>
                                     )
                                 ) : (
-                                    <div className="z-10 relative">
-                                        <div className="md:hidden mb-2">
-                                            <select
-                                                value={iptvTag}
-                                                onChange={(e) => setIptvTag(e.target.value)}
-                                                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
-                                            >
-                                                <option value="All">All Countries</option>
-                                                {Array.from(new Set(iptvChannels.map(c => c.group))).sort().map(group => (
-                                                    <option key={group} value={group}>{group}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="hidden md:flex flex-wrap gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-                                            <button
-                                                onClick={() => setIptvTag('All')}
-                                                className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${iptvTag === 'All'
-                                                    ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
-                                                    : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
-                                                    }`}
-                                            >
-                                                All Countries
-                                            </button>
-                                            {Array.from(new Set(iptvChannels.map(c => c.group))).sort().slice(0, 15).map(group => (
-                                                <button
-                                                    key={group}
-                                                    onClick={() => setIptvTag(group)}
-                                                    className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${iptvTag === group
-                                                        ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
-                                                        : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
-                                                        }`}
-                                                >
-                                                    {group}
-                                                </button>
-                                            ))}
-                                            {iptvChannels.length > 0 && (
-                                                <span className="text-[10px] text-gray-400 flex items-center ml-2 border-l pl-3 border-gray-200 dark:border-white/10 italic">
-                                                    Showing top 15 categories, use mobile selector for all
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
+                                    <div className="z-10 relative" />
                                 )}
                             </div>
 
@@ -993,12 +1034,12 @@ export const LiveSection: React.FC = () => {
                                     <div className="space-y-6">
                                         <div className="flex items-center gap-3">
                                             <Tv size={24} className="text-secondary-light" />
-                                            <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.filter(c => (iptvTag === 'All' || c.group === iptvTag) && (c.name.toLowerCase().includes(iptvSearch.toLowerCase()) || c.group.toLowerCase().includes(iptvSearch.toLowerCase()))).length})</h2>
+                                            <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length})</h2>
                                         </div>
                                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                                             {iptvChannels
-                                                .filter(c => (iptvTag === 'All' || c.group === iptvTag) && (c.name.toLowerCase().includes(iptvSearch.toLowerCase()) || c.group.toLowerCase().includes(iptvSearch.toLowerCase())))
-                                                .slice(0, 200) // Show first 200 channels to avoid freezing
+                                                .filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase()))
+                                                .slice(0, 300) // Show more channels now that categories are gone
                                                 .map((channel) => (
                                                     <button
                                                         key={channel.id}
@@ -1035,18 +1076,13 @@ export const LiveSection: React.FC = () => {
                                                         </div>
                                                     </button>
                                                 ))}
-                                            {iptvChannels.filter(c => (iptvTag === 'All' || c.group === iptvTag) && (c.name.toLowerCase().includes(iptvSearch.toLowerCase()) || c.group.toLowerCase().includes(iptvSearch.toLowerCase()))).length === 0 && (
+                                            {iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length === 0 && (
                                                 <div className="col-span-full py-12 text-center">
                                                     <div className="bg-gray-100 dark:bg-white/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                                                         <Search size={32} className="text-gray-400" />
                                                     </div>
                                                     <h3 className="text-gray-900 dark:text-white font-bold mb-1">No channels found</h3>
-                                                    <p className="text-gray-500 text-sm">Try searching for a different keyword or category</p>
-                                                </div>
-                                            )}
-                                            {iptvChannels.filter(c => (iptvTag === 'All' || c.group === iptvTag) && (c.name.toLowerCase().includes(iptvSearch.toLowerCase()) || c.group.toLowerCase().includes(iptvSearch.toLowerCase()))).length > 200 && (
-                                                <div className="col-span-full py-6 text-center text-gray-400 text-xs italic bg-gray-50 dark:bg-white/5 rounded-xl border border-dashed border-gray-200 dark:border-white/10">
-                                                    Showing first 200 channels. Refine category or search to see more.
+                                                    <p className="text-gray-500 text-sm">Try searching for a different keyword</p>
                                                 </div>
                                             )}
                                         </div>

@@ -1637,6 +1637,28 @@ export const updateSmtpSettings = async (settings: any) => {
   }
 };
 
+export const getIPTVConfig = async () => {
+  try {
+    const doc = await db.collection('config').doc('iptv').get();
+    return doc.exists ? doc.data() : { m3uUrl: '' };
+  } catch (error) {
+    console.error('Error fetching IPTV config:', error);
+    return { m3uUrl: '' };
+  }
+};
+
+export const updateIPTVConfig = async (m3uUrl: string) => {
+  try {
+    await db.collection('config').doc('iptv').set({
+      m3uUrl,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error updating IPTV config:', error);
+    throw error;
+  }
+};
+
 // --- IPTV CHANNELS ---
 
 export const getIPTVChannels = async (onlyActive = true): Promise<IPTVChannel[]> => {
@@ -1669,6 +1691,28 @@ export const addIPTVChannel = async (channel: Omit<IPTVChannel, 'id' | 'createdA
   } catch (error) {
     console.error('Error adding IPTV channel:', error);
     throw error;
+  }
+};
+
+export const batchAddIPTVChannels = async (channels: Omit<IPTVChannel, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+  const BATCH_SIZE = 500;
+  const chunks = [];
+  for (let i = 0; i < channels.length; i += BATCH_SIZE) {
+    chunks.push(channels.slice(i, i + BATCH_SIZE));
+  }
+
+  for (const chunk of chunks) {
+    const batch = db.batch();
+    const now = new Date().toISOString();
+    chunk.forEach(channel => {
+      const ref = db.collection(IPTV_CHANNELS_COLLECTION).doc();
+      batch.set(ref, {
+        ...channel,
+        createdAt: now,
+        updatedAt: now
+      });
+    });
+    await batch.commit();
   }
 };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, updateLiveLink, deleteLiveLink, setLiveLinkDefault, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch, getHighlights, addHighlight, deleteHighlight, getSubscribers, getIPTVChannels, addIPTVChannel, updateIPTVChannel, deleteIPTVChannel, getIPTVCategories, addIPTVCategory, deleteIPTVCategory } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, updateLiveLink, deleteLiveLink, setLiveLinkDefault, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch, getHighlights, addHighlight, deleteHighlight, getSubscribers, getIPTVChannels, addIPTVChannel, updateIPTVChannel, deleteIPTVChannel, getIPTVCategories, addIPTVCategory, deleteIPTVCategory, batchAddIPTVChannels } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
@@ -733,6 +733,16 @@ export const Admin: React.FC = () => {
     } catch (error) {
       if (!silent) alert('Failed to add channel.');
       throw error; // Re-throw to handle in bulk import
+    }
+  };
+
+  const handleBatchCreateIPTVChannels = async (channels: Omit<IPTVChannel, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+    try {
+      await batchAddIPTVChannels(channels);
+      refreshData();
+    } catch (error) {
+      console.error('Batch import failed:', error);
+      throw error;
     }
   };
 
@@ -2242,13 +2252,6 @@ export const Admin: React.FC = () => {
                   IPTV Administration
                 </h1>
                 <IPTVManager
-                  channels={iptvChannels}
-                  categories={iptvCategories}
-                  onCreateChannel={handleCreateIPTVChannel}
-                  onUpdateChannel={handleUpdateIPTVChannel}
-                  onDeleteChannel={handleDeleteIPTVChannel}
-                  onCreateCategory={handleCreateIPTVCategory}
-                  onDeleteCategory={handleDeleteIPTVCategory}
                   onRefresh={refreshData}
                 />
               </div>
