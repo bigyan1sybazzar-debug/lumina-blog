@@ -2,7 +2,7 @@
 import { notifyIndexNow, notifyBingWebmaster } from './indexingService'; // Ensure this is imported
 import firebase from 'firebase/compat/app';
 import { db } from './firebase';
-import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption, LiveLink, Prompt, PromptCategory, PromptSubcategory, Highlight, TrafficSession, TrafficStats } from '../types';
+import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption, LiveLink, Prompt, PromptCategory, PromptSubcategory, Highlight, TrafficSession, TrafficStats, IPTVChannel, IPTVCategory } from '../types';
 import { MOCK_POSTS, CATEGORIES } from '../constants';
 import { slugify } from '../lib/slugify'; // <-- NEW IMPORT
 
@@ -19,6 +19,8 @@ const PAGES_COLLECTION = 'pages';
 const HIGHLIGHTS_COLLECTION = 'highlights';
 const TRAFFIC_COLLECTION = 'traffic';
 const SUBSCRIBERS_COLLECTION = 'subscribers';
+const IPTV_CHANNELS_COLLECTION = 'iptv_channels';
+const IPTV_CATEGORIES_COLLECTION = 'iptv_categories';
 
 
 
@@ -1631,6 +1633,97 @@ export const updateSmtpSettings = async (settings: any) => {
     });
   } catch (error) {
     console.error('Error updating SMTP settings:', error);
+    throw error;
+  }
+};
+
+// --- IPTV CHANNELS ---
+
+export const getIPTVChannels = async (onlyActive = true): Promise<IPTVChannel[]> => {
+  try {
+    let query = db.collection(IPTV_CHANNELS_COLLECTION) as any;
+    if (onlyActive) {
+      query = query.where('status', '==', 'active');
+    }
+
+    const snapshot = await query.get();
+    return snapshot.docs.map((doc: any) => ({
+      id: doc.id,
+      ...doc.data()
+    } as IPTVChannel));
+  } catch (error) {
+    console.error('Error fetching IPTV channels:', error);
+    return [];
+  }
+};
+
+export const addIPTVChannel = async (channel: Omit<IPTVChannel, 'id' | 'createdAt' | 'updatedAt'>) => {
+  try {
+    const now = new Date().toISOString();
+    const docRef = await db.collection(IPTV_CHANNELS_COLLECTION).add({
+      ...channel,
+      createdAt: now,
+      updatedAt: now
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding IPTV channel:', error);
+    throw error;
+  }
+};
+
+export const updateIPTVChannel = async (id: string, updates: Partial<IPTVChannel>) => {
+  try {
+    await db.collection(IPTV_CHANNELS_COLLECTION).doc(id).update({
+      ...updates,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error updating IPTV channel:', error);
+    throw error;
+  }
+};
+
+export const deleteIPTVChannel = async (id: string) => {
+  try {
+    await db.collection(IPTV_CHANNELS_COLLECTION).doc(id).delete();
+  } catch (error) {
+    console.error('Error deleting IPTV channel:', error);
+    throw error;
+  }
+};
+
+// --- IPTV CATEGORIES ---
+
+export const getIPTVCategories = async (): Promise<IPTVCategory[]> => {
+  try {
+    const snapshot = await db.collection(IPTV_CATEGORIES_COLLECTION).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as IPTVCategory));
+  } catch (error) {
+    console.error('Error fetching IPTV categories:', error);
+    return [];
+  }
+};
+
+export const addIPTVCategory = async (name: string) => {
+  try {
+    const slug = slugify(name);
+    const docRef = await db.collection(IPTV_CATEGORIES_COLLECTION).add({
+      name,
+      slug
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding IPTV category:', error);
+    throw error;
+  }
+};
+
+export const deleteIPTVCategory = async (id: string) => {
+  try {
+    await db.collection(IPTV_CATEGORIES_COLLECTION).doc(id).delete();
+  } catch (error) {
+    console.error('Error deleting IPTV category:', error);
     throw error;
   }
 };

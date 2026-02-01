@@ -59,6 +59,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /iptv_channels/{channelId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /iptv_categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // --- USERS ---
     match /users/{userId} {
       allow read: if true; 

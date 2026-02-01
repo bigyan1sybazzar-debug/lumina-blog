@@ -337,3 +337,20 @@ export interface Subscriber {
   subscribedAt: string; // ISO string
   status: 'active' | 'unsubscribed';
 }
+
+export interface IPTVChannel {
+  id: string;
+  name: string;
+  url: string;
+  logo?: string;
+  category: string;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IPTVCategory {
+  id: string;
+  name: string;
+  slug: string;
+}

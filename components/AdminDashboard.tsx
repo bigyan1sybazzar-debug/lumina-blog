@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, updateLiveLink, deleteLiveLink, setLiveLinkDefault, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch, getHighlights, addHighlight, deleteHighlight, getSubscribers } from '../services/db';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, updateUserStatus, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getAllComments, getAllReviews, deleteComment, deleteReview, replyToComment, replyToReview, getAllPostsAdmin, getAllPollsAdmin, updatePollStatus, updatePoll, deletePoll, getLiveLinks, addLiveLink, updateLiveLink, deleteLiveLink, setLiveLinkDefault, getKeywords, createKeyword, deleteKeyword, getLiveMatches, createLiveMatch, updateLiveMatchStatus, deleteLiveMatch, getHighlights, addHighlight, deleteHighlight, getSubscribers, getIPTVChannels, addIPTVChannel, updateIPTVChannel, deleteIPTVChannel, getIPTVCategories, addIPTVCategory, deleteIPTVCategory } from '../services/db';
 import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { BlogPost, User, Category, BlogPostComment, BlogPostReview, Poll, LiveLink, Keyword, LiveMatch, Highlight } from '../types';
+import { BlogPost, User, Category, BlogPostComment, BlogPostReview, Poll, LiveLink, Keyword, LiveMatch, Highlight, IPTVChannel, IPTVCategory } from '../types';
 // Removed modular firestore imports for consistency with services/firebase.ts
 import { db } from '../services/firebase';
 import { getAllChats } from '../services/chatService';
@@ -17,7 +17,7 @@ import {
   PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw,
   Users, CheckCircle, Shield, Tag, Globe, ExternalLink, Trash2, Eye,
   Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter,
-  Bot, Vote, Hash, Trophy, Send
+  Bot, Vote, Hash, Trophy, Send, Tv
 } from 'lucide-react';
 import { AnalyticsDashboard } from './admin/AnalyticsDashboard';
 import { UserManagement } from './admin/UserManagement';
@@ -27,6 +27,7 @@ import { FeaturedManager } from './admin/FeaturedManager';
 import { CategoriesManager } from './admin/CategoriesManager';
 import { KeywordsManager } from './admin/KeywordsManager';
 import { LiveMatchManager } from './admin/LiveMatchManager';
+import { IPTVManager } from './admin/IPTVManager';
 
 import { ANALYTICS_DATA } from '../constants';
 import { deleteCategory, updatePost, deletePost, getPostById } from '../services/db';
@@ -45,7 +46,7 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'keywords' | 'live-matches' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section' | 'highlights' | 'subscribers'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'keywords' | 'live-matches' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section' | 'highlights' | 'subscribers' | 'iptv-manager'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -144,6 +145,10 @@ export const Admin: React.FC = () => {
   const [newHighlightTitle, setNewHighlightTitle] = useState('');
   const [newHighlightUrl, setNewHighlightUrl] = useState('');
   const [newHighlightCategory, setNewHighlightCategory] = useState('');
+
+  // IPTV State
+  const [iptvChannels, setIptvChannels] = useState<IPTVChannel[]>([]);
+  const [iptvCategories, setIptvCategories] = useState<IPTVCategory[]>([]);
 
   const logsEndRef = useRef<HTMLDivElement>(null);
   const isAdmin = user?.role === 'admin';
@@ -280,6 +285,13 @@ export const Admin: React.FC = () => {
 
       const matches = await getLiveMatches();
       setLiveMatches(matches);
+
+      if (isAdmin) {
+        const channels = await getIPTVChannels(false); // Fetch all including inactive
+        setIptvChannels(channels);
+        const iptvCats = await getIPTVCategories();
+        setIptvCategories(iptvCats);
+      }
 
       // --- CALCULATE REAL ANALYTICS ---
       if (isAdmin) { // Ensure using the refreshed allPostsData
@@ -708,6 +720,53 @@ export const Admin: React.FC = () => {
         alert('Failed to delete live match.');
         console.error(error);
       }
+    }
+  };
+
+  const handleCreateIPTVChannel = async (channel: Omit<IPTVChannel, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      await addIPTVChannel(channel);
+      alert('Channel added successfully!');
+      refreshData();
+    } catch (error) {
+      alert('Failed to add channel.');
+    }
+  };
+
+  const handleUpdateIPTVChannel = async (id: string, updates: Partial<IPTVChannel>) => {
+    try {
+      await updateIPTVChannel(id, updates);
+      refreshData();
+    } catch (error) {
+      alert('Failed to update channel.');
+    }
+  };
+
+  const handleDeleteIPTVChannel = async (id: string) => {
+    try {
+      await deleteIPTVChannel(id);
+      alert('Channel removed!');
+      refreshData();
+    } catch (error) {
+      alert('Failed to delete channel.');
+    }
+  };
+
+  const handleCreateIPTVCategory = async (name: string) => {
+    try {
+      await addIPTVCategory(name);
+      refreshData();
+    } catch (error) {
+      alert('Failed to add category.');
+    }
+  };
+
+  const handleDeleteIPTVCategory = async (id: string) => {
+    try {
+      await deleteIPTVCategory(id);
+      refreshData();
+    } catch (error) {
+      alert('Failed to delete category.');
     }
   };
 
@@ -1216,6 +1275,16 @@ export const Admin: React.FC = () => {
                       }`}
                   >
                     <Send size={18} className="mr-3" /> Subscribers
+                  </button>
+
+                  <button
+                    onClick={() => { setActiveTab('iptv-manager'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'iptv-manager'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <Tv size={18} className="mr-3" /> IPTV Manager
                   </button>
                 </>
               )}
@@ -2154,6 +2223,29 @@ export const Admin: React.FC = () => {
                   pendingPostsCount={pendingPosts.length}
                   chartData={chartData}
                   isAdmin={isAdmin}
+                />
+              </div>
+            )
+          }
+
+          {/* IPTV MANAGER TAB */}
+          {
+            activeTab === 'iptv-manager' && isAdmin && (
+              <div className="max-w-7xl mx-auto">
+                <h1 className="text-3xl font-black text-gray-900 dark:text-white flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-primary-600 text-white rounded-2xl shadow-lg shadow-primary-600/20">
+                    <Tv size={28} />
+                  </div>
+                  IPTV Administration
+                </h1>
+                <IPTVManager
+                  channels={iptvChannels}
+                  categories={iptvCategories}
+                  onCreateChannel={handleCreateIPTVChannel}
+                  onUpdateChannel={handleUpdateIPTVChannel}
+                  onDeleteChannel={handleDeleteIPTVChannel}
+                  onCreateCategory={handleCreateIPTVCategory}
+                  onDeleteCategory={handleDeleteIPTVCategory}
                 />
               </div>
             )

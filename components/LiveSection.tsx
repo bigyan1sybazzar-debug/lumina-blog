@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getLiveLinks, getHighlights, subscribeToNewsletter } from '../services/db';
+import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels } from '../services/db';
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
 import Image from 'next/image';
 import GoogleAdSense from './GoogleAdSense';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
+import HLSPlayer from './HLSPlayer';
+import { M3UChannel } from '../lib/m3uParser';
 
 // Custom styles to remove Splide padding
 const splideCustomStyles = `
@@ -85,6 +87,10 @@ export const LiveSection: React.FC = () => {
     const [showDiscussions, setShowDiscussions] = useState(false);
     const [commentText, setCommentText] = useState('');
     const [comments, setComments] = useState<{ id: string; channelId: string; text: string; timestamp: Date; }[]>([]);
+    const [iptvChannels, setIptvChannels] = useState<M3UChannel[]>([]);
+    const [isIPTVMode, setIsIPTVMode] = useState(false);
+    const [iptvTag, setIptvTag] = useState<string>('All');
+    const [iptvSearch, setIptvSearch] = useState('');
     const playerRef = React.useRef<HTMLDivElement>(null);
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
@@ -112,7 +118,16 @@ export const LiveSection: React.FC = () => {
         });
         getHighlights().then(setHighlights);
 
-        getHighlights().then(setHighlights);
+        getIPTVChannels().then(channels => {
+            const mapped = channels.map(c => ({
+                id: c.id,
+                name: c.name,
+                url: c.url,
+                logo: c.logo || '',
+                group: c.category
+            }));
+            setIptvChannels(mapped);
+        }).catch(err => console.error('Failed to load IPTV channels:', err));
     }, []);
 
     useEffect(() => {
@@ -216,6 +231,19 @@ export const LiveSection: React.FC = () => {
         }
         setShowAd(false);
         setAdTimer(0);
+        // Ensure we scroll to player when ad is skipped
+        playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    const handleIptvClick = (channel: M3UChannel) => {
+        const liveLink: any = {
+            id: channel.id,
+            heading: channel.name,
+            iframeUrl: channel.url,
+            isHLS: channel.url.includes('.m3u8'),
+            tags: [channel.group]
+        };
+        handleLinkClick(liveLink);
     };
 
     const handleOnDemandSubmit = (e: React.FormEvent) => {
@@ -534,16 +562,25 @@ export const LiveSection: React.FC = () => {
                                                 )}
                                             </div>
                                         ) : selectedLink && (
-                                            <iframe
-                                                ref={iframeRef}
-                                                key={playerKey}
-                                                src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                                title={selectedLink.heading || selectedLink.title}
-                                                className="w-full h-full border-0"
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
-                                                allowFullScreen
-                                                referrerPolicy="no-referrer"
-                                            />
+                                            selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
+                                                <HLSPlayer
+                                                    src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                                    className="w-full h-full"
+                                                    autoPlay={true}
+                                                    muted={isMuted}
+                                                />
+                                            ) : (
+                                                <iframe
+                                                    ref={iframeRef}
+                                                    key={playerKey}
+                                                    src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                                    title={selectedLink.heading || selectedLink.title}
+                                                    className="w-full h-full border-0"
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
+                                                    allowFullScreen
+                                                    referrerPolicy="no-referrer"
+                                                />
+                                            )
                                         )}
                                     </div>
                                     {!showAd && selectedLink && (
@@ -772,105 +809,249 @@ export const LiveSection: React.FC = () => {
                                 </div>
                             )}
 
-                            {allTags.length > 1 && (
-                                <div className="z-10 relative">
-                                    <div className="md:hidden mb-2">
-                                        <select
-                                            value={selectedTag}
-                                            onChange={(e) => setSelectedTag(e.target.value)}
-                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
-                                        >
-                                            {allTags.map(tag => (
-                                                <option key={tag} value={tag}>
-                                                    {tag === 'All' ? 'All Coverage' : tag}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center gap-4 bg-gray-100/50 dark:bg-white/5 p-1.5 rounded-2xl w-fit border border-gray-200 dark:border-white/5">
+                                    <button
+                                        onClick={() => setIsIPTVMode(false)}
+                                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${!isIPTVMode
+                                            ? 'bg-red-600 text-white shadow-lg'
+                                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                                    >
+                                        Live Sports
+                                    </button>
+                                    <button
+                                        onClick={() => setIsIPTVMode(true)}
+                                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${isIPTVMode
+                                            ? 'bg-red-600 text-white shadow-lg'
+                                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                                    >
+                                        IPTV Channels
+                                    </button>
+                                </div>
 
-                                    <div className="hidden md:flex flex-wrap gap-2 mb-4">
-                                        {allTags.map(tag => (
+                                {isIPTVMode && (
+                                    <div className="relative w-full max-w-md">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                        <input
+                                            type="text"
+                                            placeholder="Search IPTV channels..."
+                                            value={iptvSearch}
+                                            onChange={(e) => setIptvSearch(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all shadow-sm"
+                                        />
+                                        {iptvSearch && (
                                             <button
-                                                key={tag}
-                                                onClick={() => setSelectedTag(tag)}
-                                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${selectedTag === tag
+                                                onClick={() => setIptvSearch('')}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+
+                                {!isIPTVMode ? (
+                                    allTags.length > 1 && (
+                                        <div className="z-10 relative">
+                                            <div className="md:hidden mb-2">
+                                                <select
+                                                    value={selectedTag}
+                                                    onChange={(e) => setSelectedTag(e.target.value)}
+                                                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
+                                                >
+                                                    {allTags.map(tag => (
+                                                        <option key={tag} value={tag}>
+                                                            {tag === 'All' ? 'All Coverage' : tag}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div className="hidden md:flex flex-wrap gap-2 mb-4">
+                                                {allTags.map(tag => (
+                                                    <button
+                                                        key={tag}
+                                                        onClick={() => setSelectedTag(tag)}
+                                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${selectedTag === tag
+                                                            ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
+                                                            : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
+                                                            }`}
+                                                    >
+                                                        {tag === 'All' ? 'All Coverage' : tag}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )
+                                ) : (
+                                    <div className="z-10 relative">
+                                        <div className="md:hidden mb-2">
+                                            <select
+                                                value={iptvTag}
+                                                onChange={(e) => setIptvTag(e.target.value)}
+                                                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
+                                            >
+                                                <option value="All">All Countries</option>
+                                                {Array.from(new Set(iptvChannels.map(c => c.group))).sort().map(group => (
+                                                    <option key={group} value={group}>{group}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="hidden md:flex flex-wrap gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
+                                            <button
+                                                onClick={() => setIptvTag('All')}
+                                                className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${iptvTag === 'All'
                                                     ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
                                                     : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
                                                     }`}
                                             >
-                                                {tag === 'All' ? 'All Coverage' : tag}
+                                                All Countries
                                             </button>
-                                        ))}
+                                            {Array.from(new Set(iptvChannels.map(c => c.group))).sort().slice(0, 15).map(group => (
+                                                <button
+                                                    key={group}
+                                                    onClick={() => setIptvTag(group)}
+                                                    className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${iptvTag === group
+                                                        ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
+                                                        : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
+                                                        }`}
+                                                >
+                                                    {group}
+                                                </button>
+                                            ))}
+                                            {iptvChannels.length > 0 && (
+                                                <span className="text-[10px] text-gray-400 flex items-center ml-2 border-l pl-3 border-gray-200 dark:border-white/10 italic">
+                                                    Showing top 15 categories, use mobile selector for all
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="w-full flex justify-center min-h-[100px] mt-8 mb-4 bg-gray-50 dark:bg-white/5 rounded-xl items-center overflow-hidden">
-                                        <GoogleAdSense
-                                            slot="7838572857"
-                                            format="horizontal"
-                                            responsive={true}
-                                            style={{ display: 'block', width: '100%' }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
 
                             <div>
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-3">
-                                        <Tv size={24} className="text-secondary-light" />
-                                        <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
-                                    </div>
-                                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                        {filteredLinks.map((link) => (
-                                            <button
-                                                key={link.id}
-                                                onClick={() => handleLinkClick(link)}
-                                                className={`group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
-                                                    ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
-                                                    : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
-                                                    }`}
-                                            >
-                                                {selectedLink?.id === link.id && (
-                                                    <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
-                                                        <span className="relative flex h-1.5 w-1.5">
-                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
-                                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
-                                                        </span>
-                                                        <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
-                                                    </div>
-                                                )}
+                                {!isIPTVMode ? (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3">
+                                            <Tv size={24} className="text-secondary-light" />
+                                            <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                            {filteredLinks.map((link) => (
+                                                <button
+                                                    key={link.id}
+                                                    onClick={() => handleLinkClick(link)}
+                                                    className={`group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
+                                                        ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
+                                                        : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                        }`}
+                                                >
+                                                    {selectedLink?.id === link.id && (
+                                                        <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
+                                                            <span className="relative flex h-1.5 w-1.5">
+                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
+                                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
+                                                            </span>
+                                                            <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
+                                                        </div>
+                                                    )}
 
-                                                <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
-                                                    <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
-                                                        ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
-                                                        : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
-                                                        }`}>
-                                                        {selectedLink?.id === link.id && (
-                                                            <div className="absolute inset-0 bg-white/10 animate-pulse" />
-                                                        )}
-                                                        <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0 w-full">
-                                                        <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
-                                                            ? 'text-primary-dark'
-                                                            : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                    <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
+                                                        <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
+                                                            ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
+                                                            : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
                                                             }`}>
-                                                            {link.heading}
-                                                        </h4>
-                                                        {link.tags && link.tags.length > 0 && (
-                                                            <div className="flex flex-wrap justify-center md:justify-start gap-1 mt-2">
-                                                                {link.tags.slice(0, 1).map((tag, i) => (
-                                                                    <span key={i} className="label-micro px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">
-                                                                        {tag}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        )}
+                                                            {selectedLink?.id === link.id && (
+                                                                <div className="absolute inset-0 bg-white/10 animate-pulse" />
+                                                            )}
+                                                            <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0 w-full">
+                                                            <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
+                                                                ? 'text-primary-dark'
+                                                                : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                                }`}>
+                                                                {link.heading}
+                                                            </h4>
+                                                            {link.tags && link.tags.length > 0 && (
+                                                                <div className="flex flex-wrap justify-center md:justify-start gap-1 mt-2">
+                                                                    {link.tags.slice(0, 1).map((tag, i) => (
+                                                                        <span key={i} className="label-micro px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">
+                                                                            {tag}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </button>
-                                        ))}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3">
+                                            <Tv size={24} className="text-secondary-light" />
+                                            <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.filter(c => (iptvTag === 'All' || c.group === iptvTag) && (c.name.toLowerCase().includes(iptvSearch.toLowerCase()) || c.group.toLowerCase().includes(iptvSearch.toLowerCase()))).length})</h2>
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                                            {iptvChannels
+                                                .filter(c => (iptvTag === 'All' || c.group === iptvTag) && (c.name.toLowerCase().includes(iptvSearch.toLowerCase()) || c.group.toLowerCase().includes(iptvSearch.toLowerCase())))
+                                                .slice(0, 200) // Show first 200 channels to avoid freezing
+                                                .map((channel) => (
+                                                    <button
+                                                        key={channel.id}
+                                                        onClick={() => handleIptvClick(channel)}
+                                                        className={`group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 ${selectedLink?.id === channel.id
+                                                            ? 'border-primary-light ring-2 ring-primary-light/20 shadow-md'
+                                                            : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                            }`}
+                                                    >
+                                                        <div className="flex flex-col items-center text-center gap-3">
+                                                            <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5`}>
+                                                                {channel.logo ? (
+                                                                    <img
+                                                                        src={channel.logo}
+                                                                        alt={channel.name}
+                                                                        className="w-full h-full object-contain p-1"
+                                                                        onError={(e) => {
+                                                                            (e.target as HTMLImageElement).src = 'https://i.imgur.com/guz2ajm.png';
+                                                                        }}
+                                                                    />
+                                                                ) : (
+                                                                    <Play size={18} className="text-primary-light" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0 w-full">
+                                                                <h4 className={`font-bold text-[11px] md:text-xs line-clamp-1 transition-colors ${selectedLink?.id === channel.id
+                                                                    ? 'text-primary-dark'
+                                                                    : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                                    }`}>
+                                                                    {channel.name}
+                                                                </h4>
+                                                                <span className="text-[10px] text-gray-400 block mt-1 line-clamp-1">{channel.group}</span>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            {iptvChannels.filter(c => (iptvTag === 'All' || c.group === iptvTag) && (c.name.toLowerCase().includes(iptvSearch.toLowerCase()) || c.group.toLowerCase().includes(iptvSearch.toLowerCase()))).length === 0 && (
+                                                <div className="col-span-full py-12 text-center">
+                                                    <div className="bg-gray-100 dark:bg-white/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                        <Search size={32} className="text-gray-400" />
+                                                    </div>
+                                                    <h3 className="text-gray-900 dark:text-white font-bold mb-1">No channels found</h3>
+                                                    <p className="text-gray-500 text-sm">Try searching for a different keyword or category</p>
+                                                </div>
+                                            )}
+                                            {iptvChannels.filter(c => (iptvTag === 'All' || c.group === iptvTag) && (c.name.toLowerCase().includes(iptvSearch.toLowerCase()) || c.group.toLowerCase().includes(iptvSearch.toLowerCase()))).length > 200 && (
+                                                <div className="col-span-full py-6 text-center text-gray-400 text-xs italic bg-gray-50 dark:bg-white/5 rounded-xl border border-dashed border-gray-200 dark:border-white/10">
+                                                    Showing first 200 channels. Refine category or search to see more.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="mt-4 bg-white dark:bg-gray-800/50 rounded-3xl p-6 md:p-10 border border-gray-200 dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
