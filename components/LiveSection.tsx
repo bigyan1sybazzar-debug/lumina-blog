@@ -95,6 +95,7 @@ export const LiveSection: React.FC = () => {
     const [iptvSearch, setIptvSearch] = useState('');
     const [iptvWatchTime, setIptvWatchTime] = useState(0);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+    const [iptvConfig, setIptvConfig] = useState<any>(null);
     const { user } = useAuth();
     const playerRef = React.useRef<HTMLDivElement>(null);
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
@@ -124,6 +125,7 @@ export const LiveSection: React.FC = () => {
         getHighlights().then(setHighlights);
 
         getIPTVConfig().then(async config => {
+            setIptvConfig(config);
             if (config?.m3uUrl) {
                 try {
                     const proxyUrl = `/api/proxy?url=${encodeURIComponent(config.m3uUrl)}`;
@@ -166,27 +168,35 @@ export const LiveSection: React.FC = () => {
         }
     }, [activeScoreTab, cricketScores.length]);
 
-    // IPTV Watch Time and Login Prompt logic
+    // IPTV/Sports Watch Time and Login Prompt logic
     useEffect(() => {
         let interval: NodeJS.Timeout;
-        // Check if selected link is IPTV and user is NOT logged in
-        if (selectedLink?.isIPTV && !user && !showAd) {
+
+        // Determine if current link should be limited
+        const isIPTV = selectedLink?.isIPTV;
+        const isSports = !isIPTV; // If not IPTV, it's a Live Sports link
+
+        const shouldLimit = (isIPTV) || (isSports && iptvConfig?.enableSportsLimit);
+        const limitSeconds = (iptvConfig?.guestLimitMinutes || 5) * 60;
+
+        // Check if limit applies and user is NOT logged in
+        if (selectedLink && shouldLimit && !user && !showAd) {
             interval = setInterval(() => {
                 setIptvWatchTime(prev => {
                     const newTime = prev + 1;
-                    if (newTime >= 300) { // 300 seconds = 5 minutes
+                    if (newTime >= limitSeconds) {
                         setShowLoginPrompt(true);
                     }
                     return newTime;
                 });
             }, 1000);
         } else {
-            // Reset if they are logged in, switches to sports, or closes player
+            // Reset if they are logged in, switched to unrestricted content, or closed player
             setIptvWatchTime(0);
             setShowLoginPrompt(false);
         }
         return () => clearInterval(interval);
-    }, [selectedLink, user, showAd]);
+    }, [selectedLink, user, showAd, iptvConfig]);
 
     // Auto-block ads when iframe loads
     useEffect(() => {
@@ -640,7 +650,7 @@ export const LiveSection: React.FC = () => {
                                                             </Link>
                                                         </div>
                                                         <p className="mt-8 text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">
-                                                            Free 5-minute preview finished
+                                                            Free {iptvConfig?.guestLimitMinutes || 5}-minute preview finished
                                                         </p>
                                                     </div>
                                                 )}

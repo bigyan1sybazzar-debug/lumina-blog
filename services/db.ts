@@ -1640,17 +1640,21 @@ export const updateSmtpSettings = async (settings: any) => {
 export const getIPTVConfig = async () => {
   try {
     const doc = await db.collection('config').doc('iptv').get();
-    return doc.exists ? doc.data() : { m3uUrl: '' };
+    return doc.exists ? doc.data() : {
+      m3uUrl: '',
+      guestLimitMinutes: 5,
+      enableSportsLimit: false
+    };
   } catch (error) {
     console.error('Error fetching IPTV config:', error);
-    return { m3uUrl: '' };
+    return { m3uUrl: '', guestLimitMinutes: 5, enableSportsLimit: false };
   }
 };
 
-export const updateIPTVConfig = async (m3uUrl: string) => {
+export const updateIPTVConfig = async (settings: { m3uUrl: string; guestLimitMinutes: number; enableSportsLimit: boolean }) => {
   try {
     await db.collection('config').doc('iptv').set({
-      m3uUrl,
+      ...settings,
       updatedAt: new Date().toISOString()
     });
   } catch (error) {
