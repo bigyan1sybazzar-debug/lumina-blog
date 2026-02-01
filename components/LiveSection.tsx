@@ -10,7 +10,7 @@ import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Termi
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
-// Custom styles to remove Splide padding on mobile
+// Custom styles to remove Splide padding
 const splideCustomStyles = `
   #trending-slider .splide__track {
     padding-left: 0 !important;
@@ -19,23 +19,6 @@ const splideCustomStyles = `
   #trending-slider .splide__list {
     padding-left: 0 !important;
     padding-right: 0 !important;
-  }
-  
-  /* Mobile specific adjustments */
-  @media (max-width: 767px) {
-    #trending-slider .splide__slide:first-child {
-      margin-left: 1rem !important;
-    }
-    #trending-slider .splide__slide:last-child {
-      margin-right: 1rem !important;
-    }
-  }
-  
-  /* Desktop specific adjustments */
-  @media (min-width: 768px) {
-    #trending-slider .splide__slide:first-child {
-      margin-left: 0 !important;
-    }
   }
 `;
 
@@ -425,11 +408,11 @@ export const LiveSection: React.FC = () => {
                                     Trending Now
                                 </button>
                             </div>
-                            <div className="w-full md:flex-1 min-w-0 -mx-4 sm:-mx-6 lg:-mx-8 md:mx-0">
+                            <div className="w-full md:flex-1 min-w-0">
                                 <Splide
                                     id="trending-slider"
                                     options={splideOptionsTrending}
-                                    className="!pl-4 sm:!pl-6 lg:!pl-8 md:!pl-0"
+                                    className=""
                                 >
                                     {links.filter(l => l.isTrending).map((link) => (
                                         <SplideSlide key={link.id}>
@@ -494,7 +477,7 @@ export const LiveSection: React.FC = () => {
                             {(selectedLink || showAd) && (
                                 <div
                                     ref={playerRef}
-                                    className="relative bg-black rounded-none md:rounded-3xl overflow-hidden shadow-xl md:shadow-2xl border-y md:border border-gray-200/50 dark:border-white/10 w-screen md:w-full -ml-4 sm:-ml-6 lg:-ml-8 md:ml-0"
+                                    className="relative bg-black rounded-3xl overflow-hidden shadow-xl md:shadow-2xl border border-gray-200/50 dark:border-white/10 w-full"
                                 >
                                     <div className="aspect-video w-full relative">
                                         {showAd ? (
@@ -502,7 +485,7 @@ export const LiveSection: React.FC = () => {
                                                 <div className="w-full h-full flex items-center justify-center p-4">
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl place-items-center">
                                                         {/* Ad Unit 1 - Centered Square */}
-                                                        <div className="w-[300px] h-[250px] md:w-full md:max-w-[336px] md:h-auto md:aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
+                                                        <div className="w-[250px] h-[200px] md:w-full md:max-w-[336px] md:h-auto md:aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
                                                             <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-4xl select-none pointer-events-none">ADS</div>
                                                             <GoogleAdSense
                                                                 slot="7838572857"
