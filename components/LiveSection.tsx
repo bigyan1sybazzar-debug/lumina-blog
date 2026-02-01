@@ -6,7 +6,7 @@ import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
 import Image from 'next/image';
 import GoogleAdSense from './GoogleAdSense';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 
@@ -98,7 +98,12 @@ export const LiveSection: React.FC = () => {
     const [onDemandName, setOnDemandName] = useState('');
     const [onDemandMessage, setOnDemandMessage] = useState('');
     const [playerKey, setPlayerKey] = useState(0);
+    const [isMuted, setIsMuted] = useState(true);
+    const [showDiscussions, setShowDiscussions] = useState(false);
+    const [commentText, setCommentText] = useState('');
+    const [comments, setComments] = useState<{ id: string; channelId: string; text: string; timestamp: Date; }[]>([]);
     const playerRef = React.useRef<HTMLDivElement>(null);
+    const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -142,6 +147,58 @@ export const LiveSection: React.FC = () => {
                 });
         }
     }, [activeScoreTab, cricketScores.length]);
+
+    // Auto-block ads when iframe loads
+    useEffect(() => {
+        if (iframeRef.current && selectedLink) {
+            const iframe = iframeRef.current;
+
+            const attemptAdBlock = () => {
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                    if (iframeDoc) {
+                        // Inject ad-blocking CSS
+                        const style = iframeDoc.createElement('style');
+                        style.textContent = `
+                            /* Hide common ad elements */
+                            [id*="ad-"],
+                            [class*="ad-"],
+                            [class*="popup"],
+                            [class*="overlay"]:not([class*="video"]),
+                            [id*="popup"],
+                            div[style*="position: fixed"][style*="z-index: 9"],
+                            iframe[src*="ads"],
+                            iframe[src*="doubleclick"],
+                            iframe[src*="googlesyndication"] {
+                                display: none !important;
+                                visibility: hidden !important;
+                                opacity: 0 !important;
+                                pointer-events: none !important;
+                            }
+                        `;
+                        iframeDoc.head?.appendChild(style);
+                    }
+                } catch (e) {
+                    // CORS restriction - expected for external iframes
+                    console.log('Cannot inject ad-blocking styles due to CORS');
+                }
+            };
+
+            // Try immediately
+            attemptAdBlock();
+
+            // Try again after iframe loads
+            iframe.addEventListener('load', attemptAdBlock);
+
+            // Try periodically for dynamically loaded ads
+            const interval = setInterval(attemptAdBlock, 2000);
+
+            return () => {
+                iframe.removeEventListener('load', attemptAdBlock);
+                clearInterval(interval);
+            };
+        }
+    }, [selectedLink]);
 
     const handleSubscribe = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -203,6 +260,119 @@ export const LiveSection: React.FC = () => {
                 document.exitFullscreen();
             }
         }
+    };
+
+    const toggleMute = () => {
+        setIsMuted(!isMuted);
+        if (iframeRef.current) {
+            try {
+                // Try multiple methods to control audio
+                const iframe = iframeRef.current;
+
+                // Method 1: YouTube API
+                iframe.contentWindow?.postMessage(
+                    JSON.stringify({ event: 'command', func: isMuted ? 'unMute' : 'mute' }),
+                    '*'
+                );
+
+                // Method 2: Generic mute command
+                iframe.contentWindow?.postMessage(
+                    { type: 'mute', value: !isMuted },
+                    '*'
+                );
+
+                // Method 3: Try to access and mute video elements (may not work due to CORS)
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                    if (iframeDoc) {
+                        const videos = iframeDoc.querySelectorAll('video');
+                        videos.forEach((video: any) => {
+                            video.muted = !isMuted;
+                        });
+                    }
+                } catch (e) {
+                    // CORS restriction - expected for external iframes
+                }
+            } catch (e) {
+                console.log('Cannot control iframe audio:', e);
+            }
+        }
+    };
+
+    const clearAds = () => {
+        if (iframeRef.current) {
+            try {
+                const iframe = iframeRef.current;
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+
+                if (iframeDoc) {
+                    // Remove common ad elements
+                    const adSelectors = [
+                        'iframe[src*="ads"]',
+                        'iframe[src*="doubleclick"]',
+                        'iframe[src*="googlesyndication"]',
+                        '[id*="ad"]',
+                        '[class*="ad-"]',
+                        '[class*="popup"]',
+                        '[class*="overlay"]',
+                        '[class*="modal"]',
+                        'div[style*="position: fixed"]',
+                        'div[style*="z-index: 9"]',
+                    ];
+
+                    adSelectors.forEach(selector => {
+                        try {
+                            const elements = iframeDoc.querySelectorAll(selector);
+                            elements.forEach((el: any) => {
+                                // Check if it's likely an ad (not the main video)
+                                if (!el.querySelector('video') || el.querySelector('video').duration < 10) {
+                                    el.remove();
+                                }
+                            });
+                        } catch (e) {
+                            // Continue with other selectors
+                        }
+                    });
+
+                    alert('Attempted to clear ads. Note: Some ads may be protected by the iframe source.');
+                } else {
+                    alert('Cannot access iframe content due to browser security restrictions. Try the Refresh Player button instead.');
+                }
+            } catch (e) {
+                alert('Cannot clear ads due to browser security restrictions. The iframe content is from a different domain.');
+            }
+        }
+    };
+
+    const handlePostComment = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!commentText.trim() || !selectedLink) return;
+
+        const newComment = {
+            id: Date.now().toString(),
+            channelId: selectedLink.id,
+            text: commentText,
+            timestamp: new Date(),
+        };
+
+        setComments([newComment, ...comments]);
+        setCommentText('');
+    };
+
+    const getChannelComments = () => {
+        if (!selectedLink) return [];
+        return comments.filter(c => c.channelId === selectedLink.id);
+    };
+
+    const formatTimeAgo = (date: Date) => {
+        const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        return `${days}d ago`;
     };
 
     const groupedHighlights = highlights.reduce((acc, h) => {
@@ -382,6 +552,7 @@ export const LiveSection: React.FC = () => {
                                             </div>
                                         ) : selectedLink && (
                                             <iframe
+                                                ref={iframeRef}
                                                 key={playerKey}
                                                 src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
                                                 title={selectedLink.heading || selectedLink.title}
@@ -401,6 +572,20 @@ export const LiveSection: React.FC = () => {
                                                 >
                                                     <RefreshCw size={14} className="group-active:rotate-180 transition-transform duration-500" />
                                                     Refresh Player
+                                                </button>
+                                                <button
+                                                    onClick={clearAds}
+                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
+                                                >
+                                                    <Shield size={14} />
+                                                    Clear Ads
+                                                </button>
+                                                <button
+                                                    onClick={toggleMute}
+                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
+                                                >
+                                                    {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                                                    {isMuted ? 'Unmute' : 'Mute'}
                                                 </button>
                                                 <button
                                                     onClick={toggleFullscreen}
@@ -482,6 +667,121 @@ export const LiveSection: React.FC = () => {
                                                     >
                                                         <X size={20} />
                                                     </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Discussions Section - Redesigned */}
+                                            <div className="mt-6 relative">
+                                                <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-primary-500/10 to-orange-500/10 blur-2xl opacity-50 rounded-3xl" />
+                                                <div className="relative bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-800 dark:via-red-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-red-200 dark:border-red-800/50 shadow-xl overflow-hidden">
+                                                    <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl" />
+                                                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl" />
+
+                                                    <div className="relative p-4 md:p-6">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="p-2.5 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl shadow-lg">
+                                                                    <MessageCircle size={20} className="text-white" />
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-lg font-black text-gray-900 dark:text-white">
+                                                                        Channel Discussions
+                                                                    </h4>
+                                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                                        Share your thoughts with the community
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setShowDiscussions(!showDiscussions)}
+                                                                className="px-4 py-2 bg-white dark:bg-gray-700 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all shadow-sm border border-red-200 dark:border-red-700"
+                                                            >
+                                                                {showDiscussions ? 'Hide' : 'Show'} Comments
+                                                            </button>
+                                                        </div>
+
+                                                        {showDiscussions && (
+                                                            <div className="space-y-4 animate-in slide-in-from-top duration-300">
+                                                                <div className="bg-white dark:bg-gray-900/50 rounded-xl p-4 border border-red-100 dark:border-red-800/30 shadow-sm">
+                                                                    <div className="flex items-start gap-3">
+                                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                                                            You
+                                                                        </div>
+                                                                        <div className="flex-1 space-y-3">
+                                                                            <textarea
+                                                                                value={commentText}
+                                                                                onChange={(e) => setCommentText(e.target.value)}
+                                                                                placeholder="What do you think about this channel? Share your experience..."
+                                                                                className="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none transition-all"
+                                                                                rows={3}
+                                                                            />
+                                                                            <div className="flex items-center justify-between">
+                                                                                <p className="text-xs text-gray-400">
+                                                                                    💡 Be respectful and constructive
+                                                                                </p>
+                                                                                <button
+                                                                                    onClick={handlePostComment}
+                                                                                    disabled={!commentText.trim()}
+                                                                                    className="px-6 py-2.5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white text-sm font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                                                                >
+                                                                                    Post Comment
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Display Comments */}
+                                                                {getChannelComments().length > 0 ? (
+                                                                    <div className="pt-4 border-t-2 border-dashed border-red-200 dark:border-red-800/30 space-y-3">
+                                                                        <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                                                            💬 {getChannelComments().length} Comment{getChannelComments().length !== 1 ? 's' : ''}
+                                                                        </p>
+                                                                        {getChannelComments().map((comment) => (
+                                                                            <div key={comment.id} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-red-100 dark:border-red-800/20">
+                                                                                <div className="flex items-start gap-3">
+                                                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                                                                                        U
+                                                                                    </div>
+                                                                                    <div className="flex-1">
+                                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                                            <span className="text-xs font-bold text-gray-900 dark:text-white">User</span>
+                                                                                            <span className="text-xs text-gray-400">{formatTimeAgo(comment.timestamp)}</span>
+                                                                                        </div>
+                                                                                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                                                            {comment.text}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="pt-4 border-t-2 border-dashed border-red-200 dark:border-red-800/30">
+                                                                        <div className="text-center py-8">
+                                                                            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full mb-3">
+                                                                                <MessageCircle size={28} className="text-red-400" />
+                                                                            </div>
+                                                                            <p className="text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">
+                                                                                No comments yet
+                                                                            </p>
+                                                                            <p className="text-xs text-gray-400">
+                                                                                Be the first to start the conversation! 🎉
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {!showDiscussions && (
+                                                            <div className="text-center py-3">
+                                                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                                                    💬 Click "Show Comments" to join the discussion
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -842,8 +1142,8 @@ export const LiveSection: React.FC = () => {
                     </div>
 
                     <div className="relative group/cta">
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary-600/20 to-secondary-600/20 blur-[100px] rounded-full group-hover:scale-110 transition-transform duration-1000" />
-                        <div className="relative bg-gradient-to-br from-primary-600 to-primary-dark md:to-secondary-600 rounded-[2.5rem] p-10 md:p-16 overflow-hidden shadow-2xl text-white transform hover:scale-[1.01] transition-all duration-500">
+                        <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 to-orange-600/20 blur-[100px] rounded-full group-hover:scale-110 transition-transform duration-1000" />
+                        <div className="relative bg-gradient-to-br from-red-600 to-red-700 md:to-orange-600 rounded-[2.5rem] p-10 md:p-16 overflow-hidden shadow-2xl text-white transform hover:scale-[1.01] transition-all duration-500">
                             {/* Decorative elements */}
                             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32 animate-pulse" />
                             <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-2xl -ml-24 -mb-24 animate-pulse" />
