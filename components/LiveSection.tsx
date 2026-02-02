@@ -541,12 +541,14 @@ export const LiveSection: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="w-full flex justify-center min-h-[100px] my-4 bg-gray-50 dark:bg-white/5 rounded-xl items-center overflow-hidden">
+                    {/* Top Ad - Optimized for Mobile Wide Box */}
+                    <div className="w-full flex justify-center min-h-[60px] md:min-h-[100px] max-h-[100px] md:max-h-none my-4 bg-gray-50 dark:bg-white/5 rounded-xl items-center overflow-hidden">
                         <GoogleAdSense
                             slot="7838572857"
                             format="horizontal"
-                            responsive={true}
-                            style={{ display: 'block', width: '100%' }}
+                            responsive={false}
+                            style={{ display: 'block', width: '100%', height: '90px' }}
+                            className="flex justify-center"
                         />
                     </div>
 
@@ -645,19 +647,20 @@ export const LiveSection: React.FC = () => {
                                     ref={playerRef}
                                     className="relative bg-black rounded-3xl overflow-hidden shadow-xl md:shadow-2xl border border-gray-200/50 dark:border-white/10 w-full"
                                 >
-                                    <div className="aspect-video w-full relative">
+                                    <div className="aspect-[4/3] md:aspect-video w-full relative">
                                         {showAd ? (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/95 backdrop-blur-sm group z-50">
                                                 <div className="w-full h-full flex items-center justify-center p-4">
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl place-items-center">
-                                                        {/* Ad Unit 1 - Centered Square */}
-                                                        <div className="w-[250px] h-[200px] md:w-full md:max-w-[336px] md:h-auto md:aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
-                                                            <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-4xl select-none pointer-events-none">ADS</div>
+                                                        {/* Ad Unit 1 - Optimized for Mobile Wide Square Box */}
+                                                        <div className="w-full max-w-[300px] h-[250px] md:max-w-[336px] md:h-auto md:aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
+                                                            <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-2xl md:text-4xl select-none pointer-events-none">ADS</div>
                                                             <GoogleAdSense
                                                                 slot="7838572857"
                                                                 className="w-full h-full"
                                                                 format="rectangle"
-                                                                responsive={true}
+                                                                responsive={false}
+                                                                style={{ display: 'block', width: '100%', height: '250px' }}
                                                             />
                                                         </div>
                                                         {/* Ad Unit 2 - Hidden on Mobile, Side-by-Side on Desktop */}
