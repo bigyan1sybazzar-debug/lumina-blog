@@ -541,13 +541,13 @@ export const LiveSection: React.FC = () => {
                         </p>
                     </div>
 
-                    {/* Top Ad - Optimized for Mobile Wide Box */}
-                    <div className="w-full flex justify-center min-h-[60px] md:min-h-[100px] max-h-[100px] md:max-h-none my-4 bg-gray-50 dark:bg-white/5 rounded-xl items-center overflow-hidden">
+                    {/* Top Ad - Increased height for better fit */}
+                    <div className="w-full flex justify-center min-h-[60px] md:min-h-[100px] max-h-[120px] md:max-h-none my-4 bg-gray-50 dark:bg-white/5 rounded-xl items-center overflow-hidden">
                         <GoogleAdSense
                             slot="7838572857"
                             format="horizontal"
                             responsive={false}
-                            style={{ display: 'block', width: '100%', height: '90px' }}
+                            style={{ display: 'block', width: '100%', height: '110px' }}
                             className="flex justify-center"
                         />
                     </div>
@@ -745,21 +745,23 @@ export const LiveSection: React.FC = () => {
                                                 {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
                                                     <HLSPlayer
                                                         src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                                        className="w-full h-full"
+                                                        className="w-full h-full [&>video]:object-cover"
                                                         autoPlay={true}
                                                         muted={isMuted}
                                                     />
                                                 ) : (
-                                                    <iframe
-                                                        ref={iframeRef}
-                                                        key={playerKey}
-                                                        src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                                        title={selectedLink.heading || selectedLink.title}
-                                                        className="w-full h-full border-0"
-                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
-                                                        allowFullScreen
-                                                        referrerPolicy="no-referrer"
-                                                    />
+                                                    <div className="w-full h-full relative overflow-hidden">
+                                                        <iframe
+                                                            ref={iframeRef}
+                                                            key={playerKey}
+                                                            src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                                            title={selectedLink.heading || selectedLink.title}
+                                                            className="w-[100%] h-[100%] border-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.35] md:scale-100"
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
+                                                            allowFullScreen
+                                                            referrerPolicy="no-referrer"
+                                                        />
+                                                    </div>
                                                 )}
                                             </>
                                         )}
@@ -773,13 +775,6 @@ export const LiveSection: React.FC = () => {
                                                 >
                                                     <RefreshCw size={14} className="group-active:rotate-180 transition-transform duration-500" />
                                                     Refresh Player
-                                                </button>
-                                                <button
-                                                    onClick={clearAds}
-                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
-                                                >
-                                                    <Shield size={14} />
-                                                    Clear Ads
                                                 </button>
                                                 <button
                                                     onClick={toggleMute}
@@ -849,7 +844,14 @@ export const LiveSection: React.FC = () => {
                                                     </button>
                                                     <button
                                                         onClick={() => {
-                                                            alert("To bookmark this page, press Ctrl+D (Windows) or Cmd+D (Mac) on your keyboard.");
+                                                            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                                                            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                                                            if (isMobile) {
+                                                                alert("To keep Bigyann on your phone: \n\n• iPhone: Tap the Share button below and select 'Add to Home Screen'. \n• Android: Tap the three dots at the top right and select 'Add to Home Screen'.");
+                                                            } else {
+                                                                const shortcut = isMac ? "Cmd+D" : "Ctrl+D";
+                                                                alert(`To bookmark this page, press ${shortcut} on your keyboard.`);
+                                                            }
                                                         }}
                                                         className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-all shadow-sm"
                                                         title="How to Bookmark"
