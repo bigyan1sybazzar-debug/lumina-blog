@@ -146,27 +146,21 @@ export const LiveSection: React.FC = () => {
     }, [showAd, adTimer]);
 
     useEffect(() => {
-        getLiveLinks().then((fetchedLinks) => {
-            setLinks(fetchedLinks);
+        const loadInitialData = async () => {
+            try {
+                // Parallelize all metadata calls
+                const [fetchedLinks, fetchedHighlights, config, dbChannels] = await Promise.all([
+                    getLiveLinks(),
+                    getHighlights(),
+                    getIPTVConfig(),
+                    getIPTVChannels()
+                ]);
 
-            // Default link selection logic
-            getIPTVConfig().then(async config => {
+                setLinks(fetchedLinks);
+                setHighlights(fetchedHighlights);
                 setIptvConfig(config);
-                let fetchedIptv: M3UChannel[] = [];
 
-                if (config?.m3uUrl) {
-                    try {
-                        const proxyUrl = `/api/proxy?url=${encodeURIComponent(config.m3uUrl)}`;
-                        const res = await fetch(proxyUrl);
-                        const content = await res.text();
-                        fetchedIptv = parseM3U(content);
-                    } catch (err) {
-                        console.error('Failed to load/parse remote IPTV M3U:', err);
-                    }
-                }
-
-                // Always fetch from Firestore to get trending status and local channels
-                const dbChannels = await getIPTVChannels();
+                // Map database channels
                 const mappedDb: M3UChannel[] = dbChannels.map(c => ({
                     id: c.id,
                     name: c.name,
@@ -177,39 +171,71 @@ export const LiveSection: React.FC = () => {
                     isDefault: !!c.isDefault
                 }));
 
-                // Merge or just use Firestore (prefer Firestore as it has trending info)
-                const finalIptv = mappedDb.length > 0 ? mappedDb : fetchedIptv;
+                let finalIptv = mappedDb;
+
+                // Optimization: Skip remote fetch if we already have channels in Firestore
+                if (mappedDb.length === 0 && config?.m3uUrl) {
+                    try {
+                        const proxyUrl = `/api/proxy?url=${encodeURIComponent(config.m3uUrl)}`;
+                        const res = await fetch(proxyUrl);
+                        const content = await res.text();
+                        finalIptv = parseM3U(content);
+                    } catch (err) {
+                        console.error('Failed to load remote IPTV M3U:', err);
+                    }
+                }
+
                 setIptvChannels(finalIptv);
 
-                // Decide which link to show by default
+                // Default selection logic
                 const defaultIptv = finalIptv.find(c => c.isDefault);
                 const trendingIptv = finalIptv.find(c => c.isTrending);
                 const trendingSports = fetchedLinks.find(link => link.isTrending);
                 const defaultSports = fetchedLinks.find(link => link.isDefault) || fetchedLinks[0];
 
+                let initialLink = null;
+                let isIPTV = false;
+
                 if (user?.role === 'admin') {
-                    setIsIPTVMode(true);
-                    if (defaultIptv) {
-                        handleIptvClick(defaultIptv);
-                    } else if (trendingIptv) {
-                        handleIptvClick(trendingIptv);
-                    } else if (defaultSports) {
-                        handleLinkClick(defaultSports);
-                    }
+                    isIPTV = true;
+                    initialLink = defaultIptv || trendingIptv || (defaultSports ? {
+                        id: defaultSports.id,
+                        heading: defaultSports.heading,
+                        iframeUrl: defaultSports.iframeUrl,
+                        isHLS: defaultSports.iframeUrl.includes('.m3u8'),
+                        tags: defaultSports.tags
+                    } : null);
                 } else {
-                    if (defaultIptv) {
-                        handleIptvClick(defaultIptv);
-                    } else if (trendingIptv) {
-                        handleIptvClick(trendingIptv);
-                    } else if (trendingSports) {
-                        handleLinkClick(trendingSports);
-                    } else if (defaultSports) {
-                        handleLinkClick(defaultSports);
+                    if (defaultIptv || trendingIptv) {
+                        isIPTV = true;
+                        initialLink = defaultIptv || trendingIptv;
+                    } else {
+                        initialLink = trendingSports || defaultSports;
                     }
                 }
-            });
-        });
-        getHighlights().then(setHighlights);
+
+                if (initialLink) {
+                    setIsIPTVMode(isIPTV);
+                    const formattedLink: any = isIPTV ? {
+                        id: (initialLink as any).id,
+                        heading: (initialLink as any).name || (initialLink as any).heading,
+                        iframeUrl: (initialLink as any).url || (initialLink as any).iframeUrl,
+                        isHLS: ((initialLink as any).url || (initialLink as any).iframeUrl || '').includes('.m3u8'),
+                        tags: (initialLink as any).group ? [(initialLink as any).group] : (initialLink as any).tags,
+                        isIPTV: true
+                    } : initialLink;
+
+                    setPendingLink(formattedLink);
+                    setShowAd(true);
+                    setAdTimer(5);
+                }
+
+            } catch (error) {
+                console.error('Error in initial load:', error);
+            }
+        };
+
+        loadInitialData();
     }, [user?.role]);
 
     useEffect(() => {
@@ -478,6 +504,21 @@ export const LiveSection: React.FC = () => {
         ? links
         : links.filter(link => link.tags?.includes(selectedTag));
 
+    const iptvAllGroups = ['All', 'Trending', 'Default', ...Array.from(new Set(iptvChannels.map(c => c.group).filter(Boolean)))];
+
+    const trendingItems = [
+        ...links.filter(l => l.isTrending).map(l => ({ ...l, itemType: 'sports' })),
+        ...iptvChannels.filter(c => c.isTrending).map(c => ({
+            id: c.id,
+            heading: c.name,
+            iframeUrl: c.url,
+            isHLS: (c.url || '').includes('.m3u8'),
+            tags: [c.group],
+            isIPTV: true,
+            itemType: 'iptv'
+        }))
+    ];
+
     return (
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen relative overflow-hidden">
             {/* Custom Splide Styles */}
@@ -506,7 +547,7 @@ export const LiveSection: React.FC = () => {
                         />
                     </div>
 
-                    {links.filter(l => l.isTrending).length > 0 && (
+                    {trendingItems.length > 0 && (
                         <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
                             <div className="shrink-0">
                                 <button
@@ -523,59 +564,66 @@ export const LiveSection: React.FC = () => {
                                     options={splideOptionsTrending}
                                     className=""
                                 >
-                                    {links.filter(l => l.isTrending).map((link) => (
-                                        <SplideSlide key={link.id}>
-                                            <button
-                                                onClick={() => handleLinkClick(link)}
-                                                className={`w-full block group text-left ${selectedLink?.id === link.id ? 'scale-[0.98] transition-transform' : ''}`}
-                                            >
-                                                <div className={`relative flex items-center gap-2 md:gap-3 p-2 md:p-2.5 bg-white dark:bg-surface-dark-900 rounded-xl md:rounded-2xl border transition-all active:scale-[0.97] cursor-pointer ${selectedLink?.id === link.id
-                                                    ? 'border-primary-light ring-2 ring-primary-light/20 bg-primary-50/10 shadow-md'
-                                                    : 'border-slate-200 dark:border-slate-800 group-hover:border-primary-light/50 shadow-sm hover:shadow-md'}`}
+                                    {trendingItems
+                                        .sort((a, b) => {
+                                            const isAActive = selectedLink?.id === a.id;
+                                            const isBActive = selectedLink?.id === b.id;
+                                            if (isAActive !== isBActive) return isAActive ? -1 : 1;
+                                            return 0;
+                                        })
+                                        .map((link) => (
+                                            <SplideSlide key={link.id}>
+                                                <button
+                                                    onClick={() => handleLinkClick(link)}
+                                                    className={`w-full block group text-left ${selectedLink?.id === link.id ? 'scale-[0.98] transition-transform' : ''}`}
                                                 >
-                                                    {selectedLink?.id === link.id && (
-                                                        <div className="absolute top-1 right-1 md:top-2 md:right-2 flex items-center gap-1 md:gap-1.5 px-1.5 py-0.5 md:px-2 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50 z-10">
-                                                            <span className="relative flex h-1 w-1 md:h-1.5 md:w-1.5">
-                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
-                                                                <span className="relative inline-flex rounded-full h-1 w-1 md:h-1.5 md:w-1.5 bg-primary-600"></span>
-                                                            </span>
-                                                            <span className="text-[7px] md:text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
-                                                        </div>
-                                                    )}
+                                                    <div className={`relative flex items-center gap-2 md:gap-3 p-2 md:p-2.5 bg-white dark:bg-surface-dark-900 rounded-xl md:rounded-2xl border transition-all active:scale-[0.97] cursor-pointer ${selectedLink?.id === link.id
+                                                        ? 'border-primary-light ring-2 ring-primary-light/20 bg-primary-50/10 shadow-md'
+                                                        : 'border-slate-200 dark:border-slate-800 group-hover:border-primary-light/50 shadow-sm hover:shadow-md'}`}
+                                                    >
+                                                        {selectedLink?.id === link.id && (
+                                                            <div className="absolute top-1 right-1 md:top-2 md:right-2 flex items-center gap-1 md:gap-1.5 px-1.5 py-0.5 md:px-2 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50 z-10">
+                                                                <span className="relative flex h-1 w-1 md:h-1.5 md:w-1.5">
+                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
+                                                                    <span className="relative inline-flex rounded-full h-1 w-1 md:h-1.5 md:w-1.5 bg-primary-600"></span>
+                                                                </span>
+                                                                <span className="text-[7px] md:text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
+                                                            </div>
+                                                        )}
 
-                                                    <div className="relative group/icon flex-shrink-0">
-                                                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex flex-col items-center justify-center transition-all duration-300 relative z-10 overflow-hidden ${selectedLink?.id === link.id
-                                                            ? 'bg-gradient-to-br from-primary-600 via-primary-dark to-orange-500 text-white shadow-lg shadow-primary-500/30 ring-2 ring-white/20'
-                                                            : 'bg-gray-100 dark:bg-white/5 text-primary-light group-hover/icon:bg-primary-50 dark:group-hover/icon:bg-primary-900/20'
-                                                            }`}>
-                                                            {/* Glow effect for selected state */}
-                                                            {selectedLink?.id === link.id && (
-                                                                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent animate-pulse" />
-                                                            )}
+                                                        <div className="relative group/icon flex-shrink-0">
+                                                            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex flex-col items-center justify-center transition-all duration-300 relative z-10 overflow-hidden ${selectedLink?.id === link.id
+                                                                ? 'bg-gradient-to-br from-primary-600 via-primary-dark to-orange-500 text-white shadow-lg shadow-primary-500/30 ring-2 ring-white/20'
+                                                                : 'bg-gray-100 dark:bg-white/5 text-primary-light group-hover/icon:bg-primary-50 dark:group-hover/icon:bg-primary-900/20'
+                                                                }`}>
+                                                                {/* Glow effect for selected state */}
+                                                                {selectedLink?.id === link.id && (
+                                                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent animate-pulse" />
+                                                                )}
 
-                                                            <span className={`text-[5px] md:text-[6px] font-black tracking-[0.2em] mb-0.5 transition-colors ${selectedLink?.id === link.id ? 'text-white/90' : 'text-gray-400 group-hover/icon:text-primary-600'}`}>LIVE</span>
-                                                            <div className="relative">
-                                                                <div className={`h-1.5 w-1.5 md:h-2 md:w-2 rounded-full flex items-center justify-center ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`}>
-                                                                    <div className={`absolute h-full w-full rounded-full animate-ping opacity-75 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`} />
-                                                                    <div className={`h-0.5 w-0.5 md:h-1 md:w-1 rounded-full ${selectedLink?.id === link.id ? 'bg-primary-600' : 'bg-white'}`} />
+                                                                <span className={`text-[5px] md:text-[6px] font-black tracking-[0.2em] mb-0.5 transition-colors ${selectedLink?.id === link.id ? 'text-white/90' : 'text-gray-400 group-hover/icon:text-primary-600'}`}>LIVE</span>
+                                                                <div className="relative">
+                                                                    <div className={`h-1.5 w-1.5 md:h-2 md:w-2 rounded-full flex items-center justify-center ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`}>
+                                                                        <div className={`absolute h-full w-full rounded-full animate-ping opacity-75 ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`} />
+                                                                        <div className={`h-0.5 w-0.5 md:h-1 md:w-1 rounded-full ${selectedLink?.id === link.id ? 'bg-primary-600' : 'bg-white'}`} />
+                                                                    </div>
                                                                 </div>
                                                             </div>
+                                                            {/* Decorative ring */}
+                                                            <div className={`absolute -inset-0.5 md:-inset-1 rounded-lg md:rounded-xl opacity-0 group-hover/icon:opacity-100 transition-opacity duration-300 border border-primary-light/30 ${selectedLink?.id === link.id ? 'opacity-100 animate-pulse' : ''}`} />
                                                         </div>
-                                                        {/* Decorative ring */}
-                                                        <div className={`absolute -inset-0.5 md:-inset-1 rounded-lg md:rounded-xl opacity-0 group-hover/icon:opacity-100 transition-opacity duration-300 border border-primary-light/30 ${selectedLink?.id === link.id ? 'opacity-100 animate-pulse' : ''}`} />
+                                                        <div className="flex-1 min-w-0 pr-8 md:pr-0">
+                                                            <h3 className={`text-[10px] md:text-[11px] font-bold line-clamp-2 leading-tight transition-colors ${selectedLink?.id === link.id
+                                                                ? 'text-red-700 dark:text-red-400'
+                                                                : 'text-gray-900 dark:text-gray-100 group-hover:text-red-500'}`}
+                                                            >
+                                                                {link.heading}
+                                                            </h3>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex-1 min-w-0 pr-8 md:pr-0">
-                                                        <h3 className={`text-[10px] md:text-[11px] font-bold line-clamp-2 leading-tight transition-colors ${selectedLink?.id === link.id
-                                                            ? 'text-red-700 dark:text-red-400'
-                                                            : 'text-gray-900 dark:text-gray-100 group-hover:text-red-500'}`}
-                                                        >
-                                                            {link.heading}
-                                                        </h3>
-                                                    </div>
-                                                </div>
-                                            </button>
-                                        </SplideSlide>
-                                    ))}
+                                                </button>
+                                            </SplideSlide>
+                                        ))}
                                 </Splide>
                             </div>
                         </div>
@@ -745,16 +793,11 @@ export const LiveSection: React.FC = () => {
                                                     <div className="flex flex-wrap items-center gap-2 mb-2">
                                                         <Link
                                                             href="/"
-                                                            className="inline-flex items-center text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md"
+                                                            className="inline-flex items-center text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md mb-2"
                                                         >
                                                             <ArrowLeft className="w-2.5 h-2.5 mr-1" />
                                                             Home
                                                         </Link>
-                                                        {selectedLink.tags?.map((tag: string, i: number) => (
-                                                            <span key={i} className="text-[10px] bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-1 rounded-md font-bold uppercase tracking-wider border border-red-500/20">
-                                                                {tag}
-                                                            </span>
-                                                        ))}
                                                     </div>
                                                     <h3 className="text-base sm:text-lg md:text-2xl font-black text-gray-900 dark:text-white leading-tight">
                                                         {selectedLink.heading || selectedLink.title}
@@ -1005,7 +1048,36 @@ export const LiveSection: React.FC = () => {
                                         </div>
                                     )
                                 ) : (
-                                    <div className="z-10 relative" />
+                                    <div className="z-10 relative">
+                                        <div className="md:hidden mb-2">
+                                            <select
+                                                value={iptvTag}
+                                                onChange={(e) => setIptvTag(e.target.value)}
+                                                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
+                                            >
+                                                {iptvAllGroups.map(tag => (
+                                                    <option key={tag} value={tag}>
+                                                        {tag === 'All' ? 'All Channels' : tag}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="hidden md:flex flex-wrap gap-2 mb-4">
+                                            {iptvAllGroups.map(tag => (
+                                                <button
+                                                    key={tag}
+                                                    onClick={() => setIptvTag(tag)}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${iptvTag === tag
+                                                        ? tag === 'Trending' ? 'bg-amber-500 text-white shadow-lg' : tag === 'Default' ? 'bg-primary-600 text-white shadow-lg' : 'bg-red-600 text-white shadow-lg shadow-red-500/20'
+                                                        : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
+                                                        }`}
+                                                >
+                                                    {tag === 'Trending' ? '🔥 Trending' : tag === 'Default' ? '✨ Default' : tag === 'All' ? 'All Channels' : tag}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 )}
                             </div>
 
@@ -1017,55 +1089,53 @@ export const LiveSection: React.FC = () => {
                                             <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
                                         </div>
                                         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                            {filteredLinks.map((link) => (
-                                                <button
-                                                    key={link.id}
-                                                    onClick={() => handleLinkClick(link)}
-                                                    className={`group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
-                                                        ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
-                                                        : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
-                                                        }`}
-                                                >
-                                                    {selectedLink?.id === link.id && (
-                                                        <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
-                                                            <span className="relative flex h-1.5 w-1.5">
-                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
-                                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
-                                                            </span>
-                                                            <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
-                                                        </div>
-                                                    )}
+                                            {filteredLinks
+                                                .sort((a, b) => {
+                                                    const isAActive = selectedLink?.id === a.id;
+                                                    const isBActive = selectedLink?.id === b.id;
+                                                    if (isAActive !== isBActive) return isAActive ? -1 : 1;
+                                                    return 0;
+                                                })
+                                                .map((link) => (
+                                                    <button
+                                                        key={link.id}
+                                                        onClick={() => handleLinkClick(link)}
+                                                        className={`group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
+                                                            ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
+                                                            : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                            }`}
+                                                    >
+                                                        {selectedLink?.id === link.id && (
+                                                            <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
+                                                                <span className="relative flex h-1.5 w-1.5">
+                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
+                                                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
+                                                                </span>
+                                                                <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
+                                                            </div>
+                                                        )}
 
-                                                    <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
-                                                        <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
-                                                            ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
-                                                            : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
-                                                            }`}>
-                                                            {selectedLink?.id === link.id && (
-                                                                <div className="absolute inset-0 bg-white/10 animate-pulse" />
-                                                            )}
-                                                            <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0 w-full">
-                                                            <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
-                                                                ? 'text-primary-dark'
-                                                                : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                        <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
+                                                            <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
+                                                                ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
+                                                                : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
                                                                 }`}>
-                                                                {link.heading}
-                                                            </h4>
-                                                            {link.tags && link.tags.length > 0 && (
-                                                                <div className="flex flex-wrap justify-center md:justify-start gap-1 mt-2">
-                                                                    {link.tags.slice(0, 1).map((tag, i) => (
-                                                                        <span key={i} className="label-micro px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">
-                                                                            {tag}
-                                                                        </span>
-                                                                    ))}
-                                                                </div>
-                                                            )}
+                                                                {selectedLink?.id === link.id && (
+                                                                    <div className="absolute inset-0 bg-white/10 animate-pulse" />
+                                                                )}
+                                                                <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0 w-full">
+                                                                <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
+                                                                    ? 'text-primary-dark'
+                                                                    : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                                    }`}>
+                                                                    {link.heading}
+                                                                </h4>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </button>
-                                            ))}
+                                                    </button>
+                                                ))}
                                         </div>
                                     </div>
                                 ) : (
@@ -1076,10 +1146,27 @@ export const LiveSection: React.FC = () => {
                                         </div>
                                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                                             {iptvChannels
-                                                .filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase()))
+                                                .filter(c => {
+                                                    const matchesSearch = c.name.toLowerCase().includes(iptvSearch.toLowerCase());
+                                                    const matchesTag = iptvTag === 'All'
+                                                        || (iptvTag === 'Trending' && !!c.isTrending)
+                                                        || (iptvTag === 'Default' && !!c.isDefault)
+                                                        || c.group === iptvTag;
+                                                    return matchesSearch && matchesTag;
+                                                })
                                                 .sort((a, b) => {
-                                                    if (a.isDefault !== b.isDefault) return b.isDefault ? 1 : -1;
-                                                    return (b.isTrending ? 1 : 0) - (a.isTrending ? 1 : 0);
+                                                    // 1. Prioritize active (selected) channel
+                                                    const isAActive = selectedLink?.id === a.id;
+                                                    const isBActive = selectedLink?.id === b.id;
+                                                    if (isAActive !== isBActive) return isAActive ? -1 : 1;
+
+                                                    // 2. Prioritize trending
+                                                    if (!!b.isTrending !== !!a.isTrending) return b.isTrending ? 1 : -1;
+
+                                                    // 3. Prioritize default
+                                                    if (!!b.isDefault !== !!a.isDefault) return b.isDefault ? 1 : -1;
+
+                                                    return a.name.localeCompare(b.name);
                                                 })
                                                 .slice(0, 300)
                                                 .map((channel) => (
@@ -1127,7 +1214,6 @@ export const LiveSection: React.FC = () => {
                                                                         }`}>
                                                                         {channel.name}
                                                                     </h4>
-                                                                    <span className="text-[10px] text-gray-400 block mt-1 line-clamp-1">{channel.group}</span>
                                                                 </div>
                                                             </div>
                                                         </button>
