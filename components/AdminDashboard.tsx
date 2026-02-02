@@ -287,12 +287,7 @@ export const Admin: React.FC = () => {
       const matches = await getLiveMatches();
       setLiveMatches(matches);
 
-      if (isAdmin) {
-        const channels = await getIPTVChannels(false); // Fetch all including inactive
-        setIptvChannels(channels);
-        const iptvCats = await getIPTVCategories();
-        setIptvCategories(iptvCats);
-      }
+      // Removed global IPTV fetch to save quota
 
       // --- CALCULATE REAL ANALYTICS ---
       if (isAdmin) { // Ensure using the refreshed allPostsData
@@ -349,6 +344,15 @@ export const Admin: React.FC = () => {
         setAllComments(comments);
         setAllReviews(reviews);
         setIsLoadingReviews(false);
+      });
+    }
+  }, [activeTab, isAdmin]);
+
+  useEffect(() => {
+    if ((activeTab === 'iptv-manager' || activeTab === 'trending-manager') && isAdmin) {
+      Promise.all([getIPTVChannels(false), getIPTVCategories()]).then(([channels, cats]) => {
+        setIptvChannels(channels);
+        setIptvCategories(cats);
       });
     }
   }, [activeTab, isAdmin]);

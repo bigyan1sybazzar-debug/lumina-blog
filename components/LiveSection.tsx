@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels, getIPTVConfig, updateIPTVChannel, setDefaultIPTVChannel } from '../services/db';
+import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels, getIPTVConfig, updateIPTVChannel, setDefaultIPTVChannel, getTrendingIPTVChannels } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 import { parseM3U } from '../lib/m3uParser';
 import { LiveLink, Highlight } from '../types';
@@ -45,7 +45,7 @@ const splideOptionsHighlights = {
 const splideOptionsTrending = {
     type: 'slide',
     rewind: true,
-    drag: 'free',
+    drag: true,
     snap: true,
     focus: 0,
     perPage: 5,
@@ -54,9 +54,10 @@ const splideOptionsTrending = {
     pagination: false,
     trimSpace: false,
     flickPower: 300,
-    dragMinThreshold: 10,
+    dragMinThreshold: 5,
     flickMaxPages: 1,
-    updateOnMove: true,
+    updateOnMove: false,
+    throttle: 100,
     padding: { left: 0, right: 0 },
     breakpoints: {
         1280: { perPage: 5, gap: '0.75rem', focus: 0 },
@@ -149,19 +150,19 @@ export const LiveSection: React.FC = () => {
         const loadInitialData = async () => {
             try {
                 // Parallelize all metadata calls
-                const [fetchedLinks, fetchedHighlights, config, dbChannels] = await Promise.all([
+                const [fetchedLinks, fetchedHighlights, config, dbTrendingChannels] = await Promise.all([
                     getLiveLinks(),
                     getHighlights(),
                     getIPTVConfig(),
-                    getIPTVChannels()
+                    getTrendingIPTVChannels()
                 ]);
 
                 setLinks(fetchedLinks);
                 setHighlights(fetchedHighlights);
                 setIptvConfig(config);
 
-                // Map database channels
-                const mappedDb: M3UChannel[] = dbChannels.map(c => ({
+                // Initialize IPTV list with trending items
+                const mappedDb: M3UChannel[] = dbTrendingChannels.map((c: any) => ({
                     id: c.id,
                     name: c.name,
                     url: c.url,
@@ -191,8 +192,8 @@ export const LiveSection: React.FC = () => {
                 // Default selection logic
                 const defaultIptv = finalIptv.find(c => c.isDefault);
                 const trendingIptv = finalIptv.find(c => c.isTrending);
-                const trendingSports = fetchedLinks.find(link => link.isTrending);
-                const defaultSports = fetchedLinks.find(link => link.isDefault) || fetchedLinks[0];
+                const trendingSports = fetchedLinks.find((link: LiveLink) => link.isTrending);
+                const defaultSports = fetchedLinks.find((link: LiveLink) => link.isDefault) || fetchedLinks[0];
 
                 let initialLink = null;
                 let isIPTV = false;
@@ -1119,9 +1120,30 @@ export const LiveSection: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
-                                        <div className="flex items-center gap-3">
-                                            <Tv size={24} className="text-secondary-light" />
-                                            <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length})</h2>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <Tv size={24} className="text-secondary-light" />
+                                                <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length})</h2>
+                                            </div>
+                                            {iptvChannels.length < 50 && (
+                                                <button
+                                                    onClick={async () => {
+                                                        const allChannels = await getIPTVChannels();
+                                                        setIptvChannels(allChannels.map((c: any) => ({
+                                                            id: c.id,
+                                                            name: c.name,
+                                                            url: c.url,
+                                                            logo: c.logo || '',
+                                                            group: c.category,
+                                                            isTrending: !!c.isTrending,
+                                                            isDefault: !!c.isDefault
+                                                        })));
+                                                    }}
+                                                    className="px-4 py-2 bg-primary-600/10 text-primary-600 rounded-xl text-xs font-bold hover:bg-primary-600 hover:text-white transition-all"
+                                                >
+                                                    Load Full Channel List (Saves Data)
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                                             {iptvChannels

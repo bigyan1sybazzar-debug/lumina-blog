@@ -1683,6 +1683,19 @@ export const getIPTVChannels = async (onlyActive = true): Promise<IPTVChannel[]>
   }
 };
 
+export const getTrendingIPTVChannels = async (): Promise<IPTVChannel[]> => {
+  try {
+    const snapshot = await db.collection(IPTV_CHANNELS_COLLECTION)
+      .where('isTrending', '==', true)
+      .where('status', '==', 'active')
+      .get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as IPTVChannel));
+  } catch (error) {
+    console.error('Error fetching trending IPTV channels:', error);
+    return [];
+  }
+};
+
 export const addIPTVChannel = async (channel: Omit<IPTVChannel, 'id' | 'createdAt' | 'updatedAt'>) => {
   try {
     const now = new Date().toISOString();

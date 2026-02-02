@@ -137,8 +137,13 @@ export const TrendingManager: React.FC<TrendingManagerProps> = ({
                                             <div className="flex items-center gap-3">
                                                 <input
                                                     type="number"
-                                                    value={item.trendingOrder || 0}
-                                                    onChange={(e) => handleUpdateOrder(item.id, item.itemType as any, parseInt(e.target.value))}
+                                                    defaultValue={item.trendingOrder || 0}
+                                                    onBlur={(e) => {
+                                                        const val = parseInt(e.target.value);
+                                                        if (val !== (item.trendingOrder || 0)) {
+                                                            handleUpdateOrder(item.id, item.itemType as any, val);
+                                                        }
+                                                    }}
                                                     className="w-16 px-3 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                                 />
                                             </div>
@@ -148,12 +153,13 @@ export const TrendingManager: React.FC<TrendingManagerProps> = ({
                                                 <input
                                                     type="text"
                                                     defaultValue={item.heading}
+                                                    key={`${item.id}-${item.heading}`}
                                                     onBlur={(e) => {
-                                                        if (e.target.value !== item.heading) {
+                                                        if (e.target.value && e.target.value !== item.heading) {
                                                             handleRename(item.id, item.itemType as any, e.target.value);
                                                         }
                                                     }}
-                                                    className="flex-1 min-w-[200px] px-3 py-1.5 bg-transparent border-b border-transparent hover:border-gray-200 focus:border-primary-500 focus:bg-white dark:focus:bg-gray-900 outline-none transition-all text-sm font-bold text-gray-900 dark:text-white"
+                                                    className="flex-1 min-w-[200px] px-3 py-1.5 bg-white/50 dark:bg-gray-900/50 border border-transparent hover:border-gray-200 focus:border-primary-500 focus:bg-white dark:focus:bg-gray-900 outline-none rounded-lg transition-all text-sm font-bold text-gray-900 dark:text-white"
                                                 />
                                             </div>
                                         </td>
