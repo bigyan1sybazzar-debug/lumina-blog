@@ -1048,36 +1048,7 @@ export const LiveSection: React.FC = () => {
                                         </div>
                                     )
                                 ) : (
-                                    <div className="z-10 relative">
-                                        <div className="md:hidden mb-2">
-                                            <select
-                                                value={iptvTag}
-                                                onChange={(e) => setIptvTag(e.target.value)}
-                                                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
-                                            >
-                                                {iptvAllGroups.map(tag => (
-                                                    <option key={tag} value={tag}>
-                                                        {tag === 'All' ? 'All Channels' : tag}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="hidden md:flex flex-wrap gap-2 mb-4">
-                                            {iptvAllGroups.map(tag => (
-                                                <button
-                                                    key={tag}
-                                                    onClick={() => setIptvTag(tag)}
-                                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${iptvTag === tag
-                                                        ? tag === 'Trending' ? 'bg-amber-500 text-white shadow-lg' : tag === 'Default' ? 'bg-primary-600 text-white shadow-lg' : 'bg-red-600 text-white shadow-lg shadow-red-500/20'
-                                                        : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
-                                                        }`}
-                                                >
-                                                    {tag === 'Trending' ? '🔥 Trending' : tag === 'Default' ? '✨ Default' : tag === 'All' ? 'All Channels' : tag}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
+                                    <div className="z-10 relative" />
                                 )}
                             </div>
 
