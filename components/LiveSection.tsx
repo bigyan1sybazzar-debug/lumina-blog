@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels, getIPTVConfig } from '../services/db';
+import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels, getIPTVConfig, updateIPTVChannel, setDefaultIPTVChannel } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 import { parseM3U } from '../lib/m3uParser';
 import { LiveLink, Highlight } from '../types';
@@ -100,6 +100,39 @@ export const LiveSection: React.FC = () => {
     const playerRef = React.useRef<HTMLDivElement>(null);
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
+    const handleLinkClick = (link: any) => {
+        if (selectedLink?.id === link.id) return;
+
+        setPendingLink(link);
+        setShowAd(true);
+        setAdTimer(5);
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const skipAd = () => {
+        if (pendingLink) {
+            setSelectedLink(pendingLink);
+            setPendingLink(null);
+        }
+        setShowAd(false);
+        setAdTimer(0);
+        // Ensure we scroll to player when ad is skipped
+        playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    const handleIptvClick = (channel: M3UChannel) => {
+        const liveLink: any = {
+            id: channel.id,
+            heading: channel.name,
+            iframeUrl: channel.url,
+            isHLS: channel.url.includes('.m3u8'),
+            tags: [channel.group],
+            isIPTV: true // Flag to distinguish for limit logic
+        };
+        handleLinkClick(liveLink);
+    };
+
     useEffect(() => {
         let interval: NodeJS.Timeout;
         if (showAd && adTimer > 0) {
@@ -115,42 +148,69 @@ export const LiveSection: React.FC = () => {
     useEffect(() => {
         getLiveLinks().then((fetchedLinks) => {
             setLinks(fetchedLinks);
-            if (fetchedLinks.length > 0 && !selectedLink) {
-                const defaultLink = fetchedLinks.find(link => link.isDefault) || fetchedLinks[0];
-                setPendingLink(defaultLink);
-                setShowAd(true);
-                setAdTimer(5);
-            }
+
+            // Default link selection logic
+            getIPTVConfig().then(async config => {
+                setIptvConfig(config);
+                let fetchedIptv: M3UChannel[] = [];
+
+                if (config?.m3uUrl) {
+                    try {
+                        const proxyUrl = `/api/proxy?url=${encodeURIComponent(config.m3uUrl)}`;
+                        const res = await fetch(proxyUrl);
+                        const content = await res.text();
+                        fetchedIptv = parseM3U(content);
+                    } catch (err) {
+                        console.error('Failed to load/parse remote IPTV M3U:', err);
+                    }
+                }
+
+                // Always fetch from Firestore to get trending status and local channels
+                const dbChannels = await getIPTVChannels();
+                const mappedDb: M3UChannel[] = dbChannels.map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    url: c.url,
+                    logo: c.logo || '',
+                    group: c.category,
+                    isTrending: !!c.isTrending,
+                    isDefault: !!c.isDefault
+                }));
+
+                // Merge or just use Firestore (prefer Firestore as it has trending info)
+                const finalIptv = mappedDb.length > 0 ? mappedDb : fetchedIptv;
+                setIptvChannels(finalIptv);
+
+                // Decide which link to show by default
+                const defaultIptv = finalIptv.find(c => c.isDefault);
+                const trendingIptv = finalIptv.find(c => c.isTrending);
+                const trendingSports = fetchedLinks.find(link => link.isTrending);
+                const defaultSports = fetchedLinks.find(link => link.isDefault) || fetchedLinks[0];
+
+                if (user?.role === 'admin') {
+                    setIsIPTVMode(true);
+                    if (defaultIptv) {
+                        handleIptvClick(defaultIptv);
+                    } else if (trendingIptv) {
+                        handleIptvClick(trendingIptv);
+                    } else if (defaultSports) {
+                        handleLinkClick(defaultSports);
+                    }
+                } else {
+                    if (defaultIptv) {
+                        handleIptvClick(defaultIptv);
+                    } else if (trendingIptv) {
+                        handleIptvClick(trendingIptv);
+                    } else if (trendingSports) {
+                        handleLinkClick(trendingSports);
+                    } else if (defaultSports) {
+                        handleLinkClick(defaultSports);
+                    }
+                }
+            });
         });
         getHighlights().then(setHighlights);
-
-        getIPTVConfig().then(async config => {
-            setIptvConfig(config);
-            if (config?.m3uUrl) {
-                try {
-                    const proxyUrl = `/api/proxy?url=${encodeURIComponent(config.m3uUrl)}`;
-                    const res = await fetch(proxyUrl);
-                    const content = await res.text();
-                    const channels = parseM3U(content);
-                    setIptvChannels(channels);
-                } catch (err) {
-                    console.error('Failed to load/parse remote IPTV M3U:', err);
-                }
-            } else {
-                // Fallback to DB if no remote URL is set (optional, or just empty)
-                getIPTVChannels().then(channels => {
-                    const mapped = channels.map(c => ({
-                        id: c.id,
-                        name: c.name,
-                        url: c.url,
-                        logo: c.logo || '',
-                        group: c.category
-                    }));
-                    setIptvChannels(mapped);
-                });
-            }
-        });
-    }, []);
+    }, [user?.role]);
 
     useEffect(() => {
         if (activeScoreTab === 'cricket' && cricketScores.length === 0) {
@@ -266,38 +326,6 @@ export const LiveSection: React.FC = () => {
         }
     };
 
-    const handleLinkClick = (link: LiveLink) => {
-        if (selectedLink?.id === link.id) return;
-
-        setPendingLink(link);
-        setShowAd(true);
-        setAdTimer(5);
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const skipAd = () => {
-        if (pendingLink) {
-            setSelectedLink(pendingLink);
-            setPendingLink(null);
-        }
-        setShowAd(false);
-        setAdTimer(0);
-        // Ensure we scroll to player when ad is skipped
-        playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
-    const handleIptvClick = (channel: M3UChannel) => {
-        const liveLink: any = {
-            id: channel.id,
-            heading: channel.name,
-            iframeUrl: channel.url,
-            isHLS: channel.url.includes('.m3u8'),
-            tags: [channel.group],
-            isIPTV: true // Flag to distinguish for limit logic
-        };
-        handleLinkClick(liveLink);
-    };
 
     const handleOnDemandSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -1049,42 +1077,111 @@ export const LiveSection: React.FC = () => {
                                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                                             {iptvChannels
                                                 .filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase()))
-                                                .slice(0, 300) // Show more channels now that categories are gone
+                                                .sort((a, b) => {
+                                                    if (a.isDefault !== b.isDefault) return b.isDefault ? 1 : -1;
+                                                    return (b.isTrending ? 1 : 0) - (a.isTrending ? 1 : 0);
+                                                })
+                                                .slice(0, 300)
                                                 .map((channel) => (
-                                                    <button
-                                                        key={channel.id}
-                                                        onClick={() => handleIptvClick(channel)}
-                                                        className={`group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 ${selectedLink?.id === channel.id
-                                                            ? 'border-primary-light ring-2 ring-primary-light/20 shadow-md'
-                                                            : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
-                                                            }`}
-                                                    >
-                                                        <div className="flex flex-col items-center text-center gap-3">
-                                                            <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5`}>
-                                                                {channel.logo ? (
-                                                                    <img
-                                                                        src={channel.logo}
-                                                                        alt={channel.name}
-                                                                        className="w-full h-full object-contain p-1"
-                                                                        onError={(e) => {
-                                                                            (e.target as HTMLImageElement).src = 'https://i.imgur.com/guz2ajm.png';
-                                                                        }}
-                                                                    />
-                                                                ) : (
-                                                                    <Play size={18} className="text-primary-light" />
-                                                                )}
+                                                    <div key={channel.id} className="relative group/channel">
+                                                        <button
+                                                            onClick={() => handleIptvClick(channel)}
+                                                            className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 ${selectedLink?.id === channel.id
+                                                                ? 'border-primary-light ring-2 ring-primary-light/20 shadow-md'
+                                                                : channel.isTrending
+                                                                    ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50/10'
+                                                                    : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                                }`}
+                                                        >
+                                                            {channel.isTrending && (
+                                                                <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
+                                                                    <TrendingUp size={8} fill="currentColor" />
+                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
+                                                                </div>
+                                                            )}
+                                                            {channel.isDefault && (
+                                                                <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
+                                                                    <Sparkles size={8} fill="currentColor" />
+                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
+                                                                </div>
+                                                            )}
+                                                            <div className="flex flex-col items-center text-center gap-3">
+                                                                <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 ${channel.isTrending ? 'ring-2 ring-amber-500/20' : ''}`}>
+                                                                    {channel.logo ? (
+                                                                        <img
+                                                                            src={channel.logo}
+                                                                            alt={channel.name}
+                                                                            className="w-full h-full object-contain p-1"
+                                                                            onError={(e) => {
+                                                                                (e.target as HTMLImageElement).src = 'https://i.imgur.com/guz2ajm.png';
+                                                                            }}
+                                                                        />
+                                                                    ) : (
+                                                                        <Play size={18} className="text-primary-light" />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0 w-full">
+                                                                    <h4 className={`font-bold text-[11px] md:text-xs line-clamp-1 transition-colors ${selectedLink?.id === channel.id
+                                                                        ? 'text-primary-dark'
+                                                                        : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                                        }`}>
+                                                                        {channel.name}
+                                                                    </h4>
+                                                                    <span className="text-[10px] text-gray-400 block mt-1 line-clamp-1">{channel.group}</span>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex-1 min-w-0 w-full">
-                                                                <h4 className={`font-bold text-[11px] md:text-xs line-clamp-1 transition-colors ${selectedLink?.id === channel.id
-                                                                    ? 'text-primary-dark'
-                                                                    : 'text-gray-900 dark:text-white group-hover:text-primary-light'
-                                                                    }`}>
-                                                                    {channel.name}
-                                                                </h4>
-                                                                <span className="text-[10px] text-gray-400 block mt-1 line-clamp-1">{channel.group}</span>
-                                                            </div>
-                                                        </div>
-                                                    </button>
+                                                        </button>
+
+                                                        {user?.role === 'admin' && (
+                                                            <button
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    try {
+                                                                        await updateIPTVChannel(channel.id, { isTrending: !channel.isTrending });
+                                                                        // Refresh local state or rely on reload
+                                                                        const updatedChannels = await getIPTVChannels();
+                                                                        setIptvChannels(updatedChannels.map(c => ({
+                                                                            id: c.id,
+                                                                            name: c.name,
+                                                                            url: c.url,
+                                                                            logo: c.logo || '',
+                                                                            group: c.category,
+                                                                            isTrending: !!c.isTrending,
+                                                                            isDefault: !!c.isDefault
+                                                                        })));
+                                                                    } catch (err) {
+                                                                        console.error('Failed to toggle trending:', err);
+                                                                    }
+                                                                }}
+                                                                onDoubleClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    try {
+                                                                        await setDefaultIPTVChannel(channel.id);
+
+                                                                        const updatedChannels = await getIPTVChannels();
+                                                                        setIptvChannels(updatedChannels.map(c => ({
+                                                                            id: c.id,
+                                                                            name: c.name,
+                                                                            url: c.url,
+                                                                            logo: c.logo || '',
+                                                                            group: c.category,
+                                                                            isTrending: !!c.isTrending,
+                                                                            isDefault: !!c.isDefault
+                                                                        })));
+                                                                        alert(`${channel.name} set as default!`);
+                                                                    } catch (err) {
+                                                                        console.error('Failed to set default:', err);
+                                                                    }
+                                                                }}
+                                                                className={`absolute -top-2 -right-2 p-1.5 rounded-full shadow-lg z-20 border transition-all ${channel.isTrending
+                                                                    ? 'bg-amber-500 text-white border-amber-600 scale-110'
+                                                                    : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500'}`}
+                                                                title="Single click: Trending / Double click: Default"
+                                                            >
+                                                                <TrendingUp size={12} />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 ))}
                                             {iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length === 0 && (
                                                 <div className="col-span-full py-12 text-center">

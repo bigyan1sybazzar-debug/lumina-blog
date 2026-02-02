@@ -2253,6 +2253,12 @@ export const Admin: React.FC = () => {
                 </h1>
                 <IPTVManager
                   onRefresh={refreshData}
+                  channels={iptvChannels}
+                  categories={iptvCategories}
+                  onUpdateChannel={handleUpdateIPTVChannel}
+                  onDeleteChannel={handleDeleteIPTVChannel}
+                  onCreateChannel={handleCreateIPTVChannel}
+                  onBatchCreate={handleBatchCreateIPTVChannels}
                 />
               </div>
             )

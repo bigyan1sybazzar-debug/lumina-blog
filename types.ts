@@ -345,6 +345,8 @@ export interface IPTVChannel {
   logo?: string;
   category: string;
   status: 'active' | 'inactive';
+  isTrending?: boolean;
+  isDefault?: boolean;
   createdAt: string;
   updatedAt: string;
 }

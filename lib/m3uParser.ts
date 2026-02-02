@@ -5,6 +5,8 @@ export interface M3UChannel {
     id: string;
     group: string;
     url: string;
+    isTrending?: boolean;
+    isDefault?: boolean;
 }
 
 export const parseM3U = (content: string): M3UChannel[] => {

@@ -1732,6 +1732,27 @@ export const updateIPTVChannel = async (id: string, updates: Partial<IPTVChannel
   }
 };
 
+export const setDefaultIPTVChannel = async (id: string) => {
+  try {
+    const snapshot = await db.collection(IPTV_CHANNELS_COLLECTION).where('isDefault', '==', true).get();
+    const batch = db.batch();
+
+    // Unset current defaults
+    snapshot.docs.forEach(doc => {
+      batch.update(doc.ref, { isDefault: false, updatedAt: new Date().toISOString() });
+    });
+
+    // Set new default
+    const newDefaultRef = db.collection(IPTV_CHANNELS_COLLECTION).doc(id);
+    batch.update(newDefaultRef, { isDefault: true, updatedAt: new Date().toISOString() });
+
+    await batch.commit();
+  } catch (error) {
+    console.error('Error setting default IPTV channel:', error);
+    throw error;
+  }
+};
+
 export const deleteIPTVChannel = async (id: string) => {
   try {
     await db.collection(IPTV_CHANNELS_COLLECTION).doc(id).delete();
