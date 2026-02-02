@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels, getIPTVConfig, updateIPTVChannel, setDefaultIPTVChannel, getTrendingIPTVChannels } from '../services/db';
+import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels, getIPTVConfig, updateIPTVChannel, setDefaultIPTVChannel, getTrendingIPTVChannels, updateLiveLink, setLiveLinkDefault } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 import { parseM3U } from '../lib/m3uParser';
 import { LiveLink, Highlight } from '../types';
@@ -189,31 +189,31 @@ export const LiveSection: React.FC = () => {
 
                 setIptvChannels(finalIptv);
 
-                // Default selection logic
+                // Default selection logic - Prioritize explicit defaults first
                 const defaultIptv = finalIptv.find(c => c.isDefault);
-                const trendingIptv = finalIptv.find(c => c.isTrending);
+                const actualDefaultSports = fetchedLinks.find((link: LiveLink) => link.isDefault);
                 const trendingSports = fetchedLinks.find((link: LiveLink) => link.isTrending);
-                const defaultSports = fetchedLinks.find((link: LiveLink) => link.isDefault) || fetchedLinks[0];
+                const trendingIptv = finalIptv.find(c => c.isTrending);
+                const fallbackSports = fetchedLinks[0];
 
                 let initialLink = null;
                 let isIPTV = false;
 
-                if (user?.role === 'admin') {
+                if (actualDefaultSports) {
+                    initialLink = actualDefaultSports;
+                    isIPTV = false;
+                } else if (defaultIptv) {
+                    initialLink = defaultIptv;
                     isIPTV = true;
-                    initialLink = defaultIptv || trendingIptv || (defaultSports ? {
-                        id: defaultSports.id,
-                        heading: defaultSports.heading,
-                        iframeUrl: defaultSports.iframeUrl,
-                        isHLS: defaultSports.iframeUrl.includes('.m3u8'),
-                        tags: defaultSports.tags
-                    } : null);
-                } else {
-                    if (defaultIptv || trendingIptv) {
-                        isIPTV = true;
-                        initialLink = defaultIptv || trendingIptv;
-                    } else {
-                        initialLink = trendingSports || defaultSports;
-                    }
+                } else if (trendingSports) {
+                    initialLink = trendingSports;
+                    isIPTV = false;
+                } else if (trendingIptv) {
+                    initialLink = trendingIptv;
+                    isIPTV = true;
+                } else if (fallbackSports) {
+                    initialLink = fallbackSports;
+                    isIPTV = false;
                 }
 
                 if (initialLink) {
@@ -1077,44 +1077,113 @@ export const LiveSection: React.FC = () => {
                                                     return 0;
                                                 })
                                                 .map((link) => (
-                                                    <button
-                                                        key={link.id}
-                                                        onClick={() => handleLinkClick(link)}
-                                                        className={`group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
-                                                            ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
-                                                            : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
-                                                            }`}
-                                                    >
-                                                        {selectedLink?.id === link.id && (
-                                                            <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
-                                                                <span className="relative flex h-1.5 w-1.5">
-                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
-                                                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
-                                                                </span>
-                                                                <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
+                                                    <div key={link.id} className="relative group/channel">
+                                                        <button
+                                                            onClick={() => handleLinkClick(link)}
+                                                            className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
+                                                                ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
+                                                                : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                                }`}
+                                                        >
+                                                            {link.isTrending && (
+                                                                <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
+                                                                    <TrendingUp size={8} fill="currentColor" />
+                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
+                                                                </div>
+                                                            )}
+                                                            {link.isDefault && (
+                                                                <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
+                                                                    <Sparkles size={8} fill="currentColor" />
+                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
+                                                                </div>
+                                                            )}
+
+                                                            {selectedLink?.id === link.id && (
+                                                                <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
+                                                                    <span className="relative flex h-1.5 w-1.5">
+                                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
+                                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
+                                                                    </span>
+                                                                    <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
+                                                                </div>
+                                                            )}
+
+                                                            <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
+                                                                <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
+                                                                    ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
+                                                                    : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
+                                                                    }`}>
+                                                                    {selectedLink?.id === link.id && (
+                                                                        <div className="absolute inset-0 bg-white/10 animate-pulse" />
+                                                                    )}
+                                                                    <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0 w-full">
+                                                                    <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
+                                                                        ? 'text-primary-dark'
+                                                                        : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                                        }`}>
+                                                                        {link.heading}
+                                                                    </h4>
+                                                                </div>
+                                                            </div>
+                                                        </button>
+                                                        {user?.role === 'admin' && (
+                                                            <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
+                                                                <button
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            await updateLiveLink(link.id, { isTrending: !link.isTrending });
+                                                                            setLinks(prev => prev.map(l =>
+                                                                                l.id === link.id ? { ...l, isTrending: !link.isTrending } : l
+                                                                            ));
+                                                                        } catch (err) {
+                                                                            console.error('Failed to toggle trending:', err);
+                                                                        }
+                                                                    }}
+                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isTrending
+                                                                        ? 'bg-amber-500 text-white border-amber-400'
+                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
+                                                                    title={link.isTrending ? "Remove Trending" : "Mark as Trending"}
+                                                                >
+                                                                    <TrendingUp size={14} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            if (link.isDefault) {
+                                                                                await updateLiveLink(link.id, { isDefault: false });
+                                                                                setLinks(prev => prev.map(l =>
+                                                                                    l.id === link.id ? { ...l, isDefault: false } : l
+                                                                                ));
+                                                                            } else {
+                                                                                await setLiveLinkDefault(link.id, true);
+                                                                                // Clear defaults in both collections locally
+                                                                                setLinks(prev => prev.map(l => ({
+                                                                                    ...l,
+                                                                                    isDefault: l.id === link.id
+                                                                                })));
+                                                                                setIptvChannels(prev => prev.map(c => ({
+                                                                                    ...c,
+                                                                                    isDefault: false
+                                                                                })));
+                                                                            }
+                                                                        } catch (err) {
+                                                                            console.error('Failed to toggle default:', err);
+                                                                        }
+                                                                    }}
+                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isDefault
+                                                                        ? 'bg-primary-600 text-white border-primary-400'
+                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
+                                                                    title={link.isDefault ? "Remove Default" : "Set as Default"}
+                                                                >
+                                                                    <Sparkles size={14} />
+                                                                </button>
                                                             </div>
                                                         )}
-
-                                                        <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
-                                                            <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
-                                                                ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
-                                                                : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
-                                                                }`}>
-                                                                {selectedLink?.id === link.id && (
-                                                                    <div className="absolute inset-0 bg-white/10 animate-pulse" />
-                                                                )}
-                                                                <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
-                                                            </div>
-                                                            <div className="flex-1 min-w-0 w-full">
-                                                                <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
-                                                                    ? 'text-primary-dark'
-                                                                    : 'text-gray-900 dark:text-white group-hover:text-primary-light'
-                                                                    }`}>
-                                                                    {link.heading}
-                                                                </h4>
-                                                            </div>
-                                                        </div>
-                                                    </button>
+                                                    </div>
                                                 ))}
                                         </div>
                                     </div>
@@ -1220,53 +1289,58 @@ export const LiveSection: React.FC = () => {
                                                         </button>
 
                                                         {user?.role === 'admin' && (
-                                                            <button
-                                                                onClick={async (e) => {
-                                                                    e.stopPropagation();
-                                                                    try {
-                                                                        await updateIPTVChannel(channel.id, { isTrending: !channel.isTrending });
-                                                                        // Refresh local state or rely on reload
-                                                                        const updatedChannels = await getIPTVChannels();
-                                                                        setIptvChannels(updatedChannels.map(c => ({
-                                                                            id: c.id,
-                                                                            name: c.name,
-                                                                            url: c.url,
-                                                                            logo: c.logo || '',
-                                                                            group: c.category,
-                                                                            isTrending: !!c.isTrending,
-                                                                            isDefault: !!c.isDefault
-                                                                        })));
-                                                                    } catch (err) {
-                                                                        console.error('Failed to toggle trending:', err);
-                                                                    }
-                                                                }}
-                                                                onDoubleClick={async (e) => {
-                                                                    e.stopPropagation();
-                                                                    try {
-                                                                        await setDefaultIPTVChannel(channel.id);
-
-                                                                        const updatedChannels = await getIPTVChannels();
-                                                                        setIptvChannels(updatedChannels.map(c => ({
-                                                                            id: c.id,
-                                                                            name: c.name,
-                                                                            url: c.url,
-                                                                            logo: c.logo || '',
-                                                                            group: c.category,
-                                                                            isTrending: !!c.isTrending,
-                                                                            isDefault: !!c.isDefault
-                                                                        })));
-                                                                        alert(`${channel.name} set as default!`);
-                                                                    } catch (err) {
-                                                                        console.error('Failed to set default:', err);
-                                                                    }
-                                                                }}
-                                                                className={`absolute -top-2 -right-2 p-1.5 rounded-full shadow-lg z-20 border transition-all ${channel.isTrending
-                                                                    ? 'bg-amber-500 text-white border-amber-600 scale-110'
-                                                                    : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500'}`}
-                                                                title="Single click: Trending / Double click: Default"
-                                                            >
-                                                                <TrendingUp size={12} />
-                                                            </button>
+                                                            <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
+                                                                <button
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            await updateIPTVChannel(channel.id, { isTrending: !channel.isTrending });
+                                                                            setIptvChannels(prev => prev.map(c =>
+                                                                                c.id === channel.id ? { ...c, isTrending: !c.isTrending } : c
+                                                                            ));
+                                                                        } catch (err) {
+                                                                            console.error('Failed to toggle trending:', err);
+                                                                        }
+                                                                    }}
+                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isTrending
+                                                                        ? 'bg-amber-500 text-white border-amber-400'
+                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
+                                                                    title={channel.isTrending ? "Remove Trending" : "Mark as Trending"}
+                                                                >
+                                                                    <TrendingUp size={14} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        try {
+                                                                            if (channel.isDefault) {
+                                                                                await updateIPTVChannel(channel.id, { isDefault: false });
+                                                                                setIptvChannels(prev => prev.map(c =>
+                                                                                    c.id === channel.id ? { ...c, isDefault: false } : c
+                                                                                ));
+                                                                            } else {
+                                                                                await setDefaultIPTVChannel(channel.id);
+                                                                                setIptvChannels(prev => prev.map(c => ({
+                                                                                    ...c,
+                                                                                    isDefault: c.id === channel.id
+                                                                                })));
+                                                                                setLinks(prev => prev.map(l => ({
+                                                                                    ...l,
+                                                                                    isDefault: false
+                                                                                })));
+                                                                            }
+                                                                        } catch (err) {
+                                                                            console.error('Failed to toggle default:', err);
+                                                                        }
+                                                                    }}
+                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isDefault
+                                                                        ? 'bg-primary-600 text-white border-primary-400'
+                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
+                                                                    title={channel.isDefault ? "Remove Default" : "Set as Default"}
+                                                                >
+                                                                    <Sparkles size={14} />
+                                                                </button>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 ))}

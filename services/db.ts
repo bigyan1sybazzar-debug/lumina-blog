@@ -1044,9 +1044,15 @@ export const setLiveLinkDefault = async (id: string, isDefault: boolean) => {
     const batch = db.batch();
 
     if (isDefault) {
-      // Unset all other defaults first
-      const snapshot = await db.collection(LIVE_LINKS_COLLECTION).where('isDefault', '==', true).get();
-      snapshot.docs.forEach(doc => {
+      // Unset all other defaults in live_links collection
+      const liveSnapshot = await db.collection(LIVE_LINKS_COLLECTION).where('isDefault', '==', true).get();
+      liveSnapshot.docs.forEach(doc => {
+        batch.update(doc.ref, { isDefault: false });
+      });
+
+      // Also unset defaults in iptv_channels collection
+      const iptvSnapshot = await db.collection(IPTV_CHANNELS_COLLECTION).where('isDefault', '==', true).get();
+      iptvSnapshot.docs.forEach(doc => {
         batch.update(doc.ref, { isDefault: false });
       });
     }
@@ -1685,11 +1691,29 @@ export const getIPTVChannels = async (onlyActive = true): Promise<IPTVChannel[]>
 
 export const getTrendingIPTVChannels = async (): Promise<IPTVChannel[]> => {
   try {
-    const snapshot = await db.collection(IPTV_CHANNELS_COLLECTION)
-      .where('isTrending', '==', true)
-      .where('status', '==', 'active')
-      .get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as IPTVChannel));
+    // Fetch both trending and default channels to ensure they're available for initial load
+    const [trendingSnapshot, defaultSnapshot] = await Promise.all([
+      db.collection(IPTV_CHANNELS_COLLECTION)
+        .where('isTrending', '==', true)
+        .where('status', '==', 'active')
+        .get(),
+      db.collection(IPTV_CHANNELS_COLLECTION)
+        .where('isDefault', '==', true)
+        .where('status', '==', 'active')
+        .get()
+    ]);
+
+    const channelsMap = new Map<string, IPTVChannel>();
+
+    trendingSnapshot.docs.forEach(doc => {
+      channelsMap.set(doc.id, { id: doc.id, ...doc.data() } as IPTVChannel);
+    });
+
+    defaultSnapshot.docs.forEach(doc => {
+      channelsMap.set(doc.id, { id: doc.id, ...doc.data() } as IPTVChannel);
+    });
+
+    return Array.from(channelsMap.values());
   } catch (error) {
     console.error('Error fetching trending IPTV channels:', error);
     return [];
@@ -1747,11 +1771,17 @@ export const updateIPTVChannel = async (id: string, updates: Partial<IPTVChannel
 
 export const setDefaultIPTVChannel = async (id: string) => {
   try {
-    const snapshot = await db.collection(IPTV_CHANNELS_COLLECTION).where('isDefault', '==', true).get();
     const batch = db.batch();
 
-    // Unset current defaults
-    snapshot.docs.forEach(doc => {
+    // Unset current defaults in IPTV collection
+    const iptvSnapshot = await db.collection(IPTV_CHANNELS_COLLECTION).where('isDefault', '==', true).get();
+    iptvSnapshot.docs.forEach(doc => {
+      batch.update(doc.ref, { isDefault: false, updatedAt: new Date().toISOString() });
+    });
+
+    // Also unset defaults in live_links collection
+    const liveSnapshot = await db.collection(LIVE_LINKS_COLLECTION).where('isDefault', '==', true).get();
+    liveSnapshot.docs.forEach(doc => {
       batch.update(doc.ref, { isDefault: false, updatedAt: new Date().toISOString() });
     });
 
