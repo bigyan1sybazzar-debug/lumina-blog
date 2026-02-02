@@ -7,6 +7,7 @@ export interface M3UChannel {
     url: string;
     isTrending?: boolean;
     isDefault?: boolean;
+    trendingOrder?: number;
 }
 
 export const parseM3U = (content: string): M3UChannel[] => {

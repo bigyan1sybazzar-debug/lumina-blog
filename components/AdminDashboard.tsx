@@ -28,6 +28,7 @@ import { CategoriesManager } from './admin/CategoriesManager';
 import { KeywordsManager } from './admin/KeywordsManager';
 import { LiveMatchManager } from './admin/LiveMatchManager';
 import { IPTVManager } from './admin/IPTVManager';
+import { TrendingManager } from './admin/TrendingManager';
 
 import { ANALYTICS_DATA } from '../constants';
 import { deleteCategory, updatePost, deletePost, getPostById } from '../services/db';
@@ -46,7 +47,7 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'keywords' | 'live-matches' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section' | 'highlights' | 'subscribers' | 'iptv-manager'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'keywords' | 'live-matches' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section' | 'highlights' | 'subscribers' | 'iptv-manager' | 'trending-manager'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -1269,6 +1270,15 @@ export const Admin: React.FC = () => {
                   >
                     <Globe size={18} className="mr-3" /> Live Section
                   </button>
+                  <button
+                    onClick={() => { setActiveTab('trending-manager'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'trending-manager'
+                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <TrendingUp size={18} className="mr-3" /> Trending Now
+                  </button>
 
                   <button
                     onClick={() => { setActiveTab('highlights'); setIsSidebarOpen(false); }}
@@ -2259,6 +2269,21 @@ export const Admin: React.FC = () => {
                   onDeleteChannel={handleDeleteIPTVChannel}
                   onCreateChannel={handleCreateIPTVChannel}
                   onBatchCreate={handleBatchCreateIPTVChannels}
+                />
+              </div>
+            )
+          }
+
+          {/* TRENDING MANAGER TAB */}
+          {
+            activeTab === 'trending-manager' && isAdmin && (
+              <div className="max-w-7xl mx-auto">
+                <TrendingManager
+                  liveLinks={liveLinks}
+                  iptvChannels={iptvChannels}
+                  onUpdateLiveLink={handleUpdateLiveLink}
+                  onUpdateIPTVChannel={handleUpdateIPTVChannel}
+                  onRefresh={refreshData}
                 />
               </div>
             )

@@ -168,7 +168,8 @@ export const LiveSection: React.FC = () => {
                     logo: c.logo || '',
                     group: c.category,
                     isTrending: !!c.isTrending,
-                    isDefault: !!c.isDefault
+                    isDefault: !!c.isDefault,
+                    trendingOrder: c.trendingOrder
                 }));
 
                 let finalIptv = mappedDb;
@@ -515,7 +516,8 @@ export const LiveSection: React.FC = () => {
             isHLS: (c.url || '').includes('.m3u8'),
             tags: [c.group],
             isIPTV: true,
-            itemType: 'iptv'
+            itemType: 'iptv',
+            trendingOrder: c.trendingOrder
         }))
     ];
 
@@ -566,6 +568,12 @@ export const LiveSection: React.FC = () => {
                                 >
                                     {trendingItems
                                         .sort((a, b) => {
+                                            // Primary Sort: User Defined Trending Order
+                                            const orderA = a.trendingOrder ?? 999;
+                                            const orderB = b.trendingOrder ?? 999;
+                                            if (orderA !== orderB) return orderA - orderB;
+
+                                            // Secondary Sort: Currently Playing Item First
                                             const isAActive = selectedLink?.id === a.id;
                                             const isBActive = selectedLink?.id === b.id;
                                             if (isAActive !== isBActive) return isAActive ? -1 : 1;

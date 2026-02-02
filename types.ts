@@ -222,6 +222,7 @@ export interface LiveLink {
   tags?: string[];
   isDefault?: boolean;
   isTrending?: boolean;
+  trendingOrder?: number;
 }
 
 export interface Keyword {
@@ -347,6 +348,7 @@ export interface IPTVChannel {
   status: 'active' | 'inactive';
   isTrending?: boolean;
   isDefault?: boolean;
+  trendingOrder?: number;
   createdAt: string;
   updatedAt: string;
 }
