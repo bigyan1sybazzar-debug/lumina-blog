@@ -17,10 +17,18 @@ export default async function Page() {
     const postsSnapshot = await db.collection('posts')
         .where('status', '==', 'published')
         .orderBy('createdAt', 'desc')
-        .limit(100)
+        .limit(20) // Optimized: reduced from 100 to 20 for smaller initial payload
         .get();
 
-    const posts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost));
+    const posts = postsSnapshot.docs.map(doc => {
+        const data = doc.data();
+        // Optimize: Strip content field for the list view to reduce HTML size/hydration data
+        return {
+            id: doc.id,
+            ...data,
+            content: '' // Home page doesn't need full post content
+        } as BlogPost;
+    });
 
     // 2. Fetch Featured Hero Posts
     let heroFeatured: BlogPost[] = [];
@@ -35,11 +43,18 @@ export default async function Page() {
             const missingItems = await Promise.all(missingIds.map(async id => {
                 // Try posts first
                 let doc = await db.collection('posts').doc(id).get();
-                if (doc.exists) return { id: doc.id, ...doc.data() } as BlogPost;
+                if (doc.exists) {
+                    const data = doc.data();
+                    return { id: doc.id, ...data, content: '' } as BlogPost;
+                }
 
                 // Fallback to pages
                 doc = await db.collection('pages').doc(id).get();
-                return doc.exists ? { id: doc.id, ...doc.data() } as BlogPost : null;
+                if (doc.exists) {
+                    const data = doc.data();
+                    return { id: doc.id, ...data, content: '' } as BlogPost;
+                }
+                return null;
             }));
             heroFeatured = [...heroFeatured, ...(missingItems.filter(p => p !== null) as BlogPost[])];
         }
@@ -58,7 +73,7 @@ export default async function Page() {
     const pollsSnapshot = await db.collection('polls')
         .where('status', '==', 'approved')
         .orderBy('createdAt', 'desc')
-        .limit(8)
+        .limit(6)
         .get();
     const polls = pollsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
 

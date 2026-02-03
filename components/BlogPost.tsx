@@ -78,18 +78,18 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({ children }) => {
 // ------------------------------------------------------------------
 // MAIN COMPONENT – Fully SEO Optimized
 // ------------------------------------------------------------------
-export const BlogPostPage: React.FC = () => {
+export const BlogPostPage: React.FC<{ initialPost?: BlogPost | null }> = ({ initialPost }) => {
   const params = useParams();
   const slug = params?.slug as string;
   const { user } = useAuth();
   const router = useRouter();
 
-  const [post, setPost] = useState<BlogPost | null>(null);
+  const [post, setPost] = useState<BlogPost | null>(initialPost || null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [comments, setComments] = useState<BlogPostComment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialPost);
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(initialPost?.likes?.length || 0);
   const [isCopied, setIsCopied] = useState(false);
 
   // FIXED: Standardize to HTTPS to match search engine expectations
@@ -100,32 +100,48 @@ export const BlogPostPage: React.FC = () => {
     const fetchData = async () => {
       if (!slug) return;
 
-      const p = await getPostBySlug(slug);
+      // If we don't have a post or the slug doesn't match, fetch it
+      if (!post || post.slug !== slug) {
+        setLoading(true);
+        const p = await getPostBySlug(slug);
 
-      if (p) {
-        if (p.slug && slug !== p.slug) {
-          router.replace(`/${p.slug}`);
-          return;
+        if (p) {
+          if (p.slug && slug !== p.slug) {
+            router.replace(`/${p.slug}`);
+            return;
+          }
+          setPost(p);
+          setLikeCount(p.likes?.length || 0);
+          if (user && p.likes?.includes(user.id)) setIsLiked(true);
+          incrementViewCount(p.id);
+        } else {
+          setPost(null);
         }
-
-        setPost(p);
-        setLikeCount(p.likes?.length || 0);
-        if (user && p.likes?.includes(user.id)) setIsLiked(true);
-
-        incrementViewCount(p.id);
-        const c = await getCommentsByPostId(p.id);
-        setComments(c);
-
-        const all = await getPosts();
-        setRelatedPosts(
-          all.filter((x) => x.id !== p.id && x.status === 'published').slice(0, 3)
-        );
+        setLoading(false);
+      } else {
+        // We have the post, just need comments and related
+        if (user && post.likes?.includes(user.id)) setIsLiked(true);
+        incrementViewCount(post.id);
       }
-      setLoading(false);
+
+      // Fetch comments and related posts regardless (they are small)
+      if (post || initialPost) {
+        const currentPostId = post?.id || initialPost?.id;
+        if (currentPostId) {
+          const c = await getCommentsByPostId(currentPostId);
+          setComments(c);
+
+          // Get posts for related section, but strip content to keep hydration payload small
+          const all = await getPosts(10, true); // Limit to 10 and strip content
+          setRelatedPosts(
+            all.filter((x) => x.id !== currentPostId && x.status === 'published').slice(0, 3)
+          );
+        }
+      }
     };
 
     fetchData();
-  }, [slug, user, router]);
+  }, [slug, user, router, initialPost]);
 
   useEffect(() => {
     if (isCopied) {
