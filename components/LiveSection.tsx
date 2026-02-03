@@ -102,12 +102,14 @@ export const LiveSection: React.FC = () => {
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
     const [canSkip, setCanSkip] = useState(false);
+    const [adCountdown, setAdCountdown] = useState(4);
 
     const handleLinkClick = (link: any) => {
         if (selectedLink?.id === link.id) return;
 
         setPendingLink(link);
         setShowAd(true);
+        setAdCountdown(4); // Reset countdown to 4 seconds
         setCanSkip(false);
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -136,30 +138,19 @@ export const LiveSection: React.FC = () => {
         handleLinkClick(liveLink);
     };
 
-    // Detect ad click (window blur or iframe focus) to unlock
+    // Ad Countdown Timer Logic
     useEffect(() => {
-        const handleUnblock = () => {
-            if (showAd) {
-                skipAd();
-            }
-        };
-
-        if (showAd) {
-            window.addEventListener('blur', handleUnblock);
-
-            // Robust check for desktop: if an iframe captures focus, it's an ad click
-            const interval = setInterval(() => {
-                if (document.activeElement instanceof HTMLIFrameElement && showAd) {
-                    handleUnblock();
-                }
-            }, 500);
-
-            return () => {
-                window.removeEventListener('blur', handleUnblock);
-                clearInterval(interval);
-            };
+        let timer: NodeJS.Timeout;
+        if (showAd && adCountdown > 0) {
+            timer = setInterval(() => {
+                setAdCountdown((prev) => prev - 1);
+            }, 1000);
+        } else if (showAd && adCountdown === 0) {
+            skipAd();
         }
-    }, [showAd]);
+
+        return () => clearInterval(timer);
+    }, [showAd, adCountdown]);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -244,6 +235,7 @@ export const LiveSection: React.FC = () => {
 
                     setPendingLink(formattedLink);
                     setShowAd(true);
+                    setAdCountdown(4);
                     setCanSkip(false);
                 }
 
@@ -664,55 +656,94 @@ export const LiveSection: React.FC = () => {
                                 >
                                     <div className="aspect-[4/3] md:aspect-video w-full relative">
                                         {showAd ? (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/95 backdrop-blur-sm group z-50">
-                                                <div className="w-full h-full flex flex-col items-center justify-center p-4 overflow-y-auto">
-                                                    {/* Internal Ad Unit - Restored per request */}
-                                                    {/* Added onClick to simulate unlock for localhost/testing or if user clicks 'near' the ad */}
-                                                    <div
-                                                        onClick={() => {
-                                                            // Fallback: If the user clicks the container area, we unblock the stream.
-                                                            // Redirection for real ads is handled by the ad network itself.
-                                                            skipAd();
-                                                        }}
-                                                        className="mb-6 w-full max-w-[336px] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-2xl relative shrink-0 cursor-pointer transition-all hover:border-white/30 hover:shadow-3xl"
-                                                    >
-                                                        <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-2xl select-none pointer-events-none">ADS</div>
-                                                        <div className="relative z-10">
-                                                            <GoogleAdSense
-                                                                slot="7838572857"
-                                                                className="w-full h-full min-h-[250px]"
-                                                                format="rectangle"
-                                                                responsive={true}
-                                                            />
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c10] z-50 overflow-hidden">
+                                                {/* Animated Background Elements */}
+                                                <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
+                                                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600/30 rounded-full blur-[120px] animate-pulse"></div>
+                                                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary-600/30 rounded-full blur-[120px] animate-pulse delay-700"></div>
+                                                </div>
+
+                                                <div className="w-full h-full flex flex-col items-center justify-between p-3 md:p-8 relative z-10">
+                                                    {/* Header Info */}
+                                                    <div className="w-full flex justify-between items-start">
+                                                        <div className="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3">
+                                                            <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full animate-ping"></div>
+                                                            <span className="text-[8px] md:text-xs font-black text-white uppercase tracking-widest whitespace-nowrap">Stream Preparing</span>
+                                                        </div>
+
+                                                        {pendingLink && (
+                                                            <div className="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3 max-w-[150px] md:max-w-[250px]">
+                                                                <div className="p-1 md:p-1.5 bg-primary-600/20 rounded-lg shrink-0">
+                                                                    <Tv size={12} className="text-primary-500 md:size-[14px]" />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="text-[7px] md:text-[9px] text-gray-400 font-bold uppercase leading-none mb-0.5 md:mb-1">Up Next</p>
+                                                                    <p className="text-white text-[9px] md:text-[11px] font-black truncate">{pendingLink.heading}</p>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Ad Container - Optimized for mobile aspect ratios */}
+                                                    <div className="w-full max-w-5xl flex-1 flex flex-col items-center justify-center my-2 md:my-8 group/ad relative">
+                                                        <div className="w-full h-full max-h-[220px] md:max-h-[480px] bg-black/60 rounded-2xl md:rounded-[32px] overflow-hidden border border-white/5 shadow-3xl relative transition-all duration-500 hover:border-white/10">
+                                                            <div className="absolute inset-0 flex items-center justify-center text-white/[0.02] font-black text-[15vw] select-none pointer-events-none uppercase italic tracking-tighter">
+                                                                ADS
+                                                            </div>
+                                                            <div className="relative z-10 w-full h-full flex items-center justify-center p-1 md:p-2">
+                                                                <GoogleAdSense
+                                                                    slot="7838572857"
+                                                                    className="w-full h-full"
+                                                                    format="auto"
+                                                                    responsive={true}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Click Incentive Tag - Unified Red Color */}
+                                                        <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 bg-red-600 px-4 md:px-6 py-1.5 md:py-2 rounded-full shadow-xl shadow-red-600/30 text-[8px] md:text-xs font-black text-white uppercase tracking-widest z-20 border border-white/10 whitespace-nowrap active:scale-95 transition-transform">
+                                                            Click Ad to Support Section
                                                         </div>
                                                     </div>
-                                                    <div className="flex flex-col items-center justify-center text-center max-w-lg z-30">
-                                                        <div className="w-24 h-24 bg-red-600/20 rounded-full flex items-center justify-center mb-6 animate-pulse ring-4 ring-red-600/10">
-                                                            <img
-                                                                src="https://smoyjtogaiu8cxbm.public.blob.vercel-storage.com/single-tap_18407087.png"
-                                                                alt="Tap to unlock"
-                                                                className="w-16 h-16 object-contain animate-bounce invert"
-                                                            />
+
+                                                    {/* Footer Controls */}
+                                                    <div className="w-full max-w-xl flex flex-col items-center gap-3 md:gap-6 pb-1 md:pb-2">
+                                                        <div className="flex flex-col items-center gap-1 md:gap-2">
+                                                            <h3 className="text-lg md:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
+                                                                Starting Content
+                                                            </h3>
+                                                            <div className="hidden md:flex items-center gap-4 text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                                                                <span>Optimizing</span>
+                                                                <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
+                                                                <span>Connecting</span>
+                                                                <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
+                                                                <span>Ready</span>
+                                                            </div>
                                                         </div>
-                                                        <h3 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">
-                                                            STREAM LOCKED
-                                                        </h3>
-                                                        <p className="text-gray-300 text-sm md:text-base font-medium max-w-sm mx-auto mb-8 border-t border-b border-white/10 py-4">
-                                                            To start watching, please support us by clicking the <span className="text-white font-bold underline decoration-yellow-500 decoration-2 underline-offset-4">ADVERTISEMENT ABOVE</span>.
+
+                                                        {/* Modern Countdown Progress - Unified Red */}
+                                                        <div className="w-full flex flex-col items-center gap-2 md:gap-4">
+                                                            <div className="relative w-full h-1 md:h-2 bg-white/5 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="absolute top-0 left-0 h-full bg-red-600 transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(220,38,38,0.5)]"
+                                                                    style={{ width: `${((4 - adCountdown) / 4) * 100}%` }}
+                                                                />
+                                                            </div>
+                                                            <div className="flex items-center gap-2 md:gap-3">
+                                                                <div className="text-red-500 animate-spin">
+                                                                    <RefreshCw size={12} className="md:size-[16px]" />
+                                                                </div>
+                                                                <span className="text-white font-black text-[10px] md:text-sm uppercase tracking-widest">
+                                                                    Stream Loading in {adCountdown}s
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <p className="text-gray-500 text-[8px] md:text-[10px] font-bold text-center leading-tight uppercase opacity-60">
+                                                            Help us earn and watch <span className="text-red-500">undisturbed</span>
                                                         </p>
                                                     </div>
                                                 </div>
-
-
-
-
-
-                                                {pendingLink && (
-                                                    <div className="absolute top-4 md:top-6 right-4 md:right-6 bg-black/40 backdrop-blur-sm px-3 md:px-4 py-2 rounded-lg border border-white/10 z-20">
-                                                        <p className="text-[9px] md:text-[10px] text-gray-400 font-bold uppercase mb-1">Up Next:</p>
-                                                        <p className="text-white text-[10px] md:text-xs font-black truncate max-w-[120px] md:max-w-[150px]">{pendingLink.heading}</p>
-                                                    </div>
-                                                )}
                                             </div>
                                         ) : selectedLink && (
                                             <>
