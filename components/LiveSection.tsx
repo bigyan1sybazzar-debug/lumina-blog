@@ -8,7 +8,7 @@ import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
 import Image from 'next/image';
 import GoogleAdSense from './GoogleAdSense';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search, User } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search, User, Hand } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 import HLSPlayer from './HLSPlayer';
@@ -80,7 +80,7 @@ export const LiveSection: React.FC = () => {
     const [cricketScores, setCricketScores] = useState<any[]>([]);
     const [loadingCricket, setLoadingCricket] = useState(false);
     const [selectedTag, setSelectedTag] = useState<string>('All');
-    const [adTimer, setAdTimer] = useState(0);
+    // const [adTimer, setAdTimer] = useState(0); // Removed timer
     const [showAd, setShowAd] = useState(false);
     const [pendingLink, setPendingLink] = useState<LiveLink | null>(null);
     const [onDemandName, setOnDemandName] = useState('');
@@ -101,12 +101,14 @@ export const LiveSection: React.FC = () => {
     const playerRef = React.useRef<HTMLDivElement>(null);
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
+    const [canSkip, setCanSkip] = useState(false);
+
     const handleLinkClick = (link: any) => {
         if (selectedLink?.id === link.id) return;
 
         setPendingLink(link);
         setShowAd(true);
-        setAdTimer(5);
+        setCanSkip(false);
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -117,7 +119,7 @@ export const LiveSection: React.FC = () => {
             setPendingLink(null);
         }
         setShowAd(false);
-        setAdTimer(0);
+        setCanSkip(false);
         // Ensure we scroll to player when ad is skipped
         playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
@@ -134,17 +136,22 @@ export const LiveSection: React.FC = () => {
         handleLinkClick(liveLink);
     };
 
+    // Detect ad click (window blur) to unlock
     useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (showAd && adTimer > 0) {
-            interval = setInterval(() => {
-                setAdTimer((prev) => prev - 1);
-            }, 1000);
-        } else if (showAd && adTimer === 0) {
-            skipAd();
+        const handleBlur = () => {
+            if (showAd) {
+                skipAd();
+            }
+        };
+
+        if (showAd) {
+            window.addEventListener('blur', handleBlur);
         }
-        return () => clearInterval(interval);
-    }, [showAd, adTimer]);
+
+        return () => {
+            window.removeEventListener('blur', handleBlur);
+        };
+    }, [showAd, canSkip]);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -229,7 +236,7 @@ export const LiveSection: React.FC = () => {
 
                     setPendingLink(formattedLink);
                     setShowAd(true);
-                    setAdTimer(5);
+                    setCanSkip(false);
                 }
 
             } catch (error) {
@@ -650,50 +657,41 @@ export const LiveSection: React.FC = () => {
                                     <div className="aspect-[4/3] md:aspect-video w-full relative">
                                         {showAd ? (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/95 backdrop-blur-sm group z-50">
-                                                <div className="w-full h-full flex items-center justify-center p-4">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl place-items-center">
-                                                        {/* Ad Unit 1 - Optimized for Mobile Wide Square Box */}
-                                                        <div className="w-full max-w-[300px] h-[250px] md:max-w-[336px] md:h-auto md:aspect-square bg-black/40 rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center shadow-2xl relative">
-                                                            <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-2xl md:text-4xl select-none pointer-events-none">ADS</div>
-                                                            <GoogleAdSense
-                                                                slot="7838572857"
-                                                                className="w-full h-full"
-                                                                format="rectangle"
-                                                                responsive={false}
-                                                                style={{ display: 'block', width: '100%', height: '250px' }}
+                                                <div className="w-full h-full flex flex-col items-center justify-center p-4 overflow-y-auto">
+                                                    {/* Internal Ad Unit - Restored per request */}
+                                                    {/* Added onClick to simulate unlock for localhost/testing or if user clicks 'near' the ad */}
+                                                    <div
+                                                        onClick={skipAd}
+                                                        className="mb-6 w-full max-w-[336px] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-2xl relative shrink-0 cursor-pointer active:scale-95 transition-transform"
+                                                    >
+                                                        <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-2xl select-none pointer-events-none">ADS</div>
+                                                        <GoogleAdSense
+                                                            slot="7838572857"
+                                                            className="w-full h-full min-h-[250px]"
+                                                            format="rectangle"
+                                                            responsive={true}
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col items-center justify-center text-center max-w-lg z-30">
+                                                        <div className="w-24 h-24 bg-red-600/20 rounded-full flex items-center justify-center mb-6 animate-pulse ring-4 ring-red-600/10">
+                                                            <img
+                                                                src="https://smoyjtogaiu8cxbm.public.blob.vercel-storage.com/single-tap_18407087.png"
+                                                                alt="Tap to unlock"
+                                                                className="w-16 h-16 object-contain animate-bounce invert"
                                                             />
                                                         </div>
-                                                        {/* Ad Unit 2 - Hidden on Mobile, Side-by-Side on Desktop */}
-                                                        <div className="hidden md:flex aspect-square w-full max-w-[336px] bg-black/40 rounded-2xl overflow-hidden border border-white/10 items-center justify-center shadow-2xl relative">
-                                                            <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-4xl select-none pointer-events-none">ADS</div>
-                                                            <GoogleAdSense
-                                                                slot="7838572857"
-                                                                className="w-full h-full"
-                                                                format="rectangle"
-                                                                responsive={true}
-                                                            />
-                                                        </div>
+                                                        <h3 className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">
+                                                            STREAM LOCKED
+                                                        </h3>
+                                                        <p className="text-gray-300 text-sm md:text-base font-medium max-w-sm mx-auto mb-8 border-t border-b border-white/10 py-4">
+                                                            To start watching, please support us by clicking the <span className="text-white font-bold underline decoration-yellow-500 decoration-2 underline-offset-4">ADVERTISEMENT ABOVE</span>.
+                                                        </p>
                                                     </div>
                                                 </div>
 
-                                                <div className="absolute bottom-4 md:bottom-6 right-4 md:right-6 flex items-center gap-4 z-20">
-                                                    {adTimer > 0 ? (
-                                                        <div className="bg-black/60 backdrop-blur-md px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-white text-xs md:text-sm font-bold border border-white/10">
-                                                            Ad can be skipped in {adTimer}s...
-                                                        </div>
-                                                    ) : (
-                                                        <button
-                                                            onClick={skipAd}
-                                                            className="bg-white text-black hover:bg-red-600 hover:text-white px-4 md:px-6 py-2 rounded-lg text-xs md:text-sm font-black transition-all transform hover:scale-105 flex items-center gap-2 shadow-xl"
-                                                        >
-                                                            Skip Ad <ChevronRight size={18} />
-                                                        </button>
-                                                    )}
-                                                </div>
 
-                                                <div className="absolute top-4 md:top-6 left-4 md:left-6 flex items-center gap-2 z-20">
-                                                    <span className="bg-yellow-500 text-black text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">ADVERTISEMENT</span>
-                                                </div>
+
+
 
                                                 {pendingLink && (
                                                     <div className="absolute top-4 md:top-6 right-4 md:right-6 bg-black/40 backdrop-blur-sm px-3 md:px-4 py-2 rounded-lg border border-white/10 z-20">
