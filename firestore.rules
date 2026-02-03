@@ -113,6 +113,13 @@ service cloud.firestore {
       allow update, delete: if isAdmin(); 
     }
 
+    match /live_comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
     // --- INFRASTRUCTURE & SETTINGS ---
     match /calls/{callId} {
       allow get: if isSignedIn();

@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels, getIPTVConfig, updateIPTVChannel, setDefaultIPTVChannel, getTrendingIPTVChannels, updateLiveLink, setLiveLinkDefault } from '../services/db';
+import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels, getIPTVConfig, updateIPTVChannel, setDefaultIPTVChannel, getTrendingIPTVChannels, updateLiveLink, setLiveLinkDefault, getLiveComments, addLiveComment, clearLiveComments, likeLiveComment, subscribeToLiveComments } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 import { parseM3U } from '../lib/m3uParser';
 import { LiveLink, Highlight } from '../types';
 import Link from 'next/link';
 import Image from 'next/image';
 import GoogleAdSense from './GoogleAdSense';
-import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search, User, Hand } from 'lucide-react';
+import { X, Play, Radio, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search, User, Hand, Heart, Reply } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 import HLSPlayer from './HLSPlayer';
@@ -89,7 +89,9 @@ export const LiveSection: React.FC = () => {
     const [isMuted, setIsMuted] = useState(true);
     const [showDiscussions, setShowDiscussions] = useState(false);
     const [commentText, setCommentText] = useState('');
-    const [comments, setComments] = useState<{ id: string; channelId: string; text: string; timestamp: Date; }[]>([]);
+    const [replyText, setReplyText] = useState('');
+    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [comments, setComments] = useState<any[]>([]);
     const [iptvChannels, setIptvChannels] = useState<M3UChannel[]>([]);
     const [isIPTVMode, setIsIPTVMode] = useState(false);
     const [iptvTag, setIptvTag] = useState<string>('All');
@@ -151,6 +153,15 @@ export const LiveSection: React.FC = () => {
 
         return () => clearInterval(timer);
     }, [showAd, adCountdown]);
+
+    useEffect(() => {
+        if (selectedLink?.id) {
+            const unsubscribe = subscribeToLiveComments(selectedLink.id, (fetchedComments) => {
+                setComments(fetchedComments);
+            });
+            return () => unsubscribe();
+        }
+    }, [selectedLink?.id]);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -471,19 +482,82 @@ export const LiveSection: React.FC = () => {
         }
     };
 
-    const handlePostComment = (e: React.FormEvent) => {
+    const handlePostComment = async (e: React.FormEvent, parentId?: string) => {
         e.preventDefault();
-        if (!commentText.trim() || !selectedLink) return;
+        const textToPost = parentId ? replyText : commentText;
+        if (!textToPost.trim() || !selectedLink) return;
 
-        const newComment = {
-            id: Date.now().toString(),
-            channelId: selectedLink.id,
-            text: commentText,
-            timestamp: new Date(),
-        };
+        if (!user) {
+            alert('Please login to join the discussion.');
+            setShowLoginPrompt(true);
+            return;
+        }
 
-        setComments([newComment, ...comments]);
-        setCommentText('');
+        try {
+            const commentData: any = {
+                channelId: selectedLink.id,
+                text: textToPost,
+                userId: user?.id,
+                userName: user?.name || 'Anonymous',
+                userRole: user?.role,
+                userAvatar: user?.avatar
+            };
+
+            if (parentId) {
+                commentData.parentId = parentId;
+            }
+
+            await addLiveComment(commentData);
+
+            if (parentId) {
+                setReplyText('');
+                setReplyingTo(null);
+            } else {
+                setCommentText('');
+            }
+        } catch (error) {
+            console.error('Failed to post comment:', error);
+            alert('Failed to post comment. Please try again.');
+        }
+    };
+
+    const handleLikeComment = async (commentId: string) => {
+        if (!user) {
+            alert('Please login to like comments.');
+            setShowLoginPrompt(true);
+            return;
+        }
+
+        try {
+            await likeLiveComment(commentId, user.id);
+            setComments(prev => prev.map(c => {
+                if (c.id === commentId) {
+                    const likes = c.likes || [];
+                    const hasLiked = likes.includes(user.id);
+                    return {
+                        ...c,
+                        likes: hasLiked
+                            ? likes.filter((id: string) => id !== user.id)
+                            : [...likes, user.id]
+                    };
+                }
+                return c;
+            }));
+        } catch (error) {
+            console.error('Failed to like comment:', error);
+        }
+    };
+
+    const handleClearComments = async () => {
+        if (!selectedLink || !confirm('Are you sure you want to clear all comments for this channel?')) return;
+
+        try {
+            await clearLiveComments(selectedLink.id);
+            setComments([]);
+        } catch (error) {
+            console.error('Failed to clear comments:', error);
+            alert('Failed to clear comments.');
+        }
     };
 
     const getChannelComments = () => {
@@ -685,12 +759,12 @@ export const LiveSection: React.FC = () => {
                                                     </div>
 
                                                     {/* Ad Container - Optimized for mobile aspect ratios */}
-                                                    <div className="w-full max-w-5xl flex-1 flex flex-col items-center justify-center my-2 md:my-8 group/ad relative">
-                                                        <div className="w-full h-full max-h-[220px] md:max-h-[480px] bg-black/60 rounded-2xl md:rounded-[32px] overflow-hidden border border-white/5 shadow-3xl relative transition-all duration-500 hover:border-white/10">
+                                                    <div className="w-full max-w-5xl flex-1 flex flex-col items-center justify-center my-1 md:my-8 group/ad relative">
+                                                        <div className="w-full h-full min-h-[250px] md:min-h-[300px] max-h-[320px] md:max-h-[500px] bg-black/60 rounded-2xl md:rounded-[32px] overflow-hidden border border-white/5 shadow-3xl relative transition-all duration-500 hover:border-white/10">
                                                             <div className="absolute inset-0 flex items-center justify-center text-white/[0.02] font-black text-[15vw] select-none pointer-events-none uppercase italic tracking-tighter">
                                                                 ADS
                                                             </div>
-                                                            <div className="relative z-10 w-full h-full flex items-center justify-center p-1 md:p-2">
+                                                            <div className="relative z-10 w-full h-full flex items-center justify-center">
                                                                 <GoogleAdSense
                                                                     slot="7838572857"
                                                                     className="w-full h-full"
@@ -919,34 +993,79 @@ export const LiveSection: React.FC = () => {
                                                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl" />
 
                                                     <div className="relative p-4 md:p-6">
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="p-2.5 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl shadow-lg">
-                                                                    <MessageCircle size={20} className="text-white" />
+                                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 relative">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="relative group">
+                                                                    <div className="absolute -inset-1.5 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                                                                    <div className="relative p-3 bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl shadow-xl border border-white/20">
+                                                                        <MessageCircle size={24} className="text-white" />
+                                                                    </div>
+                                                                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full shadow-lg flex items-center justify-center">
+                                                                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div>
+                                                                    </div>
                                                                 </div>
                                                                 <div>
-                                                                    <h4 className="text-lg font-black text-gray-900 dark:text-white">
-                                                                        Channel Discussions
-                                                                    </h4>
-                                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                                        Share your thoughts with the community
-                                                                    </p>
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <h4 className="text-lg md:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">
+                                                                            Match Discussion
+                                                                        </h4>
+                                                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-red-600 text-[10px] font-black text-white rounded-full shadow-lg shadow-red-500/30 animate-pulse border border-white/10">
+                                                                            <Activity size={10} />
+                                                                            <span className="leading-none">LIVE</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="flex -space-x-1.5">
+                                                                            {[1, 2, 3].map((i) => (
+                                                                                <img
+                                                                                    key={i}
+                                                                                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 42}`}
+                                                                                    alt=""
+                                                                                    className="w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 shadow-sm"
+                                                                                />
+                                                                            ))}
+                                                                            <div className="w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 bg-gray-900 dark:bg-gray-100 flex items-center justify-center shadow-sm">
+                                                                                <span className="text-[7px] font-black text-white dark:text-gray-900">+</span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest opacity-80">
+                                                                            127 Fans interacting
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <button
-                                                                onClick={() => setShowDiscussions(!showDiscussions)}
-                                                                className="px-4 py-2 bg-white dark:bg-gray-700 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all shadow-sm border border-red-200 dark:border-red-700"
-                                                            >
-                                                                {showDiscussions ? 'Hide' : 'Show'} Comments
-                                                            </button>
+                                                            <div className="flex items-center gap-2">
+                                                                {user?.role === 'admin' && comments.length > 0 && (
+                                                                    <button
+                                                                        onClick={handleClearComments}
+                                                                        className="group flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all border border-red-200 dark:border-red-800"
+                                                                    >
+                                                                        <Shield size={12} className="group-hover:rotate-12 transition-transform" />
+                                                                        Clear
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    onClick={() => setShowDiscussions(!showDiscussions)}
+                                                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 ${showDiscussions
+                                                                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600'
+                                                                        : 'bg-primary-600 text-white hover:bg-primary-700 shadow-primary-500/20'
+                                                                        }`}
+                                                                >
+                                                                    {showDiscussions ? 'Hide Feed' : 'Show Feed'}
+                                                                </button>
+                                                            </div>
                                                         </div>
 
                                                         {showDiscussions && (
                                                             <div className="space-y-4 animate-in slide-in-from-top duration-300">
                                                                 <div className="bg-white dark:bg-gray-900/50 rounded-xl p-4 border border-red-100 dark:border-red-800/30 shadow-sm">
                                                                     <div className="flex items-start gap-3">
-                                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                                                                            You
+                                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden shadow-lg border-2 border-white dark:border-gray-800">
+                                                                            {user?.avatar ? (
+                                                                                <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                                                                            ) : (
+                                                                                (user?.name?.[0] || 'Y').toUpperCase()
+                                                                            )}
                                                                         </div>
                                                                         <div className="flex-1 space-y-3">
                                                                             <textarea
@@ -956,15 +1075,16 @@ export const LiveSection: React.FC = () => {
                                                                                 className="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none transition-all"
                                                                                 rows={3}
                                                                             />
-                                                                            <div className="flex items-center justify-between">
-                                                                                <p className="text-xs text-gray-400">
+                                                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                                                <p className="text-[10px] md:text-xs text-gray-400 font-medium">
                                                                                     💡 Be respectful and constructive
                                                                                 </p>
                                                                                 <button
-                                                                                    onClick={handlePostComment}
+                                                                                    onClick={(e) => handlePostComment(e)}
                                                                                     disabled={!commentText.trim()}
-                                                                                    className="px-6 py-2.5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white text-sm font-bold rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                                                                    className="w-full sm:w-auto px-6 md:px-8 py-2.5 md:py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white text-[10px] md:text-sm font-black uppercase tracking-widest rounded-xl md:rounded-2xl transition-all shadow-xl hover:shadow-red-500/20 transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                                                                                 >
+                                                                                    <Send size={14} className="md:size-4" />
                                                                                     Post Comment
                                                                                 </button>
                                                                             </div>
@@ -974,41 +1094,147 @@ export const LiveSection: React.FC = () => {
 
                                                                 {/* Display Comments */}
                                                                 {getChannelComments().length > 0 ? (
-                                                                    <div className="pt-4 border-t-2 border-dashed border-red-200 dark:border-red-800/30 space-y-3">
+                                                                    <div className="pt-4 border-t-2 border-dashed border-red-200 dark:border-red-800/30 space-y-4">
                                                                         <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                                                                            💬 {getChannelComments().length} Comment{getChannelComments().length !== 1 ? 's' : ''}
+                                                                            💬 {getChannelComments().length} Discussion Point{getChannelComments().length !== 1 ? 's' : ''}
                                                                         </p>
-                                                                        {getChannelComments().map((comment) => (
-                                                                            <div key={comment.id} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-red-100 dark:border-red-800/20">
-                                                                                <div className="flex items-start gap-3">
-                                                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                                                                                        U
-                                                                                    </div>
-                                                                                    <div className="flex-1">
-                                                                                        <div className="flex items-center gap-2 mb-1">
-                                                                                            <span className="text-xs font-bold text-gray-900 dark:text-white">User</span>
-                                                                                            <span className="text-xs text-gray-400">{formatTimeAgo(comment.timestamp)}</span>
+                                                                        {getChannelComments().filter(c => !c.parentId).map((comment) => (
+                                                                            <div key={comment.id} className="space-y-4">
+                                                                                <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-white/40 dark:border-white/5 shadow-sm hover:shadow-md transition-all duration-300">
+                                                                                    <div className="flex items-start gap-4">
+                                                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 overflow-hidden shadow-inner border border-white/20">
+                                                                                            {comment.userAvatar ? (
+                                                                                                <img src={comment.userAvatar} alt="" className="w-full h-full object-cover" />
+                                                                                            ) : (
+                                                                                                (comment.userName?.[0] || 'U').toUpperCase()
+                                                                                            )}
                                                                                         </div>
-                                                                                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                                                                                            {comment.text}
-                                                                                        </p>
+                                                                                        <div className="flex-1 min-w-0">
+                                                                                            <div className="flex items-center justify-between mb-1.5">
+                                                                                                <div className="flex items-center gap-2">
+                                                                                                    <span className={`text-xs md:text-sm font-black tracking-tight ${comment.userRole === 'admin' ? 'text-red-600 dark:text-red-400 flex items-center gap-1' : 'text-gray-900 dark:text-white'}`}>
+                                                                                                        {comment.userName}
+                                                                                                        {comment.userRole === 'admin' && (
+                                                                                                            <span className="px-1.5 py-0.5 bg-red-600 text-white text-[7px] md:text-[8px] font-black rounded uppercase flex items-center gap-0.5">
+                                                                                                                <Shield size={8} /> Admin
+                                                                                                            </span>
+                                                                                                        )}
+                                                                                                    </span>
+                                                                                                    <div className="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                                                                                                    <span className="text-[9px] md:text-[10px] text-gray-400 font-bold uppercase tracking-widest">{formatTimeAgo(comment.timestamp)}</span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-white dark:bg-gray-900/40 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800/50">
+                                                                                                {comment.text}
+                                                                                            </p>
+                                                                                            <div className="mt-3 flex items-center gap-5">
+                                                                                                <button
+                                                                                                    onClick={() => handleLikeComment(comment.id)}
+                                                                                                    className={`flex items-center gap-2 text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 group ${comment.likes?.includes(user?.id) ? 'text-red-500 scale-105' : 'text-gray-400 hover:text-red-500'}`}
+                                                                                                >
+                                                                                                    <div className={`p-1.5 rounded-lg ${comment.likes?.includes(user?.id) ? 'bg-red-500/10' : 'bg-gray-100 dark:bg-white/5 group-hover:bg-red-500/10'}`}>
+                                                                                                        <Heart size={14} fill={comment.likes?.includes(user?.id) ? "currentColor" : "none"} className="transition-transform active:scale-125" />
+                                                                                                    </div>
+                                                                                                    <span>{comment.likes?.length || 0}</span>
+                                                                                                </button>
+                                                                                                <button
+                                                                                                    onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                                                                                                    className={`flex items-center gap-2 text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 group ${replyingTo === comment.id ? 'text-primary-600 scale-105' : 'text-gray-400 hover:text-primary-600'}`}
+                                                                                                >
+                                                                                                    <div className={`p-1.5 rounded-lg ${replyingTo === comment.id ? 'bg-primary-600/10' : 'bg-gray-100 dark:bg-white/5 group-hover:bg-primary-600/10'}`}>
+                                                                                                        <Reply size={14} />
+                                                                                                    </div>
+                                                                                                    <span>Reply</span>
+                                                                                                </button>
+                                                                                            </div>
+
+                                                                                            {replyingTo === comment.id && (
+                                                                                                <div className="mt-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 rounded-2xl border-2 border-primary-500/20 shadow-lg animate-in fade-in zoom-in duration-300">
+                                                                                                    <textarea
+                                                                                                        value={replyText}
+                                                                                                        onChange={(e) => setReplyText(e.target.value)}
+                                                                                                        placeholder={`Reply to ${comment.userName}...`}
+                                                                                                        className="w-full px-4 py-3 text-sm bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none transition-all placeholder:text-gray-400"
+                                                                                                        rows={2}
+                                                                                                    />
+                                                                                                    <div className="flex justify-end gap-3 mt-3">
+                                                                                                        <button
+                                                                                                            onClick={() => setReplyingTo(null)}
+                                                                                                            className="px-4 py-2 text-[10px] font-black text-gray-500 uppercase hover:text-gray-800 transition-colors"
+                                                                                                        >
+                                                                                                            Cancel
+                                                                                                        </button>
+                                                                                                        <button
+                                                                                                            onClick={(e) => handlePostComment(e, comment.id)}
+                                                                                                            disabled={!replyText.trim()}
+                                                                                                            className="px-8 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-primary-500/10 active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                                                                                                        >
+                                                                                                            <Send size={14} /> Post Reply
+                                                                                                        </button>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
                                                                                     </div>
+                                                                                </div>
+
+                                                                                {/* Render Replies */}
+                                                                                <div className="ml-6 md:ml-14 space-y-3 relative">
+                                                                                    <div className="absolute left-[-20px] top-[-10px] bottom-10 w-px bg-gradient-to-b from-red-500/20 via-primary-500/20 to-transparent"></div>
+                                                                                    {getChannelComments().filter(r => r.parentId === comment.id).map(reply => (
+                                                                                        <div key={reply.id} className="relative bg-white/40 dark:bg-gray-800/20 backdrop-blur-sm rounded-xl p-3 md:p-4 border-l-4 border-primary-500 shadow-sm transition-all hover:translate-x-1 duration-300">
+                                                                                            <div className="absolute left-[-20px] top-1/2 w-4 h-px bg-primary-500/20"></div>
+                                                                                            <div className="flex items-start gap-3">
+                                                                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0 overflow-hidden shadow-inner border border-white/10">
+                                                                                                    {reply.userAvatar ? (
+                                                                                                        <img src={reply.userAvatar} alt="" className="w-full h-full object-cover" />
+                                                                                                    ) : (
+                                                                                                        (reply.userName?.[0] || 'U').toUpperCase()
+                                                                                                    )}
+                                                                                                </div>
+                                                                                                <div className="flex-1 min-w-0">
+                                                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                                                        <span className={`text-[11px] font-black tracking-tight ${reply.userRole === 'admin' ? 'text-red-500 flex items-center gap-1' : 'text-gray-800 dark:text-gray-200'}`}>
+                                                                                                            {reply.userName}
+                                                                                                            {reply.userRole === 'admin' && <Shield size={8} />}
+                                                                                                        </span>
+                                                                                                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{formatTimeAgo(reply.timestamp)}</span>
+                                                                                                    </div>
+                                                                                                    <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed italic">
+                                                                                                        {reply.text}
+                                                                                                    </p>
+                                                                                                    <div className="mt-2 text-left">
+                                                                                                        <button
+                                                                                                            onClick={() => handleLikeComment(reply.id)}
+                                                                                                            className={`flex items-center gap-1 text-[9px] font-black uppercase tracking-widest transition-all ${reply.likes?.includes(user?.id) ? 'text-red-500 scale-105' : 'text-gray-400 hover:text-red-500'}`}
+                                                                                                        >
+                                                                                                            <Heart size={12} fill={reply.likes?.includes(user?.id) ? "currentColor" : "none"} className="transition-transform active:scale-125" />
+                                                                                                            <span>{reply.likes?.length || 0}</span>
+                                                                                                        </button>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ))}
                                                                                 </div>
                                                                             </div>
                                                                         ))}
                                                                     </div>
                                                                 ) : (
-                                                                    <div className="pt-4 border-t-2 border-dashed border-red-200 dark:border-red-800/30">
-                                                                        <div className="text-center py-8">
-                                                                            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full mb-3">
-                                                                                <MessageCircle size={28} className="text-red-400" />
+                                                                    <div className="pt-8 border-t-2 border-dashed border-red-200 dark:border-red-800/20">
+                                                                        <div className="text-center py-12 px-4 relative">
+                                                                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-500/5 to-transparent rounded-full blur-3xl"></div>
+                                                                            <div className="relative">
+                                                                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 mb-4 animate-bounce shadow-inner">
+                                                                                    <MessageCircle size={32} />
+                                                                                </div>
+                                                                                <h5 className="text-lg font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight">
+                                                                                    Be the First to Speak!
+                                                                                </h5>
+                                                                                <p className="text-xs text-gray-500 dark:text-gray-400 font-bold max-w-[200px] mx-auto leading-relaxed uppercase tracking-widest opacity-70">
+                                                                                    Start the conversation and connect with other fans.
+                                                                                </p>
                                                                             </div>
-                                                                            <p className="text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">
-                                                                                No comments yet
-                                                                            </p>
-                                                                            <p className="text-xs text-gray-400">
-                                                                                Be the first to start the conversation! 🎉
-                                                                            </p>
                                                                         </div>
                                                                     </div>
                                                                 )}

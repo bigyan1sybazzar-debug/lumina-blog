@@ -13,6 +13,7 @@ const COMMENTS_COLLECTION = 'comments';
 const REVIEWS_COLLECTION = 'reviews';
 const POLLS_COLLECTION = 'polls';
 const LIVE_LINKS_COLLECTION = 'live_links';
+const LIVE_COMMENTS_COLLECTION = 'live_comments';
 const KEYWORDS_COLLECTION = 'keywords';
 const LIVE_MATCHES_COLLECTION = 'live_matches';
 const PAGES_COLLECTION = 'pages';
@@ -1158,6 +1159,125 @@ export const deletePoll = async (pollId: string): Promise<void> => {
   }
 };
 
+// --- LIVE COMMENTS (DISCUSSIONS) ---
+
+export const subscribeToLiveComments = (channelId: string, callback: (comments: any[]) => void) => {
+  return db.collection(LIVE_COMMENTS_COLLECTION)
+    .where('channelId', '==', channelId)
+    .onSnapshot((snapshot) => {
+      const comments = snapshot.docs.map(doc => {
+        const data = doc.data();
+        let timestamp = new Date();
+        if (data.timestamp) {
+          timestamp = (data.timestamp as firebase.firestore.Timestamp).toDate();
+        }
+        return {
+          id: doc.id,
+          ...data,
+          timestamp
+        };
+      }).sort((a: any, b: any) => b.timestamp.getTime() - a.timestamp.getTime());
+      callback(comments);
+    }, (error) => {
+      console.error('Error subscribing to live comments:', error);
+    });
+};
+
+export const getLiveComments = async (channelId: string): Promise<any[]> => {
+  try {
+    const snapshot = await db.collection(LIVE_COMMENTS_COLLECTION)
+      .where('channelId', '==', channelId)
+      .orderBy('timestamp', 'desc')
+      .get();
+
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      timestamp: (doc.data().timestamp as firebase.firestore.Timestamp).toDate()
+    }));
+  } catch (error) {
+    console.error('Error fetching live comments:', error);
+    // Fallback if index is missing
+    try {
+      const snapshot = await db.collection(LIVE_COMMENTS_COLLECTION)
+        .where('channelId', '==', channelId)
+        .get();
+
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: (doc.data().timestamp as firebase.firestore.Timestamp).toDate()
+      })).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    } catch (err) {
+      console.error('Fallback fetch failed:', err);
+      return [];
+    }
+  }
+};
+
+export const addLiveComment = async (comment: {
+  channelId: string;
+  text: string;
+  userId?: string;
+  userName: string;
+  userRole?: string;
+  userAvatar?: string;
+  parentId?: string;
+}) => {
+  try {
+    const docRef = await db.collection(LIVE_COMMENTS_COLLECTION).add({
+      ...comment,
+      likes: [],
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding live comment:', error);
+    throw error;
+  }
+};
+
+export const likeLiveComment = async (commentId: string, userId: string) => {
+  try {
+    const docRef = db.collection(LIVE_COMMENTS_COLLECTION).doc(commentId);
+    const doc = await docRef.get();
+    if (!doc.exists) return;
+
+    const data = doc.data();
+    const likes = data?.likes || [];
+
+    if (likes.includes(userId)) {
+      await docRef.update({
+        likes: firebase.firestore.FieldValue.arrayRemove(userId)
+      });
+    } else {
+      await docRef.update({
+        likes: firebase.firestore.FieldValue.arrayUnion(userId)
+      });
+    }
+  } catch (error) {
+    console.error('Error liking live comment:', error);
+    throw error;
+  }
+};
+
+export const clearLiveComments = async (channelId: string) => {
+  try {
+    const snapshot = await db.collection(LIVE_COMMENTS_COLLECTION)
+      .where('channelId', '==', channelId)
+      .get();
+
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    await batch.commit();
+  } catch (error) {
+    console.error('Error clearing live comments:', error);
+    throw error;
+  }
+};
+
 // --- KEYWORDS ---
 
 export const getKeywords = async (): Promise<{ id: string; name: string; count: number }[]> => {
@@ -1657,15 +1777,16 @@ export const getIPTVConfig = async () => {
     return doc.exists ? doc.data() : {
       m3uUrl: '',
       guestLimitMinutes: 5,
-      enableSportsLimit: false
+      enableSportsLimit: false,
+      adUrl: ''
     };
   } catch (error) {
     console.error('Error fetching IPTV config:', error);
-    return { m3uUrl: '', guestLimitMinutes: 5, enableSportsLimit: false };
+    return { m3uUrl: '', guestLimitMinutes: 5, enableSportsLimit: false, adUrl: '' };
   }
 };
 
-export const updateIPTVConfig = async (settings: { m3uUrl: string; guestLimitMinutes: number; enableSportsLimit: boolean }) => {
+export const updateIPTVConfig = async (settings: { m3uUrl: string; guestLimitMinutes: number; enableSportsLimit: boolean; adUrl?: string }) => {
   try {
     await db.collection('config').doc('iptv').set({
       ...settings,

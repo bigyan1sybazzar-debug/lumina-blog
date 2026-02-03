@@ -25,6 +25,7 @@ export const IPTVManager: React.FC<IPTVManagerProps> = ({
     const [m3uUrl, setM3uUrl] = useState('');
     const [guestLimitMinutes, setGuestLimitMinutes] = useState(5);
     const [enableSportsLimit, setEnableSportsLimit] = useState(false);
+    const [adUrl, setAdUrl] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
@@ -39,6 +40,7 @@ export const IPTVManager: React.FC<IPTVManagerProps> = ({
                 setM3uUrl(config?.m3uUrl || '');
                 setGuestLimitMinutes(config?.guestLimitMinutes || 5);
                 setEnableSportsLimit(config?.enableSportsLimit || false);
+                setAdUrl(config?.adUrl || '');
             } catch (error) {
                 console.error('Failed to load IPTV config:', error);
             } finally {
@@ -56,7 +58,8 @@ export const IPTVManager: React.FC<IPTVManagerProps> = ({
             await updateIPTVConfig({
                 m3uUrl,
                 guestLimitMinutes: Number(guestLimitMinutes),
-                enableSportsLimit
+                enableSportsLimit,
+                adUrl
             });
             setMessage({ type: 'success', text: 'IPTV configuration updated successfully!' });
             await onRefresh();
@@ -246,6 +249,25 @@ export const IPTVManager: React.FC<IPTVManagerProps> = ({
                                 </div>
                             </button>
                             <p className="text-[10px] text-gray-400 italic">When enabled, the same time limit applies to Live Sports matches.</p>
+                        </div>
+
+                        {/* AD URL SECTION */}
+                        <div className="space-y-3 md:col-span-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                                <TrendingUp size={12} />
+                                Unlock Page Ad URL (Opens in New Tab)
+                            </label>
+                            <div className="relative group">
+                                <TrendingUp className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-500 transition-colors" size={20} />
+                                <input
+                                    type="url"
+                                    value={adUrl}
+                                    onChange={(e) => setAdUrl(e.target.value)}
+                                    placeholder="Paste the ad URL here (e.g. from hovering over the ad)"
+                                    className="w-full pl-14 pr-6 py-5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-primary-500 outline-none transition-all font-mono text-xs"
+                                />
+                            </div>
+                            <p className="text-[10px] text-gray-400 italic">This URL will be used for the 'Click to Unlock' feature. It opens in a new tab to keep your site active.</p>
                         </div>
                     </div>
 
