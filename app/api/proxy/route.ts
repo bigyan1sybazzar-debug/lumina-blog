@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         // Detect if this is an HLS playlist by extension or content type
         const isPlaylist = targetUrl.includes('.m3u8') ||
             targetUrl.includes('.m3u') ||
+            targetUrl.includes('fetch?') ||
             contentType.includes('mpegurl') ||
             contentType.includes('application/x-mpegURL');
 
@@ -44,20 +45,23 @@ export async function GET(request: NextRequest) {
             // We must rewrite relative URLs to be absolute to the ORIGINAL server.
             const text = await response.text();
             const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
+            const proxyBaseUrl = `${request.nextUrl.origin}/api/proxy?url=`;
 
             const rewrittenText = text.split('\n').map(line => {
                 const trimmedLine = line.trim();
                 // Skip comments/tags and empty lines
                 if (!trimmedLine || trimmedLine.startsWith('#')) return line;
 
-                // If it's already an absolute URL, leave it
-                if (trimmedLine.startsWith('http')) return line;
+                let absoluteUrl = '';
+                if (trimmedLine.startsWith('http')) {
+                    absoluteUrl = trimmedLine;
+                } else if (trimmedLine.startsWith('/')) {
+                    absoluteUrl = urlObj.origin + trimmedLine;
+                } else {
+                    absoluteUrl = baseUrl + trimmedLine;
+                }
 
-                // If it's an absolute path from root, prepend origin
-                if (trimmedLine.startsWith('/')) return urlObj.origin + trimmedLine;
-
-                // It's a relative path, prepend base URL
-                return baseUrl + trimmedLine;
+                return proxyBaseUrl + encodeURIComponent(absoluteUrl);
             }).join('\n');
 
             data = Buffer.from(rewrittenText);

@@ -28,7 +28,10 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
         if (!video) return;
 
         setError(null);
-        setIsLoading(true);
+        const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+        const finalSrc = (isHttps && src.startsWith('http://'))
+            ? `/api/stream-proxy?url=${encodeURIComponent(src)}`
+            : src;
 
         const initPlayer = () => {
             if (Hls.isSupported()) {
@@ -42,22 +45,9 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                     backBufferLength: 90,
                     manifestLoadingMaxRetry: 2,
                     levelLoadingMaxRetry: 2,
-                    xhrSetup: (xhr, url) => {
-                        // Skip blobs, data URLs, and already proxied/local URLs
-                        if (url.startsWith('blob:') || url.startsWith('data:')) return;
-
-                        const isExternal = url.startsWith('http') &&
-                            !url.includes(window.location.host) &&
-                            !url.includes('/api/proxy');
-
-                        if (isExternal) {
-                            const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
-                            xhr.open('GET', proxyUrl, true);
-                        }
-                    }
                 });
 
-                hls.loadSource(src);
+                hls.loadSource(finalSrc);
                 hls.attachMedia(video);
                 hlsRef.current = hls;
 
@@ -93,7 +83,7 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                 });
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                 // Native support (Safari)
-                video.src = src;
+                video.src = finalSrc;
                 video.addEventListener('loadedmetadata', () => {
                     setIsLoading(false);
                     if (autoPlay) {

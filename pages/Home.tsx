@@ -42,6 +42,13 @@ export const Home: React.FC<HomeProps> = ({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const pollSliderRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const POSTS_PER_PAGE = 20;
+
+  // Reset pagination when category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory]);
 
   // REPLACE your fake isLoggedIn with real auth
   const { user, isLoading: authLoading } = useAuth();
@@ -49,8 +56,8 @@ export const Home: React.FC<HomeProps> = ({
   const fetchPosts = async (): Promise<BlogPost[]> => {
     for (let i = 0; i < 3; i++) {
       try {
-        // Only fetch the latest 24 posts for initial render instead of all
-        const result = await getPosts(24);
+        // Fetch more posts on client-side to support pagination
+        const result = await getPosts(100, true);
         return Array.isArray(result) ? result : [];
       } catch (err) {
         if (i === 2) {
@@ -66,15 +73,14 @@ export const Home: React.FC<HomeProps> = ({
 
 
   useEffect(() => {
-    if (initialPosts.length > 0) {
-      setEditorPicks(initialPosts.slice(0, 8));
-      return;
-    }
-
     const load = async () => {
-      setLoading(true);
+      // Don't show loading spinner if we already have initial posts
+      if (initialPosts.length === 0) setLoading(true);
+
       const data = await fetchPosts();
       const sorted = data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      // Update states
       setPosts(sorted);
       setEditorPicks(sorted.slice(0, 8));
 
@@ -140,6 +146,13 @@ export const Home: React.FC<HomeProps> = ({
     if (selectedCategory === 'Featured') return heroFeatured;
     return posts.filter(p => p.category === selectedCategory);
   }, [posts, selectedCategory, heroFeatured]);
+
+  const paginatedPosts = useMemo(() => {
+    const start = (currentPage - 1) * POSTS_PER_PAGE;
+    return filteredPosts.slice(start, start + POSTS_PER_PAGE);
+  }, [filteredPosts, currentPage, POSTS_PER_PAGE]);
+
+  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
 
   const scrollSlider = (direction: 'left' | 'right') => {
     if (!sliderRef.current) return;
@@ -720,7 +733,7 @@ export const Home: React.FC<HomeProps> = ({
       </section>
 
       {/* Latest Posts Grid (Reduced py- from py-16 to py-12) */}
-      <section className="py-12 md:py-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 section-lazy">
+      <section id="latest-articles" className="py-12 md:py-12 px-4 bg-gray-50/50 dark:bg-gray-900/50 section-lazy">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6"> {/* Reduced mb- from mb-8 to mb-6 */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-sm font-medium"> {/* Reduced mb- from mb-3 to mb-2 */}
@@ -735,30 +748,75 @@ export const Home: React.FC<HomeProps> = ({
             </h2>
           </div>
 
-          {filteredPosts.length > 0 ? (
-            <div className="grid grid-cols-2 min-[480px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              {filteredPosts.map((post, index) => (
-                <React.Fragment key={post.id}>
-                  <PostCard
-                    post={post}
-                    categoryName={post.category}
-                    variant="vertical"
-                    textSizeClass="text-[11px] sm:text-base md:text-lg"
-                    increasedTitle={false}
-                    alignLeft={true}
-                  />
-                  {/* Insert AdSense ad after every 12 posts */}
-                  {(index + 1) % 12 === 0 && index !== filteredPosts.length - 1 && (
-                    <div className="col-span-2 sm:col-span-2 lg:col-span-3 xl:col-span-4 my-4">
-                      <GoogleAdSense
-                        slot="7838572857"
-                        format="auto"
-                        responsive={true}
-                      />
-                    </div>
-                  )}
-                </React.Fragment>
-              ))}
+          {paginatedPosts.length > 0 ? (
+            <div className="space-y-12">
+              <div className="grid grid-cols-2 min-[480px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                {paginatedPosts.map((post, index) => (
+                  <React.Fragment key={post.id}>
+                    <PostCard
+                      post={post}
+                      categoryName={post.category}
+                      variant="vertical"
+                      textSizeClass="text-[11px] sm:text-base md:text-lg"
+                      increasedTitle={false}
+                      alignLeft={true}
+                    />
+                    {/* Insert AdSense ad after every 4 posts */}
+                    {(index + 1) % 4 === 0 && index !== paginatedPosts.length - 1 && (
+                      <div className="col-span-2 sm:col-span-2 lg:col-span-3 xl:col-span-4 my-4">
+                        <GoogleAdSense
+                          slot="7838572857"
+                          format="auto"
+                          responsive={true}
+                        />
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 pt-8">
+                  <button
+                    onClick={() => {
+                      setCurrentPage(prev => Math.max(prev - 1, 1));
+                      window.scrollTo({ top: document.getElementById('latest-articles')?.offsetTop || 0, behavior: 'smooth' });
+                    }}
+                    disabled={currentPage === 1}
+                    className="p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => {
+                          setCurrentPage(page);
+                          window.scrollTo({ top: document.getElementById('latest-articles')?.offsetTop || 0, behavior: 'smooth' });
+                        }}
+                        className={`w-10 h-10 rounded-xl font-bold transition-all ${currentPage === page
+                          ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                      window.scrollTo({ top: document.getElementById('latest-articles')?.offsetTop || 0, behavior: 'smooth' });
+                    }}
+                    disabled={currentPage === totalPages}
+                    className="p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-10 md:py-12"> {/* Reduced py- from py-16 to py-12 */}
