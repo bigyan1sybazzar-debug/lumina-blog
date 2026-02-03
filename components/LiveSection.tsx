@@ -661,16 +661,24 @@ export const LiveSection: React.FC = () => {
                                                     {/* Internal Ad Unit - Restored per request */}
                                                     {/* Added onClick to simulate unlock for localhost/testing or if user clicks 'near' the ad */}
                                                     <div
-                                                        onClick={skipAd}
-                                                        className="mb-6 w-full max-w-[336px] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-2xl relative shrink-0 cursor-pointer active:scale-95 transition-transform"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            // Open ad in new tab (you can replace this URL with your actual ad network URL)
+                                                            window.open('https://www.google.com/adsense', '_blank', 'noopener,noreferrer');
+                                                            // Unlock the video after opening ad
+                                                            skipAd();
+                                                        }}
+                                                        className="mb-6 w-full max-w-[336px] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-2xl relative shrink-0 cursor-pointer active:scale-95 transition-transform hover:border-white/30 hover:shadow-3xl"
                                                     >
                                                         <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-2xl select-none pointer-events-none">ADS</div>
-                                                        <GoogleAdSense
-                                                            slot="7838572857"
-                                                            className="w-full h-full min-h-[250px]"
-                                                            format="rectangle"
-                                                            responsive={true}
-                                                        />
+                                                        <div className="pointer-events-none">
+                                                            <GoogleAdSense
+                                                                slot="7838572857"
+                                                                className="w-full h-full min-h-[250px]"
+                                                                format="rectangle"
+                                                                responsive={true}
+                                                            />
+                                                        </div>
                                                     </div>
                                                     <div className="flex flex-col items-center justify-center text-center max-w-lg z-30">
                                                         <div className="w-24 h-24 bg-red-600/20 rounded-full flex items-center justify-center mb-6 animate-pulse ring-4 ring-red-600/10">
