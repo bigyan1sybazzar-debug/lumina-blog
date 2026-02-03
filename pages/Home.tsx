@@ -763,10 +763,10 @@ export const Home: React.FC<HomeProps> = ({
                     />
                     {/* Insert AdSense ad after every 4 posts */}
                     {(index + 1) % 4 === 0 && index !== paginatedPosts.length - 1 && (
-                      <div className="col-span-2 sm:col-span-2 lg:col-span-3 xl:col-span-4 my-6 sm:my-8 flex items-center justify-center">
-                        <div className="w-full max-w-full md:max-w-5xl min-h-[140px] md:min-h-[280px] bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-lg relative p-3 sm:p-4 group">
+                      <div className="col-span-2 sm:col-span-2 lg:col-span-3 xl:col-span-4 flex items-center justify-center w-full">
+                        <div className="w-full min-h-[140px] md:min-h-[250px] bg-gray-100 dark:bg-gray-800 rounded-none md:rounded-2xl overflow-hidden border-y md:border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm md:shadow-lg relative p-2 md:p-4 group">
                           <div className="absolute inset-0 flex items-center justify-center text-gray-500/10 dark:text-gray-400/10 font-black text-3xl md:text-6xl select-none pointer-events-none tracking-widest group-hover:scale-105 transition-transform duration-700">ADS</div>
-                          <div className="relative z-10 w-full flex items-center justify-center overflow-hidden rounded-xl bg-blend-multiply dark:bg-blend-screen min-h-[110px] md:min-h-[250px]">
+                          <div className="relative z-10 w-full flex items-center justify-center overflow-hidden rounded-lg md:rounded-xl bg-blend-multiply dark:bg-blend-screen min-h-[110px] md:min-h-[220px]">
                             <GoogleAdSense
                               slot="7838572857"
                               className="w-full h-full flex justify-center items-center"
