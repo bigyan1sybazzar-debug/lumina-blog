@@ -136,22 +136,30 @@ export const LiveSection: React.FC = () => {
         handleLinkClick(liveLink);
     };
 
-    // Detect ad click (window blur) to unlock
+    // Detect ad click (window blur or iframe focus) to unlock
     useEffect(() => {
-        const handleBlur = () => {
+        const handleUnblock = () => {
             if (showAd) {
                 skipAd();
             }
         };
 
         if (showAd) {
-            window.addEventListener('blur', handleBlur);
-        }
+            window.addEventListener('blur', handleUnblock);
 
-        return () => {
-            window.removeEventListener('blur', handleBlur);
-        };
-    }, [showAd, canSkip]);
+            // Robust check for desktop: if an iframe captures focus, it's an ad click
+            const interval = setInterval(() => {
+                if (document.activeElement instanceof HTMLIFrameElement && showAd) {
+                    handleUnblock();
+                }
+            }, 500);
+
+            return () => {
+                window.removeEventListener('blur', handleUnblock);
+                clearInterval(interval);
+            };
+        }
+    }, [showAd]);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -661,17 +669,15 @@ export const LiveSection: React.FC = () => {
                                                     {/* Internal Ad Unit - Restored per request */}
                                                     {/* Added onClick to simulate unlock for localhost/testing or if user clicks 'near' the ad */}
                                                     <div
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            // Open ad in new tab (you can replace this URL with your actual ad network URL)
-                                                            window.open('https://www.google.com/adsense', '_blank', 'noopener,noreferrer');
-                                                            // Unlock the video after opening ad
+                                                        onClick={() => {
+                                                            // Fallback: If the user clicks the container area, we unblock the stream.
+                                                            // Redirection for real ads is handled by the ad network itself.
                                                             skipAd();
                                                         }}
-                                                        className="mb-6 w-full max-w-[336px] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-2xl relative shrink-0 cursor-pointer active:scale-95 transition-transform hover:border-white/30 hover:shadow-3xl"
+                                                        className="mb-6 w-full max-w-[336px] bg-black/40 rounded-xl overflow-hidden border border-white/10 shadow-2xl relative shrink-0 cursor-pointer transition-all hover:border-white/30 hover:shadow-3xl"
                                                     >
                                                         <div className="absolute inset-0 flex items-center justify-center text-white/5 font-black text-2xl select-none pointer-events-none">ADS</div>
-                                                        <div className="pointer-events-none">
+                                                        <div className="relative z-10">
                                                             <GoogleAdSense
                                                                 slot="7838572857"
                                                                 className="w-full h-full min-h-[250px]"
