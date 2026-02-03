@@ -51,7 +51,7 @@ const checkPollSlugExists = async (slug: string): Promise<boolean> => {
 
 // --- POSTS ---
 
-export const getPosts = async (limitCount?: number, stripContent: boolean = false): Promise<BlogPost[]> => {
+export const getPosts = async (limitCount?: number): Promise<BlogPost[]> => {
   try {
     let query = db.collection(POSTS_COLLECTION)
       .where('status', '==', 'published')
@@ -63,14 +63,10 @@ export const getPosts = async (limitCount?: number, stripContent: boolean = fals
 
     const snapshot = await query.get();
 
-    return snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        ...(stripContent ? { content: '' } : {})
-      } as BlogPost;
-    });
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as BlogPost));
   } catch (error: any) {
     // Check for "The query requires an index" error
     if (error.code === 'failed-precondition' || (error.message && error.message.includes('requires an index'))) {
@@ -82,14 +78,10 @@ export const getPosts = async (limitCount?: number, stripContent: boolean = fals
           .where('status', '==', 'published')
           .get();
 
-        const posts = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            ...(stripContent ? { content: '' } : {})
-          } as BlogPost;
-        });
+        const posts = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as BlogPost));
 
         const sorted = posts.sort(sortByDateDesc);
         return limitCount ? sorted.slice(0, limitCount) : sorted;
@@ -104,8 +96,8 @@ export const getPosts = async (limitCount?: number, stripContent: boolean = fals
   }
 };
 
-export const getLatestPosts = async (count: number = 10, stripContent: boolean = false): Promise<BlogPost[]> => {
-  return getPosts(count, stripContent);
+export const getLatestPosts = async (count: number = 10): Promise<BlogPost[]> => {
+  return getPosts(count);
 };
 
 export const getPendingPosts = async (): Promise<BlogPost[]> => {

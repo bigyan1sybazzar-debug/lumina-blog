@@ -26,37 +26,6 @@ const splideCustomStyles = `
   }
 `;
 
-// Helper to detect if a URL is an HLS stream
-const isStreamLink = (url: string): boolean => {
-    if (!url || typeof url !== 'string') return false;
-    const low = url.toLowerCase();
-    return (
-        low.includes('.m3u8') ||
-        low.includes('.m3u') ||
-        low.includes('fetch?') ||
-        low.includes(':8080') ||
-        low.includes(':25461') ||
-        /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url.replace(/^https?:\/\//, ''))
-    );
-};
-
-// Helper to upgrade HTTP URLs to HTTPS to prevent mixed content errors
-// For HTTP-only streams, route them through our server-side proxy
-const upgradeToHttps = (url: string): string => {
-    if (!url || typeof url !== 'string') return url;
-
-    // If it's already HTTPS, return as-is
-    if (url.startsWith('https://')) return url;
-
-    // If it's HTTP, route through our proxy to avoid mixed content errors
-    if (url.startsWith('http://')) {
-        // Use our server-side proxy that fetches HTTP and serves over HTTPS
-        return `/api/stream-proxy?url=${encodeURIComponent(url)}`;
-    }
-
-    return url;
-};
-
 
 const splideOptionsHighlights = {
     perPage: 4,
@@ -158,7 +127,7 @@ export const LiveSection: React.FC = () => {
             id: channel.id,
             heading: channel.name,
             iframeUrl: channel.url,
-            isHLS: isStreamLink(channel.url),
+            isHLS: channel.url.includes('.m3u8'),
             tags: [channel.group],
             isIPTV: true // Flag to distinguish for limit logic
         };
@@ -253,7 +222,7 @@ export const LiveSection: React.FC = () => {
                         id: (initialLink as any).id,
                         heading: (initialLink as any).name || (initialLink as any).heading,
                         iframeUrl: (initialLink as any).url || (initialLink as any).iframeUrl,
-                        isHLS: isStreamLink((initialLink as any).url || (initialLink as any).iframeUrl || ''),
+                        isHLS: ((initialLink as any).url || (initialLink as any).iframeUrl || '').includes('.m3u8'),
                         tags: (initialLink as any).group ? [(initialLink as any).group] : (initialLink as any).tags,
                         isIPTV: true
                     } : initialLink;
@@ -545,7 +514,7 @@ export const LiveSection: React.FC = () => {
             id: c.id,
             heading: c.name,
             iframeUrl: c.url,
-            isHLS: isStreamLink(c.url || ''),
+            isHLS: (c.url || '').includes('.m3u8'),
             tags: [c.group],
             isIPTV: true,
             itemType: 'iptv',
@@ -773,9 +742,9 @@ export const LiveSection: React.FC = () => {
                                                         </p>
                                                     </div>
                                                 )}
-                                                {selectedLink.isHLS || isStreamLink(selectedLink.iframeUrl) ? (
+                                                {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
                                                     <HLSPlayer
-                                                        src={upgradeToHttps(selectedLink.youtubeUrl || selectedLink.iframeUrl)}
+                                                        src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
                                                         className="w-full h-full [&>video]:object-cover"
                                                         autoPlay={true}
                                                         muted={isMuted}
@@ -785,7 +754,7 @@ export const LiveSection: React.FC = () => {
                                                         <iframe
                                                             ref={iframeRef}
                                                             key={playerKey}
-                                                            src={upgradeToHttps(selectedLink.youtubeUrl || selectedLink.iframeUrl)}
+                                                            src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
                                                             title={selectedLink.heading || selectedLink.title}
                                                             className="w-[100%] h-[100%] border-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.35] md:scale-100"
                                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
