@@ -1,6 +1,6 @@
 import { put } from '@vercel/blob';
 export const runtime = 'edge';
-import admin from 'firebase-admin';
+import { db } from '../../../services/firebase';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
@@ -14,20 +14,6 @@ export async function POST(req: Request) {
     }
 
     try {
-        // Initialize Firebase Admin if not already initialized
-        if (!admin.apps.length) {
-            // Ensure FIREBASE_SERVICE_ACCOUNT is defined
-            if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-                throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is missing');
-            }
-
-            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount),
-            });
-        }
-
-        const db = admin.firestore();
         const BASE_URL = 'https://bigyann.com.np';
         const BLOB_URL = 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
 

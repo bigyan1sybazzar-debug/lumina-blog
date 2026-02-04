@@ -1,23 +1,10 @@
 
 export const runtime = 'edge';
 
-import admin from 'firebase-admin';
+import { db } from '../../../services/firebase';
+import firebase from 'firebase/compat/app';
 import { generateNewsPost, generateBlogImage } from '../../../services/geminiService';
 import { slugify } from '../../../lib/slugify';
-
-// Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
-    try {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-        });
-    } catch (e) {
-        console.error('Failed to init Firebase Admin:', e);
-    }
-}
-
-const db = admin.firestore();
 
 export default async function handler(req: Request) {
     // 1. Authenticate Request
@@ -94,7 +81,7 @@ export default async function handler(req: Request) {
         console.error('Autopilot Error:', error);
         try {
             await db.collection('config').doc('autopilot').update({
-                logs: admin.firestore.FieldValue.arrayUnion({
+                logs: firebase.firestore.FieldValue.arrayUnion({
                     id: Date.now().toString(),
                     timestamp: new Date().toLocaleTimeString(),
                     message: `Critical Failure: ${error.message}`,
@@ -116,7 +103,7 @@ async function checkSlugExists(slug: string) {
 // Helper: Log to Firestore
 async function logActivity(ref: any, message: string, type: 'info' | 'success' | 'error' | 'warning') {
     await ref.update({
-        logs: admin.firestore.FieldValue.arrayUnion({
+        logs: firebase.firestore.FieldValue.arrayUnion({
             id: Date.now().toString(),
             timestamp: new Date().toISOString(),
             message,

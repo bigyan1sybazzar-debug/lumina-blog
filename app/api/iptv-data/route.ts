@@ -2,35 +2,13 @@ import { put, list } from '@vercel/blob';
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { db } from '../../../services/firebase';
-import fs from 'fs';
-import path from 'path';
 
 const FILE_NAME = 'iptv-data.json';
 const COLLECTION_NAME = 'iptv_channels';
 
-// Helper to get token if process.env is missing it (hack for dev mode without restart)
+// Helper to get token
 function getBlobToken() {
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
-        console.log('Token found in process.env');
-        return process.env.BLOB_READ_WRITE_TOKEN;
-    }
-
-    try {
-        const envPath = path.join(process.cwd(), '.env.local');
-        if (fs.existsSync(envPath)) {
-            const envContent = fs.readFileSync(envPath, 'utf8');
-            // Improved regex for token extraction
-            const match = envContent.match(/BLOB_READ_WRITE_TOKEN=["']?([^"'\s]+)["']?/);
-            if (match && match[1]) {
-                const token = match[1].replace(/['"]/g, ''); // Clean any lingering quotes
-                console.log('Token successfully matched from .env.local file');
-                return token;
-            }
-        }
-    } catch (e) {
-        console.error('Manual .env.local read failed:', e);
-    }
-    return undefined;
+    return process.env.BLOB_READ_WRITE_TOKEN;
 }
 
 export async function GET() {

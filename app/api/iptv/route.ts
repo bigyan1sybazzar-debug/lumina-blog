@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 export const runtime = 'edge';
-import fs from 'fs/promises';
-import path from 'path';
 import { parseM3U } from '../../../lib/m3uParser';
 
 export async function GET() {
@@ -10,19 +8,13 @@ export async function GET() {
         const externalUrl = 'https://iptv-org.github.io/iptv/index.m3u';
         let content = '';
 
-        try {
-            const response = await fetch(externalUrl, { next: { revalidate: 3600 } }); // Cache for 1 hour
-            if (response.ok) {
-                content = await response.text();
-            }
-        } catch (err) {
-            console.warn('Failed to fetch remote IPTV playlist, falling back to local file:', err);
+        const response = await fetch(externalUrl, { next: { revalidate: 3600 } }); // Cache for 1 hour
+        if (response.ok) {
+            content = await response.text();
         }
 
-        // If remote fetch failed or returned empty, use local file
         if (!content) {
-            const filePath = path.join(process.cwd(), 'IPTV-master', 'playlist.m3u8');
-            content = await fs.readFile(filePath, 'utf-8');
+            return NextResponse.json({ error: 'Failed to fetch IPTV playlist' }, { status: 502 });
         }
 
         const channels = parseM3U(content);
