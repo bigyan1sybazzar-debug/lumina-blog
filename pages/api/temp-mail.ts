@@ -1,25 +1,34 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const { action, ...otherParams } = req.query;
+export const runtime = 'edge';
+
+export default async function handler(req: Request) {
+    const { searchParams } = new URL(req.url);
+    const action = searchParams.get('action');
 
     if (!action) {
-        return res.status(400).json({ error: 'Missing action parameter' });
+        return new Response(JSON.stringify({ error: 'Missing action parameter' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 
-    // specific to Guerrilla Mail
-    const baseUrl = 'https://api.guerrillamail.com/ajax.php';
-    const queryString = new URLSearchParams({
-        f: action as string,
-        ...otherParams as any
-        // Note: Guerrilla Mail uses 'sid_token' for sessions, which comes in otherParams
-    }).toString();
+    // Convert all searchParams to an object for Guerrilla Mail
+    const params: Record<string, string> = {};
+    searchParams.forEach((value, key) => {
+        if (key === 'action') {
+            params['f'] = value;
+        } else {
+            params[key] = value;
+        }
+    });
 
+    const baseUrl = 'https://api.guerrillamail.com/ajax.php';
+    const queryString = new URLSearchParams(params).toString();
     const targetUrl = `${baseUrl}?${queryString}`;
 
     try {
         const response = await fetch(targetUrl, {
-            method: 'GET', // Guerrilla Mail works mostly with GET
+            method: 'GET',
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                 'Accept': 'application/json'
@@ -27,12 +36,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
 
         const data = await response.json();
-
-        // Guerrilla mail sometimes returns 200 even for errors, so we rely on their body
-        return res.status(200).json(data);
+        return new Response(JSON.stringify(data), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
 
     } catch (error: any) {
         console.error('Proxy request failed:', error);
-        return res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        return new Response(JSON.stringify({ error: 'Internal Server Error', details: error.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }

@@ -1,4 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+
+export const runtime = 'edge';
 
 const API_KEY = 'e35d69cc7c89486cba626398fe444e70';
 const DOMAIN = 'bigyann.com.np';
@@ -8,51 +9,28 @@ const INDEXNOW_ENDPOINTS = [
     'https://yandex.com/indexnow'
 ];
 
-type IndexNowResponse = {
-    success: boolean;
-    message: string;
-    results?: {
-        engine: string;
-        status: number;
-        success: boolean;
-    }[];
-    error?: string;
-};
-
-export default async function handler(
-    req: NextApiRequest,
-    res: NextApiResponse<IndexNowResponse>
-) {
-    // Only allow POST requests
+export default async function handler(req: Request) {
     if (req.method !== 'POST') {
-        return res.status(405).json({
+        return new Response(JSON.stringify({
             success: false,
             message: 'Method not allowed. Use POST.'
-        });
+        }), { status: 405, headers: { 'Content-Type': 'application/json' } });
     }
 
     try {
-        const { url, urls } = req.body;
+        const { url, urls } = await req.json();
 
-        // Support both single URL and multiple URLs
         const urlsToSubmit: string[] = [];
-
-        if (url) {
-            urlsToSubmit.push(url);
-        }
-
-        if (urls && Array.isArray(urls)) {
-            urlsToSubmit.push(...urls);
-        }
+        if (url) urlsToSubmit.push(url);
+        if (urls && Array.isArray(urls)) urlsToSubmit.push(...urls);
 
         if (urlsToSubmit.length === 0) {
-            return res.status(400).json({
+            return new Response(JSON.stringify({
                 success: false,
                 message: 'No URLs provided. Send "url" or "urls" in request body.'
-            });
+            }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
 
-        // Clean and validate URLs
         const cleanUrls = urlsToSubmit.map(u => {
             if (u === '/' || u === '') return `https://${DOMAIN}/`;
             if (u.startsWith('http')) return u;
@@ -61,13 +39,9 @@ export default async function handler(
         });
 
         const results = [];
-
-        // Submit to each search engine
         for (const endpoint of INDEXNOW_ENDPOINTS) {
             try {
                 const keyLocation = `https://${DOMAIN}/${API_KEY}.txt`;
-
-                // Always use POST method with JSON body (more reliable for Bing)
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
@@ -99,20 +73,20 @@ export default async function handler(
 
         const allSuccessful = results.every(r => r.success);
 
-        return res.status(allSuccessful ? 200 : 207).json({
+        return new Response(JSON.stringify({
             success: allSuccessful,
             message: allSuccessful
                 ? `Successfully submitted ${cleanUrls.length} URL(s) to IndexNow`
                 : 'Some submissions failed',
             results
-        });
+        }), { status: allSuccessful ? 200 : 207, headers: { 'Content-Type': 'application/json' } });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('IndexNow API error:', error);
-        return res.status(500).json({
+        return new Response(JSON.stringify({
             success: false,
             message: 'Internal server error',
-            error: error instanceof Error ? error.message : 'Unknown error'
-        });
+            error: error.message || 'Unknown error'
+        }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 }

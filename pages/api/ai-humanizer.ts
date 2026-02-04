@@ -1,23 +1,36 @@
 
-import { NextApiRequest, NextApiResponse } from 'next';
+export const runtime = 'edge';
+
 import { analyzeAndHumanize } from '../../services/geminiService';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: Request) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ message: 'Method not allowed' });
-    }
-
-    const { text, mode } = req.body;
-
-    if (!text) {
-        return res.status(400).json({ message: "Text is required" });
+        return new Response(JSON.stringify({ message: 'Method not allowed' }), {
+            status: 405,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 
     try {
+        const { text, mode } = await req.json();
+
+        if (!text) {
+            return new Response(JSON.stringify({ message: "Text is required" }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
         const result = await analyzeAndHumanize(text, mode);
-        return res.status(200).json(result);
+        return new Response(JSON.stringify(result), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
     } catch (error: any) {
         console.error("API Humanizer Error:", error);
-        return res.status(500).json({ message: error.message || "Internal Server Error" });
+        return new Response(JSON.stringify({ message: error.message || "Internal Server Error" }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }

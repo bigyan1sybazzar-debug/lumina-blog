@@ -1,10 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+
+export const runtime = 'edge';
+
 import { XMLParser } from 'fast-xml-parser';
 
-export default async function handler(
-    req: NextApiRequest,
-    res: NextApiResponse
-) {
+export default async function handler(req: Request) {
     try {
         const response = await fetch('https://static.cricinfo.com/rss/livescores.xml');
         if (!response.ok) {
@@ -29,9 +28,15 @@ export default async function handler(
             pubDate: item.pubDate
         }));
 
-        res.status(200).json(scores);
+        return new Response(JSON.stringify(scores), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
     } catch (error: any) {
         console.error('Error fetching cricket scores:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+        return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }

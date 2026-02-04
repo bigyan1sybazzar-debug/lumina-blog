@@ -1,4 +1,5 @@
 import { put, list } from '@vercel/blob';
+export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import { db } from '../../../services/firebase';
 import fs from 'fs';

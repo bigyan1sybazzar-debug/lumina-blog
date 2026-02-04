@@ -2,6 +2,7 @@ import PollDetailPage from '../../../components/voting/PollDetailPage';
 import { Metadata } from 'next';
 import { getPollBySlug } from '../../../services/db';
 
+export const runtime = 'edge';
 export const revalidate = 60; // revalidate every minute
 
 type Props = {

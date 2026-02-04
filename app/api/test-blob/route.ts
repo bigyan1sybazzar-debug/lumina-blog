@@ -1,4 +1,5 @@
 import { put } from '@vercel/blob';
+export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';

@@ -1,29 +1,29 @@
-// api/bing-submit.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
+
+export const runtime = 'edge';
 
 const BING_API_KEY = process.env.BING_WEBMASTER_API_KEY || '1f2da629fc224cdcb5dd4a6f821facc6';
 const SITE_URL = 'https://bigyann.com.np';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: Request) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    const { url } = req.body;
-
-    if (!url) {
-        return res.status(400).json({ error: 'URL is required' });
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: { 'Content-Type': 'application/json' } });
     }
 
     try {
+        const { url } = await req.json();
+
+        if (!url) {
+            return new Response(JSON.stringify({ error: 'URL is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        }
+
         // Fetch the URL to get the HTTP response
         const response = await fetch(url);
 
         if (!response.ok) {
             console.error(`❌ Bing Webmaster: Aborting submission. Target URL ${url} returned status ${response.status}`);
-            return res.status(400).json({
+            return new Response(JSON.stringify({
                 error: `Target URL unreachable (Status ${response.status}). Ensure the page is live before submitting.`
-            });
+            }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
 
         const content = await response.text();
@@ -40,7 +40,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ].join('\n');
 
         // Base64 encode the HTTP message
-        const base64HttpMessage = Buffer.from(httpMessage).toString('base64');
+        // Using btoa/TextEncoder instead of Buffer for Edge compatibility
+        const encoder = new TextEncoder();
+        const data = encoder.encode(httpMessage);
+        const base64HttpMessage = btoa(String.fromCharCode(...data));
 
         // Build XML request
         const xmlBody = `<?xml version="1.0" encoding="utf-8"?>
@@ -67,22 +70,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (bingResponse.ok) {
             console.log(`✅ Bing Webmaster: Successfully submitted ${url}`);
-            return res.status(200).json({ success: true, message: 'URL submitted to Bing' });
+            return new Response(JSON.stringify({ success: true, message: 'URL submitted to Bing' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         } else {
             const errorText = await bingResponse.text();
             console.error(`❌ Bing Webmaster: Failed to submit ${url}`, errorText);
-            return res.status(bingResponse.status).json({
+            return new Response(JSON.stringify({
                 success: false,
                 error: 'Bing API error',
                 details: errorText
-            });
+            }), { status: bingResponse.status, headers: { 'Content-Type': 'application/json' } });
         }
     } catch (error: any) {
         console.error('❌ Bing Webmaster: Error submitting URL', error);
-        return res.status(500).json({
+        return new Response(JSON.stringify({
             success: false,
             error: 'Internal server error',
             details: error.message
-        });
+        }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 }

@@ -1,4 +1,6 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+
+export const runtime = 'edge';
+
 import admin from 'firebase-admin';
 import { generateNewsPost, generateBlogImage } from '../../../services/geminiService';
 import { slugify } from '../../../lib/slugify';
@@ -17,11 +19,11 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: Request) {
     // 1. Authenticate Request
-    const authHeader = req.headers.authorization;
+    const authHeader = req.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 
     try {
@@ -31,14 +33,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (!configDoc.exists || !configDoc.data()?.isEnabled) {
             console.log('Autopilot is disabled or not configured.');
-            return res.status(200).json({ status: 'skipped', message: 'Autopilot disabled' });
+            return new Response(JSON.stringify({ status: 'skipped', message: 'Autopilot disabled' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
 
         // 3. Fetch Categories
         const categoriesSnapshot = await db.collection('categories').get();
         if (categoriesSnapshot.empty) {
             await logActivity(configRef, 'Error: No categories found.', 'error');
-            return res.status(500).json({ error: 'No categories' });
+            return new Response(JSON.stringify({ error: 'No categories' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
         }
 
         const categories = categoriesSnapshot.docs.map(doc => doc.data());
@@ -55,7 +57,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await logActivity(configRef, 'Image generated successfully.', 'success');
 
         // 6. Create Post Data
-        // Unique Slug Check
         let slug = slugify(aiTitle);
         let counter = 1;
         while (await checkSlugExists(slug)) {
@@ -87,21 +88,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await db.collection('posts').add(postData);
         await logActivity(configRef, `Published post: ${aiTitle}`, 'success');
 
-        // 8. Trigger Sitemap Update (Non-blocking)
-        // We can call the sitemap endpoint or just trust Vercel Blob revalidation
-        // For robustness, let's just log it.
-        // Ideally, we'd call the sitemap function logic directly if we extracted it,
-        // but triggering the API endpoint is easier if we have the secret.
-        // For now, let's assume the sitemap is handled or we can add a quick logic here?
-        // Let's keep it simple. The user script `update-public-sitemap.ts` exists.
-        // But sitemap generation is best done via the designated API.
-
-        return res.status(200).json({ success: true, post: aiTitle });
+        return new Response(JSON.stringify({ success: true, post: aiTitle }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
     } catch (error: any) {
         console.error('Autopilot Error:', error);
-        // Only log if we have a configRef, but we can't guarantee scopes.
-        // Try logging to DB if possible
         try {
             await db.collection('config').doc('autopilot').update({
                 logs: admin.firestore.FieldValue.arrayUnion({
@@ -113,7 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
         } catch (e) { /* ignore */ }
 
-        return res.status(500).json({ error: error.message });
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 }
 
@@ -124,11 +114,11 @@ async function checkSlugExists(slug: string) {
 }
 
 // Helper: Log to Firestore
-async function logActivity(ref: FirebaseFirestore.DocumentReference, message: string, type: 'info' | 'success' | 'error' | 'warning') {
+async function logActivity(ref: any, message: string, type: 'info' | 'success' | 'error' | 'warning') {
     await ref.update({
         logs: admin.firestore.FieldValue.arrayUnion({
             id: Date.now().toString(),
-            timestamp: new Date().toISOString(), // Use ISO for better sorting/parsing
+            timestamp: new Date().toISOString(),
             message,
             type
         })

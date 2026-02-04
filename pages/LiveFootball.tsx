@@ -5,8 +5,7 @@ import { Loader2, RefreshCw, Trophy, Calendar, History, ChevronRight, Activity, 
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 import GoogleAdSense from '../components/GoogleAdSense';
-
-import { footballApi } from '../api/football';
+import { footballApi } from '../services/fb-api';
 
 type Tab = 'live' | 'upcoming' | 'recent';
 

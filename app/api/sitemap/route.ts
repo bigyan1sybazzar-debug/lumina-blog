@@ -1,4 +1,5 @@
 import { put } from '@vercel/blob';
+export const runtime = 'edge';
 import admin from 'firebase-admin';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
