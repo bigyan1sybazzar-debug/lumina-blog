@@ -1,0 +1,8 @@
+name = "lumina-blog"
+compatibility_date = "2024-04-03"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[vars]
+NEXT_PUBLIC_GEMINI_API_KEY = "AIzaSyCcgOnIG_bdXnWZxar0hOWWk9aaaaF4a2M"
+# Add other secrets here or in the Cloudflare Dashboard
