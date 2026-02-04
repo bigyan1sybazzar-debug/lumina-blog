@@ -9,6 +9,8 @@ import { Analytics } from '../components/Analytics';
 import FriendsSidebar from '../components/FriendsSidebar';
 import Script from 'next/script';
 
+export const revalidate = 3600; // revalidate every hour by default
+
 export const viewport: Viewport = {
     themeColor: '#1C64F2',
     width: 'device-width',

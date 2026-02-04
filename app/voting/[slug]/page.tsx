@@ -2,6 +2,8 @@ import PollDetailPage from '../../../components/voting/PollDetailPage';
 import { Metadata } from 'next';
 import { getPollBySlug } from '../../../services/db';
 
+export const revalidate = 60; // revalidate every minute
+
 type Props = {
     params: Promise<{ slug: string }>
 };

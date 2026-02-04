@@ -47,7 +47,7 @@ export async function GET() {
                 const blob = blobs.find(b => b.pathname === FILE_NAME);
 
                 if (blob) {
-                    const res = await fetch(blob.url, { cache: 'no-store' });
+                    const res = await fetch(blob.url, { next: { revalidate: 10 } });
                     if (res.ok) {
                         blobData = await res.json();
                     }
@@ -57,7 +57,14 @@ export async function GET() {
             }
         }
 
-        if (blobData) return NextResponse.json(blobData);
+        if (blobData) {
+            return NextResponse.json(blobData, {
+                headers: {
+                    'Cache-Control': 's-maxage=10, stale-while-revalidate=5',
+                    'CDN-Cache-Control': 's-maxage=10'
+                }
+            });
+        }
 
         // Fallback to Firestore
         const snapshot = await db.collection(COLLECTION_NAME).get();
@@ -77,14 +84,19 @@ export async function GET() {
             }
         }
 
-        return NextResponse.json(data);
+        return NextResponse.json(data, {
+            headers: {
+                'Cache-Control': 's-maxage=10, stale-while-revalidate=5',
+                'CDN-Cache-Control': 's-maxage=10'
+            }
+        });
     } catch (error: any) {
         console.error('IPTV GET handler catastrophic failure:', error);
         return NextResponse.json({
             error: 'Failed to fetch data',
             details: error.message,
             stack: error.stack
-        }, { status: 500 });
+        }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
     }
 }
 

@@ -2,6 +2,49 @@ import Home from '../pages/Home';
 import { Metadata } from 'next';
 import { db } from '../services/firebase';
 import { BlogPost, Poll } from '../types';
+import { unstable_cache } from 'next/cache';
+
+export const revalidate = 60; // revalidate every minute
+
+// Cached data fetchers
+const getLatestPosts = unstable_cache(
+    async () => {
+        const postsSnapshot = await db.collection('posts')
+            .where('status', '==', 'published')
+            .orderBy('createdAt', 'desc')
+            .limit(20)
+            .get();
+        return postsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            content: ''
+        }) as BlogPost);
+    },
+    ['latest-posts'],
+    { revalidate: 60 }
+);
+
+const getFeaturedConfig = unstable_cache(
+    async () => {
+        const configDoc = await db.collection('config').doc('featured').get();
+        return configDoc.exists ? (configDoc.data()?.postIds || []) as string[] : [];
+    },
+    ['featured-config'],
+    { revalidate: 3600 }
+);
+
+const getPolls = unstable_cache(
+    async () => {
+        const pollsSnapshot = await db.collection('polls')
+            .where('status', '==', 'approved')
+            .orderBy('createdAt', 'desc')
+            .limit(6)
+            .get();
+        return pollsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
+    },
+    ['featured-polls'],
+    { revalidate: 300 }
+);
 
 export const metadata: Metadata = {
     title: 'AI Powered Tech and Science - Bigyann | Reviews & Discussions',
@@ -13,34 +56,21 @@ export const metadata: Metadata = {
 
 // Next.js Server Component
 export default async function Page() {
-    // 1. Fetch Latest Posts
-    const postsSnapshot = await db.collection('posts')
-        .where('status', '==', 'published')
-        .orderBy('createdAt', 'desc')
-        .limit(20) // Optimized: reduced from 100 to 20 for smaller initial payload
-        .get();
-
-    const posts = postsSnapshot.docs.map(doc => {
-        const data = doc.data();
-        // Optimize: Strip content field for the list view to reduce HTML size/hydration data
-        return {
-            id: doc.id,
-            ...data,
-            content: '' // Home page doesn't need full post content
-        } as BlogPost;
-    });
+    // 1. Fetch Latest Posts (Cached)
+    const posts = await getLatestPosts();
 
     // 2. Fetch Featured Hero Posts
     let heroFeatured: BlogPost[] = [];
-    const configDoc = await db.collection('config').doc('featured').get();
-    if (configDoc.exists) {
-        const ids: string[] = configDoc.data()?.postIds || [];
+    const ids = await getFeaturedConfig();
+
+    if (ids.length > 0) {
         heroFeatured = posts.filter(p => ids.includes(p.id));
 
-        // If some featured posts aren't in the latest 24, fetch them individually
+        // If some featured posts aren't in the latest 20, fetch them individually
         if (heroFeatured.length < ids.length) {
             const missingIds = ids.filter(id => !heroFeatured.find(p => p.id === id));
             const missingItems = await Promise.all(missingIds.map(async id => {
+                // Try cacheable individual fetch if needed, but for simplicity here:
                 // Try posts first
                 let doc = await db.collection('posts').doc(id).get();
                 if (doc.exists) {
@@ -69,13 +99,8 @@ export default async function Page() {
         heroFeatured = [...heroFeatured, ...extra];
     }
 
-    // 3. Fetch Featured Polls
-    const pollsSnapshot = await db.collection('polls')
-        .where('status', '==', 'approved')
-        .orderBy('createdAt', 'desc')
-        .limit(6)
-        .get();
-    const polls = pollsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
+    // 3. Fetch Featured Polls (Cached)
+    const polls = await getPolls();
 
     return <Home initialPosts={posts} initialHeroFeatured={heroFeatured} initialPolls={polls} />;
 }

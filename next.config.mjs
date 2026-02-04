@@ -26,8 +26,33 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/:all*(svg|jpg|png|webp|avif)',
-        locale: false,
+        // Apply to all API routes and dynamic pages
+        source: '/:path*',
+        missing: [
+          { type: 'header', key: 'x-vercel-cache' } // skip if already cached by Vercel
+        ],
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 's-maxage=60, stale-while-revalidate=30'
+          },
+          {
+            key: 'CDN-Cache-Control',
+            value: 's-maxage=60'
+          }
+        ]
+      },
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/:path*((?:svg|jpg|png|webp|avif|ico|woff2?|json))',
         headers: [
           {
             key: 'Cache-Control',

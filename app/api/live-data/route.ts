@@ -14,7 +14,7 @@ export async function GET() {
             const blob = blobs.find(b => b.pathname === FILE_NAME);
 
             if (blob) {
-                const res = await fetch(blob.url, { cache: 'no-store' });
+                const res = await fetch(blob.url, { next: { revalidate: 10 } });
                 if (res.ok) {
                     blobData = await res.json();
                 }
@@ -23,7 +23,14 @@ export async function GET() {
             console.warn('Vercel Blob fetch failed (migrating/fallback):', blobError);
         }
 
-        if (blobData) return NextResponse.json(blobData);
+        if (blobData) {
+            return NextResponse.json(blobData, {
+                headers: {
+                    'Cache-Control': 's-maxage=10, stale-while-revalidate=5',
+                    'CDN-Cache-Control': 's-maxage=10'
+                }
+            });
+        }
 
         // 2. Migration: Fetch from Firestore
         console.log('Migrating Live Sports data from Firestore to Blob...');
@@ -37,12 +44,16 @@ export async function GET() {
             console.warn('Failed to save to Vercel Blob:', putError);
         }
 
-        return NextResponse.json(data);
-        return NextResponse.json(data);
+        return NextResponse.json(data, {
+            headers: {
+                'Cache-Control': 's-maxage=10, stale-while-revalidate=5',
+                'CDN-Cache-Control': 's-maxage=10'
+            }
+        });
     } catch (error) {
         console.error('Error in Live Data API (returning empty):', error);
         // Return empty array to prevent client crash
-        return NextResponse.json([]);
+        return NextResponse.json([], { status: 500 });
     }
 }
 
