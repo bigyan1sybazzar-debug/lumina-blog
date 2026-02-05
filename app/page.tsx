@@ -4,6 +4,7 @@ import { db } from '../services/firebase';
 import { BlogPost, Poll } from '../types';
 import { unstable_cache } from 'next/cache';
 
+export const runtime = 'edge';
 export const revalidate = 60; // revalidate every minute
 
 // Cached data fetchers
