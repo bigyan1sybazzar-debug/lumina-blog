@@ -21,6 +21,20 @@ export const generateArticleSchema = (post: BlogPost, canonicalUrl: string) => {
         }
     }));
 
+    // Safe date parsing for JSON-LD
+    const safeIsoDate = (dateStr: string | undefined) => {
+        if (!dateStr) return new Date().toISOString();
+        try {
+            const d = new Date(dateStr);
+            return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+        } catch (e) {
+            return new Date().toISOString();
+        }
+    };
+
+    const publishedDate = safeIsoDate(post.date);
+    const modifiedDate = post.updatedAt ? safeIsoDate(post.updatedAt) : publishedDate;
+
     // Base Article Schema
     const articleSchema = {
         "@context": "https://schema.org",
@@ -41,8 +55,8 @@ export const generateArticleSchema = (post: BlogPost, canonicalUrl: string) => {
                 "url": "https://bigyann.com.np/logo.png"
             }
         },
-        "datePublished": new Date(post.date).toISOString(),
-        "dateModified": post.updatedAt ? new Date(post.updatedAt).toISOString() : new Date(post.date).toISOString(),
+        "datePublished": publishedDate,
+        "dateModified": modifiedDate,
         "mainEntityOfPage": {
             "@type": "WebPage",
             "@id": canonicalUrl

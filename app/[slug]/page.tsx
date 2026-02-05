@@ -25,42 +25,57 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     const keywords = post.seo?.focusKeywords || post.tags || [];
-    const publishedTime = post.date ? new Date(post.date).toISOString() : new Date().toISOString();
+
+    // Defensive date parsing
+    let publishedTime = new Date().toISOString();
+    try {
+        if (post.date) {
+            const d = new Date(post.date);
+            if (!isNaN(d.getTime())) {
+                publishedTime = d.toISOString();
+            }
+        }
+    } catch (e) {
+        console.error("Metadata date parsing error:", e);
+    }
+
     const modifiedTime = post.updatedAt || publishedTime;
 
+    const authorName = post.author?.name || 'Bigyann Author';
+
     return {
-        title: post.seo?.metaTitle || post.title,
-        description: post.seo?.metaDescription || post.excerpt || `Read the latest article about ${post.title} on Bigyann.`,
+        title: post.seo?.metaTitle || post.title || 'Tech Article',
+        description: post.seo?.metaDescription || post.excerpt || `Read the latest article about ${post.title || 'technology'} on Bigyann.`,
         keywords: keywords,
-        authors: [{ name: post.author.name }],
+        authors: [{ name: authorName }],
         alternates: {
             canonical: `https://bigyann.com.np/${post.slug}`,
         },
         openGraph: {
-            title: post.seo?.metaTitle || post.title,
-            description: post.seo?.metaDescription || post.excerpt || `Read ${post.title} on Bigyann.`,
+            title: post.seo?.metaTitle || post.title || 'Tech Article',
+            description: post.seo?.metaDescription || post.excerpt || `Read ${post.title || 'technology'} on Bigyann.`,
             url: `https://bigyann.com.np/${post.slug}`,
             siteName: 'Bigyann',
-            images: [
+            images: post.coverImage ? [
                 {
                     url: post.coverImage,
                     width: 1200,
                     height: 630,
                     alt: post.title,
                 },
-            ],
+            ] : [],
             locale: 'en_US',
             type: 'article',
             publishedTime: publishedTime,
             modifiedTime: modifiedTime,
-            authors: [post.author.name],
+            authors: [authorName],
             tags: keywords,
         },
         twitter: {
             card: 'summary_large_image',
-            title: post.seo?.metaTitle || post.title,
-            description: post.seo?.metaDescription || post.excerpt || `Read ${post.title} on Bigyann.`,
-            images: [post.coverImage],
+            title: post.seo?.metaTitle || post.title || 'Tech Article',
+            description: post.seo?.metaDescription || post.excerpt || `Read ${post.title || 'technology'} on Bigyann.`,
+            images: post.coverImage ? [post.coverImage] : [],
         },
     };
 }

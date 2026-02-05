@@ -35,7 +35,7 @@ if (typeof window === 'undefined') {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Compat App (For legacy collection().get() usage)
-if (!firebase.apps.length) {
+if (isBrowser && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
@@ -43,7 +43,7 @@ if (!firebase.apps.length) {
 export { app };
 
 // Legacy Compat Exports
-export const db = firebase.firestore();
+export const db = isBrowser ? firebase.firestore() : null as any;
 export const auth: firebase.auth.Auth = isBrowser ? firebase.auth() : {} as any;
 export const googleProvider = isBrowser ? new firebase.auth.GoogleAuthProvider() : null;
 
