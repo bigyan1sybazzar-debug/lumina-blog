@@ -2,7 +2,7 @@
 
 import firebase from "firebase/compat/app";
 import "firebase/compat/auth";
-import "firebase/compat/firestore"; 
+import "firebase/compat/firestore";
 import "firebase/compat/analytics";
 
 // ⚠️ IMPORTANT: Helper function to check environment
@@ -27,15 +27,21 @@ if (!firebase.apps.length) {
 // Exports:
 export const app = firebase.app();
 
-// 1. Auth and Google Provider are only initialized if window/document exists
-export const auth = isBrowser ? firebase.auth() : {} as firebase.auth.Auth;
-export const googleProvider = isBrowser ? new firebase.auth.GoogleAuthProvider() : null;
+// Helper to get Firebase services safely
+const getDb = () => firebase.firestore();
+const getAuth = () => isBrowser ? firebase.auth() : {} as firebase.auth.Auth;
+const getGoogleProvider = () => isBrowser ? new firebase.auth.GoogleAuthProvider() : null;
+const getAnalytics = () => (isBrowser && typeof firebase.analytics === 'function') ? firebase.analytics() : null;
 
-// 2. Firestore is safe for Node (used for sitemap script)
-export const db: firebase.firestore.Firestore = firebase.firestore();
+// 1. Auth and Google Provider are only initialized if window/document exists
+export const auth = isBrowser ? getAuth() : {} as firebase.auth.Auth;
+export const googleProvider = isBrowser ? getGoogleProvider() : null;
+
+// 2. Firestore - attempt to initialize safely
+// Note: compat firestore usually works in Node but can fail in Edge if it accesses navigator
+export const db: firebase.firestore.Firestore = (isBrowser || typeof process !== 'undefined') ? getDb() : {} as firebase.firestore.Firestore;
 
 // 3. Analytics is only initialized if supported
-// The `?.` (optional chaining) is good, but `isBrowser` is cleaner for initialization
-export const analytics: firebase.analytics.Analytics | null = isBrowser ? firebase.analytics() : null;
+export const analytics: firebase.analytics.Analytics | null = isBrowser ? getAnalytics() : null;
 
 export default app;

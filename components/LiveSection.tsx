@@ -87,7 +87,7 @@ export const LiveSection: React.FC = () => {
     const [onDemandMessage, setOnDemandMessage] = useState('');
     const [playerKey, setPlayerKey] = useState(0);
     const [isMuted, setIsMuted] = useState(true);
-    const [showDiscussions, setShowDiscussions] = useState(false);
+    const [showDiscussions, setShowDiscussions] = useState(true);
     const [commentText, setCommentText] = useState('');
     const [replyText, setReplyText] = useState('');
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -729,7 +729,7 @@ export const LiveSection: React.FC = () => {
                                         ref={playerRef}
                                         className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-gray-200/50 dark:border-white/10 w-full"
                                     >
-                                        <div className="aspect-[4/3] md:aspect-video w-full relative">
+                                        <div className="aspect-[4/3] md:aspect-[16/9.5] w-full relative">
                                             {showAd ? (
                                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c10] z-50 overflow-hidden">
                                                     {/* Animated Background Elements */}
@@ -759,13 +759,13 @@ export const LiveSection: React.FC = () => {
                                                             )}
                                                         </div>
 
-                                                        {/* Ad Container - Optimized for mobile aspect ratios */}
-                                                        <div className="w-full max-w-5xl flex-1 flex flex-col items-center justify-center my-1 md:my-8 group/ad relative">
-                                                            <div className="w-full h-full min-h-[250px] md:min-h-[300px] max-h-[320px] md:max-h-[500px] bg-black/60 rounded-2xl md:rounded-[32px] overflow-hidden border border-white/5 shadow-3xl relative transition-all duration-500 hover:border-white/10">
-                                                                <div className="absolute inset-0 flex items-center justify-center text-white/[0.02] font-black text-[15vw] select-none pointer-events-none uppercase italic tracking-tighter">
+                                                        {/* Ad Container - Enhanced Responsive & Visible */}
+                                                        <div className="w-full max-w-5xl flex-1 flex flex-col items-center justify-center my-2 md:my-8 group/ad relative">
+                                                            <div className="w-full h-full min-h-[280px] md:min-h-[350px] max-h-[360px] md:max-h-[550px] bg-gradient-to-br from-gray-900 via-black to-gray-900 rounded-2xl md:rounded-[32px] overflow-visible border-2 border-red-500/20 shadow-3xl relative transition-all duration-500 hover:border-red-500/40">
+                                                                <div className="absolute inset-0 flex items-center justify-center text-white/[0.03] font-black text-[12vw] md:text-[10vw] select-none pointer-events-none uppercase italic tracking-tighter">
                                                                     ADS
                                                                 </div>
-                                                                <div className="relative z-10 w-full h-full flex items-center justify-center">
+                                                                <div className="relative z-10 w-full h-full flex items-center justify-center p-2 md:p-4">
                                                                     <GoogleAdSense
                                                                         slot="7838572857"
                                                                         className="w-full h-full"
@@ -775,9 +775,9 @@ export const LiveSection: React.FC = () => {
                                                                 </div>
                                                             </div>
 
-                                                            {/* Click Incentive Tag - Unified Red Color */}
-                                                            <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 bg-red-600 px-4 md:px-6 py-1.5 md:py-2 rounded-full shadow-xl shadow-red-600/30 text-[8px] md:text-xs font-black text-white uppercase tracking-widest z-20 border border-white/10 whitespace-nowrap active:scale-95 transition-transform">
-                                                                Click Ad to Support Section
+                                                            {/* Click Incentive Tag - Enhanced Visibility */}
+                                                            <div className="absolute -bottom-3 md:-bottom-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-600 to-red-700 px-5 md:px-8 py-2 md:py-2.5 rounded-full shadow-2xl shadow-red-600/50 text-[9px] md:text-sm font-black text-white uppercase tracking-widest z-20 border-2 border-white/20 whitespace-nowrap active:scale-95 transition-all hover:shadow-red-600/70">
+                                                                <span className="drop-shadow-lg">Click Ad to Support • Watch Free</span>
                                                             </div>
                                                         </div>
 
@@ -995,115 +995,117 @@ export const LiveSection: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Discussions Section - Moved to Sidebar/Grid Column */}
+                            {/* Discussions Section - 40% Width Sidebar */}
                             {showDiscussions && (selectedLink || showAd) && (
                                 <div className="h-full lg:col-span-2">
                                     <div className="relative h-full">
                                         <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-primary-500/10 to-orange-500/10 blur-2xl opacity-50 rounded-3xl" />
-                                        <div className="relative h-full bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-800 dark:via-red-900/20 dark:to-orange-900/20 rounded-3xl border-2 border-red-200 dark:border-red-800/50 shadow-xl overflow-hidden flex flex-col">
+                                        <div className="relative h-full min-h-[500px] md:min-h-[600px] lg:min-h-[650px] bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-800 dark:via-red-900/20 dark:to-orange-900/20 rounded-3xl border-2 border-red-200 dark:border-red-800/50 shadow-xl overflow-hidden flex flex-col">
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl" />
                                             <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl" />
 
-                                            <div className="relative p-4 md:p-6 flex flex-col h-full">
-                                                <div className="flex items-center justify-between gap-4 mb-6 shrink-0">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="relative p-2.5 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl shadow-lg border border-white/20">
-                                                            <MessageCircle size={20} className="text-white" />
+                                            <div className="relative p-3 md:p-4 flex flex-col h-full">
+                                                {/* Header - Stacked for narrow sidebar */}
+                                                <div className="flex flex-col gap-3 mb-4 shrink-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="relative p-2 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl shadow-lg border border-white/20">
+                                                            <MessageCircle size={16} className="text-white" />
                                                         </div>
-                                                        <div className="flex flex-col gap-1.5">
-                                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                                                                <h4 className="text-sm md:text-base font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">
                                                                     Discussion
                                                                 </h4>
-                                                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-600 text-[8px] font-black text-white rounded-full animate-pulse w-fit">
+                                                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-600 text-[8px] font-black text-white rounded-full animate-pulse">
                                                                     LIVE
                                                                 </div>
                                                             </div>
-                                                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                                                                {getChannelComments().length} Active Points
+                                                            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">
+                                                                {getChannelComments().length} Points
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
+
+                                                    {/* Action Buttons - Full Width Stack */}
+                                                    <div className="flex flex-col gap-2">
                                                         {user?.role === 'admin' && comments.length > 0 && (
                                                             <button
                                                                 onClick={handleClearComments}
-                                                                className="px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all border border-red-200 dark:border-red-800"
+                                                                className="w-full px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all border border-red-200 dark:border-red-800"
                                                             >
-                                                                Clear
+                                                                Clear All
                                                             </button>
                                                         )}
                                                         <button
                                                             onClick={() => setShowDiscussions(false)}
-                                                            className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl transition-colors text-gray-400"
-                                                            title="Close discussion"
+                                                            className="w-full px-3 py-2 bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 rounded-xl text-[9px] font-black uppercase tracking-wider hover:bg-gray-200 dark:hover:bg-white/20 transition-all flex items-center justify-center gap-2"
                                                         >
-                                                            <X size={18} />
+                                                            <X size={14} />
+                                                            Hide Feed
                                                         </button>
                                                     </div>
                                                 </div>
 
                                                 {/* Scrollable Comments Area */}
-                                                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-6">
-                                                    <div className="bg-white/50 dark:bg-gray-900/40 rounded-2xl p-4 border border-red-100 dark:border-red-800/30">
-                                                        <div className="flex items-start gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                                                <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-4">
+                                                    {/* Comment Input - Compact */}
+                                                    <div className="bg-white/50 dark:bg-gray-900/40 rounded-xl p-3 border border-red-100 dark:border-red-800/30 sticky top-0 z-10">
+                                                        <div className="flex items-start gap-2 mb-2">
+                                                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
                                                                 {user?.avatar ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" /> : (user?.name?.[0] || 'Y').toUpperCase()}
                                                             </div>
-                                                            <div className="flex-1">
-                                                                <textarea
-                                                                    value={commentText}
-                                                                    onChange={(e) => setCommentText(e.target.value)}
-                                                                    placeholder="Share your thoughts..."
-                                                                    className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none resize-none transition-all"
-                                                                    rows={2}
-                                                                />
-                                                                <button
-                                                                    onClick={(e) => handlePostComment(e)}
-                                                                    disabled={!commentText.trim()}
-                                                                    className="mt-2 w-full py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-red-500/20"
-                                                                >
-                                                                    Post Comment
-                                                                </button>
-                                                            </div>
+                                                            <textarea
+                                                                value={commentText}
+                                                                onChange={(e) => setCommentText(e.target.value)}
+                                                                placeholder="Share thoughts..."
+                                                                className="flex-1 px-2 py-1.5 text-xs bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none resize-none transition-all"
+                                                                rows={2}
+                                                            />
                                                         </div>
+                                                        <button
+                                                            onClick={(e) => handlePostComment(e)}
+                                                            disabled={!commentText.trim()}
+                                                            className="w-full py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-red-500/20"
+                                                        >
+                                                            Post Comment
+                                                        </button>
                                                     </div>
 
                                                     {/* Display Comments */}
                                                     {getChannelComments().length > 0 ? (
-                                                        <div className="space-y-4">
+                                                        <div className="space-y-3">
                                                             {getChannelComments().filter(c => !c.parentId).map((comment) => (
-                                                                <div key={comment.id} className="space-y-3">
-                                                                    <div className="bg-white dark:bg-gray-800/60 rounded-2xl p-4 border border-white/40 dark:border-white/5 shadow-sm">
-                                                                        <div className="flex items-start gap-3">
-                                                                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-bold shrink-0">
+                                                                <div key={comment.id} className="space-y-2">
+                                                                    <div className="bg-white dark:bg-gray-800/60 rounded-xl p-3 border border-white/40 dark:border-white/5 shadow-sm">
+                                                                        <div className="flex items-start gap-2">
+                                                                            <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[8px] font-bold shrink-0">
                                                                                 {comment.userAvatar ? <img src={comment.userAvatar} className="w-full h-full rounded-full object-cover" /> : (comment.userName?.[0] || 'U').toUpperCase()}
                                                                             </div>
                                                                             <div className="flex-1 min-w-0">
-                                                                                <div className="flex items-center justify-between gap-2 mb-1">
-                                                                                    <span className="text-[11px] font-black text-gray-900 dark:text-white truncate">
+                                                                                <div className="flex items-center justify-between gap-1 mb-1">
+                                                                                    <span className="text-[10px] font-black text-gray-900 dark:text-white truncate">
                                                                                         {comment.userName}
                                                                                     </span>
-                                                                                    <span className="text-[9px] text-gray-400 font-bold uppercase shrink-0">
+                                                                                    <span className="text-[8px] text-gray-400 font-bold uppercase shrink-0">
                                                                                         {formatTimeAgo(comment.timestamp)}
                                                                                     </span>
                                                                                 </div>
-                                                                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
+                                                                                <p className="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
                                                                                     {comment.text}
                                                                                 </p>
-                                                                                <div className="flex items-center gap-4">
+                                                                                <div className="flex items-center gap-3">
                                                                                     <button
                                                                                         onClick={() => handleLikeComment(comment.id)}
-                                                                                        className={`flex items-center gap-1.5 text-[10px] font-black uppercase transition-all ${comment.likes?.includes(user?.id) ? 'text-red-500' : 'text-gray-400'}`}
+                                                                                        className={`flex items-center gap-1 text-[9px] font-black uppercase transition-all ${comment.likes?.includes(user?.id) ? 'text-red-500' : 'text-gray-400'}`}
                                                                                     >
-                                                                                        <Heart size={12} fill={comment.likes?.includes(user?.id) ? "currentColor" : "none"} />
+                                                                                        <Heart size={10} fill={comment.likes?.includes(user?.id) ? "currentColor" : "none"} />
                                                                                         <span>{comment.likes?.length || 0}</span>
                                                                                     </button>
                                                                                     <button
                                                                                         onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                                                                                        className={`flex items-center gap-1.5 text-[10px] font-black uppercase transition-all ${replyingTo === comment.id ? 'text-primary-600' : 'text-gray-400'}`}
+                                                                                        className={`flex items-center gap-1 text-[9px] font-black uppercase transition-all ${replyingTo === comment.id ? 'text-primary-600' : 'text-gray-400'}`}
                                                                                     >
-                                                                                        <Reply size={12} />
+                                                                                        <Reply size={10} />
                                                                                         <span>Reply</span>
                                                                                     </button>
                                                                                 </div>
@@ -1113,14 +1115,14 @@ export const LiveSection: React.FC = () => {
 
                                                                     {/* Nested Replies */}
                                                                     {getChannelComments().filter(r => r.parentId === comment.id).map(reply => (
-                                                                        <div key={reply.id} className="ml-8 bg-black/5 dark:bg-white/5 rounded-xl p-3 border-l-2 border-primary-500">
-                                                                            <div className="flex items-start gap-2">
-                                                                                <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-[8px] font-bold shrink-0">
+                                                                        <div key={reply.id} className="ml-6 bg-black/5 dark:bg-white/5 rounded-lg p-2 border-l-2 border-primary-500">
+                                                                            <div className="flex items-start gap-1.5">
+                                                                                <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-[7px] font-bold shrink-0">
                                                                                     {reply.userAvatar ? <img src={reply.userAvatar} className="w-full h-full rounded-full object-cover" /> : (reply.userName?.[0] || 'U').toUpperCase()}
                                                                                 </div>
                                                                                 <div className="flex-1 min-w-0">
-                                                                                    <span className="text-[10px] font-black text-gray-800 dark:text-gray-200">{reply.userName}</span>
-                                                                                    <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-tight italic">{reply.text}</p>
+                                                                                    <span className="text-[9px] font-black text-gray-800 dark:text-gray-200">{reply.userName}</span>
+                                                                                    <p className="text-[10px] text-gray-600 dark:text-gray-400 leading-tight italic">{reply.text}</p>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -1129,9 +1131,9 @@ export const LiveSection: React.FC = () => {
                                                             ))}
                                                         </div>
                                                     ) : (
-                                                        <div className="text-center py-10 opacity-50">
-                                                            <MessageCircle size={32} className="mx-auto mb-2" />
-                                                            <p className="text-[10px] font-black uppercase tracking-widest">No messages yet</p>
+                                                        <div className="text-center py-8 opacity-50">
+                                                            <MessageCircle size={24} className="mx-auto mb-2" />
+                                                            <p className="text-[9px] font-black uppercase tracking-widest">No messages yet</p>
                                                         </div>
                                                     )}
                                                 </div>
