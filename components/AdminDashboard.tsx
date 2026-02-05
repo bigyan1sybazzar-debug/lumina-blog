@@ -375,7 +375,7 @@ export const Admin: React.FC = () => {
     if (!isAdmin) return;
 
     const unsub = db.collection('config').doc('autopilot').onSnapshot(
-      (docSnap) => {
+      (docSnap: any) => {
         if (docSnap.exists) {
           const data = docSnap.data();
           if (data) {
@@ -385,7 +385,7 @@ export const Admin: React.FC = () => {
           }
         }
       },
-      (error) => {
+      (error: any) => {
         console.error("Firestore listener error:", error);
         if (error.code === 'permission-denied') {
           console.error("Error: Permission denied. Check Firestore Rules.");

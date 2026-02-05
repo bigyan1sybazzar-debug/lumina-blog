@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Ensure persistence is set to LOCAL to avoid environment issues with session storage
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
       .then(() => {
-        const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+        const unsubscribe = auth.onAuthStateChanged(async (firebaseUser: firebase.User | null) => {
           if (firebaseUser) {
             try {
               const userDoc = await db.collection('users').doc(firebaseUser.uid).get();
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         return () => unsubscribe();
       })
-      .catch((error) => {
+      .catch((error: any) => {
         console.error("Auth Persistence Error:", error);
         setIsLoading(false);
       });

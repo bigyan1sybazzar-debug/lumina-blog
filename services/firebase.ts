@@ -44,7 +44,7 @@ export { app };
 
 // Legacy Compat Exports
 export const db = firebase.firestore();
-export const auth = isBrowser ? firebase.auth() : {} as any;
+export const auth: firebase.auth.Auth = isBrowser ? firebase.auth() : {} as any;
 export const googleProvider = isBrowser ? new firebase.auth.GoogleAuthProvider() : null;
 
 // New Modular/Lite Exports

@@ -165,10 +165,10 @@ export const listenToDirectMessages = (userId1: string, userId2: string, callbac
         .where('chatId', '==', chatId) // We'll add this field for easier querying
         .where('participants', 'array-contains', myId)
         .orderBy('timestamp', 'asc')
-        .onSnapshot(snapshot => {
-            const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DirectMessage));
+        .onSnapshot((snapshot: any) => {
+            const messages = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as DirectMessage));
             callback(messages);
-        }, error => {
+        }, (error: any) => {
             console.error("Firestore Snapshot Error (direct_messages):", error);
         });
 };

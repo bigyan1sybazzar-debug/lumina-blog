@@ -1175,8 +1175,8 @@ export const deletePoll = async (pollId: string): Promise<void> => {
 export const subscribeToLiveComments = (channelId: string, callback: (comments: any[]) => void) => {
   return db.collection(LIVE_COMMENTS_COLLECTION)
     .where('channelId', '==', channelId)
-    .onSnapshot((snapshot) => {
-      const comments = snapshot.docs.map(doc => {
+    .onSnapshot((snapshot: any) => {
+      const comments = snapshot.docs.map((doc: any) => {
         const data = doc.data();
         let timestamp = new Date();
         if (data.timestamp) {
@@ -1189,7 +1189,7 @@ export const subscribeToLiveComments = (channelId: string, callback: (comments: 
         };
       }).sort((a: any, b: any) => b.timestamp.getTime() - a.timestamp.getTime());
       callback(comments);
-    }, (error) => {
+    }, (error: any) => {
       console.error('Error subscribing to live comments:', error);
     });
 };

@@ -16,7 +16,7 @@ const VotingPage: React.FC = () => {
     const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
+        const unsubscribe = auth.onAuthStateChanged((user: any) => {
             setUser(user);
         });
         return () => unsubscribe();
