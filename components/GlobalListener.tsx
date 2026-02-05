@@ -18,16 +18,16 @@ export const GlobalListener: React.FC = () => {
             .where('participants', 'array-contains', user.id)
             .orderBy('timestamp', 'desc')
             .limit(5)
-            .onSnapshot(snapshot => {
+            .onSnapshot((snapshot: any) => {
                 // Initial load filtering
                 if (isInitialLoad.current) {
-                    snapshot.docs.forEach(doc => knownMessageIds.current.add(doc.id));
+                    snapshot.docs.forEach((doc: any) => knownMessageIds.current.add(doc.id));
                     return;
                 }
 
-                const newChanges = snapshot.docChanges().filter(c => c.type === 'added');
+                const newChanges = snapshot.docChanges().filter((c: any) => c.type === 'added');
 
-                newChanges.forEach(change => {
+                newChanges.forEach((change: any) => {
                     const data = change.doc.data();
                     const msgId = change.doc.id;
 
