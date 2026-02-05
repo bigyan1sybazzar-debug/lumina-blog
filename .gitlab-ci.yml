@@ -3,7 +3,7 @@ stages:
   - deploy
 
 variables:
-  NODE_VERSION: "18"
+  NODE_VERSION: "20"
 
 # Cache node_modules for faster builds
 cache:
@@ -14,7 +14,7 @@ cache:
 # Build job - runs on every push
 build:
   stage: build
-  image: node:18
+  image: node:20
   script:
     - node -v
     - npm -v
@@ -35,7 +35,7 @@ build:
 # Deploy to Cloudflare Pages - Production
 deploy_production:
   stage: deploy
-  image: node:18
+  image: node:20
   dependencies:
     - build
   script:
@@ -58,7 +58,7 @@ deploy_production:
 # Deploy to Cloudflare Pages - Preview
 deploy_preview:
   stage: deploy
-  image: node:18
+  image: node:20
   dependencies:
     - build
   script:
