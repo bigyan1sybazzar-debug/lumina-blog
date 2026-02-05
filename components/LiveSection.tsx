@@ -729,7 +729,7 @@ export const LiveSection: React.FC = () => {
                                         ref={playerRef}
                                         className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-gray-200/50 dark:border-white/10 w-full"
                                     >
-                                        <div className="aspect-[4/3] md:aspect-[16/9.5] w-full relative">
+                                        <div className="aspect-[4/3] md:aspect-[16/9.5] w-full relative min-h-[500px] md:min-h-[600px] lg:min-h-[650px]">
                                             {showAd ? (
                                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c10] z-50 overflow-hidden">
                                                     {/* Animated Background Elements */}
