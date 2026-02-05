@@ -36,7 +36,7 @@ export async function GET() {
         // 2. Migration: Fetch from Firestore
         console.log('Migrating Live Sports data from Firestore to Blob...');
         const snapshot = await db.collection(COLLECTION_NAME).orderBy('createdAt', 'desc').get();
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const data = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
         // 3. Save to Blob
         try {

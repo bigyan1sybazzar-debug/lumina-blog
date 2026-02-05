@@ -47,7 +47,7 @@ export async function GET() {
 
         // Fallback to Firestore
         const snapshot = await db.collection(COLLECTION_NAME).get();
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const data = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
         // Migration attempt
         if (token && data.length > 0) {

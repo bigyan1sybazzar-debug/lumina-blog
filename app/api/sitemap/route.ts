@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
         // 1. Fetch published posts
         const snapshot = await db.collection('posts').where('status', '==', 'published').get();
-        const posts = snapshot.docs.map(doc => {
+        const posts = snapshot.docs.map((doc: any) => {
             const d = doc.data();
             // Handle Firestore Timestamp or Date
             const date = d.updatedAt?.toDate?.() || d.createdAt?.toDate?.() || new Date();
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
         // 2. Fetch approved polls
         const pollsSnapshot = await db.collection('polls').where('status', '==', 'approved').get();
-        const polls = pollsSnapshot.docs.map(doc => {
+        const polls = pollsSnapshot.docs.map((doc: any) => {
             const d = doc.data();
             const date = d.updatedAt?.toDate?.() || d.createdAt?.toDate?.() || new Date();
             return {
@@ -45,13 +45,13 @@ export async function POST(req: Request) {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${BASE_URL}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
   <url><loc>${BASE_URL}/voting</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
-  ${posts.map(p => `
+  ${posts.map((p: any) => `
   <url>
     <loc>${BASE_URL}/${p.slug}</loc>
     <lastmod>${p.updatedAt.split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq><priority>0.8</priority>
   </url>`).join('')}
-  ${polls.map(p => `
+  ${polls.map((p: any) => `
   <url>
     <loc>${BASE_URL}/voting/${p.slug}</loc>
     <lastmod>${p.updatedAt.split('T')[0]}</lastmod>

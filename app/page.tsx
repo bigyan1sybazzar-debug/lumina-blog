@@ -14,7 +14,7 @@ const getLatestPosts = unstable_cache(
             .orderBy('createdAt', 'desc')
             .limit(20)
             .get();
-        return postsSnapshot.docs.map(doc => ({
+        return postsSnapshot.docs.map((doc: any) => ({
             id: doc.id,
             ...doc.data(),
             content: ''
@@ -40,7 +40,7 @@ const getPolls = unstable_cache(
             .orderBy('createdAt', 'desc')
             .limit(6)
             .get();
-        return pollsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
+        return pollsSnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Poll));
     },
     ['featured-polls'],
     { revalidate: 300 }
@@ -64,7 +64,7 @@ export default async function Page() {
     const ids = await getFeaturedConfig();
 
     if (ids.length > 0) {
-        heroFeatured = posts.filter(p => ids.includes(p.id));
+        heroFeatured = posts.filter((p: any) => ids.includes(p.id));
 
         // If some featured posts aren't in the latest 20, fetch them individually
         if (heroFeatured.length < ids.length) {
@@ -95,7 +95,7 @@ export default async function Page() {
     if (heroFeatured.length === 0) {
         heroFeatured = posts.slice(0, 3);
     } else if (heroFeatured.length < 3) {
-        const extra = posts.filter(p => !heroFeatured.find(h => h.id === p.id)).slice(0, 3 - heroFeatured.length);
+        const extra = posts.filter((p: any) => !heroFeatured.find((h: any) => h.id === p.id)).slice(0, 3 - heroFeatured.length);
         heroFeatured = [...heroFeatured, ...extra];
     }
 
