@@ -39,6 +39,9 @@ deploy_production:
   script:
     - echo "Installing Wrangler CLI..."
     - npm install -g wrangler
+    - echo "Authenticating with Cloudflare..."
+    - export CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN
+    - export CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID
     - echo "Building for Cloudflare Pages..."
     - npx @cloudflare/next-on-pages
     - echo "Deploying to Cloudflare Pages (Production)..."
@@ -59,6 +62,9 @@ deploy_preview:
   script:
     - echo "Installing Wrangler CLI..."
     - npm install -g wrangler
+    - echo "Authenticating with Cloudflare..."
+    - export CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN
+    - export CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID
     - echo "Building for Cloudflare Pages..."
     - npx @cloudflare/next-on-pages
     - echo "Deploying to Cloudflare Pages (Preview)..."
