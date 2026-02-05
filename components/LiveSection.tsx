@@ -722,981 +722,866 @@ export const LiveSection: React.FC = () => {
                     )}
 
                     {links.length > 0 && (
-                        <div className="flex flex-col gap-3 md:gap-6">
+                        <div className={`grid gap-6 md:gap-8 ${showDiscussions && (selectedLink || showAd) ? 'lg:grid-cols-5' : 'max-w-5xl mx-auto'}`}>
                             {(selectedLink || showAd) && (
-                                <div
-                                    ref={playerRef}
-                                    className="relative bg-black rounded-3xl overflow-hidden shadow-xl md:shadow-2xl border border-gray-200/50 dark:border-white/10 w-full"
-                                >
-                                    <div className="aspect-[4/3] md:aspect-video w-full relative">
-                                        {showAd ? (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c10] z-50 overflow-hidden">
-                                                {/* Animated Background Elements */}
-                                                <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
-                                                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600/30 rounded-full blur-[120px] animate-pulse"></div>
-                                                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary-600/30 rounded-full blur-[120px] animate-pulse delay-700"></div>
-                                                </div>
-
-                                                <div className="w-full h-full flex flex-col items-center justify-between p-3 md:p-8 relative z-10">
-                                                    {/* Header Info */}
-                                                    <div className="w-full flex justify-between items-start">
-                                                        <div className="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3">
-                                                            <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full animate-ping"></div>
-                                                            <span className="text-[8px] md:text-xs font-black text-white uppercase tracking-widest whitespace-nowrap">Stream Preparing</span>
-                                                        </div>
-
-                                                        {pendingLink && (
-                                                            <div className="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3 max-w-[150px] md:max-w-[250px]">
-                                                                <div className="p-1 md:p-1.5 bg-primary-600/20 rounded-lg shrink-0">
-                                                                    <Tv size={12} className="text-primary-500 md:size-[14px]" />
-                                                                </div>
-                                                                <div className="min-w-0">
-                                                                    <p className="text-[7px] md:text-[9px] text-gray-400 font-bold uppercase leading-none mb-0.5 md:mb-1">Up Next</p>
-                                                                    <p className="text-white text-[9px] md:text-[11px] font-black truncate">{pendingLink.heading}</p>
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                <div className={`flex flex-col gap-4 ${showDiscussions ? 'lg:col-span-3' : 'w-full'}`}>
+                                    <div
+                                        ref={playerRef}
+                                        className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-gray-200/50 dark:border-white/10 w-full"
+                                    >
+                                        <div className="aspect-[4/3] md:aspect-video w-full relative">
+                                            {showAd ? (
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c10] z-50 overflow-hidden">
+                                                    {/* Animated Background Elements */}
+                                                    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
+                                                        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600/30 rounded-full blur-[120px] animate-pulse"></div>
+                                                        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary-600/30 rounded-full blur-[120px] animate-pulse delay-700"></div>
                                                     </div>
 
-                                                    {/* Ad Container - Optimized for mobile aspect ratios */}
-                                                    <div className="w-full max-w-5xl flex-1 flex flex-col items-center justify-center my-1 md:my-8 group/ad relative">
-                                                        <div className="w-full h-full min-h-[250px] md:min-h-[300px] max-h-[320px] md:max-h-[500px] bg-black/60 rounded-2xl md:rounded-[32px] overflow-hidden border border-white/5 shadow-3xl relative transition-all duration-500 hover:border-white/10">
-                                                            <div className="absolute inset-0 flex items-center justify-center text-white/[0.02] font-black text-[15vw] select-none pointer-events-none uppercase italic tracking-tighter">
-                                                                ADS
+                                                    <div className="w-full h-full flex flex-col items-center justify-between p-3 md:p-8 relative z-10">
+                                                        {/* Header Info */}
+                                                        <div className="w-full flex justify-between items-start">
+                                                            <div className="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3">
+                                                                <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full animate-ping"></div>
+                                                                <span className="text-[8px] md:text-xs font-black text-white uppercase tracking-widest whitespace-nowrap">Stream Preparing</span>
                                                             </div>
-                                                            <div className="relative z-10 w-full h-full flex items-center justify-center">
+
+                                                            {pendingLink && (
+                                                                <div className="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3 max-w-[150px] md:max-w-[250px]">
+                                                                    <div className="p-1 md:p-1.5 bg-primary-600/20 rounded-lg shrink-0">
+                                                                        <Tv size={12} className="text-primary-500 md:size-[14px]" />
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-[7px] md:text-[9px] text-gray-400 font-bold uppercase leading-none mb-0.5 md:mb-1">Up Next</p>
+                                                                        <p className="text-white text-[9px] md:text-[11px] font-black truncate">{pendingLink.heading}</p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Ad Container - Optimized for mobile aspect ratios */}
+                                                        <div className="w-full max-w-5xl flex-1 flex flex-col items-center justify-center my-1 md:my-8 group/ad relative">
+                                                            <div className="w-full h-full min-h-[250px] md:min-h-[300px] max-h-[320px] md:max-h-[500px] bg-black/60 rounded-2xl md:rounded-[32px] overflow-hidden border border-white/5 shadow-3xl relative transition-all duration-500 hover:border-white/10">
+                                                                <div className="absolute inset-0 flex items-center justify-center text-white/[0.02] font-black text-[15vw] select-none pointer-events-none uppercase italic tracking-tighter">
+                                                                    ADS
+                                                                </div>
+                                                                <div className="relative z-10 w-full h-full flex items-center justify-center">
+                                                                    <GoogleAdSense
+                                                                        slot="7838572857"
+                                                                        className="w-full h-full"
+                                                                        format="auto"
+                                                                        responsive={true}
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Click Incentive Tag - Unified Red Color */}
+                                                            <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 bg-red-600 px-4 md:px-6 py-1.5 md:py-2 rounded-full shadow-xl shadow-red-600/30 text-[8px] md:text-xs font-black text-white uppercase tracking-widest z-20 border border-white/10 whitespace-nowrap active:scale-95 transition-transform">
+                                                                Click Ad to Support Section
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Footer Controls */}
+                                                        <div className="w-full max-w-xl flex flex-col items-center gap-3 md:gap-6 pb-1 md:pb-2">
+                                                            <div className="flex flex-col items-center gap-1 md:gap-2">
+                                                                <h3 className="text-lg md:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
+                                                                    Starting Content
+                                                                </h3>
+                                                                <div className="hidden md:flex items-center gap-4 text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                                                                    <span>Optimizing</span>
+                                                                    <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
+                                                                    <span>Connecting</span>
+                                                                    <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
+                                                                    <span>Ready</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Modern Countdown Progress - Unified Red */}
+                                                            <div className="w-full flex flex-col items-center gap-2 md:gap-4">
+                                                                <div className="relative w-full h-1 md:h-2 bg-white/5 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className="absolute top-0 left-0 h-full bg-red-600 transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(220,38,38,0.5)]"
+                                                                        style={{ width: `${((4 - adCountdown) / 4) * 100}%` }}
+                                                                    />
+                                                                </div>
+                                                                <div className="flex items-center gap-2 md:gap-3">
+                                                                    <div className="text-red-500 animate-spin">
+                                                                        <RefreshCw size={12} className="md:size-[16px]" />
+                                                                    </div>
+                                                                    <span className="text-white font-black text-[10px] md:text-sm uppercase tracking-widest">
+                                                                        Stream Loading in {adCountdown}s
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            <p className="text-gray-500 text-[8px] md:text-[10px] font-bold text-center leading-tight uppercase opacity-60">
+                                                                Help us earn and watch <span className="text-red-500">undisturbed</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : selectedLink && (
+                                                <>
+                                                    {showLoginPrompt && !user && (
+                                                        <div className="absolute inset-0 z-[60] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+                                                            <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-primary-600/40 animate-bounce">
+                                                                <User size={40} className="text-white" />
+                                                            </div>
+                                                            <h2 className="text-2xl md:text-3xl font-black text-white mb-4">Login Required</h2>
+
+                                                            {/* Added Ad to Popup */}
+                                                            <div className="w-full max-w-sm mb-6 bg-white/5 rounded-xl overflow-hidden border border-white/10">
                                                                 <GoogleAdSense
                                                                     slot="7838572857"
-                                                                    className="w-full h-full"
-                                                                    format="auto"
+                                                                    format="rectangle"
                                                                     responsive={true}
                                                                 />
                                                             </div>
-                                                        </div>
 
-                                                        {/* Click Incentive Tag - Unified Red Color */}
-                                                        <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 bg-red-600 px-4 md:px-6 py-1.5 md:py-2 rounded-full shadow-xl shadow-red-600/30 text-[8px] md:text-xs font-black text-white uppercase tracking-widest z-20 border border-white/10 whitespace-nowrap active:scale-95 transition-transform">
-                                                            Click Ad to Support Section
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Footer Controls */}
-                                                    <div className="w-full max-w-xl flex flex-col items-center gap-3 md:gap-6 pb-1 md:pb-2">
-                                                        <div className="flex flex-col items-center gap-1 md:gap-2">
-                                                            <h3 className="text-lg md:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
-                                                                Starting Content
-                                                            </h3>
-                                                            <div className="hidden md:flex items-center gap-4 text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">
-                                                                <span>Optimizing</span>
-                                                                <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
-                                                                <span>Connecting</span>
-                                                                <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
-                                                                <span>Ready</span>
+                                                            <p className="text-gray-400 max-w-sm mb-8 font-medium">
+                                                                To continue watching <span className="text-white font-bold">{selectedLink.heading}</span> and enjoy unlimited IPTV streaming, please sign in to your account.
+                                                            </p>
+                                                            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
+                                                                <Link
+                                                                    href="/login"
+                                                                    className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg hover:shadow-primary-600/25 active:scale-95 text-center"
+                                                                >
+                                                                    Log In
+                                                                </Link>
+                                                                <Link
+                                                                    href="/signup"
+                                                                    className="flex-1 bg-white/10 hover:bg-white/20 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition-all backdrop-blur-sm active:scale-95 text-center"
+                                                                >
+                                                                    Sign Up
+                                                                </Link>
                                                             </div>
+                                                            <p className="mt-8 text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">
+                                                                Free {iptvConfig?.guestLimitMinutes || 5}-minute preview finished
+                                                            </p>
                                                         </div>
-
-                                                        {/* Modern Countdown Progress - Unified Red */}
-                                                        <div className="w-full flex flex-col items-center gap-2 md:gap-4">
-                                                            <div className="relative w-full h-1 md:h-2 bg-white/5 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className="absolute top-0 left-0 h-full bg-red-600 transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(220,38,38,0.5)]"
-                                                                    style={{ width: `${((4 - adCountdown) / 4) * 100}%` }}
-                                                                />
-                                                            </div>
-                                                            <div className="flex items-center gap-2 md:gap-3">
-                                                                <div className="text-red-500 animate-spin">
-                                                                    <RefreshCw size={12} className="md:size-[16px]" />
-                                                                </div>
-                                                                <span className="text-white font-black text-[10px] md:text-sm uppercase tracking-widest">
-                                                                    Stream Loading in {adCountdown}s
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
-                                                        <p className="text-gray-500 text-[8px] md:text-[10px] font-bold text-center leading-tight uppercase opacity-60">
-                                                            Help us earn and watch <span className="text-red-500">undisturbed</span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ) : selectedLink && (
-                                            <>
-                                                {showLoginPrompt && !user && (
-                                                    <div className="absolute inset-0 z-[60] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
-                                                        <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-primary-600/40 animate-bounce">
-                                                            <User size={40} className="text-white" />
-                                                        </div>
-                                                        <h2 className="text-2xl md:text-3xl font-black text-white mb-4">Login Required</h2>
-
-                                                        {/* Added Ad to Popup */}
-                                                        <div className="w-full max-w-sm mb-6 bg-white/5 rounded-xl overflow-hidden border border-white/10">
-                                                            <GoogleAdSense
-                                                                slot="7838572857"
-                                                                format="rectangle"
-                                                                responsive={true}
+                                                    )}
+                                                    {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
+                                                        <HLSPlayer
+                                                            src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                                            className="w-full h-full [&>video]:object-cover"
+                                                            autoPlay={true}
+                                                            muted={isMuted}
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full relative overflow-hidden">
+                                                            <iframe
+                                                                ref={iframeRef}
+                                                                key={playerKey}
+                                                                src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                                                title={selectedLink.heading || selectedLink.title}
+                                                                className="w-[100%] h-[100%] border-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.35] md:scale-100"
+                                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
+                                                                allowFullScreen
+                                                                referrerPolicy="no-referrer"
                                                             />
                                                         </div>
-
-                                                        <p className="text-gray-400 max-w-sm mb-8 font-medium">
-                                                            To continue watching <span className="text-white font-bold">{selectedLink.heading}</span> and enjoy unlimited IPTV streaming, please sign in to your account.
-                                                        </p>
-                                                        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                        {!showAd && selectedLink && (
+                                            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-3 md:p-5 border-t border-gray-200 dark:border-white/10">
+                                                <div className="flex flex-wrap items-center gap-2 mb-6 p-2 bg-gray-100/50 dark:bg-white/5 rounded-2xl border border-gray-200/50 dark:border-white/5">
+                                                    <button
+                                                        onClick={handleRefresh}
+                                                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-500 transition-all shadow-sm border border-gray-200 dark:border-white/5 group"
+                                                    >
+                                                        <RefreshCw size={14} className="group-active:rotate-180 transition-transform duration-500" />
+                                                        Refresh Player
+                                                    </button>
+                                                    <button
+                                                        onClick={toggleMute}
+                                                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
+                                                    >
+                                                        {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                                                        {isMuted ? 'Unmute' : 'Mute'}
+                                                    </button>
+                                                    <button
+                                                        onClick={toggleFullscreen}
+                                                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
+                                                    >
+                                                        <Maximize size={14} />
+                                                        Fullscreen
+                                                    </button>
+                                                    <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-white/10 mx-2" />
+                                                    <p className="hidden md:block text-[9px] font-bold text-gray-400 uppercase italic">
+                                                        Use these controls to avoid clicking ads inside the video
+                                                    </p>
+                                                </div>
+                                                <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                                                    <div className="w-full md:flex-1">
+                                                        <div className="flex flex-wrap items-center gap-2 mb-2">
                                                             <Link
-                                                                href="/login"
-                                                                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg hover:shadow-primary-600/25 active:scale-95 text-center"
+                                                                href="/"
+                                                                className="inline-flex items-center text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md mb-2"
                                                             >
-                                                                Log In
-                                                            </Link>
-                                                            <Link
-                                                                href="/signup"
-                                                                className="flex-1 bg-white/10 hover:bg-white/20 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition-all backdrop-blur-sm active:scale-95 text-center"
-                                                            >
-                                                                Sign Up
+                                                                <ArrowLeft className="w-2.5 h-2.5 mr-1" />
+                                                                Home
                                                             </Link>
                                                         </div>
-                                                        <p className="mt-8 text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">
-                                                            Free {iptvConfig?.guestLimitMinutes || 5}-minute preview finished
-                                                        </p>
+                                                        <h3 className="text-base sm:text-lg md:text-2xl font-black text-gray-900 dark:text-white leading-tight">
+                                                            {selectedLink.heading || selectedLink.title}
+                                                        </h3>
                                                     </div>
-                                                )}
-                                                {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
-                                                    <HLSPlayer
-                                                        src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                                        className="w-full h-full [&>video]:object-cover"
-                                                        autoPlay={true}
-                                                        muted={isMuted}
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full relative overflow-hidden">
-                                                        <iframe
-                                                            ref={iframeRef}
-                                                            key={playerKey}
-                                                            src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                                            title={selectedLink.heading || selectedLink.title}
-                                                            className="w-[100%] h-[100%] border-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.35] md:scale-100"
-                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
-                                                            allowFullScreen
-                                                            referrerPolicy="no-referrer"
-                                                        />
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                if (typeof window === 'undefined') return;
+                                                                const url = window.location.href;
+                                                                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                                                            }}
+                                                            className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
+                                                            title="Share on Facebook"
+                                                        >
+                                                            <Facebook size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (typeof window === 'undefined') return;
+                                                                const url = window.location.href;
+                                                                const text = "Watch Live on Bigyann! " + url;
+                                                                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                                            }}
+                                                            className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-green-600 hover:bg-green-500 hover:text-white transition-all shadow-sm"
+                                                            title="Share on WhatsApp"
+                                                        >
+                                                            <MessageCircle size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (typeof window === 'undefined' || typeof navigator === 'undefined') return;
+                                                                navigator.clipboard.writeText(window.location.href);
+                                                                alert("Link copied to clipboard!");
+                                                            }}
+                                                            className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-primary-600 hover:bg-primary-500 hover:text-white transition-all shadow-sm"
+                                                            title="Copy Page Link"
+                                                        >
+                                                            <Link2 size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (typeof navigator === 'undefined') return;
+                                                                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                                                                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                                                                if (isMobile) {
+                                                                    alert("To keep Bigyann on your phone: \n\n• iPhone: Tap the Share button below and select 'Add to Home Screen'. \n• Android: Tap the three dots at the top right and select 'Add to Home Screen'.");
+                                                                } else {
+                                                                    const shortcut = isMac ? "Cmd+D" : "Ctrl+D";
+                                                                    alert(`To bookmark this page, press ${shortcut} on your keyboard.`);
+                                                                }
+                                                            }}
+                                                            className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-all shadow-sm"
+                                                            title="How to Bookmark"
+                                                        >
+                                                            <Bookmark size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setSelectedLink(null)}
+                                                            className="p-2.5 bg-gray-100 dark:bg-white/5 text-gray-400 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm"
+                                                            title="Close player"
+                                                        >
+                                                            <X size={20} />
+                                                        </button>
                                                     </div>
-                                                )}
-                                            </>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
-                                    {!showAd && selectedLink && (
-                                        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-3 md:p-5 border-t border-gray-200 dark:border-white/10">
-                                            <div className="flex flex-wrap items-center gap-2 mb-6 p-2 bg-gray-100/50 dark:bg-white/5 rounded-2xl border border-gray-200/50 dark:border-white/5">
-                                                <button
-                                                    onClick={handleRefresh}
-                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-500 transition-all shadow-sm border border-gray-200 dark:border-white/5 group"
-                                                >
-                                                    <RefreshCw size={14} className="group-active:rotate-180 transition-transform duration-500" />
-                                                    Refresh Player
-                                                </button>
-                                                <button
-                                                    onClick={toggleMute}
-                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
-                                                >
-                                                    {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                                                    {isMuted ? 'Unmute' : 'Mute'}
-                                                </button>
-                                                <button
-                                                    onClick={toggleFullscreen}
-                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
-                                                >
-                                                    <Maximize size={14} />
-                                                    Fullscreen
-                                                </button>
-                                                <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-white/10 mx-2" />
-                                                <p className="hidden md:block text-[9px] font-bold text-gray-400 uppercase italic">
-                                                    Use these controls to avoid clicking ads inside the video
-                                                </p>
-                                            </div>
-                                            <div className="flex flex-col md:flex-row items-start justify-between gap-4">
-                                                <div className="w-full md:flex-1">
-                                                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                                                        <Link
-                                                            href="/"
-                                                            className="inline-flex items-center text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md mb-2"
-                                                        >
-                                                            <ArrowLeft className="w-2.5 h-2.5 mr-1" />
-                                                            Home
-                                                        </Link>
-                                                    </div>
-                                                    <h3 className="text-base sm:text-lg md:text-2xl font-black text-gray-900 dark:text-white leading-tight">
-                                                        {selectedLink.heading || selectedLink.title}
-                                                    </h3>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => {
-                                                            const url = window.location.href;
-                                                            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-                                                        }}
-                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
-                                                        title="Share on Facebook"
-                                                    >
-                                                        <Facebook size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            const url = window.location.href;
-                                                            const text = "Watch Live on Bigyann! " + url;
-                                                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                                                        }}
-                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-green-600 hover:bg-green-500 hover:text-white transition-all shadow-sm"
-                                                        title="Share on WhatsApp"
-                                                    >
-                                                        <MessageCircle size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(window.location.href);
-                                                            alert("Link copied to clipboard!");
-                                                        }}
-                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-primary-600 hover:bg-primary-500 hover:text-white transition-all shadow-sm"
-                                                        title="Copy Page Link"
-                                                    >
-                                                        <Link2 size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                                                            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-                                                            if (isMobile) {
-                                                                alert("To keep Bigyann on your phone: \n\n• iPhone: Tap the Share button below and select 'Add to Home Screen'. \n• Android: Tap the three dots at the top right and select 'Add to Home Screen'.");
-                                                            } else {
-                                                                const shortcut = isMac ? "Cmd+D" : "Ctrl+D";
-                                                                alert(`To bookmark this page, press ${shortcut} on your keyboard.`);
-                                                            }
-                                                        }}
-                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-all shadow-sm"
-                                                        title="How to Bookmark"
-                                                    >
-                                                        <Bookmark size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setSelectedLink(null)}
-                                                        className="p-2.5 bg-gray-100 dark:bg-white/5 text-gray-400 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm"
-                                                        title="Close player"
-                                                    >
-                                                        <X size={20} />
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            {/* Discussions Section - Redesigned */}
-                                            <div className="mt-6 relative">
-                                                <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-primary-500/10 to-orange-500/10 blur-2xl opacity-50 rounded-3xl" />
-                                                <div className="relative bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-800 dark:via-red-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-red-200 dark:border-red-800/50 shadow-xl overflow-hidden">
-                                                    <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl" />
-                                                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl" />
-
-                                                    <div className="relative p-4 md:p-6">
-                                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 relative">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="relative group">
-                                                                    <div className="absolute -inset-1.5 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                                                                    <div className="relative p-3 bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl shadow-xl border border-white/20">
-                                                                        <MessageCircle size={24} className="text-white" />
-                                                                    </div>
-                                                                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full shadow-lg flex items-center justify-center">
-                                                                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div>
-                                                                    </div>
-                                                                </div>
-                                                                <div>
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <h4 className="text-lg md:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">
-                                                                            Match Discussion
-                                                                        </h4>
-                                                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-red-600 text-[10px] font-black text-white rounded-full shadow-lg shadow-red-500/30 animate-pulse border border-white/10">
-                                                                            <Activity size={10} />
-                                                                            <span className="leading-none">LIVE</span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="flex -space-x-1.5">
-                                                                            {[1, 2, 3].map((i) => (
-                                                                                <img
-                                                                                    key={i}
-                                                                                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 42}`}
-                                                                                    alt=""
-                                                                                    className="w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 shadow-sm"
-                                                                                />
-                                                                            ))}
-                                                                            <div className="w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 bg-gray-900 dark:bg-gray-100 flex items-center justify-center shadow-sm">
-                                                                                <span className="text-[7px] font-black text-white dark:text-gray-900">+</span>
-                                                                            </div>
-                                                                        </div>
-                                                                        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest opacity-80">
-                                                                            127 Fans interacting
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                {user?.role === 'admin' && comments.length > 0 && (
-                                                                    <button
-                                                                        onClick={handleClearComments}
-                                                                        className="group flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all border border-red-200 dark:border-red-800"
-                                                                    >
-                                                                        <Shield size={12} className="group-hover:rotate-12 transition-transform" />
-                                                                        Clear
-                                                                    </button>
-                                                                )}
-                                                                <button
-                                                                    onClick={() => setShowDiscussions(!showDiscussions)}
-                                                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 ${showDiscussions
-                                                                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600'
-                                                                        : 'bg-primary-600 text-white hover:bg-primary-700 shadow-primary-500/20'
-                                                                        }`}
-                                                                >
-                                                                    {showDiscussions ? 'Hide Feed' : 'Show Feed'}
-                                                                </button>
-                                                            </div>
-                                                        </div>
-
-                                                        {showDiscussions && (
-                                                            <div className="space-y-4 animate-in slide-in-from-top duration-300">
-                                                                <div className="bg-white dark:bg-gray-900/50 rounded-xl p-4 border border-red-100 dark:border-red-800/30 shadow-sm">
-                                                                    <div className="flex items-start gap-3">
-                                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden shadow-lg border-2 border-white dark:border-gray-800">
-                                                                            {user?.avatar ? (
-                                                                                <img src={user.avatar} alt="" className="w-full h-full object-cover" />
-                                                                            ) : (
-                                                                                (user?.name?.[0] || 'Y').toUpperCase()
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="flex-1 space-y-3">
-                                                                            <textarea
-                                                                                value={commentText}
-                                                                                onChange={(e) => setCommentText(e.target.value)}
-                                                                                placeholder="What do you think about this channel? Share your experience..."
-                                                                                className="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none transition-all"
-                                                                                rows={3}
-                                                                            />
-                                                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                                                                <p className="text-[10px] md:text-xs text-gray-400 font-medium">
-                                                                                    💡 Be respectful and constructive
-                                                                                </p>
-                                                                                <button
-                                                                                    onClick={(e) => handlePostComment(e)}
-                                                                                    disabled={!commentText.trim()}
-                                                                                    className="w-full sm:w-auto px-6 md:px-8 py-2.5 md:py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white text-[10px] md:text-sm font-black uppercase tracking-widest rounded-xl md:rounded-2xl transition-all shadow-xl hover:shadow-red-500/20 transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
-                                                                                >
-                                                                                    <Send size={14} className="md:size-4" />
-                                                                                    Post Comment
-                                                                                </button>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Display Comments */}
-                                                                {getChannelComments().length > 0 ? (
-                                                                    <div className="pt-4 border-t-2 border-dashed border-red-200 dark:border-red-800/30 space-y-4">
-                                                                        <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                                                                            💬 {getChannelComments().length} Discussion Point{getChannelComments().length !== 1 ? 's' : ''}
-                                                                        </p>
-                                                                        {getChannelComments().filter(c => !c.parentId).map((comment) => (
-                                                                            <div key={comment.id} className="space-y-4">
-                                                                                <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-white/40 dark:border-white/5 shadow-sm hover:shadow-md transition-all duration-300">
-                                                                                    <div className="flex items-start gap-4">
-                                                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 overflow-hidden shadow-inner border border-white/20">
-                                                                                            {comment.userAvatar ? (
-                                                                                                <img src={comment.userAvatar} alt="" className="w-full h-full object-cover" />
-                                                                                            ) : (
-                                                                                                (comment.userName?.[0] || 'U').toUpperCase()
-                                                                                            )}
-                                                                                        </div>
-                                                                                        <div className="flex-1 min-w-0">
-                                                                                            <div className="flex items-center justify-between mb-1.5">
-                                                                                                <div className="flex items-center gap-2">
-                                                                                                    <span className={`text-xs md:text-sm font-black tracking-tight ${comment.userRole === 'admin' ? 'text-red-600 dark:text-red-400 flex items-center gap-1' : 'text-gray-900 dark:text-white'}`}>
-                                                                                                        {comment.userName}
-                                                                                                        {comment.userRole === 'admin' && (
-                                                                                                            <span className="px-1.5 py-0.5 bg-red-600 text-white text-[7px] md:text-[8px] font-black rounded uppercase flex items-center gap-0.5">
-                                                                                                                <Shield size={8} /> Admin
-                                                                                                            </span>
-                                                                                                        )}
-                                                                                                    </span>
-                                                                                                    <div className="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-                                                                                                    <span className="text-[9px] md:text-[10px] text-gray-400 font-bold uppercase tracking-widest">{formatTimeAgo(comment.timestamp)}</span>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-white dark:bg-gray-900/40 p-2.5 rounded-lg border border-gray-100 dark:border-gray-800/50">
-                                                                                                {comment.text}
-                                                                                            </p>
-                                                                                            <div className="mt-3 flex items-center gap-5">
-                                                                                                <button
-                                                                                                    onClick={() => handleLikeComment(comment.id)}
-                                                                                                    className={`flex items-center gap-2 text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 group ${comment.likes?.includes(user?.id) ? 'text-red-500 scale-105' : 'text-gray-400 hover:text-red-500'}`}
-                                                                                                >
-                                                                                                    <div className={`p-1.5 rounded-lg ${comment.likes?.includes(user?.id) ? 'bg-red-500/10' : 'bg-gray-100 dark:bg-white/5 group-hover:bg-red-500/10'}`}>
-                                                                                                        <Heart size={14} fill={comment.likes?.includes(user?.id) ? "currentColor" : "none"} className="transition-transform active:scale-125" />
-                                                                                                    </div>
-                                                                                                    <span>{comment.likes?.length || 0}</span>
-                                                                                                </button>
-                                                                                                <button
-                                                                                                    onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                                                                                                    className={`flex items-center gap-2 text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-300 group ${replyingTo === comment.id ? 'text-primary-600 scale-105' : 'text-gray-400 hover:text-primary-600'}`}
-                                                                                                >
-                                                                                                    <div className={`p-1.5 rounded-lg ${replyingTo === comment.id ? 'bg-primary-600/10' : 'bg-gray-100 dark:bg-white/5 group-hover:bg-primary-600/10'}`}>
-                                                                                                        <Reply size={14} />
-                                                                                                    </div>
-                                                                                                    <span>Reply</span>
-                                                                                                </button>
-                                                                                            </div>
-
-                                                                                            {replyingTo === comment.id && (
-                                                                                                <div className="mt-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-4 rounded-2xl border-2 border-primary-500/20 shadow-lg animate-in fade-in zoom-in duration-300">
-                                                                                                    <textarea
-                                                                                                        value={replyText}
-                                                                                                        onChange={(e) => setReplyText(e.target.value)}
-                                                                                                        placeholder={`Reply to ${comment.userName}...`}
-                                                                                                        className="w-full px-4 py-3 text-sm bg-gray-50/50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none transition-all placeholder:text-gray-400"
-                                                                                                        rows={2}
-                                                                                                    />
-                                                                                                    <div className="flex justify-end gap-3 mt-3">
-                                                                                                        <button
-                                                                                                            onClick={() => setReplyingTo(null)}
-                                                                                                            className="px-4 py-2 text-[10px] font-black text-gray-500 uppercase hover:text-gray-800 transition-colors"
-                                                                                                        >
-                                                                                                            Cancel
-                                                                                                        </button>
-                                                                                                        <button
-                                                                                                            onClick={(e) => handlePostComment(e, comment.id)}
-                                                                                                            disabled={!replyText.trim()}
-                                                                                                            className="px-8 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-[10px] md:text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-primary-500/10 active:scale-95 disabled:opacity-50 flex items-center gap-2"
-                                                                                                        >
-                                                                                                            <Send size={14} /> Post Reply
-                                                                                                        </button>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                {/* Render Replies */}
-                                                                                <div className="ml-6 md:ml-14 space-y-3 relative">
-                                                                                    <div className="absolute left-[-20px] top-[-10px] bottom-10 w-px bg-gradient-to-b from-red-500/20 via-primary-500/20 to-transparent"></div>
-                                                                                    {getChannelComments().filter(r => r.parentId === comment.id).map(reply => (
-                                                                                        <div key={reply.id} className="relative bg-white/40 dark:bg-gray-800/20 backdrop-blur-sm rounded-xl p-3 md:p-4 border-l-4 border-primary-500 shadow-sm transition-all hover:translate-x-1 duration-300">
-                                                                                            <div className="absolute left-[-20px] top-1/2 w-4 h-px bg-primary-500/20"></div>
-                                                                                            <div className="flex items-start gap-3">
-                                                                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0 overflow-hidden shadow-inner border border-white/10">
-                                                                                                    {reply.userAvatar ? (
-                                                                                                        <img src={reply.userAvatar} alt="" className="w-full h-full object-cover" />
-                                                                                                    ) : (
-                                                                                                        (reply.userName?.[0] || 'U').toUpperCase()
-                                                                                                    )}
-                                                                                                </div>
-                                                                                                <div className="flex-1 min-w-0">
-                                                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                                                        <span className={`text-[11px] font-black tracking-tight ${reply.userRole === 'admin' ? 'text-red-500 flex items-center gap-1' : 'text-gray-800 dark:text-gray-200'}`}>
-                                                                                                            {reply.userName}
-                                                                                                            {reply.userRole === 'admin' && <Shield size={8} />}
-                                                                                                        </span>
-                                                                                                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{formatTimeAgo(reply.timestamp)}</span>
-                                                                                                    </div>
-                                                                                                    <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed italic">
-                                                                                                        {reply.text}
-                                                                                                    </p>
-                                                                                                    <div className="mt-2 text-left">
-                                                                                                        <button
-                                                                                                            onClick={() => handleLikeComment(reply.id)}
-                                                                                                            className={`flex items-center gap-1 text-[9px] font-black uppercase tracking-widest transition-all ${reply.likes?.includes(user?.id) ? 'text-red-500 scale-105' : 'text-gray-400 hover:text-red-500'}`}
-                                                                                                        >
-                                                                                                            <Heart size={12} fill={reply.likes?.includes(user?.id) ? "currentColor" : "none"} className="transition-transform active:scale-125" />
-                                                                                                            <span>{reply.likes?.length || 0}</span>
-                                                                                                        </button>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    ))}
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="pt-8 border-t-2 border-dashed border-red-200 dark:border-red-800/20">
-                                                                        <div className="text-center py-12 px-4 relative">
-                                                                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-500/5 to-transparent rounded-full blur-3xl"></div>
-                                                                            <div className="relative">
-                                                                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 mb-4 animate-bounce shadow-inner">
-                                                                                    <MessageCircle size={32} />
-                                                                                </div>
-                                                                                <h5 className="text-lg font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tight">
-                                                                                    Be the First to Speak!
-                                                                                </h5>
-                                                                                <p className="text-xs text-gray-500 dark:text-gray-400 font-bold max-w-[200px] mx-auto leading-relaxed uppercase tracking-widest opacity-70">
-                                                                                    Start the conversation and connect with other fans.
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-
-                                                        {!showDiscussions && (
-                                                            <div className="text-center py-3">
-                                                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                                    💬 Click "Show Comments" to join the discussion
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             )}
 
-                            <div className="flex flex-col gap-4">
-                                <div className="flex items-center gap-4 bg-gray-100/50 dark:bg-white/5 p-1.5 rounded-2xl w-fit border border-gray-200 dark:border-white/5">
-                                    <button
-                                        onClick={() => setIsIPTVMode(false)}
-                                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${!isIPTVMode
-                                            ? 'bg-red-600 text-white shadow-lg'
-                                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
-                                    >
-                                        Live Sports
-                                    </button>
-                                    <button
-                                        onClick={() => setIsIPTVMode(true)}
-                                        className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${isIPTVMode
-                                            ? 'bg-red-600 text-white shadow-lg'
-                                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
-                                    >
-                                        IPTV Channels
-                                    </button>
-                                </div>
+                            {/* Discussions Section - Moved to Sidebar/Grid Column */}
+                            {showDiscussions && (selectedLink || showAd) && (
+                                <div className="h-full lg:col-span-2">
+                                    <div className="relative h-full">
+                                        <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-primary-500/10 to-orange-500/10 blur-2xl opacity-50 rounded-3xl" />
+                                        <div className="relative h-full bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-800 dark:via-red-900/20 dark:to-orange-900/20 rounded-3xl border-2 border-red-200 dark:border-red-800/50 shadow-xl overflow-hidden flex flex-col">
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl" />
+                                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl" />
 
-                                {isIPTVMode && (
-                                    <div className="relative w-full max-w-md">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                        <input
-                                            type="text"
-                                            placeholder="Search IPTV channels..."
-                                            value={iptvSearch}
-                                            onChange={(e) => setIptvSearch(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all shadow-sm"
-                                        />
-                                        {iptvSearch && (
-                                            <button
-                                                onClick={() => setIptvSearch('')}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                                            >
-                                                <X size={14} />
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-
-                                {!isIPTVMode ? (
-                                    allTags.length > 1 && (
-                                        <div className="z-10 relative">
-                                            <div className="md:hidden mb-2">
-                                                <select
-                                                    value={selectedTag}
-                                                    onChange={(e) => setSelectedTag(e.target.value)}
-                                                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
-                                                >
-                                                    {allTags.map(tag => (
-                                                        <option key={tag} value={tag}>
-                                                            {tag === 'All' ? 'All Coverage' : tag}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            <div className="hidden md:flex flex-wrap gap-2 mb-4">
-                                                {allTags.map(tag => (
-                                                    <button
-                                                        key={tag}
-                                                        onClick={() => setSelectedTag(tag)}
-                                                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${selectedTag === tag
-                                                            ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
-                                                            : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
-                                                            }`}
-                                                    >
-                                                        {tag === 'All' ? 'All Coverage' : tag}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )
-                                ) : (
-                                    <div className="z-10 relative" />
-                                )}
-                            </div>
-
-                            <div>
-                                {!isIPTVMode ? (
-                                    <div className="space-y-6">
-                                        <div className="flex items-center gap-3">
-                                            <Tv size={24} className="text-secondary-light" />
-                                            <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
-                                        </div>
-                                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                            {filteredLinks
-                                                .sort((a, b) => {
-                                                    const isAActive = selectedLink?.id === a.id;
-                                                    const isBActive = selectedLink?.id === b.id;
-                                                    if (isAActive !== isBActive) return isAActive ? -1 : 1;
-                                                    return 0;
-                                                })
-                                                .map((link) => (
-                                                    <div key={link.id} className="relative group/channel">
-                                                        <button
-                                                            onClick={() => handleLinkClick(link)}
-                                                            className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
-                                                                ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
-                                                                : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
-                                                                }`}
-                                                        >
-                                                            {link.isTrending && (
-                                                                <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
-                                                                    <TrendingUp size={8} fill="currentColor" />
-                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
-                                                                </div>
-                                                            )}
-                                                            {link.isDefault && (
-                                                                <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
-                                                                    <Sparkles size={8} fill="currentColor" />
-                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
-                                                                </div>
-                                                            )}
-
-                                                            {selectedLink?.id === link.id && (
-                                                                <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
-                                                                    <span className="relative flex h-1.5 w-1.5">
-                                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
-                                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
-                                                                    </span>
-                                                                    <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
-                                                                </div>
-                                                            )}
-
-                                                            <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
-                                                                <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
-                                                                    ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
-                                                                    : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
-                                                                    }`}>
-                                                                    {selectedLink?.id === link.id && (
-                                                                        <div className="absolute inset-0 bg-white/10 animate-pulse" />
-                                                                    )}
-                                                                    <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
-                                                                </div>
-                                                                <div className="flex-1 min-w-0 w-full">
-                                                                    <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
-                                                                        ? 'text-primary-dark'
-                                                                        : 'text-gray-900 dark:text-white group-hover:text-primary-light'
-                                                                        }`}>
-                                                                        {link.heading}
-                                                                    </h4>
+                                            <div className="relative p-4 md:p-6 flex flex-col h-full">
+                                                <div className="flex items-center justify-between gap-4 mb-6 shrink-0">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="relative p-2.5 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl shadow-lg border border-white/20">
+                                                            <MessageCircle size={20} className="text-white" />
+                                                        </div>
+                                                        <div className="flex flex-col gap-1.5">
+                                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                                                <h4 className="text-sm md:text-base font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">
+                                                                    Discussion
+                                                                </h4>
+                                                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-600 text-[8px] font-black text-white rounded-full animate-pulse w-fit">
+                                                                    LIVE
                                                                 </div>
                                                             </div>
-                                                        </button>
-                                                        {user?.role === 'admin' && (
-                                                            <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
-                                                                <button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            await updateLiveLink(link.id, { isTrending: !link.isTrending });
-                                                                            setLinks(prev => prev.map(l =>
-                                                                                l.id === link.id ? { ...l, isTrending: !link.isTrending } : l
-                                                                            ));
-                                                                        } catch (err) {
-                                                                            console.error('Failed to toggle trending:', err);
-                                                                        }
-                                                                    }}
-                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isTrending
-                                                                        ? 'bg-amber-500 text-white border-amber-400'
-                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
-                                                                    title={link.isTrending ? "Remove Trending" : "Mark as Trending"}
-                                                                >
-                                                                    <TrendingUp size={14} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            if (link.isDefault) {
-                                                                                await updateLiveLink(link.id, { isDefault: false });
-                                                                                setLinks(prev => prev.map(l =>
-                                                                                    l.id === link.id ? { ...l, isDefault: false } : l
-                                                                                ));
-                                                                            } else {
-                                                                                await setLiveLinkDefault(link.id, true);
-                                                                                // Clear defaults in both collections locally
-                                                                                setLinks(prev => prev.map(l => ({
-                                                                                    ...l,
-                                                                                    isDefault: l.id === link.id
-                                                                                })));
-                                                                                setIptvChannels(prev => prev.map(c => ({
-                                                                                    ...c,
-                                                                                    isDefault: false
-                                                                                })));
-                                                                            }
-                                                                        } catch (err) {
-                                                                            console.error('Failed to toggle default:', err);
-                                                                        }
-                                                                    }}
-                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isDefault
-                                                                        ? 'bg-primary-600 text-white border-primary-400'
-                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
-                                                                    title={link.isDefault ? "Remove Default" : "Set as Default"}
-                                                                >
-                                                                    <Sparkles size={14} />
-                                                                </button>
-                                                            </div>
+                                                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                                                {getChannelComments().length} Active Points
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {user?.role === 'admin' && comments.length > 0 && (
+                                                            <button
+                                                                onClick={handleClearComments}
+                                                                className="px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all border border-red-200 dark:border-red-800"
+                                                            >
+                                                                Clear
+                                                            </button>
                                                         )}
-                                                    </div>
-                                                ))}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-6">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <Tv size={24} className="text-secondary-light" />
-                                                <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length})</h2>
-                                            </div>
-                                            {iptvChannels.length < 50 && (
-                                                <button
-                                                    onClick={async () => {
-                                                        const allChannels = await getIPTVChannels();
-                                                        setIptvChannels(allChannels.map((c: any) => ({
-                                                            id: c.id,
-                                                            name: c.name,
-                                                            url: c.url,
-                                                            logo: c.logo || '',
-                                                            group: c.category,
-                                                            isTrending: !!c.isTrending,
-                                                            isDefault: !!c.isDefault
-                                                        })));
-                                                    }}
-                                                    className="px-4 py-2 bg-primary-600/10 text-primary-600 rounded-xl text-xs font-bold hover:bg-primary-600 hover:text-white transition-all"
-                                                >
-                                                    Load Full Channel List (Saves Data)
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-                                            {iptvChannels
-                                                .filter(c => {
-                                                    const matchesSearch = c.name.toLowerCase().includes(iptvSearch.toLowerCase());
-                                                    const matchesTag = iptvTag === 'All'
-                                                        || (iptvTag === 'Trending' && !!c.isTrending)
-                                                        || (iptvTag === 'Default' && !!c.isDefault)
-                                                        || c.group === iptvTag;
-                                                    return matchesSearch && matchesTag;
-                                                })
-                                                .sort((a, b) => {
-                                                    // 1. Prioritize active (selected) channel
-                                                    const isAActive = selectedLink?.id === a.id;
-                                                    const isBActive = selectedLink?.id === b.id;
-                                                    if (isAActive !== isBActive) return isAActive ? -1 : 1;
-
-                                                    // 2. Prioritize trending
-                                                    if (!!b.isTrending !== !!a.isTrending) return b.isTrending ? 1 : -1;
-
-                                                    // 3. Prioritize default
-                                                    if (!!b.isDefault !== !!a.isDefault) return b.isDefault ? 1 : -1;
-
-                                                    return a.name.localeCompare(b.name);
-                                                })
-                                                .slice(0, 300)
-                                                .map((channel) => (
-                                                    <div key={channel.id} className="relative group/channel">
                                                         <button
-                                                            onClick={() => handleIptvClick(channel)}
-                                                            className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 ${selectedLink?.id === channel.id
-                                                                ? 'border-primary-light ring-2 ring-primary-light/20 shadow-md'
-                                                                : channel.isTrending
-                                                                    ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50/10'
-                                                                    : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
-                                                                }`}
+                                                            onClick={() => setShowDiscussions(false)}
+                                                            className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl transition-colors text-gray-400"
+                                                            title="Close discussion"
                                                         >
-                                                            {channel.isTrending && (
-                                                                <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
-                                                                    <TrendingUp size={8} fill="currentColor" />
-                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
-                                                                </div>
-                                                            )}
-                                                            {channel.isDefault && (
-                                                                <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
-                                                                    <Sparkles size={8} fill="currentColor" />
-                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
-                                                                </div>
-                                                            )}
-                                                            <div className="flex flex-col items-center text-center gap-3">
-                                                                <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 ${channel.isTrending ? 'ring-2 ring-amber-500/20' : ''}`}>
-                                                                    {channel.logo ? (
-                                                                        <img
-                                                                            src={channel.logo}
-                                                                            alt={channel.name}
-                                                                            className="w-full h-full object-contain p-1"
-                                                                            onError={(e) => {
-                                                                                (e.target as HTMLImageElement).src = 'https://i.imgur.com/guz2ajm.png';
-                                                                            }}
-                                                                        />
-                                                                    ) : (
-                                                                        <Play size={18} className="text-primary-light" />
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0 w-full">
-                                                                    <h4 className={`font-bold text-[11px] md:text-xs line-clamp-1 transition-colors ${selectedLink?.id === channel.id
-                                                                        ? 'text-primary-dark'
-                                                                        : 'text-gray-900 dark:text-white group-hover:text-primary-light'
-                                                                        }`}>
-                                                                        {channel.name}
-                                                                    </h4>
-                                                                </div>
-                                                            </div>
+                                                            <X size={18} />
                                                         </button>
+                                                    </div>
+                                                </div>
 
-                                                        {user?.role === 'admin' && (
-                                                            <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
+                                                {/* Scrollable Comments Area */}
+                                                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-6">
+                                                    <div className="bg-white/50 dark:bg-gray-900/40 rounded-2xl p-4 border border-red-100 dark:border-red-800/30">
+                                                        <div className="flex items-start gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                                                                {user?.avatar ? <img src={user.avatar} className="w-full h-full rounded-full object-cover" /> : (user?.name?.[0] || 'Y').toUpperCase()}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <textarea
+                                                                    value={commentText}
+                                                                    onChange={(e) => setCommentText(e.target.value)}
+                                                                    placeholder="Share your thoughts..."
+                                                                    className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border-2 border-gray-100 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none resize-none transition-all"
+                                                                    rows={2}
+                                                                />
                                                                 <button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            await updateIPTVChannel(channel.id, { isTrending: !channel.isTrending });
-                                                                            setIptvChannels(prev => prev.map(c =>
-                                                                                c.id === channel.id ? { ...c, isTrending: !c.isTrending } : c
-                                                                            ));
-                                                                        } catch (err) {
-                                                                            console.error('Failed to toggle trending:', err);
-                                                                        }
-                                                                    }}
-                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isTrending
-                                                                        ? 'bg-amber-500 text-white border-amber-400'
-                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
-                                                                    title={channel.isTrending ? "Remove Trending" : "Mark as Trending"}
+                                                                    onClick={(e) => handlePostComment(e)}
+                                                                    disabled={!commentText.trim()}
+                                                                    className="mt-2 w-full py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-red-500/20"
                                                                 >
-                                                                    <TrendingUp size={14} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            if (channel.isDefault) {
-                                                                                await updateIPTVChannel(channel.id, { isDefault: false });
-                                                                                setIptvChannels(prev => prev.map(c =>
-                                                                                    c.id === channel.id ? { ...c, isDefault: false } : c
-                                                                                ));
-                                                                            } else {
-                                                                                await setDefaultIPTVChannel(channel.id);
-                                                                                setIptvChannels(prev => prev.map(c => ({
-                                                                                    ...c,
-                                                                                    isDefault: c.id === channel.id
-                                                                                })));
-                                                                                setLinks(prev => prev.map(l => ({
-                                                                                    ...l,
-                                                                                    isDefault: false
-                                                                                })));
-                                                                            }
-                                                                        } catch (err) {
-                                                                            console.error('Failed to toggle default:', err);
-                                                                        }
-                                                                    }}
-                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isDefault
-                                                                        ? 'bg-primary-600 text-white border-primary-400'
-                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
-                                                                    title={channel.isDefault ? "Remove Default" : "Set as Default"}
-                                                                >
-                                                                    <Sparkles size={14} />
+                                                                    Post Comment
                                                                 </button>
                                                             </div>
-                                                        )}
+                                                        </div>
                                                     </div>
-                                                ))}
-                                            {iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length === 0 && (
-                                                <div className="col-span-full py-12 text-center">
-                                                    <div className="bg-gray-100 dark:bg-white/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                        <Search size={32} className="text-gray-400" />
-                                                    </div>
-                                                    <h3 className="text-gray-900 dark:text-white font-bold mb-1">No channels found</h3>
-                                                    <p className="text-gray-500 text-sm">Try searching for a different keyword</p>
+
+                                                    {/* Display Comments */}
+                                                    {getChannelComments().length > 0 ? (
+                                                        <div className="space-y-4">
+                                                            {getChannelComments().filter(c => !c.parentId).map((comment) => (
+                                                                <div key={comment.id} className="space-y-3">
+                                                                    <div className="bg-white dark:bg-gray-800/60 rounded-2xl p-4 border border-white/40 dark:border-white/5 shadow-sm">
+                                                                        <div className="flex items-start gap-3">
+                                                                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-bold shrink-0">
+                                                                                {comment.userAvatar ? <img src={comment.userAvatar} className="w-full h-full rounded-full object-cover" /> : (comment.userName?.[0] || 'U').toUpperCase()}
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className="flex items-center justify-between gap-2 mb-1">
+                                                                                    <span className="text-[11px] font-black text-gray-900 dark:text-white truncate">
+                                                                                        {comment.userName}
+                                                                                    </span>
+                                                                                    <span className="text-[9px] text-gray-400 font-bold uppercase shrink-0">
+                                                                                        {formatTimeAgo(comment.timestamp)}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
+                                                                                    {comment.text}
+                                                                                </p>
+                                                                                <div className="flex items-center gap-4">
+                                                                                    <button
+                                                                                        onClick={() => handleLikeComment(comment.id)}
+                                                                                        className={`flex items-center gap-1.5 text-[10px] font-black uppercase transition-all ${comment.likes?.includes(user?.id) ? 'text-red-500' : 'text-gray-400'}`}
+                                                                                    >
+                                                                                        <Heart size={12} fill={comment.likes?.includes(user?.id) ? "currentColor" : "none"} />
+                                                                                        <span>{comment.likes?.length || 0}</span>
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                                                                                        className={`flex items-center gap-1.5 text-[10px] font-black uppercase transition-all ${replyingTo === comment.id ? 'text-primary-600' : 'text-gray-400'}`}
+                                                                                    >
+                                                                                        <Reply size={12} />
+                                                                                        <span>Reply</span>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Nested Replies */}
+                                                                    {getChannelComments().filter(r => r.parentId === comment.id).map(reply => (
+                                                                        <div key={reply.id} className="ml-8 bg-black/5 dark:bg-white/5 rounded-xl p-3 border-l-2 border-primary-500">
+                                                                            <div className="flex items-start gap-2">
+                                                                                <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-[8px] font-bold shrink-0">
+                                                                                    {reply.userAvatar ? <img src={reply.userAvatar} className="w-full h-full rounded-full object-cover" /> : (reply.userName?.[0] || 'U').toUpperCase()}
+                                                                                </div>
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <span className="text-[10px] font-black text-gray-800 dark:text-gray-200">{reply.userName}</span>
+                                                                                    <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-tight italic">{reply.text}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-10 opacity-50">
+                                                            <MessageCircle size={32} className="mx-auto mb-2" />
+                                                            <p className="text-[10px] font-black uppercase tracking-widest">No messages yet</p>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     </div>
-                                )}
-                            </div>
-
-                            <div className="mt-4 bg-white dark:bg-gray-800/50 rounded-3xl p-6 md:p-10 border border-gray-200 dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
-                                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none group-hover/ondemand:scale-110 transition-transform duration-500">
-                                    <MessageCircle size={120} className="text-red-500" />
                                 </div>
-                                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                                    <div>
-                                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-light/10 text-primary-light rounded-full label-micro !text-[10px] mb-4">
-                                            <Sparkles size={12} />
-                                            Request Live Channels
-                                        </div>
-                                        <h2 className="text-gray-900 dark:text-white mb-4">
-                                            On <span className="gradient-text">Demand</span> Request
-                                        </h2>
-                                        <p className="text-gray-500 dark:text-gray-400 mb-6">
-                                            Can't find your match? Send us a request! Tell us which channel or match you want to watch, and we'll try to add it for you instantly.
-                                        </p>
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-accent-success/10 text-accent-success rounded-lg">
-                                                    <CheckCircle size={16} />
-                                                </div>
-                                                <p className="label-micro !text-xs">Fast Support</p>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-accent-success/10 text-accent-success rounded-lg">
-                                                    <CheckCircle size={16} />
-                                                </div>
-                                                <p className="label-micro !text-xs">24/7 Monitoring</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <form onSubmit={handleOnDemandSubmit} className="bg-white dark:bg-surface-dark-900 p-8 rounded-card border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
-                                        <div>
-                                            <input
-                                                type="text"
-                                                placeholder="Your Name"
-                                                value={onDemandName}
-                                                onChange={(e) => setOnDemandName(e.target.value)}
-                                                className="input-field"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <textarea
-                                                placeholder="Name of Match or Channel (e.g. Star Sports HD 1, IPL Match)"
-                                                value={onDemandMessage}
-                                                onChange={(e) => setOnDemandMessage(e.target.value)}
-                                                rows={3}
-                                                className="input-field"
-                                                required
-                                            ></textarea>
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            className="w-full btn-primary"
-                                        >
-                                            Send Request
-                                            <MessageCircle size={16} className="ml-2 inline" />
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     )}
+
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-4 bg-gray-100/50 dark:bg-white/5 p-1.5 rounded-2xl w-fit border border-gray-200 dark:border-white/5">
+                            <button
+                                onClick={() => setIsIPTVMode(false)}
+                                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${!isIPTVMode
+                                    ? 'bg-red-600 text-white shadow-lg'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                            >
+                                Live Sports
+                            </button>
+                            <button
+                                onClick={() => setIsIPTVMode(true)}
+                                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${isIPTVMode
+                                    ? 'bg-red-600 text-white shadow-lg'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                            >
+                                IPTV Channels
+                            </button>
+                        </div>
+
+                        {isIPTVMode && (
+                            <div className="relative w-full max-w-md">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                <input
+                                    type="text"
+                                    placeholder="Search IPTV channels..."
+                                    value={iptvSearch}
+                                    onChange={(e) => setIptvSearch(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all shadow-sm"
+                                />
+                                {iptvSearch && (
+                                    <button
+                                        onClick={() => setIptvSearch('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {!isIPTVMode ? (
+                            allTags.length > 1 && (
+                                <div className="z-10 relative">
+                                    <div className="md:hidden mb-2">
+                                        <select
+                                            value={selectedTag}
+                                            onChange={(e) => setSelectedTag(e.target.value)}
+                                            className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:border-red-500 focus:outline-none transition-all"
+                                        >
+                                            {allTags.map(tag => (
+                                                <option key={tag} value={tag}>
+                                                    {tag === 'All' ? 'All Coverage' : tag}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="hidden md:flex flex-wrap gap-2 mb-4">
+                                        {allTags.map(tag => (
+                                            <button
+                                                key={tag}
+                                                onClick={() => setSelectedTag(tag)}
+                                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${selectedTag === tag
+                                                    ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
+                                                    : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10'
+                                                    }`}
+                                            >
+                                                {tag === 'All' ? 'All Coverage' : tag}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        ) : (
+                            <div className="z-10 relative" />
+                        )}
+                    </div>
+
+                    <div>
+                        {!isIPTVMode ? (
+                            <div className="space-y-6">
+                                <div className="flex items-center gap-3">
+                                    <Tv size={24} className="text-secondary-light" />
+                                    <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                    {filteredLinks
+                                        .sort((a, b) => {
+                                            const isAActive = selectedLink?.id === a.id;
+                                            const isBActive = selectedLink?.id === b.id;
+                                            if (isAActive !== isBActive) return isAActive ? -1 : 1;
+                                            return 0;
+                                        })
+                                        .map((link) => (
+                                            <div key={link.id} className="relative group/channel">
+                                                <button
+                                                    onClick={() => handleLinkClick(link)}
+                                                    className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
+                                                        ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
+                                                        : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                        }`}
+                                                >
+                                                    {link.isTrending && (
+                                                        <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
+                                                            <TrendingUp size={8} fill="currentColor" />
+                                                            <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
+                                                        </div>
+                                                    )}
+                                                    {link.isDefault && (
+                                                        <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
+                                                            <Sparkles size={8} fill="currentColor" />
+                                                            <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
+                                                        </div>
+                                                    )}
+
+                                                    {selectedLink?.id === link.id && (
+                                                        <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
+                                                            <span className="relative flex h-1.5 w-1.5">
+                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
+                                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
+                                                            </span>
+                                                            <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
+                                                        <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
+                                                            ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
+                                                            : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
+                                                            }`}>
+                                                            {selectedLink?.id === link.id && (
+                                                                <div className="absolute inset-0 bg-white/10 animate-pulse" />
+                                                            )}
+                                                            <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0 w-full">
+                                                            <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
+                                                                ? 'text-primary-dark'
+                                                                : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                                }`}>
+                                                                {link.heading}
+                                                            </h4>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                                {user?.role === 'admin' && (
+                                                    <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                try {
+                                                                    await updateLiveLink(link.id, { isTrending: !link.isTrending });
+                                                                    setLinks(prev => prev.map(l =>
+                                                                        l.id === link.id ? { ...l, isTrending: !link.isTrending } : l
+                                                                    ));
+                                                                } catch (err) {
+                                                                    console.error('Failed to toggle trending:', err);
+                                                                }
+                                                            }}
+                                                            className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isTrending
+                                                                ? 'bg-amber-500 text-white border-amber-400'
+                                                                : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
+                                                            title={link.isTrending ? "Remove Trending" : "Mark as Trending"}
+                                                        >
+                                                            <TrendingUp size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                try {
+                                                                    if (link.isDefault) {
+                                                                        await updateLiveLink(link.id, { isDefault: false });
+                                                                        setLinks(prev => prev.map(l =>
+                                                                            l.id === link.id ? { ...l, isDefault: false } : l
+                                                                        ));
+                                                                    } else {
+                                                                        await setLiveLinkDefault(link.id, true);
+                                                                        // Clear defaults in both collections locally
+                                                                        setLinks(prev => prev.map(l => ({
+                                                                            ...l,
+                                                                            isDefault: l.id === link.id
+                                                                        })));
+                                                                        setIptvChannels(prev => prev.map(c => ({
+                                                                            ...c,
+                                                                            isDefault: false
+                                                                        })));
+                                                                    }
+                                                                } catch (err) {
+                                                                    console.error('Failed to toggle default:', err);
+                                                                }
+                                                            }}
+                                                            className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isDefault
+                                                                ? 'bg-primary-600 text-white border-primary-400'
+                                                                : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
+                                                            title={link.isDefault ? "Remove Default" : "Set as Default"}
+                                                        >
+                                                            <Sparkles size={14} />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Tv size={24} className="text-secondary-light" />
+                                        <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length})</h2>
+                                    </div>
+                                    {/* Admin-only "Load Full Channel List" button */}
+                                    {user?.role === 'admin' && iptvChannels.length < 50 && (
+                                        <button
+                                            onClick={async () => {
+                                                const allChannels = await getIPTVChannels();
+                                                setIptvChannels(allChannels.map((c: any) => ({
+                                                    id: c.id,
+                                                    name: c.name,
+                                                    url: c.url,
+                                                    logo: c.logo || '',
+                                                    group: c.category,
+                                                    isTrending: !!c.isTrending,
+                                                    isDefault: !!c.isDefault
+                                                })));
+                                            }}
+                                            className="px-4 py-2 bg-primary-600/10 text-primary-600 rounded-xl text-xs font-bold hover:bg-primary-600 hover:text-white transition-all"
+                                        >
+                                            Load Full Channel List (Saves Data)
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                                    {iptvChannels
+                                        .filter(c => {
+                                            const matchesSearch = c.name.toLowerCase().includes(iptvSearch.toLowerCase());
+                                            const matchesTag = iptvTag === 'All'
+                                                || (iptvTag === 'Trending' && !!c.isTrending)
+                                                || (iptvTag === 'Default' && !!c.isDefault)
+                                                || c.group === iptvTag;
+                                            return matchesSearch && matchesTag;
+                                        })
+                                        .sort((a, b) => {
+                                            // 1. Prioritize active (selected) channel
+                                            const isAActive = selectedLink?.id === a.id;
+                                            const isBActive = selectedLink?.id === b.id;
+                                            if (isAActive !== isBActive) return isAActive ? -1 : 1;
+
+                                            // 2. Prioritize trending
+                                            if (!!b.isTrending !== !!a.isTrending) return b.isTrending ? 1 : -1;
+
+                                            // 3. Prioritize default
+                                            if (!!b.isDefault !== !!a.isDefault) return b.isDefault ? 1 : -1;
+
+                                            return a.name.localeCompare(b.name);
+                                        })
+                                        .slice(0, 300)
+                                        .map((channel) => (
+                                            <div key={channel.id} className="relative group/channel">
+                                                <button
+                                                    onClick={() => handleIptvClick(channel)}
+                                                    className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 ${selectedLink?.id === channel.id
+                                                        ? 'border-primary-light ring-2 ring-primary-light/20 shadow-md'
+                                                        : channel.isTrending
+                                                            ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50/10'
+                                                            : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                        }`}
+                                                >
+                                                    {channel.isTrending && (
+                                                        <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
+                                                            <TrendingUp size={8} fill="currentColor" />
+                                                            <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
+                                                        </div>
+                                                    )}
+                                                    {channel.isDefault && (
+                                                        <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
+                                                            <Sparkles size={8} fill="currentColor" />
+                                                            <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex flex-col items-center text-center gap-3">
+                                                        <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 ${channel.isTrending ? 'ring-2 ring-amber-500/20' : ''}`}>
+                                                            {channel.logo ? (
+                                                                <img
+                                                                    src={channel.logo}
+                                                                    alt={channel.name}
+                                                                    className="w-full h-full object-contain p-1"
+                                                                    onError={(e) => {
+                                                                        (e.target as HTMLImageElement).src = 'https://i.imgur.com/guz2ajm.png';
+                                                                    }}
+                                                                />
+                                                            ) : (
+                                                                <Play size={18} className="text-primary-light" />
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0 w-full">
+                                                            <h4 className={`font-bold text-[11px] md:text-xs line-clamp-1 transition-colors ${selectedLink?.id === channel.id
+                                                                ? 'text-primary-dark'
+                                                                : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                                }`}>
+                                                                {channel.name}
+                                                            </h4>
+                                                        </div>
+                                                    </div>
+                                                </button>
+
+                                                {user?.role === 'admin' && (
+                                                    <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                try {
+                                                                    await updateIPTVChannel(channel.id, { isTrending: !channel.isTrending });
+                                                                    setIptvChannels(prev => prev.map(c =>
+                                                                        c.id === channel.id ? { ...c, isTrending: !c.isTrending } : c
+                                                                    ));
+                                                                } catch (err) {
+                                                                    console.error('Failed to toggle trending:', err);
+                                                                }
+                                                            }}
+                                                            className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isTrending
+                                                                ? 'bg-amber-500 text-white border-amber-400'
+                                                                : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
+                                                            title={channel.isTrending ? "Remove Trending" : "Mark as Trending"}
+                                                        >
+                                                            <TrendingUp size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                try {
+                                                                    if (channel.isDefault) {
+                                                                        await updateIPTVChannel(channel.id, { isDefault: false });
+                                                                        setIptvChannels(prev => prev.map(c =>
+                                                                            c.id === channel.id ? { ...c, isDefault: false } : c
+                                                                        ));
+                                                                    } else {
+                                                                        await setDefaultIPTVChannel(channel.id);
+                                                                        setIptvChannels(prev => prev.map(c => ({
+                                                                            ...c,
+                                                                            isDefault: c.id === channel.id
+                                                                        })));
+                                                                        setLinks(prev => prev.map(l => ({
+                                                                            ...l,
+                                                                            isDefault: false
+                                                                        })));
+                                                                    }
+                                                                } catch (err) {
+                                                                    console.error('Failed to toggle default:', err);
+                                                                }
+                                                            }}
+                                                            className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isDefault
+                                                                ? 'bg-primary-600 text-white border-primary-400'
+                                                                : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
+                                                            title={channel.isDefault ? "Remove Default" : "Set as Default"}
+                                                        >
+                                                            <Sparkles size={14} />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    {iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length === 0 && (
+                                        <div className="col-span-full py-12 text-center">
+                                            <div className="bg-gray-100 dark:bg-white/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <Search size={32} className="text-gray-400" />
+                                            </div>
+                                            <h3 className="text-gray-900 dark:text-white font-bold mb-1">No channels found</h3>
+                                            <p className="text-gray-500 text-sm">Try searching for a different keyword</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-4 bg-white dark:bg-gray-800/50 rounded-3xl p-6 md:p-10 border border-gray-200 dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none group-hover/ondemand:scale-110 transition-transform duration-500">
+                            <MessageCircle size={120} className="text-red-500" />
+                        </div>
+                        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                            <div>
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-light/10 text-primary-light rounded-full label-micro !text-[10px] mb-4">
+                                    <Sparkles size={12} />
+                                    Request Live Channels
+                                </div>
+                                <h2 className="text-gray-900 dark:text-white mb-4">
+                                    On <span className="gradient-text">Demand</span> Request
+                                </h2>
+                                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                                    Can't find your match? Send us a request! Tell us which channel or match you want to watch, and we'll try to add it for you instantly.
+                                </p>
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-accent-success/10 text-accent-success rounded-lg">
+                                            <CheckCircle size={16} />
+                                        </div>
+                                        <p className="label-micro !text-xs">Fast Support</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-accent-success/10 text-accent-success rounded-lg">
+                                            <CheckCircle size={16} />
+                                        </div>
+                                        <p className="label-micro !text-xs">24/7 Monitoring</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleOnDemandSubmit} className="bg-white dark:bg-surface-dark-900 p-8 rounded-card border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+                                <div>
+                                    <input
+                                        type="text"
+                                        placeholder="Your Name"
+                                        value={onDemandName}
+                                        onChange={(e) => setOnDemandName(e.target.value)}
+                                        className="input-field"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <textarea
+                                        placeholder="Name of Match or Channel (e.g. Star Sports HD 1, IPL Match)"
+                                        value={onDemandMessage}
+                                        onChange={(e) => setOnDemandMessage(e.target.value)}
+                                        rows={3}
+                                        className="input-field"
+                                        required
+                                    ></textarea>
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="w-full btn-primary"
+                                >
+                                    Send Request
+                                </button>
+                            </form>
+                        </div>
+                    </div>
 
                     <div className="flex justify-center my-4">
                         <GoogleAdSense
@@ -1809,71 +1694,73 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-                    {highlights.length > 0 && (
-                        <div className="space-y-8">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-2xl bg-accent-premium/10 border border-accent-premium/20">
-                                    <Sparkles className="w-7 h-7 text-accent-premium" />
-                                </div>
-                                <div className="space-y-1">
-                                    <span className="label-micro !text-accent-premium">Best Moments</span>
-                                    <h2 className="text-gray-900 dark:text-white">
-                                        Match <span className="text-accent-premium">Highlights</span>
-                                    </h2>
-                                </div>
-                            </div>
-
-                            {Object.entries(groupedHighlights).map(([category, items]) => (
-                                <div key={category} className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-1 h-6 bg-primary-600 rounded-full" />
-                                        <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 uppercase tracking-tight">
-                                            {category}
-                                        </h3>
+                    {
+                        highlights.length > 0 && (
+                            <div className="space-y-8">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 rounded-2xl bg-accent-premium/10 border border-accent-premium/20">
+                                        <Sparkles className="w-7 h-7 text-accent-premium" />
                                     </div>
-                                    <div className="relative group/highlights">
-                                        <Splide options={splideOptionsHighlights} className="highlights-splide">
-                                            {items.map((item) => (
-                                                <SplideSlide key={item.id}>
-                                                    <div
-                                                        key={item.id}
-                                                        onClick={() => handleLinkClick(item as any)}
-                                                        className="group cursor-pointer bg-white dark:bg-surface-dark-900 rounded-card overflow-hidden border border-slate-200 dark:border-slate-800 hover:shadow-2xl transition-all duration-300 active:scale-[0.98]"
-                                                    >
-                                                        <div className="aspect-video relative bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                                                            <Image
-                                                                src={item.thumbnailUrl || `https://img.youtube.com/vi/${item.youtubeUrl.split('/').pop()?.split('?')[0]}/mqdefault.jpg`}
-                                                                alt={item.title}
-                                                                fill
-                                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                                                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                                            />
-                                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                                                                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-all duration-300">
-                                                                    <Play size={24} fill="currentColor" />
+                                    <div className="space-y-1">
+                                        <span className="label-micro !text-accent-premium">Best Moments</span>
+                                        <h2 className="text-gray-900 dark:text-white">
+                                            Match <span className="text-accent-premium">Highlights</span>
+                                        </h2>
+                                    </div>
+                                </div>
+
+                                {Object.entries(groupedHighlights).map(([category, items]) => (
+                                    <div key={category} className="space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-1 h-6 bg-primary-600 rounded-full" />
+                                            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 uppercase tracking-tight">
+                                                {category}
+                                            </h3>
+                                        </div>
+                                        <div className="relative group/highlights">
+                                            <Splide options={splideOptionsHighlights} className="highlights-splide">
+                                                {items.map((item) => (
+                                                    <SplideSlide key={item.id}>
+                                                        <div
+                                                            key={item.id}
+                                                            onClick={() => handleLinkClick(item as any)}
+                                                            className="group cursor-pointer bg-white dark:bg-surface-dark-900 rounded-card overflow-hidden border border-slate-200 dark:border-slate-800 hover:shadow-2xl transition-all duration-300 active:scale-[0.98]"
+                                                        >
+                                                            <div className="aspect-video relative bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                                                <Image
+                                                                    src={item.thumbnailUrl || `https://img.youtube.com/vi/${item.youtubeUrl.split('/').pop()?.split('?')[0]}/mqdefault.jpg`}
+                                                                    alt={item.title}
+                                                                    fill
+                                                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                                                />
+                                                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                                                                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-all duration-300">
+                                                                        <Play size={24} fill="currentColor" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="p-5">
+                                                                <h4 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 min-h-[40px] group-hover:text-primary-light transition-colors">
+                                                                    {item.title}
+                                                                </h4>
+                                                                <div className="flex items-center justify-between mt-4 uppercase">
+                                                                    <span className="label-micro !text-[9px]">
+                                                                        {category}
+                                                                    </span>
+                                                                    <Tv size={14} className="text-slate-300" />
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div className="p-5">
-                                                            <h4 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-2 min-h-[40px] group-hover:text-primary-light transition-colors">
-                                                                {item.title}
-                                                            </h4>
-                                                            <div className="flex items-center justify-between mt-4 uppercase">
-                                                                <span className="label-micro !text-[9px]">
-                                                                    {category}
-                                                                </span>
-                                                                <Tv size={14} className="text-slate-300" />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </SplideSlide>
-                                            ))}
-                                        </Splide>
+                                                    </SplideSlide>
+                                                ))}
+                                            </Splide>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                        )
+                    }
 
                     <div className="flex justify-center my-8">
                         <GoogleAdSense
