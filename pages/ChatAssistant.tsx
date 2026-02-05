@@ -1,7 +1,7 @@
 'use client';
 
 export const config = {
-  runtime: 'edge',
+  runtime: 'experimental-edge',
 };
 
 // src/components/ChatAssistant.tsx
