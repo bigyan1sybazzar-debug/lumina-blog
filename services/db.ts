@@ -343,9 +343,9 @@ export const deletePost = async (postId: string): Promise<void> => {
 
     // ... (rest of your deletion logic for comments/reviews remains the same)
     const commentsSnapshot = await db.collection(COMMENTS_COLLECTION).where('postId', '==', postId).get();
-    const deleteCommentsPromises = commentssnapshot.docs.map((doc: any) => doc.ref.delete());
+    const deleteCommentsPromises = commentsSnapshot.docs.map((doc: any) => doc.ref.delete());
     const reviewsSnapshot = await db.collection(REVIEWS_COLLECTION).where('postId', '==', postId).get();
-    const deleteReviewsPromises = reviewssnapshot.docs.map((doc: any) => doc.ref.delete());
+    const deleteReviewsPromises = reviewsSnapshot.docs.map((doc: any) => doc.ref.delete());
     await Promise.all([...deleteCommentsPromises, ...deleteReviewsPromises]);
 
     if (post.status === 'published') {
@@ -489,7 +489,7 @@ export const getCommentsByPostId = async (postId: string): Promise<BlogPostComme
 
     const comments = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BlogPostComment));
 
-    return comments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return comments.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
     console.error('Error fetching comments:', error);
     return [];
@@ -502,7 +502,7 @@ export const getCommentsByUserId = async (userId: string): Promise<BlogPostComme
       .where('userId', '==', userId)
       .get();
     const comments = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BlogPostComment));
-    return comments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return comments.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
     console.error('Error fetching user comments:', error);
     return [];
@@ -526,7 +526,7 @@ export const getReviewsByPostId = async (postId: string): Promise<BlogPostReview
 
     const reviews = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BlogPostReview));
 
-    return reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return reviews.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
     console.error('Error fetching reviews:', error);
     return [];
@@ -539,7 +539,7 @@ export const getReviewsByUserId = async (userId: string): Promise<BlogPostReview
       .where('userId', '==', userId)
       .get();
     const reviews = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BlogPostReview));
-    return reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return reviews.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
     console.error('Error fetching user reviews:', error);
     return [];
@@ -567,7 +567,7 @@ export const getAllComments = async (): Promise<BlogPostComment[]> => {
 
     // Fetch post titles for each comment
     const commentsWithTitles = await Promise.all(
-      comments.map(async (comment) => {
+      comments.map(async (comment: any) => {
         const post = await getPostById(comment.postId);
         return {
           ...comment,
@@ -590,7 +590,7 @@ export const getAllReviews = async (): Promise<BlogPostReview[]> => {
 
     // Fetch post titles for each review
     const reviewsWithTitles = await Promise.all(
-      reviews.map(async (review) => {
+      reviews.map(async (review: any) => {
         const post = await getPostById(review.postId);
         return {
           ...review,
@@ -799,7 +799,7 @@ export const getRealtimeTraffic = async (): Promise<{ activeUsers: number; activ
     const sessions = snapshot.docs.map((doc: any) => doc.data() as TrafficSession);
     const pageCounts: Record<string, { title: string, count: number }> = {};
 
-    sessions.forEach(s => {
+    sessions.forEach((s: any) => {
       if (!pageCounts[s.slug]) {
         pageCounts[s.slug] = { title: s.title, count: 0 };
       }
@@ -812,7 +812,7 @@ export const getRealtimeTraffic = async (): Promise<{ activeUsers: number; activ
         slug,
         title: data.title,
         count: data.count
-      })).sort((a, b) => b.count - a.count)
+      })).sort((a: any, b: any) => b.count - a.count)
     };
   } catch (error) {
     console.error('Error fetching realtime traffic:', error);
@@ -841,7 +841,7 @@ export const getTrafficStats = async (period: 'daily' | 'weekly' | 'monthly'): P
 
     const stats: TrafficStats = {
       totalViews: sessions.length,
-      totalDuration: sessions.reduce((acc, s) => acc + s.duration, 0),
+      totalDuration: sessions.reduce((acc: any, s: any) => acc + s.duration, 0),
       averageTime: 0,
       topPages: [],
       realTimeActive: 0,
@@ -851,7 +851,7 @@ export const getTrafficStats = async (period: 'daily' | 'weekly' | 'monthly'): P
     stats.averageTime = stats.totalViews > 0 ? stats.totalDuration / stats.totalViews : 0;
 
     const pageAgg: Record<string, { title: string, views: number, duration: number }> = {};
-    sessions.forEach(s => {
+    sessions.forEach((s: any) => {
       if (!pageAgg[s.slug]) {
         pageAgg[s.slug] = { title: s.title, views: 0, duration: 0 };
       }
@@ -864,7 +864,7 @@ export const getTrafficStats = async (period: 'daily' | 'weekly' | 'monthly'): P
       title: data.title,
       views: data.views,
       duration: data.duration
-    })).sort((a, b) => b.views - a.views).slice(0, 10);
+    })).sort((a: any, b: any) => b.views - a.views).slice(0, 10);
 
     // Realtime part (last 5 mins for dashboard summary)
     const realtime = await getRealtimeTraffic();
@@ -910,7 +910,7 @@ export const getPolls = async (category?: string, status: Poll['status'] = 'appr
     const polls = snapshot.docs.map((docSnap: any) => ({ id: docSnap.id, ...docSnap.data() } as Poll));
 
     // Sort logic
-    return polls.sort((a, b) => {
+    return polls.sort((a: any, b: any) => {
       if (isFeatured) {
         const orderA = a.featuredOrder ?? 999;
         const orderB = b.featuredOrder ?? 999;
@@ -928,7 +928,7 @@ export const getAllPollsAdmin = async (): Promise<Poll[]> => {
   try {
     const snapshot = await db.collection(POLLS_COLLECTION).get();
     const polls = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Poll));
-    return polls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return polls.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
     console.error('Error fetching all polls (admin):', error);
     return [];
@@ -1218,7 +1218,7 @@ export const getLiveComments = async (channelId: string): Promise<any[]> => {
         id: doc.id,
         ...doc.data(),
         timestamp: (doc.data().timestamp as firebase.firestore.Timestamp).toDate()
-      })).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      })).sort((a: any, b: any) => b.timestamp.getTime() - a.timestamp.getTime());
     } catch (err) {
       console.error('Fallback fetch failed:', err);
       return [];

@@ -729,7 +729,7 @@ export const LiveSection: React.FC = () => {
                                         ref={playerRef}
                                         className="relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-gray-200/50 dark:border-white/10 w-full"
                                     >
-                                        <div className="aspect-[4/3] md:aspect-[16/9.5] w-full relative min-h-[500px] md:min-h-[600px] lg:min-h-[650px]">
+                                        <div className="aspect-video md:aspect-[16/9.5] w-full relative min-h-[200px] md:min-h-[600px] lg:min-h-[650px]">
                                             {showAd ? (
                                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c10] z-50 overflow-hidden">
                                                     {/* Animated Background Elements */}
@@ -1000,7 +1000,7 @@ export const LiveSection: React.FC = () => {
                                 <div className="h-full lg:col-span-2">
                                     <div className="relative h-full">
                                         <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-primary-500/10 to-orange-500/10 blur-2xl opacity-50 rounded-3xl" />
-                                        <div className="relative h-full min-h-[500px] md:min-h-[600px] lg:min-h-[650px] bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-800 dark:via-red-900/20 dark:to-orange-900/20 rounded-3xl border-2 border-red-200 dark:border-red-800/50 shadow-xl overflow-hidden flex flex-col">
+                                        <div className="relative h-full min-h-[300px] md:min-h-[600px] lg:min-h-[650px] bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-800 dark:via-red-900/20 dark:to-orange-900/20 rounded-3xl border-2 border-red-200 dark:border-red-800/50 shadow-xl overflow-hidden flex flex-col">
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl" />
                                             <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl" />
 
