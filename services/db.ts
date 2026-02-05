@@ -78,7 +78,7 @@ export const getPosts = async (limitCount?: number, stripContent: boolean = fals
 
     const snapshot = await getDocs(q);
 
-    return snapshot.docs.map(docSnap => {
+    return snapshot.docs.map((docSnap: any) => {
       const data = docSnap.data();
       return {
         id: docSnap.id,
@@ -99,7 +99,7 @@ export const getPosts = async (limitCount?: number, stripContent: boolean = fals
         );
         const snapshot = await getDocs(qFallback);
 
-        const posts = snapshot.docs.map(docSnap => {
+        const posts = snapshot.docs.map((docSnap: any) => {
           const data = docSnap.data();
           return {
             id: docSnap.id,
@@ -907,7 +907,7 @@ export const getPolls = async (category?: string, status: Poll['status'] = 'appr
     q = query(q, limit(40));
 
     const snapshot = await getDocs(q);
-    const polls = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Poll));
+    const polls = snapshot.docs.map((docSnap: any) => ({ id: docSnap.id, ...docSnap.data() } as Poll));
 
     // Sort logic
     return polls.sort((a, b) => {
@@ -1066,13 +1066,13 @@ export const setLiveLinkDefault = async (id: string, isDefault: boolean) => {
     if (isDefault) {
       // Unset all other defaults in live_links collection
       const liveSnapshot = await db.collection(LIVE_LINKS_COLLECTION).where('isDefault', '==', true).get();
-      liveSnapshot.docs.forEach(doc => {
+      liveSnapshot.docs.forEach((doc: any) => {
         batch.update(doc.ref, { isDefault: false });
       });
 
       // Also unset defaults in iptv_channels collection
       const iptvSnapshot = await db.collection(IPTV_CHANNELS_COLLECTION).where('isDefault', '==', true).get();
-      iptvSnapshot.docs.forEach(doc => {
+      iptvSnapshot.docs.forEach((doc: any) => {
         batch.update(doc.ref, { isDefault: false });
       });
     }
@@ -1279,7 +1279,7 @@ export const clearLiveComments = async (channelId: string) => {
       .get();
 
     const batch = db.batch();
-    snapshot.docs.forEach(doc => {
+    snapshot.docs.forEach((doc: any) => {
       batch.delete(doc.ref);
     });
     await batch.commit();
@@ -1845,11 +1845,11 @@ export const getTrendingIPTVChannels = async (): Promise<IPTVChannel[]> => {
 
     const channelsMap = new Map<string, IPTVChannel>();
 
-    trendingSnapshot.docs.forEach(doc => {
+    trendingSnapshot.docs.forEach((doc: any) => {
       channelsMap.set(doc.id, { id: doc.id, ...doc.data() } as IPTVChannel);
     });
 
-    defaultSnapshot.docs.forEach(doc => {
+    defaultSnapshot.docs.forEach((doc: any) => {
       channelsMap.set(doc.id, { id: doc.id, ...doc.data() } as IPTVChannel);
     });
 
@@ -1915,13 +1915,13 @@ export const setDefaultIPTVChannel = async (id: string) => {
 
     // Unset current defaults in IPTV collection
     const iptvSnapshot = await db.collection(IPTV_CHANNELS_COLLECTION).where('isDefault', '==', true).get();
-    iptvSnapshot.docs.forEach(doc => {
+    iptvSnapshot.docs.forEach((doc: any) => {
       batch.update(doc.ref, { isDefault: false, updatedAt: new Date().toISOString() });
     });
 
     // Also unset defaults in live_links collection
     const liveSnapshot = await db.collection(LIVE_LINKS_COLLECTION).where('isDefault', '==', true).get();
-    liveSnapshot.docs.forEach(doc => {
+    liveSnapshot.docs.forEach((doc: any) => {
       batch.update(doc.ref, { isDefault: false, updatedAt: new Date().toISOString() });
     });
 
