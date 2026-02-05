@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { getPostBySlug } from '../../services/db';
 import { generateArticleSchema } from '../../lib/schemaGenerator';
 
-export const runtime = 'edge';
+// export const runtime = 'edge'; // Disabled to fix Firestore compatibility
 export const revalidate = 3600; // revalidate every hour
 
 type Props = {
