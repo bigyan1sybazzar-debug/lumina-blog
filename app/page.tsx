@@ -1,6 +1,7 @@
 import Home from '../pages/Home';
 import { Metadata } from 'next';
-import { db } from '../services/firebase';
+import { dbLite } from '../services/firebase'; // Use dbLite
+import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore/lite';
 import { BlogPost, Poll } from '../types';
 import { unstable_cache } from 'next/cache';
 
@@ -9,16 +10,24 @@ export const revalidate = 60; // revalidate every minute
 // Cached data fetchers
 const getLatestPosts = unstable_cache(
     async () => {
-        const postsSnapshot = await db.collection('posts')
-            .where('status', '==', 'published')
-            .orderBy('createdAt', 'desc')
-            .limit(20)
-            .get();
-        return postsSnapshot.docs.map((doc: any) => ({
-            id: doc.id,
-            ...doc.data(),
-            content: ''
-        }) as BlogPost);
+        try {
+            const q = query(
+                collection(dbLite, 'posts'),
+                where('status', '==', 'published'),
+                orderBy('createdAt', 'desc'),
+                limit(20)
+            );
+            const postsSnapshot = await getDocs(q);
+            return postsSnapshot.docs.map((doc: any) => ({
+                id: doc.id,
+                ...doc.data(),
+                content: ''
+            }) as BlogPost);
+        } catch (error: any) {
+            console.error('Build Error: Failed to fetch latest posts:', error?.message || error);
+            // Return dummy data or empty to allow build to proceed
+            return [];
+        }
     },
     ['latest-posts'],
     { revalidate: 60 }
@@ -26,8 +35,14 @@ const getLatestPosts = unstable_cache(
 
 const getFeaturedConfig = unstable_cache(
     async () => {
-        const configDoc = await db.collection('config').doc('featured').get();
-        return configDoc.exists ? (configDoc.data()?.postIds || []) as string[] : [];
+        try {
+            const configRef = doc(dbLite, 'config', 'featured');
+            const configDoc = await getDoc(configRef);
+            return configDoc.exists() ? (configDoc.data()?.postIds || []) as string[] : [];
+        } catch (error) {
+            console.error('Build Warning: Failed to fetch featured config:', error);
+            return [];
+        }
     },
     ['featured-config'],
     { revalidate: 3600 }
@@ -35,12 +50,19 @@ const getFeaturedConfig = unstable_cache(
 
 const getPolls = unstable_cache(
     async () => {
-        const pollsSnapshot = await db.collection('polls')
-            .where('status', '==', 'approved')
-            .orderBy('createdAt', 'desc')
-            .limit(6)
-            .get();
-        return pollsSnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Poll));
+        try {
+            const q = query(
+                collection(dbLite, 'polls'),
+                where('status', '==', 'approved'),
+                orderBy('createdAt', 'desc'),
+                limit(6)
+            );
+            const pollsSnapshot = await getDocs(q);
+            return pollsSnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Poll));
+        } catch (error) {
+            console.error('Build Warning: Failed to fetch polls:', error);
+            return [];
+        }
     },
     ['featured-polls'],
     { revalidate: 300 }
@@ -72,17 +94,20 @@ export default async function Page() {
             const missingItems = await Promise.all(missingIds.map(async id => {
                 // Try cacheable individual fetch if needed, but for simplicity here:
                 // Try posts first
-                let doc = await db.collection('posts').doc(id).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    return { id: doc.id, ...data, content: '' } as BlogPost;
+                const postRef = doc(dbLite, 'posts', id);
+                let docSnap = await getDoc(postRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    return { id: docSnap.id, ...data, content: '' } as BlogPost;
                 }
 
                 // Fallback to pages
-                doc = await db.collection('pages').doc(id).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    return { id: doc.id, ...data, content: '' } as BlogPost;
+                const pageRef = doc(dbLite, 'pages', id);
+                docSnap = await getDoc(pageRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    return { id: docSnap.id, ...data, content: '' } as BlogPost;
                 }
                 return null;
             }));

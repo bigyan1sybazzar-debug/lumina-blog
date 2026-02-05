@@ -1,6 +1,7 @@
-import { put } from '@vercel/blob';
+import { storage } from '../../../lib/storage';
 export const runtime = 'edge';
-import { db } from '../../../services/firebase';
+import { dbLite } from '../../../services/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore/lite';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
@@ -15,10 +16,14 @@ export async function POST(req: Request) {
 
     try {
         const BASE_URL = 'https://bigyann.com.np';
-        const BLOB_URL = 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
+        // Use R2 domain or fallback to Vercel
+        const BLOB_URL = storage.isR2Configured()
+            ? `${process.env.R2_PUBLIC_DOMAIN || ''}/sitemap.xml`
+            : 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
 
         // 1. Fetch published posts
-        const snapshot = await db.collection('posts').where('status', '==', 'published').get();
+        const postsQuery = query(collection(dbLite, 'posts'), where('status', '==', 'published'));
+        const snapshot = await getDocs(postsQuery);
         const posts = snapshot.docs.map((doc: any) => {
             const d = doc.data();
             // Handle Firestore Timestamp or Date
@@ -30,7 +35,8 @@ export async function POST(req: Request) {
         });
 
         // 2. Fetch approved polls
-        const pollsSnapshot = await db.collection('polls').where('status', '==', 'approved').get();
+        const pollsQuery = query(collection(dbLite, 'polls'), where('status', '==', 'approved'));
+        const pollsSnapshot = await getDocs(pollsQuery);
         const polls = pollsSnapshot.docs.map((doc: any) => {
             const d = doc.data();
             const date = d.updatedAt?.toDate?.() || d.createdAt?.toDate?.() || new Date();
@@ -59,12 +65,13 @@ export async function POST(req: Request) {
   </url>`).join('')}
 </urlset>`.trim();
 
-        // 4. Upload to Vercel Blob
-        await put('sitemap.xml', xml, {
+        // 4. Upload to Storage
+        await storage.put('sitemap.xml', xml, {
             access: 'public',
             addRandomSuffix: false,
             contentType: 'application/xml',
             allowOverwrite: true,
+            token: process.env.BLOB_READ_WRITE_TOKEN
         });
 
         // 5. Revalidate the dynamic sitemap route

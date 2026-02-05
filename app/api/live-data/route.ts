@@ -1,17 +1,18 @@
-import { put, list } from '@vercel/blob';
+import { storage } from '../../../lib/storage';
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
-import { db } from '../../../services/firebase';
+import { dbLite } from '../../../services/firebase';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore/lite';
 
 const FILE_NAME = 'live-data.json';
 const COLLECTION_NAME = 'live_links';
 
 export async function GET() {
     try {
-        // 1. Try to fetch from Blob
+        // 1. Try to fetch from Storage
         let blobData = null;
         try {
-            const { blobs } = await list({ prefix: FILE_NAME, limit: 1 });
+            const { blobs } = await storage.list({ prefix: FILE_NAME, limit: 1 });
             const blob = blobs.find(b => b.pathname === FILE_NAME);
 
             if (blob) {
@@ -21,7 +22,7 @@ export async function GET() {
                 }
             }
         } catch (blobError) {
-            console.warn('Vercel Blob fetch failed (migrating/fallback):', blobError);
+            console.warn('Storage fetch failed (migrating/fallback):', blobError);
         }
 
         if (blobData) {
@@ -34,15 +35,23 @@ export async function GET() {
         }
 
         // 2. Migration: Fetch from Firestore
-        console.log('Migrating Live Sports data from Firestore to Blob...');
-        const snapshot = await db.collection(COLLECTION_NAME).orderBy('createdAt', 'desc').get();
+        console.log('Migrating Live Sports data from Firestore to Storage...');
+        const q = query(
+            collection(dbLite, COLLECTION_NAME),
+            orderBy('createdAt', 'desc')
+        );
+        const snapshot = await getDocs(q);
         const data = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
-        // 3. Save to Blob
+        // 3. Save to Storage
         try {
-            await put(FILE_NAME, JSON.stringify(data), { access: 'public', addRandomSuffix: false });
+            await storage.put(FILE_NAME, JSON.stringify(data), {
+                access: 'public',
+                addRandomSuffix: false,
+                token: process.env.BLOB_READ_WRITE_TOKEN
+            });
         } catch (putError) {
-            console.warn('Failed to save to Vercel Blob:', putError);
+            console.warn('Failed to save to Storage:', putError);
         }
 
         return NextResponse.json(data, {
@@ -62,7 +71,11 @@ export async function POST(request: Request) {
     try {
         const data = await request.json();
         // Allow full overwrite
-        await put(FILE_NAME, JSON.stringify(data), { access: 'public', addRandomSuffix: false });
+        await storage.put(FILE_NAME, JSON.stringify(data), {
+            access: 'public',
+            addRandomSuffix: false,
+            token: process.env.BLOB_READ_WRITE_TOKEN
+        });
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error saving Live Sports data:', error);
