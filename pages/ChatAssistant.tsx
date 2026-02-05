@@ -1,5 +1,9 @@
 'use client';
 
+export const config = {
+  runtime: 'edge',
+};
+
 // src/components/ChatAssistant.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 // Note: Removed unused 'useNavigate' since routing was not in the original file
