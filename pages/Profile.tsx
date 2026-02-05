@@ -102,11 +102,11 @@ const Profile: React.FC = () => {
         const unsubRequests = db.collection('friendRequests')
             .where('toId', '==', user.id)
             .where('status', '==', 'pending')
-            .onSnapshot(snapshot => {
-                const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FriendRequest));
+            .onSnapshot((snapshot: any) => {
+                const requests = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as FriendRequest));
 
                 // Check if this is a real update (not initial)
-                if (!isInitialLoad.current && snapshot.docChanges().some(change => change.type === 'added')) {
+                if (!isInitialLoad.current && snapshot.docChanges().some((change: any) => change.type === 'added')) {
                     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
                     audio.play().catch(e => console.error("Audio playback failed:", e));
                 }
@@ -118,8 +118,8 @@ const Profile: React.FC = () => {
             .where('status', '==', 'published')
             .orderBy('createdAt', 'desc')
             .limit(5)
-            .onSnapshot(snapshot => {
-                const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost));
+            .onSnapshot((snapshot: any) => {
+                const posts = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BlogPost));
                 setLatestPosts(posts);
             });
 
@@ -128,15 +128,15 @@ const Profile: React.FC = () => {
             .where('participants', 'array-contains', user.id)
             .orderBy('timestamp', 'desc')
             .limit(10)
-            .onSnapshot(snapshot => {
-                const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            .onSnapshot((snapshot: any) => {
+                const msgs = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
                 // Robust Sound Trigger
                 if (!isInitialLoad.current) {
-                    const newChanges = snapshot.docChanges().filter(c => c.type === 'added');
+                    const newChanges = snapshot.docChanges().filter((c: any) => c.type === 'added');
                     if (newChanges.length > 0) {
                         // Check if any new message is NOT from me AND not previously known
-                        const hasIncoming = newChanges.some(change => {
+                        const hasIncoming = newChanges.some((change: any) => {
                             const data = change.doc.data();
                             const isIncoming = data.senderId !== user.id;
                             const isNew = !knownMessageIds.current.has(change.doc.id);
@@ -151,7 +151,7 @@ const Profile: React.FC = () => {
                 }
 
                 // Update known IDs
-                snapshot.docs.forEach(doc => knownMessageIds.current.add(doc.id));
+                snapshot.docs.forEach((doc: any) => knownMessageIds.current.add(doc.id));
                 setLatestMessages(msgs);
             });
 
@@ -229,11 +229,11 @@ const Profile: React.FC = () => {
                     const ids: string[] = configDoc.data().postIds || [];
                     const ordered: BlogPost[] = [];
                     ids.forEach(id => {
-                        const post = posts.find(p => p.id === id);
+                        const post = posts.find((p: any) => p.id === id);
                         if (post) ordered.push(post);
                     });
                     setFeaturedPosts(ordered);
-                    setAvailablePosts(posts.filter(p => !ids.includes(p.id)));
+                    setAvailablePosts(posts.filter((p: any) => !ids.includes(p.id)));
                 } else {
                     setFeaturedPosts([]);
                     setAvailablePosts(posts);
@@ -287,7 +287,7 @@ const Profile: React.FC = () => {
         setIsSavingFeatured(true);
         try {
             await setDoc(doc(db, 'config', 'featured'), {
-                postIds: featuredPosts.map(p => p.id),
+                postIds: featuredPosts.map((p: any) => p.id),
                 updatedAt: new Date().toISOString()
             });
             alert('Featured posts saved successfully!');
@@ -433,7 +433,7 @@ const Profile: React.FC = () => {
         if (window.confirm('Are you sure you want to delete this post?')) {
             try {
                 await deletePost(postId);
-                setUserPosts(userPosts.filter(p => p.id !== postId));
+                setUserPosts(userPosts.filter((p: any) => p.id !== postId));
             } catch (error) {
                 console.error("Error deleting post:", error);
             }
@@ -456,8 +456,8 @@ const Profile: React.FC = () => {
             ]);
 
             const friendIds = [
-                ...sent.docs.map(doc => doc.data().toId),
-                ...received.docs.map(doc => doc.data().fromId)
+                ...sent.docs.map((doc: any) => doc.data().toId),
+                ...received.docs.map((doc: any) => doc.data().fromId)
             ];
 
             if (friendIds.length === 0) {
@@ -473,7 +473,7 @@ const Profile: React.FC = () => {
 
             for (const chunk of chunks) {
                 const snapshot = await db.collection('users').where(firebase.firestore.FieldPath.documentId(), 'in', chunk).get();
-                snapshot.forEach(doc => friendList.push({ id: doc.id, ...doc.data() } as User));
+                snapshot.forEach((doc: any) => friendList.push({ id: doc.id, ...doc.data() } as User));
             }
             setFriends(friendList);
         } catch (error) {
@@ -506,8 +506,8 @@ const Profile: React.FC = () => {
             .get();
 
         const results = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as User))
-            .filter(u => u.id !== user?.id);
+            .map((doc: any) => ({ id: doc.id, ...doc.data() } as User))
+            .filter((u: any) => u.id !== user?.id);
         setSearchResults(results);
     };
 
@@ -525,7 +525,7 @@ const Profile: React.FC = () => {
         try {
             await acceptFriendRequest(req.id);
             alert('Friend request accepted!');
-            setIncomingRequests(prev => prev.filter(r => r.id !== req.id));
+            setIncomingRequests(prev => prev.filter((r: any) => r.id !== req.id));
             fetchFriends();
         } catch (error) {
             alert('Action failed');
@@ -536,7 +536,7 @@ const Profile: React.FC = () => {
         try {
             await rejectFriendRequest(req.id);
             alert('Friend request rejected!');
-            setIncomingRequests(prev => prev.filter(r => r.id !== req.id));
+            setIncomingRequests(prev => prev.filter((r: any) => r.id !== req.id));
         } catch (error) {
             alert('Action failed');
         }

@@ -131,7 +131,7 @@ export const getPendingPosts = async (): Promise<BlogPost[]> => {
       .where('status', '==', 'pending')
       .get();
 
-    const posts = snapshot.docs.map(doc => ({
+    const posts = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     } as BlogPost));
@@ -149,7 +149,7 @@ export const getUserPosts = async (userId: string): Promise<BlogPost[]> => {
       .where('author.id', '==', userId)
       .get();
 
-    const posts = snapshot.docs.map(doc => ({
+    const posts = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     } as BlogPost));
@@ -164,7 +164,7 @@ export const getUserPosts = async (userId: string): Promise<BlogPost[]> => {
 export const getAllPostsAdmin = async (): Promise<BlogPost[]> => {
   try {
     const snapshot = await db.collection(POSTS_COLLECTION).get();
-    const posts = snapshot.docs.map(doc => ({
+    const posts = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     } as BlogPost));
@@ -181,7 +181,7 @@ export const getAllPostsAdmin = async (): Promise<BlogPost[]> => {
 export const getPages = async (): Promise<BlogPost[]> => {
   try {
     const snapshot = await db.collection(PAGES_COLLECTION).get();
-    const pages = snapshot.docs.map(doc => ({
+    const pages = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     } as BlogPost));
@@ -343,9 +343,9 @@ export const deletePost = async (postId: string): Promise<void> => {
 
     // ... (rest of your deletion logic for comments/reviews remains the same)
     const commentsSnapshot = await db.collection(COMMENTS_COLLECTION).where('postId', '==', postId).get();
-    const deleteCommentsPromises = commentsSnapshot.docs.map(doc => doc.ref.delete());
+    const deleteCommentsPromises = commentssnapshot.docs.map((doc: any) => doc.ref.delete());
     const reviewsSnapshot = await db.collection(REVIEWS_COLLECTION).where('postId', '==', postId).get();
-    const deleteReviewsPromises = reviewsSnapshot.docs.map(doc => doc.ref.delete());
+    const deleteReviewsPromises = reviewssnapshot.docs.map((doc: any) => doc.ref.delete());
     await Promise.all([...deleteCommentsPromises, ...deleteReviewsPromises]);
 
     if (post.status === 'published') {
@@ -420,7 +420,7 @@ export const getCategories = async (): Promise<Category[]> => {
   try {
     const snapshot = await db.collection(CATEGORIES_COLLECTION).get();
     if (snapshot.empty) return CATEGORIES;
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+    return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Category));
   } catch (error) {
     console.error('Error fetching categories:', error);
     return CATEGORIES;
@@ -464,7 +464,7 @@ export const deleteCategory = async (categoryId: string): Promise<void> => {
 export const getAllUsers = async (): Promise<User[]> => {
   try {
     const snapshot = await db.collection(USERS_COLLECTION).get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+    return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as User));
   } catch (error) {
     console.error('Error fetching users:', error);
     return [];
@@ -487,7 +487,7 @@ export const getCommentsByPostId = async (postId: string): Promise<BlogPostComme
       .where('postId', '==', postId)
       .get();
 
-    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostComment));
+    const comments = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BlogPostComment));
 
     return comments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
@@ -501,7 +501,7 @@ export const getCommentsByUserId = async (userId: string): Promise<BlogPostComme
     const snapshot = await db.collection(COMMENTS_COLLECTION)
       .where('userId', '==', userId)
       .get();
-    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostComment));
+    const comments = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BlogPostComment));
     return comments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
     console.error('Error fetching user comments:', error);
@@ -524,7 +524,7 @@ export const getReviewsByPostId = async (postId: string): Promise<BlogPostReview
       .where('postId', '==', postId)
       .get();
 
-    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostReview));
+    const reviews = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BlogPostReview));
 
     return reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
@@ -538,7 +538,7 @@ export const getReviewsByUserId = async (userId: string): Promise<BlogPostReview
     const snapshot = await db.collection(REVIEWS_COLLECTION)
       .where('userId', '==', userId)
       .get();
-    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostReview));
+    const reviews = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BlogPostReview));
     return reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
     console.error('Error fetching user reviews:', error);
@@ -563,7 +563,7 @@ export const addReview = async (review: Omit<BlogPostReview, 'id' | 'createdAt'>
 export const getAllComments = async (): Promise<BlogPostComment[]> => {
   try {
     const snapshot = await db.collection(COMMENTS_COLLECTION).get();
-    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostComment));
+    const comments = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BlogPostComment));
 
     // Fetch post titles for each comment
     const commentsWithTitles = await Promise.all(
@@ -586,7 +586,7 @@ export const getAllComments = async (): Promise<BlogPostComment[]> => {
 export const getAllReviews = async (): Promise<BlogPostReview[]> => {
   try {
     const snapshot = await db.collection(REVIEWS_COLLECTION).get();
-    const reviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPostReview));
+    const reviews = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BlogPostReview));
 
     // Fetch post titles for each review
     const reviewsWithTitles = await Promise.all(
@@ -796,7 +796,7 @@ export const getRealtimeTraffic = async (): Promise<{ activeUsers: number; activ
       .where('lastHeartbeat', '>', oneMinuteAgo)
       .get();
 
-    const sessions = snapshot.docs.map(doc => doc.data() as TrafficSession);
+    const sessions = snapshot.docs.map((doc: any) => doc.data() as TrafficSession);
     const pageCounts: Record<string, { title: string, count: number }> = {};
 
     sessions.forEach(s => {
@@ -837,7 +837,7 @@ export const getTrafficStats = async (period: 'daily' | 'weekly' | 'monthly'): P
       .where('startTime', '>=', startDate.toISOString())
       .get();
 
-    const sessions = snapshot.docs.map(doc => doc.data() as TrafficSession);
+    const sessions = snapshot.docs.map((doc: any) => doc.data() as TrafficSession);
 
     const stats: TrafficStats = {
       totalViews: sessions.length,
@@ -927,7 +927,7 @@ export const getPolls = async (category?: string, status: Poll['status'] = 'appr
 export const getAllPollsAdmin = async (): Promise<Poll[]> => {
   try {
     const snapshot = await db.collection(POLLS_COLLECTION).get();
-    const polls = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
+    const polls = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Poll));
     return polls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
     console.error('Error fetching all polls (admin):', error);
@@ -1016,7 +1016,7 @@ export const getLiveLinks = async (): Promise<LiveLink[]> => {
       .orderBy('createdAt', 'desc')
       .get();
 
-    return snapshot.docs.map(doc => ({
+    return snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     } as LiveLink));
@@ -1201,7 +1201,7 @@ export const getLiveComments = async (channelId: string): Promise<any[]> => {
       .orderBy('timestamp', 'desc')
       .get();
 
-    return snapshot.docs.map(doc => ({
+    return snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
       timestamp: (doc.data().timestamp as firebase.firestore.Timestamp).toDate()
@@ -1214,7 +1214,7 @@ export const getLiveComments = async (channelId: string): Promise<any[]> => {
         .where('channelId', '==', channelId)
         .get();
 
-      return snapshot.docs.map(doc => ({
+      return snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data(),
         timestamp: (doc.data().timestamp as firebase.firestore.Timestamp).toDate()
@@ -1294,7 +1294,7 @@ export const clearLiveComments = async (channelId: string) => {
 export const getKeywords = async (): Promise<{ id: string; name: string; count: number }[]> => {
   try {
     const snapshot = await db.collection(KEYWORDS_COLLECTION).orderBy('name').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as { id: string; name: string; count: number }));
+    return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as { id: string; name: string; count: number }));
   } catch (error) {
     console.error('Error fetching keywords:', error);
     return [];
@@ -1333,7 +1333,7 @@ export const deleteKeyword = async (id: string) => {
 export const getLiveMatches = async (): Promise<any[]> => {
   try {
     const snapshot = await db.collection(LIVE_MATCHES_COLLECTION).orderBy('createdAt', 'desc').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
     console.error('Error fetching live matches:', error);
     return [];
@@ -1383,7 +1383,7 @@ export const getPromptCategories = async (): Promise<PromptCategory[]> => {
     const snapshot = await db.collection(PROMPT_CATEGORIES_COLLECTION)
       .orderBy('order', 'asc')
       .get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PromptCategory));
+    return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as PromptCategory));
   } catch (error) {
     console.error('Error fetching prompt categories:', error);
     return [];
@@ -1450,7 +1450,7 @@ export const getPromptSubcategories = async (categoryId?: string): Promise<Promp
     }
 
     const snapshot = await query.orderBy('order', 'asc').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PromptSubcategory));
+    return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as PromptSubcategory));
   } catch (error) {
     console.error('Error fetching prompt subcategories:', error);
     return [];
@@ -1525,7 +1525,7 @@ export const getPrompts = async (filters?: {
     }
 
     const snapshot = await query.get();
-    const prompts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prompt));
+    const prompts = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Prompt));
 
     // Sort by creation date (newest first)
     return prompts.sort((a, b) =>
@@ -1655,7 +1655,7 @@ export const getHighlights = async (): Promise<Highlight[]> => {
     const snapshot = await db.collection(HIGHLIGHTS_COLLECTION)
       .orderBy('createdAt', 'desc')
       .get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Highlight));
+    return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Highlight));
   } catch (error) {
     console.error('Error fetching highlights:', error);
     return [];
@@ -1739,7 +1739,7 @@ export const getSubscribers = async (): Promise<any[]> => {
       .orderBy('subscribedAt', 'desc')
       .get();
 
-    return snapshot.docs.map(doc => ({
+    return snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     }));
@@ -1950,7 +1950,7 @@ export const deleteIPTVChannel = async (id: string) => {
 export const getIPTVCategories = async (): Promise<IPTVCategory[]> => {
   try {
     const snapshot = await db.collection(IPTV_CATEGORIES_COLLECTION).get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as IPTVCategory));
+    return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as IPTVCategory));
   } catch (error) {
     console.error('Error fetching IPTV categories:', error);
     return [];

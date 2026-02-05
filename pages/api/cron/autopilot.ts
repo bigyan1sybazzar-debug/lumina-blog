@@ -30,7 +30,7 @@ export default async function handler(req: Request) {
             return new Response(JSON.stringify({ error: 'No categories' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
         }
 
-        const categories = categoriesSnapshot.docs.map(doc => doc.data());
+        const categories = categoriesSnapshot.docs.map((doc: any) => doc.data());
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
 
         await logActivity(configRef, `Starting cycle. Category: ${randomCategory.name}`, 'info');

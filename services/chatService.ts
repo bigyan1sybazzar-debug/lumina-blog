@@ -99,7 +99,7 @@ export const getUserChats = async (userId: string): Promise<ChatSession[]> => {
             .orderBy('updatedAt', 'desc')
             .get();
 
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatSession));
+        return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as ChatSession));
     } catch (error) {
         console.error("Error fetching user chats:", error);
         return [];
@@ -113,7 +113,7 @@ export const getAllChats = async (): Promise<ChatSession[]> => {
             .limit(50) // Limit for performance
             .get();
 
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChatSession));
+        return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as ChatSession));
     } catch (error) {
         console.error("Error fetching all chats:", error);
         return [];
