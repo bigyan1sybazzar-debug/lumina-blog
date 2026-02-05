@@ -16,10 +16,12 @@ build:
   stage: build
   image: node:18
   script:
+    - node -v
+    - npm -v
     - echo "Installing dependencies..."
-    - npm ci
+    - npm install --legacy-peer-deps
     - echo "Building Next.js application..."
-    - npm run build
+    - npm run build || (echo "Build failed! Check if env variables are missing." && exit 1)
   artifacts:
     paths:
       - .next/
