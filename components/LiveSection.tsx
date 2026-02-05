@@ -724,300 +724,276 @@ export const LiveSection: React.FC = () => {
                     {links.length > 0 && (
                         <div className="flex flex-col gap-3 md:gap-6">
                             {(selectedLink || showAd) && (
-                                <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] xl:grid-cols-[1.5fr_1fr] gap-6 items-stretch">
-                                    <div className="w-full min-w-0">
-                                        <div
-                                            ref={playerRef}
-                                            className="relative bg-black rounded-3xl overflow-hidden shadow-xl md:shadow-2xl border border-gray-200/50 dark:border-white/10"
-                                        >
-                                            <div className="aspect-[4/3] md:aspect-video w-full relative">
-                                                {showAd ? (
-                                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c10] z-50 overflow-hidden">
-                                                        {/* Animated Background Elements */}
-                                                        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
-                                                            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600/30 rounded-full blur-[120px] animate-pulse"></div>
-                                                            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary-600/30 rounded-full blur-[120px] animate-pulse delay-700"></div>
+                                <div
+                                    ref={playerRef}
+                                    className="relative bg-black rounded-3xl overflow-hidden shadow-xl md:shadow-2xl border border-gray-200/50 dark:border-white/10 w-full"
+                                >
+                                    <div className="aspect-[4/3] md:aspect-video w-full relative">
+                                        {showAd ? (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0c10] z-50 overflow-hidden">
+                                                {/* Animated Background Elements */}
+                                                <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
+                                                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600/30 rounded-full blur-[120px] animate-pulse"></div>
+                                                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary-600/30 rounded-full blur-[120px] animate-pulse delay-700"></div>
+                                                </div>
+
+                                                <div className="w-full h-full flex flex-col items-center justify-between p-3 md:p-8 relative z-10">
+                                                    {/* Header Info */}
+                                                    <div className="w-full flex justify-between items-start">
+                                                        <div className="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3">
+                                                            <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full animate-ping"></div>
+                                                            <span className="text-[8px] md:text-xs font-black text-white uppercase tracking-widest whitespace-nowrap">Stream Preparing</span>
                                                         </div>
 
-                                                        <div className="w-full h-full flex flex-col items-center justify-between p-3 md:p-8 relative z-10">
-                                                            {/* Header Info */}
-                                                            <div className="w-full flex justify-between items-start">
-                                                                <div className="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3">
-                                                                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full animate-ping"></div>
-                                                                    <span className="text-[8px] md:text-xs font-black text-white uppercase tracking-widest whitespace-nowrap">Stream Preparing</span>
+                                                        {pendingLink && (
+                                                            <div className="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3 max-w-[150px] md:max-w-[250px]">
+                                                                <div className="p-1 md:p-1.5 bg-primary-600/20 rounded-lg shrink-0">
+                                                                    <Tv size={12} className="text-primary-500 md:size-[14px]" />
                                                                 </div>
-
-                                                                {pendingLink && (
-                                                                    <div className="bg-white/5 backdrop-blur-md border border-white/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2 md:gap-3 max-w-[150px] md:max-w-[250px]">
-                                                                        <div className="p-1 md:p-1.5 bg-primary-600/20 rounded-lg shrink-0">
-                                                                            <Tv size={12} className="text-primary-500 md:size-[14px]" />
-                                                                        </div>
-                                                                        <div className="min-w-0">
-                                                                            <p className="text-[7px] md:text-[9px] text-gray-400 font-bold uppercase leading-none mb-0.5 md:mb-1">Up Next</p>
-                                                                            <p className="text-white text-[9px] md:text-[11px] font-black truncate">{pendingLink.heading}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Ad Container - Optimized for mobile aspect ratios */}
-                                                            <div className="w-full max-w-5xl flex-1 flex flex-col items-center justify-center my-1 md:my-8 group/ad relative">
-                                                                <div className="w-full h-full min-h-[250px] md:min-h-[300px] max-h-[320px] md:max-h-[500px] bg-black/60 rounded-2xl md:rounded-[32px] overflow-hidden border border-white/5 shadow-3xl relative transition-all duration-500 hover:border-white/10">
-                                                                    <div className="absolute inset-0 flex items-center justify-center text-white/[0.02] font-black text-[15vw] select-none pointer-events-none uppercase italic tracking-tighter">
-                                                                        ADS
-                                                                    </div>
-                                                                    <div className="relative z-10 w-full h-full flex items-center justify-center">
-                                                                        <GoogleAdSense
-                                                                            slot="7838572857"
-                                                                            className="w-full h-full"
-                                                                            format="auto"
-                                                                            responsive={true}
-                                                                        />
-                                                                    </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="text-[7px] md:text-[9px] text-gray-400 font-bold uppercase leading-none mb-0.5 md:mb-1">Up Next</p>
+                                                                    <p className="text-white text-[9px] md:text-[11px] font-black truncate">{pendingLink.heading}</p>
                                                                 </div>
-
-                                                                {/* Click Incentive Tag - Unified Red Color */}
-                                                                <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 bg-red-600 px-4 md:px-6 py-1.5 md:py-2 rounded-full shadow-xl shadow-red-600/30 text-[8px] md:text-xs font-black text-white uppercase tracking-widest z-20 border border-white/10 whitespace-nowrap active:scale-95 transition-transform">
-                                                                    Click Ad to Support Section
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Footer Controls */}
-                                                            <div className="w-full max-w-xl flex flex-col items-center gap-3 md:gap-6 pb-1 md:pb-2">
-                                                                <div className="flex flex-col items-center gap-1 md:gap-2">
-                                                                    <h3 className="text-lg md:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
-                                                                        Starting Content
-                                                                    </h3>
-                                                                    <div className="hidden md:flex items-center gap-4 text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">
-                                                                        <span>Optimizing</span>
-                                                                        <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
-                                                                        <span>Connecting</span>
-                                                                        <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
-                                                                        <span>Ready</span>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Modern Countdown Progress - Unified Red */}
-                                                                <div className="w-full flex flex-col items-center gap-2 md:gap-4">
-                                                                    <div className="relative w-full h-1 md:h-2 bg-white/5 rounded-full overflow-hidden">
-                                                                        <div
-                                                                            className="absolute top-0 left-0 h-full bg-red-600 transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(220,38,38,0.5)]"
-                                                                            style={{ width: `${((4 - adCountdown) / 4) * 100}%` }}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="flex items-center gap-2 md:gap-3">
-                                                                        <div className="text-red-500 animate-spin">
-                                                                            <RefreshCw size={12} className="md:size-[16px]" />
-                                                                        </div>
-                                                                        <span className="text-white font-black text-[10px] md:text-sm uppercase tracking-widest">
-                                                                            Stream Loading in {adCountdown}s
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-
-                                                                <p className="text-gray-500 text-[8px] md:text-[10px] font-bold text-center leading-tight uppercase opacity-60">
-                                                                    Help us earn and watch <span className="text-red-500">undisturbed</span>
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ) : selectedLink && (
-                                                    <>
-                                                        {showLoginPrompt && !user && (
-                                                            <div className="absolute inset-0 z-[60] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
-                                                                <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-primary-600/40 animate-bounce">
-                                                                    <User size={40} className="text-white" />
-                                                                </div>
-                                                                <h2 className="text-2xl md:text-3xl font-black text-white mb-4">Login Required</h2>
-
-                                                                {/* Added Ad to Popup */}
-                                                                <div className="w-full max-w-sm mb-6 bg-white/5 rounded-xl overflow-hidden border border-white/10">
-                                                                    <GoogleAdSense
-                                                                        slot="7838572857"
-                                                                        format="rectangle"
-                                                                        responsive={true}
-                                                                    />
-                                                                </div>
-
-                                                                <p className="text-gray-400 max-w-sm mb-8 font-medium">
-                                                                    To continue watching <span className="text-white font-bold">{selectedLink.heading}</span> and enjoy unlimited IPTV streaming, please sign in to your account.
-                                                                </p>
-                                                                <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
-                                                                    <Link
-                                                                        href="/login"
-                                                                        className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg hover:shadow-primary-600/25 active:scale-95 text-center"
-                                                                    >
-                                                                        Log In
-                                                                    </Link>
-                                                                    <Link
-                                                                        href="/signup"
-                                                                        className="flex-1 bg-white/10 hover:bg-white/20 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition-all backdrop-blur-sm active:scale-95 text-center"
-                                                                    >
-                                                                        Sign Up
-                                                                    </Link>
-                                                                </div>
-                                                                <p className="mt-8 text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">
-                                                                    Free {iptvConfig?.guestLimitMinutes || 5}-minute preview finished
-                                                                </p>
                                                             </div>
                                                         )}
-                                                        {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
-                                                            <HLSPlayer
-                                                                src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                                                className="w-full h-full [&>video]:object-cover"
-                                                                autoPlay={true}
-                                                                muted={isMuted}
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full h-full relative overflow-hidden">
-                                                                <iframe
-                                                                    ref={iframeRef}
-                                                                    key={playerKey}
-                                                                    src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
-                                                                    title={selectedLink.heading || selectedLink.title}
-                                                                    className="w-[100%] h-[100%] border-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.35] md:scale-100"
-                                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
-                                                                    allowFullScreen
-                                                                    referrerPolicy="no-referrer"
+                                                    </div>
+
+                                                    {/* Ad Container - Optimized for mobile aspect ratios */}
+                                                    <div className="w-full max-w-5xl flex-1 flex flex-col items-center justify-center my-1 md:my-8 group/ad relative">
+                                                        <div className="w-full h-full min-h-[250px] md:min-h-[300px] max-h-[320px] md:max-h-[500px] bg-black/60 rounded-2xl md:rounded-[32px] overflow-hidden border border-white/5 shadow-3xl relative transition-all duration-500 hover:border-white/10">
+                                                            <div className="absolute inset-0 flex items-center justify-center text-white/[0.02] font-black text-[15vw] select-none pointer-events-none uppercase italic tracking-tighter">
+                                                                ADS
+                                                            </div>
+                                                            <div className="relative z-10 w-full h-full flex items-center justify-center">
+                                                                <GoogleAdSense
+                                                                    slot="7838572857"
+                                                                    className="w-full h-full"
+                                                                    format="auto"
+                                                                    responsive={true}
                                                                 />
                                                             </div>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
-                                            {!showAd && selectedLink && (
-                                                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-3 md:p-5 border-t border-gray-200 dark:border-white/10">
-                                                    <div className="flex flex-wrap items-center gap-2 mb-6 p-2 bg-gray-100/50 dark:bg-white/5 rounded-2xl border border-gray-200/50 dark:border-white/5">
-                                                        <button
-                                                            onClick={handleRefresh}
-                                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-500 transition-all shadow-sm border border-gray-200 dark:border-white/5 group"
-                                                        >
-                                                            <RefreshCw size={14} className="group-active:rotate-180 transition-transform duration-500" />
-                                                            Refresh Player
-                                                        </button>
-                                                        <button
-                                                            onClick={toggleMute}
-                                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
-                                                        >
-                                                            {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                                                            {isMuted ? 'Unmute' : 'Mute'}
-                                                        </button>
-                                                        <button
-                                                            onClick={toggleFullscreen}
-                                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
-                                                        >
-                                                            <Maximize size={14} />
-                                                            Fullscreen
-                                                        </button>
-                                                        <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-white/10 mx-2" />
-                                                        <p className="hidden md:block text-[9px] font-bold text-gray-400 uppercase italic">
-                                                            Use these controls to avoid clicking ads inside the video
+                                                        </div>
+
+                                                        {/* Click Incentive Tag - Unified Red Color */}
+                                                        <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 bg-red-600 px-4 md:px-6 py-1.5 md:py-2 rounded-full shadow-xl shadow-red-600/30 text-[8px] md:text-xs font-black text-white uppercase tracking-widest z-20 border border-white/10 whitespace-nowrap active:scale-95 transition-transform">
+                                                            Click Ad to Support Section
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Footer Controls */}
+                                                    <div className="w-full max-w-xl flex flex-col items-center gap-3 md:gap-6 pb-1 md:pb-2">
+                                                        <div className="flex flex-col items-center gap-1 md:gap-2">
+                                                            <h3 className="text-lg md:text-3xl font-black text-white tracking-tighter uppercase italic leading-none">
+                                                                Starting Content
+                                                            </h3>
+                                                            <div className="hidden md:flex items-center gap-4 text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                                                                <span>Optimizing</span>
+                                                                <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
+                                                                <span>Connecting</span>
+                                                                <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
+                                                                <span>Ready</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Modern Countdown Progress - Unified Red */}
+                                                        <div className="w-full flex flex-col items-center gap-2 md:gap-4">
+                                                            <div className="relative w-full h-1 md:h-2 bg-white/5 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className="absolute top-0 left-0 h-full bg-red-600 transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(220,38,38,0.5)]"
+                                                                    style={{ width: `${((4 - adCountdown) / 4) * 100}%` }}
+                                                                />
+                                                            </div>
+                                                            <div className="flex items-center gap-2 md:gap-3">
+                                                                <div className="text-red-500 animate-spin">
+                                                                    <RefreshCw size={12} className="md:size-[16px]" />
+                                                                </div>
+                                                                <span className="text-white font-black text-[10px] md:text-sm uppercase tracking-widest">
+                                                                    Stream Loading in {adCountdown}s
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <p className="text-gray-500 text-[8px] md:text-[10px] font-bold text-center leading-tight uppercase opacity-60">
+                                                            Help us earn and watch <span className="text-red-500">undisturbed</span>
                                                         </p>
                                                     </div>
-                                                    <div className="flex flex-col md:flex-row items-start justify-between gap-4">
-                                                        <div className="w-full md:flex-1">
-                                                            <div className="flex flex-wrap items-center gap-2 mb-2">
-                                                                <Link
-                                                                    href="/"
-                                                                    className="inline-flex items-center text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md mb-2"
-                                                                >
-                                                                    <ArrowLeft className="w-2.5 h-2.5 mr-1" />
-                                                                    Home
-                                                                </Link>
-                                                            </div>
-                                                            <h3 className="text-base sm:text-lg md:text-2xl font-black text-gray-900 dark:text-white leading-tight">
-                                                                {selectedLink.heading || selectedLink.title}
-                                                            </h3>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <button
-                                                                onClick={() => {
-                                                                    const url = window.location.href;
-                                                                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-                                                                }}
-                                                                className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
-                                                                title="Share on Facebook"
-                                                            >
-                                                                <Facebook size={16} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => {
-                                                                    const url = window.location.href;
-                                                                    const text = "Watch Live on Bigyann! " + url;
-                                                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                                                                }}
-                                                                className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-green-600 hover:bg-green-500 hover:text-white transition-all shadow-sm"
-                                                                title="Share on WhatsApp"
-                                                            >
-                                                                <MessageCircle size={16} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => {
-                                                                    navigator.clipboard.writeText(window.location.href);
-                                                                    alert("Link copied to clipboard!");
-                                                                }}
-                                                                className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-primary-600 hover:bg-primary-500 hover:text-white transition-all shadow-sm"
-                                                                title="Copy Page Link"
-                                                            >
-                                                                <Link2 size={16} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => {
-                                                                    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                                                                    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-                                                                    if (isMobile) {
-                                                                        alert("To keep Bigyann on your phone: \n\n• iPhone: Tap the Share button below and select 'Add to Home Screen'. \n• Android: Tap the three dots at the top right and select 'Add to Home Screen'.");
-                                                                    } else {
-                                                                        const shortcut = isMac ? "Cmd+D" : "Ctrl+D";
-                                                                        alert(`To bookmark this page, press ${shortcut} on your keyboard.`);
-                                                                    }
-                                                                }}
-                                                                className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-all shadow-sm"
-                                                                title="How to Bookmark"
-                                                            >
-                                                                <Bookmark size={16} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setSelectedLink(null)}
-                                                                className="p-2.5 bg-gray-100 dark:bg-white/5 text-gray-400 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm"
-                                                                title="Close player"
-                                                            >
-                                                                <X size={20} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
                                                 </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                            </div>
+                                        ) : selectedLink && (
+                                            <>
+                                                {showLoginPrompt && !user && (
+                                                    <div className="absolute inset-0 z-[60] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+                                                        <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center mb-6 shadow-2xl shadow-primary-600/40 animate-bounce">
+                                                            <User size={40} className="text-white" />
+                                                        </div>
+                                                        <h2 className="text-2xl md:text-3xl font-black text-white mb-4">Login Required</h2>
 
-                                    {(selectedLink || pendingLink) && (
-                                        <div className="w-full min-w-0 h-full flex flex-col">
-                                            {/* Discussions Section - Moved to Sidebar */}
-                                            <div className="h-full relative flex flex-col">
+                                                        {/* Added Ad to Popup */}
+                                                        <div className="w-full max-w-sm mb-6 bg-white/5 rounded-xl overflow-hidden border border-white/10">
+                                                            <GoogleAdSense
+                                                                slot="7838572857"
+                                                                format="rectangle"
+                                                                responsive={true}
+                                                            />
+                                                        </div>
+
+                                                        <p className="text-gray-400 max-w-sm mb-8 font-medium">
+                                                            To continue watching <span className="text-white font-bold">{selectedLink.heading}</span> and enjoy unlimited IPTV streaming, please sign in to your account.
+                                                        </p>
+                                                        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
+                                                            <Link
+                                                                href="/login"
+                                                                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition-all shadow-lg hover:shadow-primary-600/25 active:scale-95 text-center"
+                                                            >
+                                                                Log In
+                                                            </Link>
+                                                            <Link
+                                                                href="/signup"
+                                                                className="flex-1 bg-white/10 hover:bg-white/20 text-white py-4 rounded-2xl font-black uppercase tracking-widest transition-all backdrop-blur-sm active:scale-95 text-center"
+                                                            >
+                                                                Sign Up
+                                                            </Link>
+                                                        </div>
+                                                        <p className="mt-8 text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">
+                                                            Free {iptvConfig?.guestLimitMinutes || 5}-minute preview finished
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
+                                                    <HLSPlayer
+                                                        src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                                        className="w-full h-full [&>video]:object-cover"
+                                                        autoPlay={true}
+                                                        muted={isMuted}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full relative overflow-hidden">
+                                                        <iframe
+                                                            ref={iframeRef}
+                                                            key={playerKey}
+                                                            src={selectedLink.youtubeUrl || selectedLink.iframeUrl}
+                                                            title={selectedLink.heading || selectedLink.title}
+                                                            className="w-[100%] h-[100%] border-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.35] md:scale-100"
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen;"
+                                                            allowFullScreen
+                                                            referrerPolicy="no-referrer"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                    {!showAd && selectedLink && (
+                                        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-3 md:p-5 border-t border-gray-200 dark:border-white/10">
+                                            <div className="flex flex-wrap items-center gap-2 mb-6 p-2 bg-gray-100/50 dark:bg-white/5 rounded-2xl border border-gray-200/50 dark:border-white/5">
+                                                <button
+                                                    onClick={handleRefresh}
+                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-500 transition-all shadow-sm border border-gray-200 dark:border-white/5 group"
+                                                >
+                                                    <RefreshCw size={14} className="group-active:rotate-180 transition-transform duration-500" />
+                                                    Refresh Player
+                                                </button>
+                                                <button
+                                                    onClick={toggleMute}
+                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
+                                                >
+                                                    {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                                                    {isMuted ? 'Unmute' : 'Mute'}
+                                                </button>
+                                                <button
+                                                    onClick={toggleFullscreen}
+                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-500 transition-all shadow-sm border border-gray-200 dark:border-white/5"
+                                                >
+                                                    <Maximize size={14} />
+                                                    Fullscreen
+                                                </button>
+                                                <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-white/10 mx-2" />
+                                                <p className="hidden md:block text-[9px] font-bold text-gray-400 uppercase italic">
+                                                    Use these controls to avoid clicking ads inside the video
+                                                </p>
+                                            </div>
+                                            <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                                                <div className="w-full md:flex-1">
+                                                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                        <Link
+                                                            href="/"
+                                                            className="inline-flex items-center text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md mb-2"
+                                                        >
+                                                            <ArrowLeft className="w-2.5 h-2.5 mr-1" />
+                                                            Home
+                                                        </Link>
+                                                    </div>
+                                                    <h3 className="text-base sm:text-lg md:text-2xl font-black text-gray-900 dark:text-white leading-tight">
+                                                        {selectedLink.heading || selectedLink.title}
+                                                    </h3>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => {
+                                                            const url = window.location.href;
+                                                            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                                                        }}
+                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
+                                                        title="Share on Facebook"
+                                                    >
+                                                        <Facebook size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            const url = window.location.href;
+                                                            const text = "Watch Live on Bigyann! " + url;
+                                                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                                        }}
+                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-green-600 hover:bg-green-500 hover:text-white transition-all shadow-sm"
+                                                        title="Share on WhatsApp"
+                                                    >
+                                                        <MessageCircle size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(window.location.href);
+                                                            alert("Link copied to clipboard!");
+                                                        }}
+                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-primary-600 hover:bg-primary-500 hover:text-white transition-all shadow-sm"
+                                                        title="Copy Page Link"
+                                                    >
+                                                        <Link2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                                                            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                                                            if (isMobile) {
+                                                                alert("To keep Bigyann on your phone: \n\n• iPhone: Tap the Share button below and select 'Add to Home Screen'. \n• Android: Tap the three dots at the top right and select 'Add to Home Screen'.");
+                                                            } else {
+                                                                const shortcut = isMac ? "Cmd+D" : "Ctrl+D";
+                                                                alert(`To bookmark this page, press ${shortcut} on your keyboard.`);
+                                                            }
+                                                        }}
+                                                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-all shadow-sm"
+                                                        title="How to Bookmark"
+                                                    >
+                                                        <Bookmark size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setSelectedLink(null)}
+                                                        className="p-2.5 bg-gray-100 dark:bg-white/5 text-gray-400 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm"
+                                                        title="Close player"
+                                                    >
+                                                        <X size={20} />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Discussions Section - Redesigned */}
+                                            <div className="mt-6 relative">
                                                 <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-primary-500/10 to-orange-500/10 blur-2xl opacity-50 rounded-3xl" />
-                                                <div className="relative h-full flex flex-col bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-800 dark:via-red-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-red-200 dark:border-red-800/50 shadow-xl overflow-hidden">
+                                                <div className="relative bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-800 dark:via-red-900/20 dark:to-orange-900/20 rounded-2xl border-2 border-red-200 dark:border-red-800/50 shadow-xl overflow-hidden">
                                                     <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl" />
                                                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl" />
 
-                                                    <div className="relative p-4 md:p-6 flex flex-col h-full overflow-hidden">
-                                                        {/* Welcome Message */}
-                                                        <div className="mb-6 bg-gradient-to-r from-red-600/10 to-orange-600/10 border border-red-200 dark:border-red-800/30 rounded-xl p-3 flex gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center text-white shrink-0 shadow-lg animate-pulse">
-                                                                <Shield size={14} />
-                                                            </div>
-                                                            <div>
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <span className="text-xs font-black text-red-700 dark:text-red-400 uppercase tracking-wider">Admin Message</span>
-                                                                    <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 text-[8px] font-bold rounded uppercase">Pinned</span>
-                                                                </div>
-                                                                <p className="text-xs text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
-                                                                    Hi, Welcome! Watch full matches, games in HD and do share with friends.
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex flex-col gap-4 mb-6 relative">
+                                                    <div className="relative p-4 md:p-6">
+                                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 relative">
                                                             <div className="flex items-center gap-4">
                                                                 <div className="relative group">
                                                                     <div className="absolute -inset-1.5 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
@@ -1030,7 +1006,7 @@ export const LiveSection: React.FC = () => {
                                                                 </div>
                                                                 <div>
                                                                     <div className="flex items-center gap-2 mb-1">
-                                                                        <h4 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">
+                                                                        <h4 className="text-lg md:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">
                                                                             Match Discussion
                                                                         </h4>
                                                                         <div className="flex items-center gap-1.5 px-2 py-1 bg-red-600 text-[10px] font-black text-white rounded-full shadow-lg shadow-red-500/30 animate-pulse border border-white/10">
@@ -1058,11 +1034,11 @@ export const LiveSection: React.FC = () => {
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center gap-2 w-full">
+                                                            <div className="flex items-center gap-2">
                                                                 {user?.role === 'admin' && comments.length > 0 && (
                                                                     <button
                                                                         onClick={handleClearComments}
-                                                                        className="flex-1 group flex items-center justify-center gap-2 px-3 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all border border-red-200 dark:border-red-800"
+                                                                        className="group flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all border border-red-200 dark:border-red-800"
                                                                     >
                                                                         <Shield size={12} className="group-hover:rotate-12 transition-transform" />
                                                                         Clear
@@ -1070,7 +1046,7 @@ export const LiveSection: React.FC = () => {
                                                                 )}
                                                                 <button
                                                                     onClick={() => setShowDiscussions(!showDiscussions)}
-                                                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 lg:hidden ${showDiscussions
+                                                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 ${showDiscussions
                                                                         ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600'
                                                                         : 'bg-primary-600 text-white hover:bg-primary-700 shadow-primary-500/20'
                                                                         }`}
@@ -1080,7 +1056,7 @@ export const LiveSection: React.FC = () => {
                                                             </div>
                                                         </div>
 
-                                                        <div className={`${showDiscussions ? 'block' : 'hidden'} lg:block flex-1 overflow-y-auto pr-2 custom-scrollbar`}>
+                                                        {showDiscussions && (
                                                             <div className="space-y-4 animate-in slide-in-from-top duration-300">
                                                                 <div className="bg-white dark:bg-gray-900/50 rounded-xl p-4 border border-red-100 dark:border-red-800/30 shadow-sm">
                                                                     <div className="flex items-start gap-3">
@@ -1099,19 +1075,16 @@ export const LiveSection: React.FC = () => {
                                                                                 className="w-full px-4 py-3 text-sm bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none transition-all"
                                                                                 rows={3}
                                                                             />
-                                                                            <div className="flex flex-col gap-3 mt-1">
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <p className="text-[10px] text-gray-400 font-medium flex items-center gap-1.5">
-                                                                                        <span>💡</span>
-                                                                                        <span>Be respectful and constructive</span>
-                                                                                    </p>
-                                                                                </div>
+                                                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                                                <p className="text-[10px] md:text-xs text-gray-400 font-medium">
+                                                                                    💡 Be respectful and constructive
+                                                                                </p>
                                                                                 <button
                                                                                     onClick={(e) => handlePostComment(e)}
                                                                                     disabled={!commentText.trim()}
-                                                                                    className="w-full py-2.5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg hover:shadow-red-500/20 transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                                                                                    className="w-full sm:w-auto px-6 md:px-8 py-2.5 md:py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white text-[10px] md:text-sm font-black uppercase tracking-widest rounded-xl md:rounded-2xl transition-all shadow-xl hover:shadow-red-500/20 transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                                                                                 >
-                                                                                    <Send size={14} />
+                                                                                    <Send size={14} className="md:size-4" />
                                                                                     Post Comment
                                                                                 </button>
                                                                             </div>
@@ -1266,10 +1239,10 @@ export const LiveSection: React.FC = () => {
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                        </div>
+                                                        )}
 
                                                         {!showDiscussions && (
-                                                            <div className="lg:hidden text-center py-3">
+                                                            <div className="text-center py-3">
                                                                 <p className="text-sm text-gray-500 dark:text-gray-400">
                                                                     💬 Click "Show Comments" to join the discussion
                                                                 </p>
@@ -2018,6 +1991,6 @@ export const LiveSection: React.FC = () => {
                     }
                 }
             `}</style>
-        </section >
+        </section>
     );
 };
