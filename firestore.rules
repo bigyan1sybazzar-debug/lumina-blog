@@ -98,7 +98,13 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    match /posts/{postId} { allow read: if true; allow write: if isAdmin(); }
+    // --- BLOG CONTENT ---
+    match /posts/{postId} { 
+      allow read: if true; 
+      // Allow public to increment views, but only admin for everything else
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'updatedAt']) || isAdmin();
+      allow write: if isAdmin(); 
+    }
     match /categories/{categoryId} { allow read: if true; allow write: if isAdmin(); }
     
     match /comments/{commentId} { 

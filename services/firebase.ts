@@ -1,9 +1,11 @@
 // src/services/firebase.ts
-
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth as getAuthModular, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore as getFirestoreStd } from "firebase/firestore";
+import { getFirestore as getFirestoreLite } from "firebase/firestore/lite";
 import firebase from "firebase/compat/app";
 import "firebase/compat/auth";
 import "firebase/compat/firestore";
-import "firebase/compat/analytics";
 
 // ⚠️ IMPORTANT: Helper function to check environment
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -19,29 +21,37 @@ const firebaseConfig = {
     measurementId: "G-XG73Y1PC2X"
 };
 
-// Initialize once
+// ⚡️ Edge Runtime Polyfills
+if (typeof window === 'undefined') {
+    if (typeof (globalThis as any).navigator === 'undefined') {
+        (globalThis as any).navigator = { userAgent: 'node.js', onLine: true, languages: ['en-US', 'en'] };
+    }
+    if (typeof (globalThis as any).location === 'undefined') {
+        (globalThis as any).location = { protocol: 'https:', host: 'localhost', href: 'https://localhost/' };
+    }
+}
+
+// Initialize Modular App (Safer for Edge/Lite services)
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+// Initialize Compat App (For legacy collection().get() usage)
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
 // Exports:
-export const app = firebase.app();
+export { app };
 
-// Helper to get Firebase services safely
-const getDb = () => firebase.firestore();
-const getAuth = () => isBrowser ? firebase.auth() : {} as firebase.auth.Auth;
-const getGoogleProvider = () => isBrowser ? new firebase.auth.GoogleAuthProvider() : null;
-const getAnalytics = () => (isBrowser && typeof firebase.analytics === 'function') ? firebase.analytics() : null;
+// Legacy Compat Exports
+export const db = firebase.firestore();
+export const auth = isBrowser ? firebase.auth() : {} as any;
+export const googleProvider = isBrowser ? new firebase.auth.GoogleAuthProvider() : null;
 
-// 1. Auth and Google Provider are only initialized if window/document exists
-export const auth = isBrowser ? getAuth() : {} as firebase.auth.Auth;
-export const googleProvider = isBrowser ? getGoogleProvider() : null;
+// New Modular/Lite Exports
+export const dbLite = getFirestoreLite(app);
+export const dbModular = isBrowser ? getFirestoreStd(app) : dbLite;
 
-// 2. Firestore - attempt to initialize safely
-// Note: compat firestore usually works in Node but can fail in Edge if it accesses navigator
-export const db: firebase.firestore.Firestore = (isBrowser || typeof process !== 'undefined') ? getDb() : {} as firebase.firestore.Firestore;
-
-// 3. Analytics is only initialized if supported
-export const analytics: firebase.analytics.Analytics | null = isBrowser ? getAnalytics() : null;
+// Cleanup for Edge/Server environments where analytics might be imported
+export const analytics = null;
 
 export default app;

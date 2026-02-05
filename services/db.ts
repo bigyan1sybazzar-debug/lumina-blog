@@ -1,7 +1,19 @@
 // services/db.ts
 import { notifyIndexNow, notifyBingWebmaster } from './indexingService'; // Ensure this is imported
 import firebase from 'firebase/compat/app';
-import { db } from './firebase';
+import { db, dbModular, dbLite } from './firebase';
+import {
+  collection,
+  query,
+  where,
+  limit,
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  increment,
+  orderBy
+} from 'firebase/firestore/lite';
 import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOption, LiveLink, Prompt, PromptCategory, PromptSubcategory, Highlight, TrafficSession, TrafficStats, IPTVChannel, IPTVCategory } from '../types';
 import { MOCK_POSTS, CATEGORIES } from '../constants';
 import { slugify } from '../lib/slugify'; // <-- NEW IMPORT
@@ -54,20 +66,22 @@ const checkPollSlugExists = async (slug: string): Promise<boolean> => {
 
 export const getPosts = async (limitCount?: number, stripContent: boolean = false): Promise<BlogPost[]> => {
   try {
-    let query = db.collection(POSTS_COLLECTION)
-      .where('status', '==', 'published')
-      .orderBy('createdAt', 'desc');
+    let q = query(
+      collection(dbLite, POSTS_COLLECTION),
+      where('status', '==', 'published'),
+      orderBy('createdAt', 'desc')
+    );
 
     if (limitCount) {
-      query = query.limit(limitCount);
+      q = query(q, limit(limitCount));
     }
 
-    const snapshot = await query.get();
+    const snapshot = await getDocs(q);
 
-    return snapshot.docs.map(doc => {
-      const data = doc.data();
+    return snapshot.docs.map(docSnap => {
+      const data = docSnap.data();
       return {
-        id: doc.id,
+        id: docSnap.id,
         ...data,
         ...(stripContent ? { content: '' } : {})
       } as BlogPost;
@@ -75,18 +89,20 @@ export const getPosts = async (limitCount?: number, stripContent: boolean = fals
   } catch (error: any) {
     // Check for "The query requires an index" error
     if (error.code === 'failed-precondition' || (error.message && error.message.includes('requires an index'))) {
-      console.warn('Firestore index missing for optimized query. Falling back to client-side sort. Please create the index using the link in the console/Lighthouse report.');
+      console.warn('Firestore index missing for optimized query. Falling back to client-side sort.');
 
       // Fallback: Fetch without sorting/limiting and sort client-side
       try {
-        const snapshot = await db.collection(POSTS_COLLECTION)
-          .where('status', '==', 'published')
-          .get();
+        const qFallback = query(
+          collection(dbLite, POSTS_COLLECTION),
+          where('status', '==', 'published')
+        );
+        const snapshot = await getDocs(qFallback);
 
-        const posts = snapshot.docs.map(doc => {
-          const data = doc.data();
+        const posts = snapshot.docs.map(docSnap => {
+          const data = docSnap.data();
           return {
-            id: doc.id,
+            id: docSnap.id,
             ...data,
             ...(stripContent ? { content: '' } : {})
           } as BlogPost;
@@ -191,29 +207,28 @@ export const getPostById = async (id: string): Promise<BlogPost | null> => {
   }
 };
 
-// Public-facing: supports both /blog/my-slug and /blog/old-id
+// Public-facing: supports both /blog/my-slug and /blog/old-id (Modular API for Edge Compatibility)
 export const getPostBySlug = async (slugOrId: string): Promise<BlogPost | null> => {
   try {
     // 1. Try by slug field
-    const bySlug = await db.collection(POSTS_COLLECTION)
-      .where('slug', '==', slugOrId)
-      .limit(1)
-      .get();
+    const q = query(collection(dbModular, POSTS_COLLECTION), where('slug', '==', slugOrId), limit(1));
+    const snapshot = await getDocs(q);
 
-    if (!bySlug.empty) {
-      const doc = bySlug.docs[0];
-      return { id: doc.id, ...doc.data() } as BlogPost;
+    if (!snapshot.empty) {
+      const docSnap = snapshot.docs[0];
+      return { id: docSnap.id, ...docSnap.data() } as BlogPost;
     }
 
     // 2. Fallback to document ID
-    const byId = await db.collection(POSTS_COLLECTION).doc(slugOrId).get();
-    if (byId.exists) {
-      return { id: byId.id, ...byId.data() } as BlogPost;
+    const docRef = doc(dbModular, POSTS_COLLECTION, slugOrId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() } as BlogPost;
     }
 
     return null;
   } catch (error) {
-    console.error('Error fetching post by slug/ID:', error);
+    console.error('Error fetching post by slug/ID (Modular):', error);
     return null;
   }
 };
@@ -389,12 +404,13 @@ export const toggleLikePost = async (postId: string, userId: string): Promise<bo
 
 export const incrementViewCount = async (id: string) => {
   try {
-    await db.collection(POSTS_COLLECTION).doc(id).update({
-      views: firebase.firestore.FieldValue.increment(1),
+    const docRef = doc(dbModular, POSTS_COLLECTION, id);
+    await updateDoc(docRef, {
+      views: increment(1),
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error incrementing views:', error);
+    console.error('Error incrementing views (Modular):', error);
   }
 };
 
@@ -874,28 +890,24 @@ export const getTrafficStats = async (period: 'daily' | 'weekly' | 'monthly'): P
 
 export const getPolls = async (category?: string, status: Poll['status'] = 'approved', isFeatured?: boolean): Promise<Poll[]> => {
   try {
-    let query: firebase.firestore.Query = db.collection(POLLS_COLLECTION);
+    let q = query(collection(dbLite, POLLS_COLLECTION));
 
-    // Admin can see everything, but for UI we might want to filter
     if (status) {
-      query = query.where('status', '==', status);
+      q = query(q, where('status', '==', status));
     }
 
     if (category && category !== 'all') {
-      query = query.where('category', '==', category);
+      q = query(q, where('category', '==', category));
     }
 
     if (isFeatured !== undefined) {
-      query = query.where('isFeatured', '==', isFeatured);
+      q = query(q, where('isFeatured', '==', isFeatured));
     }
 
-    // Apply sorting in Firestore where possible (requires index)
-    // Falling back to manual sort for complex filters if index isn't present
-    // But for performance, it's better to limit the results
-    query = query.limit(40);
+    q = query(q, limit(40));
 
-    const snapshot = await query.get();
-    const polls = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
+    const snapshot = await getDocs(q);
+    const polls = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Poll));
 
     // Sort logic
     return polls.sort((a, b) => {
@@ -907,7 +919,7 @@ export const getPolls = async (category?: string, status: Poll['status'] = 'appr
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   } catch (error) {
-    console.error('Error fetching polls:', error);
+    console.error('Error fetching polls (Lite):', error);
     return [];
   }
 };
@@ -938,26 +950,25 @@ export const getPollById = async (id: string): Promise<Poll | null> => {
 
 export const getPollBySlug = async (slugOrId: string): Promise<Poll | null> => {
   try {
-    // 1. Try by slug
-    const bySlug = await db.collection(POLLS_COLLECTION)
-      .where('slug', '==', slugOrId)
-      .limit(1)
-      .get();
+    // 1. Try by slug (Modular API)
+    const q = query(collection(dbModular, POLLS_COLLECTION), where('slug', '==', slugOrId), limit(1));
+    const snapshot = await getDocs(q);
 
-    if (!bySlug.empty) {
-      const doc = bySlug.docs[0];
-      return { id: doc.id, ...doc.data() } as Poll;
+    if (!snapshot.empty) {
+      const docSnap = snapshot.docs[0];
+      return { id: docSnap.id, ...docSnap.data() } as Poll;
     }
 
     // 2. Fallback to document ID
-    const byId = await db.collection(POLLS_COLLECTION).doc(slugOrId).get();
-    if (byId.exists) {
-      return { id: byId.id, ...byId.data() } as Poll;
+    const docRef = doc(dbModular, POLLS_COLLECTION, slugOrId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() } as Poll;
     }
 
     return null;
   } catch (error) {
-    console.error('Error fetching poll by slug/ID:', error);
+    console.error('Error fetching poll by slug/ID (Modular):', error);
     return null;
   }
 };
