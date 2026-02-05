@@ -203,7 +203,7 @@ export const Home: React.FC<HomeProps> = ({
                   <span className="bg-gradient-to-r from-primary-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient">
                     New Gadgets?
                   </span>
-                  <svg className="absolute -bottom-1 md:-bottom-2 left-0 w-full" height="8 md:12" viewBox="0 0 200 12" fill="none">
+                  <svg className="absolute -bottom-1 md:-bottom-2 left-0 w-full h-[8px] md:h-[12px]" viewBox="0 0 200 12" fill="none">
                     <path d="M2 10C60 2 140 2 198 10" stroke="url(#gradient-hero)" strokeWidth="3" strokeLinecap="round" />
                     <defs>
                       <linearGradient id="gradient-hero" x1="0%" y1="0%" x2="100%" y2="0%">

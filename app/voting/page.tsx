@@ -1,7 +1,6 @@
 import VotingPage from '../../components/voting/VotingPage';
 import { Metadata } from 'next';
 
-export const runtime = 'edge';
 export const revalidate = 60; // revalidate every minute
 
 export const metadata: Metadata = {
