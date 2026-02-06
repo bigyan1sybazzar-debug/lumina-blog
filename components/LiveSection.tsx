@@ -1,7 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getLiveLinks, getHighlights, subscribeToNewsletter, getIPTVChannels, getIPTVConfig, updateIPTVChannel, setDefaultIPTVChannel, getTrendingIPTVChannels, updateLiveLink, setLiveLinkDefault, getLiveComments, addLiveComment, clearLiveComments, likeLiveComment, subscribeToLiveComments } from '../services/db';
+import {
+    getLiveLinks,
+    getHighlights,
+    subscribeToNewsletter,
+    getIPTVChannels,
+    getIPTVConfig,
+    upsertIPTVChannel,
+    setDefaultIPTVChannel,
+    getTrendingIPTVChannels,
+    updateLiveLink,
+    setLiveLinkDefault,
+    getLiveComments,
+    addLiveComment,
+    clearLiveComments,
+    likeLiveComment,
+    subscribeToLiveComments
+} from '../services/db';
 import { useAuth } from '../context/AuthContext';
 import { parseM3U } from '../lib/m3uParser';
 import { LiveLink, Highlight } from '../types';
@@ -68,6 +84,7 @@ const splideOptionsTrending = {
 };
 
 export const LiveSection: React.FC = () => {
+    const [isMounted, setIsMounted] = useState(false);
     const [links, setLinks] = useState<LiveLink[]>([]);
     const [highlights, setHighlights] = useState<Highlight[]>([]);
     const [selectedLink, setSelectedLink] = useState<any>(null);
@@ -120,7 +137,7 @@ export const LiveSection: React.FC = () => {
         playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
-    const handleIptvClick = (channel: M3UChannel) => {
+    const handleIptvClick = async (channel: M3UChannel) => {
         const liveLink: any = {
             id: channel.id,
             heading: channel.name,
@@ -130,6 +147,13 @@ export const LiveSection: React.FC = () => {
             isIPTV: true
         };
         handleLinkClick(liveLink);
+
+        // Save to Firestore so it shows up in Trending
+        try {
+            await upsertIPTVChannel(channel, { isTrending: true });
+        } catch (err) {
+            console.error('Failed to mark IPTV as trending:', err);
+        }
     };
 
     useEffect(() => {
@@ -154,6 +178,7 @@ export const LiveSection: React.FC = () => {
     }, [selectedLink?.id]);
 
     useEffect(() => {
+        setIsMounted(true);
         const loadInitialData = async () => {
             try {
                 const [fetchedLinks, fetchedHighlights, config, dbTrendingChannels] = await Promise.all([
@@ -178,10 +203,9 @@ export const LiveSection: React.FC = () => {
                     trendingOrder: c.trendingOrder
                 }));
 
-                let finalIptv: M3UChannel[] = [];
+                let finalIptv = mappedDb;
 
-                // 1. Attempt to load the full M3U catalog
-                if (config?.m3uUrl) {
+                if (mappedDb.length === 0 && config?.m3uUrl) {
                     try {
                         const proxyUrl = `/api/proxy?url=${encodeURIComponent(config.m3uUrl)}`;
                         const res = await fetch(proxyUrl);
@@ -190,25 +214,6 @@ export const LiveSection: React.FC = () => {
                     } catch (err) {
                         console.error('Failed to load remote IPTV M3U:', err);
                     }
-                }
-
-                // 2. Merge DB overrides (Saved Trending/Default status) with live M3U data
-                if (finalIptv.length > 0) {
-                    finalIptv = finalIptv.map(channel => {
-                        const override = mappedDb.find(d => d.id === channel.id);
-                        if (override) {
-                            return {
-                                ...channel,
-                                isTrending: override.isTrending,
-                                isDefault: override.isDefault,
-                                trendingOrder: override.trendingOrder
-                            };
-                        }
-                        return channel;
-                    });
-                } else {
-                    // Fallback: If M3U fails or is empty, properly show at least the DB saved channels
-                    finalIptv = mappedDb;
                 }
 
                 setIptvChannels(finalIptv);
@@ -242,9 +247,18 @@ export const LiveSection: React.FC = () => {
             }
         };
         loadInitialData();
-    }, [user?.role]);
 
-    // FIXED: Dependency array size is now constant
+        // Inject custom styles
+        const style = document.createElement('style');
+        style.textContent = splideCustomStyles;
+        document.head.appendChild(style);
+        return () => {
+            if (document.head.contains(style)) {
+                document.head.removeChild(style);
+            }
+        };
+    }, []);
+
     useEffect(() => {
         if (activeScoreTab === 'cricket' && cricketScores.length === 0) {
             setLoadingCricket(true);
@@ -429,9 +443,10 @@ export const LiveSection: React.FC = () => {
         }))
     ];
 
+    if (!isMounted) return null;
+
     return (
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen relative overflow-hidden">
-            <style dangerouslySetInnerHTML={{ __html: splideCustomStyles }} />
             <div className="absolute inset-0 bg-gradient-to-b from-primary-light/5 via-transparent opacity-50 pointer-events-none" />
 
             <div className="py-6 md:py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -474,15 +489,12 @@ export const LiveSection: React.FC = () => {
                         </div>
                     )}
 
-                    {/* MAIN PLAYER & DISCUSSION WRAPPER (Side-by-side 60/40) */}
+                    {/* MAIN PLAYER & DISCUSSION WRAPPER */}
                     {(selectedLink || showAd) && (
                         <div className="flex flex-col lg:flex-row gap-6 items-stretch">
-
-                            {/* LEFT COLUMN: Player & Controls (60%) */}
                             <div className="w-full lg:w-[60%] flex flex-col gap-4">
                                 <div ref={playerRef} className="relative bg-black rounded-[32px] overflow-hidden shadow-2xl border border-gray-200/50 dark:border-white/10 w-full aspect-video lg:aspect-[16/11.5]">
                                     {showAd ? (
-                                        /* Ad Prep Screen (Image 2 style) */
                                         <div className="absolute inset-0 flex flex-col items-center justify-between p-4 md:p-8 bg-[#0a0c10] z-50">
                                             <div className="w-full flex justify-between items-start">
                                                 <div className="bg-white/5 border border-white/10 px-4 py-1.5 rounded-full flex items-center gap-2 backdrop-blur-md">
@@ -495,7 +507,6 @@ export const LiveSection: React.FC = () => {
                                                     </div>
                                                 )}
                                             </div>
-
                                             <div className="w-full max-w-4xl flex-1 flex flex-col items-center justify-center relative group/ad mb-10">
                                                 <div className="w-full h-full bg-black/60 rounded-[32px] border border-white/5 flex items-center justify-center relative shadow-3xl">
                                                     <div className="absolute inset-0 flex items-center justify-center text-white/[0.02] font-black text-[8vw] pointer-events-none uppercase italic">ADS</div>
@@ -503,7 +514,6 @@ export const LiveSection: React.FC = () => {
                                                 </div>
                                                 <div className="absolute -bottom-3 bg-red-600 px-6 py-2 rounded-full text-xs font-black text-white uppercase shadow-xl tracking-widest">Click Ad to Support • Watch Free</div>
                                             </div>
-
                                             <div className="w-full flex flex-col items-center gap-4">
                                                 <div className="text-center">
                                                     <h3 className="text-xl md:text-3xl font-black text-white uppercase italic tracking-tighter">Starting Content</h3>
@@ -522,7 +532,6 @@ export const LiveSection: React.FC = () => {
                                             </div>
                                         </div>
                                     ) : selectedLink && (
-                                        /* Content Screen */
                                         <>
                                             {showLoginPrompt && !user && (
                                                 <div className="absolute inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-6 text-center animate-in fade-in backdrop-blur-xl">
@@ -541,8 +550,6 @@ export const LiveSection: React.FC = () => {
                                         </>
                                     )}
                                 </div>
-
-                                {/* CONTROLS SECTION (Below Video) */}
                                 {selectedLink && (
                                     <div className="bg-white dark:bg-surface-dark-900 rounded-[32px] p-4 md:p-6 border border-gray-200 dark:border-white/10 shadow-xl transition-all">
                                         <div className="flex flex-wrap items-center gap-2 mb-6 p-2 bg-gray-100/50 dark:bg-white/5 rounded-2xl">
@@ -550,7 +557,6 @@ export const LiveSection: React.FC = () => {
                                             <button onClick={toggleMute} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase text-gray-700 dark:text-gray-200 border dark:border-white/5 shadow-sm transition-all">{isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} {isMuted ? 'Unmute' : 'Mute'}</button>
                                             <button onClick={toggleFullscreen} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase text-gray-700 dark:text-gray-200 border dark:border-white/5 shadow-sm transition-all"><Maximize size={14} /> View</button>
                                         </div>
-
                                         <div className="flex flex-col md:flex-row items-start justify-between gap-4">
                                             <div className="w-full md:flex-1 min-w-0">
                                                 <Link href="/" className="inline-flex items-center text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md mb-2"><ArrowLeft size={10} className="mr-1" /> Home</Link>
@@ -566,13 +572,9 @@ export const LiveSection: React.FC = () => {
                                     </div>
                                 )}
                             </div>
-
-                            {/* RIGHT COLUMN: Discussion Feed (40%) */}
                             <div className="w-full lg:w-[40%] flex flex-col h-auto">
                                 <div className="relative h-full flex flex-col bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-900 dark:via-red-950/20 dark:to-orange-950/20 rounded-[32px] border-2 border-red-200 dark:border-red-900/50 shadow-xl overflow-hidden min-h-[500px] lg:min-h-[690px] lg:max-h-[1100px]">
                                     <div className="relative p-4 md:p-6 flex flex-col h-full">
-
-                                        {/* Header */}
                                         <div className="flex items-center justify-between mb-6">
                                             <div className="flex items-center gap-3">
                                                 <div className="p-2.5 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl shadow-lg text-white shadow-red-500/20"><MessageCircle size={18} /></div>
@@ -589,9 +591,7 @@ export const LiveSection: React.FC = () => {
                                                 <button onClick={() => setShowDiscussions(!showDiscussions)} className="text-[10px] font-black uppercase text-red-600 dark:text-red-400 lg:hidden">{showDiscussions ? 'Hide Feed' : 'Show Feed'}</button>
                                             </div>
                                         </div>
-
                                         <div className={`flex flex-col h-full overflow-hidden ${showDiscussions ? '' : 'hidden lg:flex'}`}>
-                                            {/* Input Box */}
                                             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-4 border border-red-100 dark:border-red-800/30 shadow-sm mb-4">
                                                 <div className="flex gap-3">
                                                     <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-black">{(user?.name?.[0] || 'Y').toUpperCase()}</div>
@@ -610,8 +610,6 @@ export const LiveSection: React.FC = () => {
                                                     >Post Comment</button>
                                                 </div>
                                             </div>
-
-                                            {/* Comments List */}
                                             <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide space-y-4 pb-4">
                                                 {getChannelComments().length > 0 ? (
                                                     getChannelComments().filter(c => !c.parentId).map((comment) => (
@@ -630,7 +628,6 @@ export const LiveSection: React.FC = () => {
                                                                         <button onClick={() => handleLikeComment(comment.id)} className={`flex items-center gap-1 text-[9px] font-black ${comment.likes?.includes(user?.id) ? 'text-red-500' : 'text-gray-400'}`}><Heart size={10} fill={comment.likes?.includes(user?.id) ? "currentColor" : "none"} /> {comment.likes?.length || 0}</button>
                                                                         <button onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)} className="text-[9px] font-black text-gray-400 hover:text-red-600 flex items-center gap-1"><Reply size={10} /> Reply</button>
                                                                     </div>
-                                                                    {/* Simple Reply logic */}
                                                                     {replyingTo === comment.id && (
                                                                         <div className="mt-2 flex gap-2"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Reply..." className="flex-1 bg-gray-50 dark:bg-gray-900 p-2 text-[10px] rounded-lg border outline-none" /><button onClick={(e) => handlePostComment(e, comment.id)} className="px-3 bg-red-600 text-white rounded-lg text-[9px] font-bold">Send</button></div>
                                                                     )}
@@ -649,11 +646,11 @@ export const LiveSection: React.FC = () => {
                         </div>
                     )}
 
-                    {/* CHANNEL PICKER & GRID (Admin Logic Preserved) */}
-                    <div className="flex flex-col gap-4 mt-10">
+                    {/* CHANNEL PICKER & GRID */}
+                    <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-4 bg-gray-100/50 dark:bg-white/5 p-1.5 rounded-2xl w-fit border border-gray-200 dark:border-white/5">
-                            <button onClick={() => setIsIPTVMode(false)} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${!isIPTVMode ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Live Sports</button>
-                            <button onClick={() => setIsIPTVMode(true)} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${isIPTVMode ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>IPTV Channels</button>
+                            <button onClick={() => setIsIPTVMode(false)} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${!isIPTVMode ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Live Sports</button>
+                            <button onClick={() => setIsIPTVMode(true)} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${isIPTVMode ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>IPTV Channels</button>
                         </div>
                         {isIPTVMode && (
                             <div className="relative w-full max-w-md">
@@ -670,45 +667,297 @@ export const LiveSection: React.FC = () => {
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {!isIPTVMode ? (
-                            filteredLinks.map((link) => (
-                                <div key={link.id} className="relative group">
-                                    <button onClick={() => handleLinkClick(link)} className={`w-full text-left p-6 bg-white dark:bg-surface-dark-900 rounded-3xl border transition-all ${selectedLink?.id === link.id ? 'border-primary-light ring-2 shadow-lg' : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'}`}>
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${selectedLink?.id === link.id ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400'}`}><Play size={20} fill="currentColor" /></div>
-                                            <h4 className="font-bold text-sm dark:text-white line-clamp-2">{link.heading}</h4>
+                    {/* GRID - Live Sports */}
+                    {!isIPTVMode ? (
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <Tv size={24} className="text-secondary-light" />
+                                <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                {filteredLinks
+                                    .sort((a, b) => {
+                                        const isAActive = selectedLink?.id === a.id;
+                                        const isBActive = selectedLink?.id === b.id;
+                                        if (isAActive !== isBActive) return isAActive ? -1 : 1;
+                                        return 0;
+                                    })
+                                    .map((link) => (
+                                        <div key={link.id} className="relative group/channel">
+                                            <button
+                                                onClick={() => handleLinkClick(link)}
+                                                className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
+                                                    ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
+                                                    : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                    }`}
+                                            >
+                                                {link.isTrending && (
+                                                    <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
+                                                        <TrendingUp size={8} fill="currentColor" />
+                                                        <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
+                                                    </div>
+                                                )}
+                                                {link.isDefault && (
+                                                    <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
+                                                        <Sparkles size={8} fill="currentColor" />
+                                                        <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
+                                                    </div>
+                                                )}
+                                                {selectedLink?.id === link.id && (
+                                                    <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
+                                                        <span className="relative flex h-1.5 w-1.5">
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
+                                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
+                                                        </span>
+                                                        <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
+                                                    <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
+                                                        ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
+                                                        : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
+                                                        }`}>
+                                                        {selectedLink?.id === link.id && (
+                                                            <div className="absolute inset-0 bg-white/10 animate-pulse" />
+                                                        )}
+                                                        <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 w-full">
+                                                        <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
+                                                            ? 'text-primary-dark'
+                                                            : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                            }`}>
+                                                            {link.heading}
+                                                        </h4>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                            {user?.role === 'admin' && (
+                                                <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            try {
+                                                                await updateLiveLink(link.id, { isTrending: !link.isTrending });
+                                                                setLinks(prev => prev.map(l =>
+                                                                    l.id === link.id ? { ...l, isTrending: !link.isTrending } : l
+                                                                ));
+                                                            } catch (err) {
+                                                                console.error('Failed to toggle trending:', err);
+                                                            }
+                                                        }}
+                                                        className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isTrending
+                                                            ? 'bg-amber-500 text-white border-amber-400'
+                                                            : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
+                                                        title={link.isTrending ? "Remove Trending" : "Mark as Trending"}
+                                                    >
+                                                        <TrendingUp size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            try {
+                                                                if (link.isDefault) {
+                                                                    await updateLiveLink(link.id, { isDefault: false });
+                                                                    setLinks(prev => prev.map(l =>
+                                                                        l.id === link.id ? { ...l, isDefault: false } : l
+                                                                    ));
+                                                                } else {
+                                                                    await setLiveLinkDefault(link.id, true);
+                                                                    setLinks(prev => prev.map(l => ({
+                                                                        ...l,
+                                                                        isDefault: l.id === link.id
+                                                                    })));
+                                                                    setIptvChannels(prev => prev.map(c => ({
+                                                                        ...c,
+                                                                        isDefault: false
+                                                                    })));
+                                                                }
+                                                            } catch (err) {
+                                                                console.error('Failed to toggle default:', err);
+                                                            }
+                                                        }}
+                                                        className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isDefault
+                                                            ? 'bg-primary-600 text-white border-primary-400'
+                                                            : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
+                                                        title={link.isDefault ? "Remove Default" : "Set as Default"}
+                                                    >
+                                                        <Sparkles size={14} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
-                                    </button>
-                                    {user?.role === 'admin' && (
-                                        <div className="absolute -top-2 -right-2 flex gap-1 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={async (e) => { e.stopPropagation(); await updateLiveLink(link.id, { isTrending: !link.isTrending }); setLinks(l => l.map(x => x.id === link.id ? { ...x, isTrending: !x.isTrending } : x)); }} className={`p-2 rounded-full border-2 ${link.isTrending ? 'bg-amber-500 border-amber-400 text-white' : 'bg-white text-gray-400'}`}><TrendingUp size={12} /></button>
-                                            <button onClick={async (e) => { e.stopPropagation(); await setLiveLinkDefault(link.id, !link.isDefault); setLinks(l => l.map(x => x.id === link.id ? { ...x, isDefault: !x.isDefault } : { ...x, isDefault: false })); }} className={`p-2 rounded-full border-2 ${link.isDefault ? 'bg-primary-600 border-primary-400 text-white' : 'bg-white text-gray-400'}`}><Sparkles size={12} /></button>
-                                        </div>
-                                    )}
+                                    ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Tv size={24} className="text-secondary-light" />
+                                    <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.length})</h2>
                                 </div>
-                            ))
-                        ) : (
-                            iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).slice(0, 300).map((channel) => (
-                                <div key={channel.id} className="relative group">
-                                    <button onClick={() => handleIptvClick(channel)} className={`w-full p-4 bg-white dark:bg-surface-dark-900 rounded-2xl border transition-all ${selectedLink?.id === channel.id ? 'border-primary-light ring-2 shadow-md' : 'border-slate-200 dark:border-slate-800'}`}>
-                                        <div className="flex flex-col items-center gap-3 text-center">
-                                            <div className="w-12 h-12 rounded-lg bg-gray-50 dark:bg-white/5 overflow-hidden flex items-center justify-center border dark:border-white/5">
-                                                {channel.logo ? <img src={channel.logo} className="w-full h-full object-contain p-1" onError={(e) => (e.target as any).src = 'https://i.imgur.com/guz2ajm.png'} /> : <Play size={18} className="text-primary-light" />}
-                                            </div>
-                                            <h4 className="font-bold text-[11px] dark:text-white line-clamp-1">{channel.name}</h4>
-                                        </div>
+                                {user?.role === 'admin' && iptvChannels.length < 50 && (
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const allChannels = await getIPTVChannels();
+                                                setIptvChannels(allChannels.map((c: any) => ({
+                                                    id: c.id,
+                                                    name: c.name,
+                                                    url: c.url,
+                                                    logo: c.logo || '',
+                                                    group: c.category || 'Uncategorized',
+                                                    isTrending: !!c.isTrending,
+                                                    isDefault: !!c.isDefault,
+                                                    trendingOrder: c.trendingOrder
+                                                })));
+                                            } catch (err) {
+                                                console.error('Failed to load full IPTV list:', err);
+                                            }
+                                        }}
+                                        className="px-4 py-2 bg-primary-600/10 text-primary-600 rounded-xl text-xs font-bold hover:bg-primary-600 hover:text-white transition-all border border-primary-600/20"
+                                    >
+                                        Load Full Channel List (Saves Data)
                                     </button>
-                                    {user?.role === 'admin' && (
-                                        <div className="absolute -top-2 -right-2 flex gap-1 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={async (e) => { e.stopPropagation(); await updateIPTVChannel(channel.id, { isTrending: !channel.isTrending }); setIptvChannels(c => c.map(x => x.id === channel.id ? { ...x, isTrending: !x.isTrending } : x)); }} className={`p-2 rounded-full border-2 ${channel.isTrending ? 'bg-amber-500 border-amber-400 text-white' : 'bg-white text-gray-400'}`}><TrendingUp size={10} /></button>
-                                            <button onClick={async (e) => { e.stopPropagation(); await setDefaultIPTVChannel(channel.id); setIptvChannels(c => c.map(x => ({ ...x, isDefault: x.id === channel.id }))); }} className={`p-2 rounded-full border-2 ${channel.isDefault ? 'bg-primary-600 border-primary-400 text-white' : 'bg-white text-gray-400'}`}><Sparkles size={10} /></button>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                                {iptvChannels
+                                    .filter(c => {
+                                        const matchesSearch = c.name.toLowerCase().includes(iptvSearch.toLowerCase());
+                                        const matchesTag = iptvTag === 'All'
+                                            || (iptvTag === 'Trending' && !!c.isTrending)
+                                            || (iptvTag === 'Default' && !!c.isDefault)
+                                            || c.group === iptvTag;
+                                        return matchesSearch && matchesTag;
+                                    })
+                                    .sort((a, b) => {
+                                        const isAActive = selectedLink?.id === a.id;
+                                        const isBActive = selectedLink?.id === b.id;
+                                        if (isAActive !== isBActive) return isAActive ? -1 : 1;
+                                        if (!!b.isTrending !== !!a.isTrending) return b.isTrending ? 1 : -1;
+                                        if (!!b.isDefault !== !!a.isDefault) return b.isDefault ? 1 : -1;
+                                        return a.name.localeCompare(b.name);
+                                    })
+                                    .slice(0, 300)
+                                    .map((channel) => (
+                                        <div key={channel.id} className="relative group/channel">
+                                            <button
+                                                onClick={() => handleIptvClick(channel)}
+                                                className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 ${selectedLink?.id === channel.id
+                                                    ? 'border-primary-light ring-2 ring-primary-light/20 shadow-md'
+                                                    : channel.isTrending
+                                                        ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50/10'
+                                                        : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                    }`}
+                                            >
+                                                {channel.isTrending && (
+                                                    <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
+                                                        <TrendingUp size={8} fill="currentColor" />
+                                                        <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
+                                                    </div>
+                                                )}
+                                                {channel.isDefault && (
+                                                    <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
+                                                        <Sparkles size={8} fill="currentColor" />
+                                                        <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex flex-col items-center text-center gap-3">
+                                                    <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 ${channel.isTrending ? 'ring-2 ring-amber-500/20' : ''}`}>
+                                                        {channel.logo ? (
+                                                            <img
+                                                                src={channel.logo}
+                                                                alt={channel.name}
+                                                                className="w-full h-full object-contain p-1"
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).src = 'https://i.imgur.com/guz2ajm.png';
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <Play size={18} className="text-primary-light" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 w-full">
+                                                        <h4 className={`font-bold text-[11px] md:text-xs line-clamp-1 transition-colors ${selectedLink?.id === channel.id
+                                                            ? 'text-primary-dark'
+                                                            : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                            }`}>
+                                                            {channel.name}
+                                                        </h4>
+                                                    </div>
+                                                </div>
+                                            </button>
+
+                                            {user?.role === 'admin' && (
+                                                <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            try {
+                                                                await upsertIPTVChannel(channel, { isTrending: !channel.isTrending });
+                                                                setIptvChannels(prev => prev.map(c =>
+                                                                    c.id === channel.id ? { ...c, isTrending: !channel.isTrending } : c
+                                                                ));
+                                                            } catch (err) {
+                                                                console.error('Failed to toggle trending:', err);
+                                                            }
+                                                        }}
+                                                        className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isTrending
+                                                            ? 'bg-amber-500 text-white border-amber-400'
+                                                            : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
+                                                        title={channel.isTrending ? "Remove Trending" : "Mark as Trending"}
+                                                    >
+                                                        <TrendingUp size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            try {
+                                                                if (channel.isDefault) {
+                                                                    await upsertIPTVChannel(channel, { isDefault: false });
+                                                                    setIptvChannels(prev => prev.map(c =>
+                                                                        c.id === channel.id ? { ...c, isDefault: false } : c
+                                                                    ));
+                                                                } else {
+                                                                    await setDefaultIPTVChannel(channel);
+                                                                    setIptvChannels(prev => prev.map(c => ({
+                                                                        ...c,
+                                                                        isDefault: c.id === channel.id
+                                                                    })));
+                                                                    setLinks(prev => prev.map(l => ({
+                                                                        ...l,
+                                                                        isDefault: false
+                                                                    })));
+                                                                }
+                                                            } catch (err) {
+                                                                console.error('Failed to toggle default:', err);
+                                                            }
+                                                        }}
+                                                        className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isDefault
+                                                            ? 'bg-primary-600 text-white border-primary-400'
+                                                            : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
+                                                        title={channel.isDefault ? "Remove Default" : "Set as Default"}
+                                                    >
+                                                        <Sparkles size={14} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
-                            ))
-                        )}
-                    </div>
+                                    ))}
+                                {iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length === 0 && (
+                                    <div className="col-span-full py-12 text-center">
+                                        <div className="bg-gray-100 dark:bg-white/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <Search size={32} className="text-gray-400" />
+                                        </div>
+                                        <h3 className="text-gray-900 dark:text-white font-bold mb-1">No channels found</h3>
+                                        <p className="text-gray-500 text-sm">Try searching for a different keyword</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* ON DEMAND REQUEST */}
                     <div className="mt-8 grid lg:grid-cols-2 gap-8 items-center bg-white dark:bg-gray-800/50 p-8 md:p-12 rounded-[32px] border dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
@@ -742,7 +991,7 @@ export const LiveSection: React.FC = () => {
                                     {loadingCricket ? <div className="col-span-full py-20 text-center dark:text-white">Fetching Live Cricket...</div> : cricketScores.map((m) => (
                                         <a key={m.id} href={m.link} target="_blank" className="p-5 bg-white dark:bg-white/5 rounded-2xl border dark:border-white/5 hover:border-red-500/30 transition-all flex flex-col group">
                                             <span className="text-[10px] font-black text-red-600 mb-2 uppercase animate-pulse">● Live</span>
-                                            <h3 className="text-sm font-bold dark:text-white group-hover:text-red-600">{m.title}</h3>
+                                            <span className="text-sm font-bold dark:text-white group-hover:text-red-600">{m.title}</span>
                                         </a>
                                     ))}
                                 </div>
@@ -756,7 +1005,7 @@ export const LiveSection: React.FC = () => {
                             <h2 className="text-gray-900 dark:text-white">Match <span className="text-red-600">Highlights</span></h2>
                             {Object.entries(groupedHighlights).map(([category, items]) => (
                                 <div key={category} className="space-y-4">
-                                    <h3 className="text-lg font-bold dark:text-gray-200 uppercase flex items-center gap-2"><div className="w-1 h-6 bg-red-600" /> {category}</h3>
+                                    <span className="text-lg font-bold dark:text-gray-200 uppercase flex items-center gap-2 mb-4"><span className="w-1 h-6 bg-red-600" /> {category}</span>
                                     <Splide options={splideOptionsHighlights}>
                                         {items.map((item) => (
                                             <SplideSlide key={item.id}>

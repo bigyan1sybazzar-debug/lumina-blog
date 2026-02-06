@@ -1,9 +1,12 @@
 'use client';
 
 import React from 'react';
-import { LiveSection } from '../../../components/LiveSection';
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+const LiveSection = dynamic(
+    () => import('../../../components/LiveSection').then((mod) => mod.LiveSection),
+    { ssr: false }
+);
 
 export default function LiveTVPage() {
     return (
