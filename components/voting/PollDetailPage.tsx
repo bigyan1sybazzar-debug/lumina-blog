@@ -30,7 +30,7 @@ const PollDetailPage = () => {
     }, [isCopied]);
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user: any) => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
             setUser(user);
         });
         return () => unsubscribe();

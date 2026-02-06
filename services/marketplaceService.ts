@@ -22,16 +22,16 @@ export const getPhoneListings = async (filters?: { brand?: string; minPrice?: nu
         // We will do client-side filtering for price to avoid complex index requirements for now.
 
         const snapshot = await query.get();
-        let listings = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as PhoneListing));
+        let listings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PhoneListing));
 
         if (filters?.condition && filters.condition !== 'All') {
-            listings = listings.filter((l: PhoneListing) => l.condition === filters.condition);
+            listings = listings.filter(l => l.condition === filters.condition);
         }
         if (filters?.minPrice) {
-            listings = listings.filter((l: PhoneListing) => l.price >= filters.minPrice!);
+            listings = listings.filter(l => l.price >= filters.minPrice!);
         }
         if (filters?.maxPrice) {
-            listings = listings.filter((l: PhoneListing) => l.price <= filters.maxPrice!);
+            listings = listings.filter(l => l.price <= filters.maxPrice!);
         }
 
         return listings;
@@ -79,7 +79,7 @@ export const getPendingListings = async (): Promise<PhoneListing[]> => {
             .where('status', '==', 'pending')
             .orderBy('timestamp', 'asc')
             .get();
-        return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as PhoneListing));
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PhoneListing));
     } catch (error) {
         console.error("Error fetching pending listings:", error);
         return [];
@@ -92,7 +92,7 @@ export const getMyListings = async (userId: string): Promise<PhoneListing[]> => 
             .where('sellerId', '==', userId)
             .orderBy('timestamp', 'desc')
             .get();
-        return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as PhoneListing));
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PhoneListing));
     } catch (error) {
         console.error("Error fetching my listings:", error);
         return [];
@@ -116,7 +116,7 @@ export const getBuyerRequests = async (): Promise<BuyerRequest[]> => {
             .orderBy('timestamp', 'desc')
             .limit(50)
             .get();
-        return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as BuyerRequest));
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BuyerRequest));
     } catch (error) {
         console.error("Error fetching buyer requests:", error);
         return [];

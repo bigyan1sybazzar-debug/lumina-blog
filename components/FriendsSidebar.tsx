@@ -25,16 +25,16 @@ const FriendsSidebar: React.FC = () => {
         const unsub1 = db.collection('friendRequests')
             .where('fromId', '==', user.id)
             .where('status', '==', 'accepted')
-            .onSnapshot(async (snapshot: any) => {
-                const ids = snapshot.docs.map((doc: any) => doc.data().toId);
+            .onSnapshot(async snapshot => {
+                const ids = snapshot.docs.map(doc => doc.data().toId);
                 fetchDetails(ids, 'sent');
             });
 
         const unsub2 = db.collection('friendRequests')
             .where('toId', '==', user.id)
             .where('status', '==', 'accepted')
-            .onSnapshot(async (snapshot: any) => {
-                const ids = snapshot.docs.map((doc: any) => doc.data().fromId);
+            .onSnapshot(async snapshot => {
+                const ids = snapshot.docs.map(doc => doc.data().fromId);
                 fetchDetails(ids, 'received');
             });
 
@@ -44,7 +44,7 @@ const FriendsSidebar: React.FC = () => {
             if (ids.length === 0) return;
             // Fetch user details for these IDs
             const snapshot = await db.collection('users').where('__name__', 'in', ids.slice(0, 10)).get();
-            snapshot.forEach((doc: any) => {
+            snapshot.forEach(doc => {
                 friendDetails[doc.id] = { id: doc.id, ...doc.data() } as User;
             });
             setFriends(Object.values(friendDetails));
@@ -58,7 +58,7 @@ const FriendsSidebar: React.FC = () => {
 
     if (!user) return null;
 
-    const filteredFriends = friends.filter((f: User) =>
+    const filteredFriends = friends.filter(f =>
         f.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -119,7 +119,7 @@ const FriendsSidebar: React.FC = () => {
                             </div>
                         ) : (
                             <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                                {filteredFriends.map((friend: User) => (
+                                {filteredFriends.map(friend => (
                                     <button
                                         key={friend.id}
                                         onClick={() => setSelectedFriend(friend)}

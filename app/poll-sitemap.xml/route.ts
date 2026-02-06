@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-export const runtime = 'edge';
 import { getPolls } from '../../services/db';
 
 import { Poll } from '../../types';
@@ -7,14 +6,14 @@ import { Poll } from '../../types';
 const BASE_URL = 'https://bigyann.com.np';
 
 export async function GET() {
-  let polls: Poll[] = [];
-  try {
-    polls = await getPolls('all');
-  } catch (error) {
-    console.error('Failed to fetch polls for sitemap:', error);
-  }
+    let polls: Poll[] = [];
+    try {
+        polls = await getPolls('all');
+    } catch (error) {
+        console.error('Failed to fetch polls for sitemap:', error);
+    }
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
       ${polls.map(poll => `
         <url>
@@ -27,7 +26,7 @@ export async function GET() {
     </urlset>
   `;
 
-  return new NextResponse(xml, {
-    headers: { 'Content-Type': 'application/xml' },
-  });
+    return new NextResponse(xml, {
+        headers: { 'Content-Type': 'application/xml' },
+    });
 }

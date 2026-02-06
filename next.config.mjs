@@ -2,7 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
   compress: true,
-  transpilePackages: ['react-markdown', 'remark-gfm', 'rehype-raw', 'ai', '@ai-sdk/google', 'react-syntax-highlighter', 'lucide-react'],
   async rewrites() {
     return [
       {

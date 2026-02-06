@@ -1,15 +1,35 @@
-import { storage } from '../../../lib/storage';
-export const runtime = 'edge';
+import { put, list } from '@vercel/blob';
 import { NextResponse } from 'next/server';
-import { dbLite } from '../../../services/firebase';
-import { collection, getDocs } from 'firebase/firestore/lite';
+import { db } from '../../../services/firebase';
+import fs from 'fs';
+import path from 'path';
 
 const FILE_NAME = 'iptv-data.json';
 const COLLECTION_NAME = 'iptv_channels';
 
-// Helper to get token
+// Helper to get token if process.env is missing it (hack for dev mode without restart)
 function getBlobToken() {
-    return process.env.BLOB_READ_WRITE_TOKEN;
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+        console.log('Token found in process.env');
+        return process.env.BLOB_READ_WRITE_TOKEN;
+    }
+
+    try {
+        const envPath = path.join(process.cwd(), '.env.local');
+        if (fs.existsSync(envPath)) {
+            const envContent = fs.readFileSync(envPath, 'utf8');
+            // Improved regex for token extraction
+            const match = envContent.match(/BLOB_READ_WRITE_TOKEN=["']?([^"'\s]+)["']?/);
+            if (match && match[1]) {
+                const token = match[1].replace(/['"]/g, ''); // Clean any lingering quotes
+                console.log('Token successfully matched from .env.local file');
+                return token;
+            }
+        }
+    } catch (e) {
+        console.error('Manual .env.local read failed:', e);
+    }
+    return undefined;
 }
 
 export async function GET() {
@@ -17,23 +37,24 @@ export async function GET() {
     const token = getBlobToken();
     try {
         let blobData = null;
-        // Try storage (Blob or R2)
-        try {
-            const { blobs } = await storage.list({
-                prefix: FILE_NAME,
-                limit: 1,
-                token: token
-            });
-            const blob = blobs.find(b => b.pathname === FILE_NAME);
+        if (token) {
+            try {
+                const { blobs } = await list({
+                    prefix: FILE_NAME,
+                    limit: 1,
+                    token: token
+                });
+                const blob = blobs.find(b => b.pathname === FILE_NAME);
 
-            if (blob) {
-                const res = await fetch(blob.url, { next: { revalidate: 10 } });
-                if (res.ok) {
-                    blobData = await res.json();
+                if (blob) {
+                    const res = await fetch(blob.url, { next: { revalidate: 10 } });
+                    if (res.ok) {
+                        blobData = await res.json();
+                    }
                 }
+            } catch (blobError: any) {
+                console.warn('Blob list/fetch stage failed:', blobError.message);
             }
-        } catch (blobError: any) {
-            console.warn('Storage list/fetch stage failed:', blobError.message);
         }
 
         if (blobData) {
@@ -45,21 +66,21 @@ export async function GET() {
             });
         }
 
-        // Fallback to Firestore (Modular / Lite)
-        const snapshot = await getDocs(collection(dbLite, COLLECTION_NAME));
-        const data = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+        // Fallback to Firestore
+        const snapshot = await db.collection(COLLECTION_NAME).get();
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         // Migration attempt
-        if (data.length > 0) {
+        if (token && data.length > 0) {
             try {
-                await storage.put(FILE_NAME, JSON.stringify(data), {
+                await put(FILE_NAME, JSON.stringify(data), {
                     access: 'public',
                     addRandomSuffix: false,
                     token: token
                 });
-                console.log('Migrated data to Storage during GET');
+                console.log('Migrated data to Blob during GET');
             } catch (putError: any) {
-                console.warn('Auto-migration to Storage failed:', putError.message);
+                console.warn('Auto-migration to Blob failed:', putError.message);
             }
         }
 
@@ -97,10 +118,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Data is not an array' }, { status: 400 });
         }
 
-        // Check token only if using Vercel Blob (adapter handles this, but here we can check explicitly if needed)
-        // For simplicity, we pass token to adapter, it ignores it if R2 is used.
-        // But if R2 is NOT used, and token is missing, we should error.
-        if (!storage.isR2Configured() && !token) {
+        if (!token) {
             console.error('CRITICAL: BLOB_READ_WRITE_TOKEN not found');
             return NextResponse.json({
                 error: 'Configuration error',
@@ -108,9 +126,9 @@ export async function POST(request: Request) {
             }, { status: 500 });
         }
 
-        console.log(`Attempting to upload ${body.length} items to Storage...`);
+        console.log(`Attempting to upload ${body.length} items to Vercel Blob...`);
 
-        const result = await storage.put(FILE_NAME, JSON.stringify(body), {
+        const result = await put(FILE_NAME, JSON.stringify(body), {
             access: 'public',
             addRandomSuffix: false,
             token: token

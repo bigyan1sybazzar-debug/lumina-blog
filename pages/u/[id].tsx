@@ -53,7 +53,7 @@ const PublicProfile: React.FC = () => {
                                 .get()
                         ]);
 
-                        const accepted = [...sentReq.docs, ...receivedReq.docs].find((doc: any) => doc.data().status === 'accepted');
+                        const accepted = [...sentReq.docs, ...receivedReq.docs].find(doc => doc.data().status === 'accepted');
 
                         if (accepted) {
                             setFriendStatus('friends');

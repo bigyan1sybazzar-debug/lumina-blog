@@ -1,17 +1,13 @@
 'use client';
 
-export const config = {
-  runtime: 'experimental-edge',
-};
-
 // src/components/ChatAssistant.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 // Note: Removed unused 'useNavigate' since routing was not in the original file
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-// Use CJS paths for styles to avoid ESM resolution issues in certain environments
-import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+// Used a lighter, common theme for better contrast, but can be changed
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { sendChatMessage, startNewChat } from '../services/puterGrokChat';
 // Icons from lucide-react (assuming they are installed/available)
 import { Loader2, Send, Copy, Check, Bot, User, Sparkles, RefreshCw, Zap, Command, Search, X, StopCircle, Lock } from 'lucide-react';

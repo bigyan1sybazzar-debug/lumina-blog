@@ -1,6 +1,3 @@
-export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-
 import PollDetailPage from '../../../components/voting/PollDetailPage';
 import { Metadata } from 'next';
 import { getPollBySlug } from '../../../services/db';

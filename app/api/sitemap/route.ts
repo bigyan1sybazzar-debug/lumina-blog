@@ -1,7 +1,5 @@
-import { storage } from '../../../lib/storage';
-export const runtime = 'edge';
-import { dbLite } from '../../../services/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore/lite';
+import { put } from '@vercel/blob';
+import admin from 'firebase-admin';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
@@ -15,16 +13,26 @@ export async function POST(req: Request) {
     }
 
     try {
+        // Initialize Firebase Admin if not already initialized
+        if (!admin.apps.length) {
+            // Ensure FIREBASE_SERVICE_ACCOUNT is defined
+            if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+                throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is missing');
+            }
+
+            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+            });
+        }
+
+        const db = admin.firestore();
         const BASE_URL = 'https://bigyann.com.np';
-        // Use R2 domain or fallback to Vercel
-        const BLOB_URL = storage.isR2Configured()
-            ? `${process.env.R2_PUBLIC_DOMAIN || ''}/sitemap.xml`
-            : 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
+        const BLOB_URL = 'https://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml';
 
         // 1. Fetch published posts
-        const postsQuery = query(collection(dbLite, 'posts'), where('status', '==', 'published'));
-        const snapshot = await getDocs(postsQuery);
-        const posts = snapshot.docs.map((doc: any) => {
+        const snapshot = await db.collection('posts').where('status', '==', 'published').get();
+        const posts = snapshot.docs.map(doc => {
             const d = doc.data();
             // Handle Firestore Timestamp or Date
             const date = d.updatedAt?.toDate?.() || d.createdAt?.toDate?.() || new Date();
@@ -35,9 +43,8 @@ export async function POST(req: Request) {
         });
 
         // 2. Fetch approved polls
-        const pollsQuery = query(collection(dbLite, 'polls'), where('status', '==', 'approved'));
-        const pollsSnapshot = await getDocs(pollsQuery);
-        const polls = pollsSnapshot.docs.map((doc: any) => {
+        const pollsSnapshot = await db.collection('polls').where('status', '==', 'approved').get();
+        const polls = pollsSnapshot.docs.map(doc => {
             const d = doc.data();
             const date = d.updatedAt?.toDate?.() || d.createdAt?.toDate?.() || new Date();
             return {
@@ -51,13 +58,13 @@ export async function POST(req: Request) {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${BASE_URL}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
   <url><loc>${BASE_URL}/voting</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
-  ${posts.map((p: any) => `
+  ${posts.map(p => `
   <url>
     <loc>${BASE_URL}/${p.slug}</loc>
     <lastmod>${p.updatedAt.split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq><priority>0.8</priority>
   </url>`).join('')}
-  ${polls.map((p: any) => `
+  ${polls.map(p => `
   <url>
     <loc>${BASE_URL}/voting/${p.slug}</loc>
     <lastmod>${p.updatedAt.split('T')[0]}</lastmod>
@@ -65,13 +72,12 @@ export async function POST(req: Request) {
   </url>`).join('')}
 </urlset>`.trim();
 
-        // 4. Upload to Storage
-        await storage.put('sitemap.xml', xml, {
+        // 4. Upload to Vercel Blob
+        await put('sitemap.xml', xml, {
             access: 'public',
             addRandomSuffix: false,
             contentType: 'application/xml',
             allowOverwrite: true,
-            token: process.env.BLOB_READ_WRITE_TOKEN
         });
 
         // 5. Revalidate the dynamic sitemap route

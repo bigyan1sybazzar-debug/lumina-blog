@@ -1,48 +1,45 @@
-
-export const runtime = 'edge';
-
+import type { NextApiRequest, NextApiResponse } from 'next';
 import nodemailer from 'nodemailer';
 import { db } from '../../services/firebase';
 
-export default async function handler(req: Request) {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: { 'Content-Type': 'application/json' } });
-  }
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
 
-  try {
-    const { email } = await req.json();
+    const { email } = req.body;
 
     if (!email) {
-      return new Response(JSON.stringify({ error: 'Email is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        return res.status(400).json({ error: 'Email is required' });
     }
 
-    // Fetch SMTP settings from Firestore
-    const smtpDoc = await db.collection('config').doc('smtp').get();
+    try {
+        // Fetch SMTP settings from Firestore
+        const smtpDoc = await db.collection('config').doc('smtp').get();
 
-    if (!smtpDoc.exists) {
-      return new Response(JSON.stringify({ error: 'SMTP not configured' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-    }
+        if (!smtpDoc.exists) {
+            return res.status(500).json({ error: 'SMTP not configured' });
+        }
 
-    const smtpSettings = smtpDoc.data();
+        const smtpSettings = smtpDoc.data();
 
-    // Create transporter with SMTP settings
-    // Note: nodemailer might require nodejs_compat in Cloudflare
-    const transporter = nodemailer.createTransport({
-      host: smtpSettings?.host || 'smtp.zoho.com',
-      port: smtpSettings?.port || 465,
-      secure: true,
-      auth: {
-        user: smtpSettings?.username,
-        pass: smtpSettings?.password,
-      },
-    });
+        // Create transporter with SMTP settings
+        const transporter = nodemailer.createTransport({
+            host: smtpSettings?.host || 'smtp.zoho.com',
+            port: smtpSettings?.port || 465,
+            secure: true,
+            auth: {
+                user: smtpSettings?.username,
+                pass: smtpSettings?.password,
+            },
+        });
 
-    // Send confirmation email
-    await transporter.sendMail({
-      from: `"${smtpSettings?.fromName || 'Bigyann Blog'}" <${smtpSettings?.username}>`,
-      to: email,
-      subject: 'Welcome to Bigyann Newsletter 🎉',
-      html: `
+        // Send confirmation email
+        await transporter.sendMail({
+            from: `"${smtpSettings?.fromName || 'Bigyann Blog'}" <${smtpSettings?.username}>`,
+            to: email,
+            subject: 'Welcome to Bigyann Newsletter 🎉',
+            html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -80,11 +77,11 @@ export default async function handler(req: Request) {
         </body>
         </html>
       `,
-    });
+        });
 
-    return new Response(JSON.stringify({ success: true, message: 'Confirmation email sent' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  } catch (error: any) {
-    console.error('Error sending email:', error);
-    return new Response(JSON.stringify({ error: 'Failed to send email', details: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-  }
+        return res.status(200).json({ success: true, message: 'Confirmation email sent' });
+    } catch (error) {
+        console.error('Error sending email:', error);
+        return res.status(500).json({ error: 'Failed to send email', details: error });
+    }
 }

@@ -1,16 +1,27 @@
-
-export const runtime = 'edge';
-
-import { db } from '../../../services/firebase';
-import firebase from 'firebase/compat/app';
+import { NextApiRequest, NextApiResponse } from 'next';
+import admin from 'firebase-admin';
 import { generateNewsPost, generateBlogImage } from '../../../services/geminiService';
 import { slugify } from '../../../lib/slugify';
 
-export default async function handler(req: Request) {
+// Initialize Firebase Admin if not already initialized
+if (!admin.apps.length) {
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+        });
+    } catch (e) {
+        console.error('Failed to init Firebase Admin:', e);
+    }
+}
+
+const db = admin.firestore();
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     // 1. Authenticate Request
-    const authHeader = req.headers.get('authorization');
+    const authHeader = req.headers.authorization;
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+        return res.status(401).json({ error: 'Unauthorized' });
     }
 
     try {
@@ -20,17 +31,17 @@ export default async function handler(req: Request) {
 
         if (!configDoc.exists || !configDoc.data()?.isEnabled) {
             console.log('Autopilot is disabled or not configured.');
-            return new Response(JSON.stringify({ status: 'skipped', message: 'Autopilot disabled' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            return res.status(200).json({ status: 'skipped', message: 'Autopilot disabled' });
         }
 
         // 3. Fetch Categories
         const categoriesSnapshot = await db.collection('categories').get();
         if (categoriesSnapshot.empty) {
             await logActivity(configRef, 'Error: No categories found.', 'error');
-            return new Response(JSON.stringify({ error: 'No categories' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+            return res.status(500).json({ error: 'No categories' });
         }
 
-        const categories = categoriesSnapshot.docs.map((doc: any) => doc.data());
+        const categories = categoriesSnapshot.docs.map(doc => doc.data());
         const randomCategory = categories[Math.floor(Math.random() * categories.length)];
 
         await logActivity(configRef, `Starting cycle. Category: ${randomCategory.name}`, 'info');
@@ -44,6 +55,7 @@ export default async function handler(req: Request) {
         await logActivity(configRef, 'Image generated successfully.', 'success');
 
         // 6. Create Post Data
+        // Unique Slug Check
         let slug = slugify(aiTitle);
         let counter = 1;
         while (await checkSlugExists(slug)) {
@@ -75,13 +87,24 @@ export default async function handler(req: Request) {
         await db.collection('posts').add(postData);
         await logActivity(configRef, `Published post: ${aiTitle}`, 'success');
 
-        return new Response(JSON.stringify({ success: true, post: aiTitle }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        // 8. Trigger Sitemap Update (Non-blocking)
+        // We can call the sitemap endpoint or just trust Vercel Blob revalidation
+        // For robustness, let's just log it.
+        // Ideally, we'd call the sitemap function logic directly if we extracted it,
+        // but triggering the API endpoint is easier if we have the secret.
+        // For now, let's assume the sitemap is handled or we can add a quick logic here?
+        // Let's keep it simple. The user script `update-public-sitemap.ts` exists.
+        // But sitemap generation is best done via the designated API.
+
+        return res.status(200).json({ success: true, post: aiTitle });
 
     } catch (error: any) {
         console.error('Autopilot Error:', error);
+        // Only log if we have a configRef, but we can't guarantee scopes.
+        // Try logging to DB if possible
         try {
             await db.collection('config').doc('autopilot').update({
-                logs: firebase.firestore.FieldValue.arrayUnion({
+                logs: admin.firestore.FieldValue.arrayUnion({
                     id: Date.now().toString(),
                     timestamp: new Date().toLocaleTimeString(),
                     message: `Critical Failure: ${error.message}`,
@@ -90,7 +113,7 @@ export default async function handler(req: Request) {
             });
         } catch (e) { /* ignore */ }
 
-        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+        return res.status(500).json({ error: error.message });
     }
 }
 
@@ -101,11 +124,11 @@ async function checkSlugExists(slug: string) {
 }
 
 // Helper: Log to Firestore
-async function logActivity(ref: any, message: string, type: 'info' | 'success' | 'error' | 'warning') {
+async function logActivity(ref: FirebaseFirestore.DocumentReference, message: string, type: 'info' | 'success' | 'error' | 'warning') {
     await ref.update({
-        logs: firebase.firestore.FieldValue.arrayUnion({
+        logs: admin.firestore.FieldValue.arrayUnion({
             id: Date.now().toString(),
-            timestamp: new Date().toISOString(),
+            timestamp: new Date().toISOString(), // Use ISO for better sorting/parsing
             message,
             type
         })
