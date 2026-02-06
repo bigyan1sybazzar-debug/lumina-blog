@@ -1898,14 +1898,46 @@ export const updateIPTVChannel = async (id: string, updates: Partial<IPTVChannel
   }
 };
 
-export const setDefaultIPTVChannel = async (id: string) => {
+export async function upsertIPTVChannel(channel: any, updates: Partial<IPTVChannel>) {
+  try {
+    const docRef = db.collection(IPTV_CHANNELS_COLLECTION).doc(channel.id);
+    const doc = await docRef.get();
+
+    if (doc.exists) {
+      await docRef.update({
+        ...updates,
+        updatedAt: new Date().toISOString()
+      });
+    } else {
+      await docRef.set({
+        name: channel.name,
+        url: channel.url,
+        logo: channel.logo || '',
+        category: channel.group || 'Uncategorized',
+        status: 'active',
+        isTrending: false,
+        isDefault: false,
+        ...updates,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    console.error('Error upserting IPTV channel:', error);
+    throw error;
+  }
+}
+
+export const setDefaultIPTVChannel = async (channel: any) => {
   try {
     const batch = db.batch();
 
     // Unset current defaults in IPTV collection
     const iptvSnapshot = await db.collection(IPTV_CHANNELS_COLLECTION).where('isDefault', '==', true).get();
     iptvSnapshot.docs.forEach(doc => {
-      batch.update(doc.ref, { isDefault: false, updatedAt: new Date().toISOString() });
+      if (doc.id !== channel.id) {
+        batch.update(doc.ref, { isDefault: false, updatedAt: new Date().toISOString() });
+      }
     });
 
     // Also unset defaults in live_links collection
@@ -1915,8 +1947,24 @@ export const setDefaultIPTVChannel = async (id: string) => {
     });
 
     // Set new default
-    const newDefaultRef = db.collection(IPTV_CHANNELS_COLLECTION).doc(id);
-    batch.update(newDefaultRef, { isDefault: true, updatedAt: new Date().toISOString() });
+    const newDefaultRef = db.collection(IPTV_CHANNELS_COLLECTION).doc(channel.id);
+    const doc = await newDefaultRef.get();
+
+    if (!doc.exists) {
+      batch.set(newDefaultRef, {
+        name: channel.name,
+        url: channel.url,
+        logo: channel.logo || '',
+        category: channel.group || 'Uncategorized',
+        status: 'active',
+        isTrending: !!channel.isTrending,
+        isDefault: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    } else {
+      batch.update(newDefaultRef, { isDefault: true, updatedAt: new Date().toISOString() });
+    }
 
     await batch.commit();
   } catch (error) {

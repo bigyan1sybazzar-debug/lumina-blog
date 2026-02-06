@@ -406,7 +406,7 @@ export const LiveSection: React.FC = () => {
         const welcomeMsg: any = {
             id: 'welcome-bot',
             channelId: selectedLink.id,
-            text: "Welcome to the Live Stream! 👋 Please be respectful in the chat. If the stream buffers, try refreshing or switching channels. Enjoy the match!",
+            text: "Welcome! 👋 watch Live Hd Full match. Please be respectful in the chat. If the stream buffers, try refreshing or switching channels. Enjoy the match!",
             userId: 'admin-bot',
             userName: 'Bigyann Admin',
             userRole: 'admin',
