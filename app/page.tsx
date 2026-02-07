@@ -5,7 +5,7 @@ import { BlogPost, Poll } from '../types';
 import { unstable_cache } from 'next/cache';
 import { getR2Posts, getR2Polls } from '../services/r2-data';
 
-export const revalidate = 60; // revalidate every minute
+export const revalidate = 3600; // revalidate every hour
 
 // Cached data fetchers
 const getFeaturedConfig = unstable_cache(

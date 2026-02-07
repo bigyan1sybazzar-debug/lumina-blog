@@ -115,7 +115,7 @@ export const getAllPostsAdmin = async (): Promise<BlogPost[]> => {
     // Since we just wrote to API, let's use the public JSON url for reading to be fast
     // But API route ensures we get the latest if we implemented revalidation there
     // For now, fetch from public R2 URL
-    const res = await fetch('https://pub-b2a714905946497d980c717ac1abfd8f.r2.dev/posts.json', { cache: 'no-store' });
+    const res = await fetch('https://pub-b2a714905946497d980c717ac1abfd8f.r2.dev/posts.json', { next: { revalidate: 3600 } });
     if (!res.ok) throw new Error('Failed to fetch from R2');
     const posts = await res.json();
     return Array.isArray(posts) ? posts.sort(sortByDateDesc) : [];

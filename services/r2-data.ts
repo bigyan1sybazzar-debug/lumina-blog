@@ -8,8 +8,8 @@ const R2_PUBLIC_DOMAIN = "https://pub-b2a714905946497d980c717ac1abfd8f.r2.dev";
 async function fetchR2<T>(filename: string, fallbackFn: () => Promise<T>): Promise<T> {
     try {
         const res = await fetch(`${R2_PUBLIC_DOMAIN}/${filename}`, {
-            next: { revalidate: 60 },
-            headers: { 'Cache-Control': 'no-cache' } // Ensure fresh fetch on client
+            next: { revalidate: 3600 },
+            // headers: { 'Cache-Control': 'no-cache' } // REMOVED: Allow caching to save costs
         });
         if (!res.ok) throw new Error(`${filename} fetch failed`);
         const data = await res.json();
