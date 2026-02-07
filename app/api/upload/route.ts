@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob';
+import { storage } from '@/lib/storage';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -14,14 +14,21 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     try {
-        const blob = await put(filename, request.body, {
+        // Use the unified storage abstraction
+        const blob = await storage.put(filename, request.body, {
             access: 'public',
-            addRandomSuffix: true, // Prevent filename conflicts
+            addRandomSuffix: true,
+            contentType: request.headers.get('content-type') || 'application/octet-stream'
         });
 
         return NextResponse.json(blob);
     } catch (error) {
-        console.error("Vercel Blob Error:", error);
-        return NextResponse.json({ error: 'Upload failed', details: (error as Error).message }, { status: 500 });
+        console.error("Storage Error:", error);
+        return NextResponse.json({
+            error: 'Upload failed',
+            details: (error as Error).message,
+            storage: storage.isR2Configured() ? 'R2' : 'Vercel'
+        }, { status: 500 });
     }
 }
+

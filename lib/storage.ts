@@ -21,7 +21,7 @@ if (USE_R2) {
 
 export type StoragePutOptions = {
     access: 'public';
-    addRandomSuffix?: boolean; // Vercel specific, ignored for R2 (we use direct path)
+    addRandomSuffix?: boolean;
     contentType?: string;
     token?: string; // Vercel specific
     allowOverwrite?: boolean; // Vercel specific
@@ -33,33 +33,50 @@ export type StorageListOptions = {
     token?: string;
 };
 
+// Helper to generate random suffix like Vercel Blob
+function generateRandomSuffix() {
+    return Math.random().toString(36).slice(2, 10);
+}
+
 export const storage = {
-    async put(path: string, body: string | Buffer | ReadableStream, options: StoragePutOptions): Promise<{ url: string }> {
+    async put(path: string, body: any, options: StoragePutOptions): Promise<{ url: string }> {
         if (USE_R2 && r2) {
             try {
-                // For R2, if addRandomSuffix is false (default intent for overwrites), we use key directly.
-                // If it were true, we'd need to append random chars. Assuming false for migration consistency.
-                const key = path;
+                let key = path;
+                if (options.addRandomSuffix) {
+                    const lastDotIndex = path.lastIndexOf('.');
+                    if (lastDotIndex !== -1) {
+                        const name = path.substring(0, lastDotIndex);
+                        const ext = path.substring(lastDotIndex);
+                        key = `${name}-${generateRandomSuffix()}${ext}`;
+                    } else {
+                        key = `${path}-${generateRandomSuffix()}`;
+                    }
+                }
 
-                // Convert body if needed. S3 client accepts string, buffer, stream.
-                // TextEncoder for string to ensure correct length measurement if needed, but aws-sdk handles strings.
+                // Handle ReadableStream if needed (Browser vs Node)
+                let uploadBody = body;
+                if (body instanceof ReadableStream && typeof Buffer !== 'undefined') {
+                    // In Node.js environment, we might need to convert it or use chunks
+                    // But AWS SDK v3 should handle it if nodejs_compat is on
+                }
 
                 await r2.send(new PutObjectCommand({
                     Bucket: R2_BUCKET,
                     Key: key,
-                    Body: body as any,
-                    ContentType: options.contentType || 'application/json',
-                    // ACL is often not supported on R2 depending on bucket settings, omitting for safety
+                    Body: uploadBody,
+                    ContentType: options.contentType || 'application/octet-stream',
                 }));
 
-                return { url: `${R2_PUBLIC_DOMAIN}/${key}` };
+                const baseUrl = R2_PUBLIC_DOMAIN.endsWith('/') ? R2_PUBLIC_DOMAIN.slice(0, -1) : R2_PUBLIC_DOMAIN;
+                return { url: `${baseUrl}/${key}` };
             } catch (error) {
                 console.error('R2 Put Error:', error);
                 throw error;
             }
         } else {
             // Vercel Blob Fallback
-            return await putVercel(path, body, options); // options are compatible
+            return await putVercel(path, body, options);
         }
     },
 
@@ -73,8 +90,9 @@ export const storage = {
                 });
                 const response = await r2.send(command);
 
+                const baseUrl = R2_PUBLIC_DOMAIN.endsWith('/') ? R2_PUBLIC_DOMAIN.slice(0, -1) : R2_PUBLIC_DOMAIN;
                 const blobs = (response.Contents || []).map(item => ({
-                    url: `${R2_PUBLIC_DOMAIN}/${item.Key}`,
+                    url: `${baseUrl}/${item.Key}`,
                     pathname: item.Key || '',
                     uploadedAt: item.LastModified || new Date(),
                 }));
@@ -82,7 +100,6 @@ export const storage = {
                 return { blobs };
             } catch (error) {
                 console.error('R2 List Error:', error);
-                // Fail gracefully or throw? Vercel list throws.
                 throw error;
             }
         } else {
@@ -94,3 +111,4 @@ export const storage = {
         return USE_R2;
     }
 };
+

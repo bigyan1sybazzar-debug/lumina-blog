@@ -4,7 +4,7 @@
 import { db } from '../services/firebase';
 import * as fs from 'fs';
 import * as path from 'path';
-import { put } from '@vercel/blob';
+import { storage } from '../lib/storage';
 import { SitemapStream, streamToPromise } from 'sitemap';
 import { Readable } from 'stream';
 import { Timestamp } from 'firebase/firestore'; // Assuming you have the correct firebase import structure
@@ -136,21 +136,18 @@ async function generateSitemap() {
     console.log(`→ ${totalUrls} URLs indexed (${STATIC_ROUTES.length} static + ${posts.length} blog posts)`);
     console.log(`→ Saved: ${sitemapPath}`);
 
-    // Upload to Vercel Blob (only in production)
-    if (process.env.VERCEL) {
-        try {
-            const { url } = await put('sitemap.xml', xmlContent, {
-                access: 'public',
-                addRandomSuffix: false,
-                contentType: 'application/xml',
-                allowOverwrite: true,
-            });
-            console.log(`Uploaded to Vercel Blob → ${url}`);
-        } catch (err: any) {
-            console.warn('Vercel Blob upload failed (normal locally):', err.message);
-        }
-    } else {
-        console.log('Local build → Vercel Blob upload skipped');
+    // Upload to Storage
+    try {
+        const { url } = await storage.put('sitemap.xml', xmlContent, {
+            access: 'public',
+            addRandomSuffix: false,
+            contentType: 'application/xml',
+            allowOverwrite: true,
+            token: process.env.BLOB_READ_WRITE_TOKEN // Fallback for Vercel
+        });
+        console.log(`Uploaded to Storage → ${url}`);
+    } catch (err: any) {
+        console.warn('Storage upload failed:', err.message);
     }
 }
 

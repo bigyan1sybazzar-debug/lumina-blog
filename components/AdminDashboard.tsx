@@ -37,6 +37,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { generateAndUploadSitemap } from '../services/db';
+import { slugify } from '../lib/slugify';
 
 // Automation Types
 interface AutoLog {
@@ -69,7 +70,9 @@ export const Admin: React.FC = () => {
   const [liveMatches, setLiveMatches] = useState<LiveMatch[]>([]);
   const [allPolls, setAllPolls] = useState<Poll[]>([]);
   const [sitemapUrl, setSitemapUrl] = useState<string | null>(null);
+
   const [isGeneratingSitemap, setIsGeneratingSitemap] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Chat History State
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
@@ -140,6 +143,7 @@ export const Admin: React.FC = () => {
   const [newLiveTags, setNewLiveTags] = useState('');
   const [newLiveIsTrending, setNewLiveIsTrending] = useState(false);
   const [editingLiveLink, setEditingLiveLink] = useState<LiveLink | null>(null);
+  const [isLiveUploading, setIsLiveUploading] = useState(false);
 
   // Highlights State
   const [highlights, setHighlights] = useState<Highlight[]>([]);
@@ -803,7 +807,8 @@ export const Admin: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert(`Sitemap Updated!\n${data.posts} posts indexed\n\nLive URL:\nhttps://ulganzkpfwuuglxj.public.blob.vercel-storage.com/sitemap.xml`);
+        setSitemapUrl(data.publicUrl);
+        alert(`Sitemap Updated!\n${data.posts} posts indexed\n\nLive URL:\n${data.publicUrl}`);
       } else {
         alert('Failed: ' + data.error);
       }
@@ -811,6 +816,25 @@ export const Admin: React.FC = () => {
       alert('Deploy vercel.json + api/sitemap.ts first!');
     } finally {
       setIsGeneratingSitemap(false);
+    }
+  };
+
+  const handleExportToR2 = async () => {
+    if (!confirm('This will overwrite all JSON files on R2 with current Database content. Continue?')) return;
+    try {
+      setIsExporting(true);
+      const res = await fetch('/api/admin/export-to-r2', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Export Successful!\n\nExported:\n${data.details.map((d: any) => `- ${d.collection}: ${d.count} items`).join('\n')}`);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      console.error('Export Error:', error);
+      alert('Export failed: ' + error.message);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -1050,7 +1074,59 @@ export const Admin: React.FC = () => {
 
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
   const setRandomImage = () => setCoverImage(`https://picsum.photos/800/400?random=${Math.floor(Math.random() * 1000)}`);
+
+  // Helper to upload base64 AI image to R2/Blob
+  const uploadAIImage = async (base64Data: string, prompt: string) => {
+    try {
+      setIsSaving(true);
+      const filename = `ai-${slugify(prompt.substring(0, 30))}-${Date.now()}.png`;
+
+      // Convert base64 to Blob
+      const res = await fetch(base64Data);
+      const blob = await res.blob();
+
+      const uploadRes = await fetch(`/api/upload?filename=${filename}`, {
+        method: 'POST',
+        body: blob,
+        headers: { 'Content-Type': 'image/png' }
+      });
+
+      if (!uploadRes.ok) throw new Error('Upload failed');
+      const data = await uploadRes.json();
+      setCoverImage(data.url);
+      return data.url;
+    } catch (error) {
+      console.error('AI Image Upload Error:', error);
+      alert('Failed to save AI image to storage. Using temporary URL.');
+      setCoverImage(base64Data);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleGenerateAIImage = async () => {
+    if (!topic && !title) {
+      alert("Please enter a topic or title first");
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const prompt = title || topic;
+      const base64 = await generateBlogImage(prompt);
+      if (base64.startsWith('data:')) {
+        await uploadAIImage(base64, prompt);
+      } else {
+        setCoverImage(base64);
+      }
+    } catch (error) {
+      console.error(error);
+      setRandomImage();
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const goToEditor = (mode: 'manual' | 'ai', editPostId: string | null = null) => {
     setEditorMode(mode);
@@ -1501,6 +1577,15 @@ export const Admin: React.FC = () => {
                         >
                           <Globe size={16} />
                           <span className="hidden sm:inline">Update Sitemap</span>
+                        </button>
+                        <button
+                          onClick={handleExportToR2}
+                          disabled={isExporting}
+                          className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50"
+                          title="Export DB to R2 JSON"
+                        >
+                          {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
+                          <span className="hidden sm:inline">Export to R2</span>
                         </button>
                       </>
                     )}
@@ -1958,13 +2043,46 @@ export const Admin: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Iframe URL</label>
-                      <input
-                        type="text"
-                        value={newLiveIframe}
-                        onChange={(e) => setNewLiveIframe(e.target.value)}
-                        placeholder="https://www.youtube.com/embed/..."
-                        className="input-field font-mono text-sm"
-                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newLiveIframe}
+                          onChange={(e) => setNewLiveIframe(e.target.value)}
+                          placeholder="https://www.youtube.com/embed/..."
+                          className="input-field font-mono text-sm flex-1"
+                        />
+                        <label className="flex items-center justify-center px-4 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Upload File">
+                          {isLiveUploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} className="text-gray-500 dark:text-gray-400" />}
+                          <input
+                            type="file"
+                            className="hidden"
+                            disabled={isLiveUploading}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+
+                              try {
+                                setIsLiveUploading(true);
+                                const filename = encodeURIComponent(file.name);
+                                const res = await fetch(`/api/upload?filename=${filename}`, {
+                                  method: 'POST',
+                                  body: file,
+                                });
+
+                                if (!res.ok) throw new Error('Upload failed');
+
+                                const data = await res.json();
+                                setNewLiveIframe(data.url);
+                              } catch (error) {
+                                console.error('Upload error:', error);
+                                alert('Failed to upload file.');
+                              } finally {
+                                setIsLiveUploading(false);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -2458,14 +2576,17 @@ export const Admin: React.FC = () => {
                           </div>
                           <button
                             onClick={() => {
-                              if (confirm('Generate new cover image?')) {
+                              if (editorMode === 'ai') {
+                                handleGenerateAIImage();
+                              } else if (confirm('Generate new random cover image?')) {
                                 setRandomImage();
                               }
                             }}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            disabled={isGenerating}
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
                           >
-                            <RefreshCw size={16} />
-                            New Cover
+                            {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                            {editorMode === 'ai' ? 'AI Cover' : 'New Cover'}
                           </button>
                         </div>
 

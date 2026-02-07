@@ -183,15 +183,49 @@ export const IPTVManager: React.FC<IPTVManagerProps> = ({
                         {/* M3U URL */}
                         <div className="lg:col-span-2 space-y-3">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">M3U Playlist URL</label>
-                            <div className="relative group">
-                                <Link2 className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-500 transition-colors" size={20} />
-                                <input
-                                    type="url"
-                                    value={m3uUrl}
-                                    onChange={(e) => setM3uUrl(e.target.value)}
-                                    placeholder="https://example.com/playlist.m3u"
-                                    className="w-full pl-14 pr-6 py-5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-primary-500 outline-none transition-all font-mono text-sm"
-                                />
+                            <div className="relative group flex gap-2">
+                                <div className="relative flex-1">
+                                    <Link2 className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-500 transition-colors" size={20} />
+                                    <input
+                                        type="url"
+                                        value={m3uUrl}
+                                        onChange={(e) => setM3uUrl(e.target.value)}
+                                        placeholder="https://example.com/playlist.m3u"
+                                        className="w-full pl-14 pr-6 py-5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-primary-500 outline-none transition-all font-mono text-sm"
+                                    />
+                                </div>
+                                <label className="flex items-center justify-center px-4 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Upload M3U File">
+                                    <Upload size={20} className="text-gray-500" />
+                                    <input
+                                        type="file"
+                                        accept=".m3u,.m3u8"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+
+                                            try {
+                                                setIsImporting(true);
+                                                const filename = encodeURIComponent(file.name);
+                                                const res = await fetch(`/api/upload?filename=${filename}`, {
+                                                    method: 'POST',
+                                                    body: file,
+                                                });
+
+                                                if (!res.ok) throw new Error('Upload failed');
+
+                                                const data = await res.json();
+                                                setM3uUrl(data.url);
+                                                alert('File uploaded successfully! URL set.');
+                                            } catch (error) {
+                                                console.error('Upload error:', error);
+                                                alert('Failed to upload file.');
+                                            } finally {
+                                                setIsImporting(false);
+                                            }
+                                        }}
+                                    />
+                                </label>
                             </div>
                         </div>
 

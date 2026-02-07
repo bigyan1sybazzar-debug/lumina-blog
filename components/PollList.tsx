@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Poll } from '../types';
-import { getPolls } from '../services/db';
+import { getR2Polls } from '../services/r2-data';
 import PollCard from './PollCard';
 import { Vote, Filter, Loader2, Inbox } from 'lucide-react';
 
@@ -16,7 +16,7 @@ const PollList: React.FC<PollListProps> = ({ userId, initialCategory = 'all' }) 
     const [category, setCategory] = useState<string>(initialCategory);
     const [loading, setLoading] = useState<boolean>(true);
 
-    const categories = [
+    const categories = [ // ... unchanged
         { id: 'all', label: 'All Polls' },
         { id: 'election', label: 'Elections' },
         { id: 'movies', label: 'Movies' },
@@ -27,8 +27,15 @@ const PollList: React.FC<PollListProps> = ({ userId, initialCategory = 'all' }) 
     useEffect(() => {
         const fetchPolls = async () => {
             setLoading(true);
-            const data = await getPolls(category === 'all' ? undefined : category);
-            setPolls(data);
+            try {
+                const allPolls = await getR2Polls();
+                const filtered = category === 'all'
+                    ? allPolls
+                    : allPolls.filter(p => p.category === category);
+                setPolls(filtered);
+            } catch (err) {
+                console.error("Failed to fetch R2 polls", err);
+            }
             setLoading(false);
         };
         fetchPolls();

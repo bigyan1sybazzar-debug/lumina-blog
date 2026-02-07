@@ -3,7 +3,7 @@
 // src/pages/Categories.tsx
 import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { getCategories, getPosts } from '../services/db';
+import { getR2Categories, getR2Posts } from '../services/r2-data';
 import { Category, BlogPost } from '../types';
 import * as Icons from 'lucide-react';
 import { PostCard } from '../components/PostCard';
@@ -62,8 +62,12 @@ export const Categories: React.FC = () => {
 
   useEffect(() => {
     const fetchCats = async () => {
-      const data = await getCategories();
-      setCategories(data);
+      try {
+        const data = await getR2Categories();
+        setCategories(data);
+      } catch (e) {
+        console.error("Failed to fetch categories", e);
+      }
       setLoadingCategories(false);
     };
     fetchCats();
@@ -71,9 +75,13 @@ export const Categories: React.FC = () => {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const posts = await getPosts();
-      setAllPosts(posts);
-      setDisplayedPosts(posts);
+      try {
+        const posts = await getR2Posts();
+        setAllPosts(posts);
+        setDisplayedPosts(posts);
+      } catch (e) {
+        console.error("Failed to fetch posts", e);
+      }
       setLoadingPosts(false);
     };
     fetchPosts();

@@ -5,13 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  getPostBySlug,
-  getPosts,
   incrementViewCount,
   getCommentsByPostId,
   addComment,
   toggleLikePost,
 } from '../services/db';
+import { getR2PostBySlug, getR2Posts } from '../services/r2-data';
 import { BlogPost, BlogPostComment } from '../types';
 import { Calendar, Clock, Share2, MessageSquare, Heart, Loader2, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -103,7 +102,7 @@ export const BlogPostPage: React.FC<{ initialPost?: BlogPost | null }> = ({ init
       // If we don't have a post or the slug doesn't match, fetch it
       if (!post || post.slug !== slug) {
         setLoading(true);
-        const p = await getPostBySlug(slug);
+        const p = await getR2PostBySlug(slug);
 
         if (p) {
           if (p.slug && slug !== p.slug) {
@@ -125,17 +124,24 @@ export const BlogPostPage: React.FC<{ initialPost?: BlogPost | null }> = ({ init
       }
 
       // Fetch comments and related posts regardless (they are small)
+      // Comments still from Firestore (Realtime)
       if (post || initialPost) {
         const currentPostId = post?.id || initialPost?.id;
         if (currentPostId) {
           const c = await getCommentsByPostId(currentPostId);
           setComments(c);
 
-          // Get posts for related section, but strip content to keep hydration payload small
-          const all = await getPosts(10, true); // Limit to 10 and strip content
-          setRelatedPosts(
-            all.filter((x) => x.id !== currentPostId && x.status === 'published').slice(0, 3)
-          );
+          // Get posts for related section from R2
+          try {
+            const all = await getR2Posts();
+            // Filter related posts (exclude current, ensure published)
+            const related = all
+              .filter((x) => x.id !== currentPostId && x.status === 'published')
+              .slice(0, 3);
+            setRelatedPosts(related);
+          } catch (e) {
+            console.error("Failed to load related posts from R2", e);
+          }
         }
       }
     };

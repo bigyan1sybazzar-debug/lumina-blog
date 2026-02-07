@@ -18,6 +18,7 @@ import {
     likeLiveComment,
     subscribeToLiveComments
 } from '../services/db';
+import { getR2LiveLinks, getR2IPTVChannels, getR2Highlights } from '../services/r2-data';
 import { useAuth } from '../context/AuthContext';
 import { parseM3U } from '../lib/m3uParser';
 import { LiveLink, Highlight } from '../types';
@@ -96,7 +97,7 @@ export const LiveSection: React.FC = () => {
     const [cricketScores, setCricketScores] = useState<any[]>([]);
     const [loadingCricket, setLoadingCricket] = useState(false);
     const [selectedTag, setSelectedTag] = useState<string>('All');
-    const [showAd, setShowAd] = useState(false);
+    const [showAd, setShowAd] = useState(false); // Kept for compatibility but unused
     const [pendingLink, setPendingLink] = useState<LiveLink | null>(null);
     const [onDemandName, setOnDemandName] = useState('');
     const [onDemandMessage, setOnDemandMessage] = useState('');
@@ -114,28 +115,22 @@ export const LiveSection: React.FC = () => {
     const [iptvWatchTime, setIptvWatchTime] = useState(0);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
     const [iptvConfig, setIptvConfig] = useState<any>(null);
+    const [hasFullList, setHasFullList] = useState(false);
     const { user } = useAuth();
     const playerRef = React.useRef<HTMLDivElement>(null);
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
-    const [adCountdown, setAdCountdown] = useState(4);
+    // Removed adCountdown
 
     const handleLinkClick = (link: any) => {
         if (selectedLink?.id === link.id) return;
-        setPendingLink(link);
-        setShowAd(true);
-        setAdCountdown(4);
+        setPendingLink(null);
+        setSelectedLink(link); // Directly play
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const skipAd = () => {
-        if (pendingLink) {
-            setSelectedLink(pendingLink);
-            setPendingLink(null);
-        }
-        setShowAd(false);
-        playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    // Removed skipAd and timer effect
+
 
     const handleIptvClick = async (channel: M3UChannel) => {
         const liveLink: any = {
@@ -148,25 +143,12 @@ export const LiveSection: React.FC = () => {
         };
         handleLinkClick(liveLink);
 
-        // Save to Firestore so it shows up in Trending
         try {
             await upsertIPTVChannel(channel, { isTrending: true });
         } catch (err) {
             console.error('Failed to mark IPTV as trending:', err);
         }
     };
-
-    useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (showAd && adCountdown > 0) {
-            timer = setInterval(() => {
-                setAdCountdown((prev) => prev - 1);
-            }, 1000);
-        } else if (showAd && adCountdown === 0) {
-            skipAd();
-        }
-        return () => clearInterval(timer);
-    }, [showAd, adCountdown]);
 
     useEffect(() => {
         if (selectedLink?.id) {
@@ -181,18 +163,18 @@ export const LiveSection: React.FC = () => {
         setIsMounted(true);
         const loadInitialData = async () => {
             try {
-                const [fetchedLinks, fetchedHighlights, config, dbTrendingChannels] = await Promise.all([
-                    getLiveLinks(),
-                    getHighlights(),
+                const [fetchedLinks, fetchedHighlights, config, r2Channels] = await Promise.all([
+                    getR2LiveLinks(),
+                    getR2Highlights(),
                     getIPTVConfig(),
-                    getTrendingIPTVChannels()
+                    getR2IPTVChannels()
                 ]);
 
                 setLinks(fetchedLinks);
                 setHighlights(fetchedHighlights);
                 setIptvConfig(config);
 
-                const mappedDb: M3UChannel[] = dbTrendingChannels.map((c: any) => ({
+                const mappedChannels: M3UChannel[] = r2Channels.map((c: any) => ({
                     id: c.id,
                     name: c.name,
                     url: c.url,
@@ -203,9 +185,9 @@ export const LiveSection: React.FC = () => {
                     trendingOrder: c.trendingOrder
                 }));
 
-                let finalIptv = mappedDb;
+                let finalIptv = mappedChannels;
 
-                if (mappedDb.length === 0 && config?.m3uUrl) {
+                if (mappedChannels.length === 0 && config?.m3uUrl) {
                     try {
                         const proxyUrl = `/api/proxy?url=${encodeURIComponent(config.m3uUrl)}`;
                         const res = await fetch(proxyUrl);
@@ -237,9 +219,9 @@ export const LiveSection: React.FC = () => {
                         isIPTV: true
                     } : initialLink;
 
-                    setPendingLink(formattedLink);
-                    setShowAd(true);
-                    setAdCountdown(4);
+                    setPendingLink(null);
+                    setSelectedLink(formattedLink);
+                    setShowAd(false);
                 }
 
             } catch (error) {
@@ -490,48 +472,11 @@ export const LiveSection: React.FC = () => {
                     )}
 
                     {/* MAIN PLAYER & DISCUSSION WRAPPER */}
-                    {(selectedLink || showAd) && (
+                    {(selectedLink) && (
                         <div className="flex flex-col lg:flex-row gap-6 items-stretch">
                             <div className="w-full lg:w-[60%] flex flex-col gap-4">
                                 <div ref={playerRef} className="relative bg-black rounded-[32px] overflow-hidden shadow-2xl border border-gray-200/50 dark:border-white/10 w-full aspect-video lg:aspect-[16/11.5]">
-                                    {showAd ? (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-between p-4 md:p-8 bg-[#0a0c10] z-50">
-                                            <div className="w-full flex justify-between items-start">
-                                                <div className="bg-white/5 border border-white/10 px-4 py-1.5 rounded-full flex items-center gap-2 backdrop-blur-md">
-                                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
-                                                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Stream Preparing</span>
-                                                </div>
-                                                {pendingLink && (
-                                                    <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-2xl flex items-center gap-3 text-white text-[10px] font-black truncate max-w-[200px]">
-                                                        Up Next: {pendingLink.heading}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="w-full max-w-4xl flex-1 flex flex-col items-center justify-center relative group/ad mb-10">
-                                                <div className="w-full h-full bg-black/60 rounded-[32px] border border-white/5 flex items-center justify-center relative shadow-3xl">
-                                                    <div className="absolute inset-0 flex items-center justify-center text-white/[0.02] font-black text-[8vw] pointer-events-none uppercase italic">ADS</div>
-                                                    <GoogleAdSense slot="7838572857" className="w-full h-full" format="auto" responsive={true} />
-                                                </div>
-                                                <div className="absolute -bottom-3 bg-red-600 px-6 py-2 rounded-full text-xs font-black text-white uppercase shadow-xl tracking-widest">Click Ad to Support • Watch Free</div>
-                                            </div>
-                                            <div className="w-full flex flex-col items-center gap-4">
-                                                <div className="text-center">
-                                                    <h3 className="text-xl md:text-3xl font-black text-white uppercase italic tracking-tighter">Starting Content</h3>
-                                                    <div className="flex items-center gap-4 text-gray-500 text-[9px] font-bold uppercase mt-2">
-                                                        <span>Optimizing</span><div className="w-1 h-1 bg-gray-700 rounded-full" /><span>Connecting</span><div className="w-1 h-1 bg-gray-700 rounded-full" /><span>Ready</span>
-                                                    </div>
-                                                </div>
-                                                <div className="w-full max-w-md">
-                                                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-red-600 transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(220,38,38,0.5)]" style={{ width: `${((4 - adCountdown) / 4) * 100}%` }} />
-                                                    </div>
-                                                    <div className="flex items-center justify-center gap-2 mt-3 text-white font-black text-[11px] uppercase tracking-widest">
-                                                        <RefreshCw size={14} className="animate-spin text-red-500" /> Stream Loading in {adCountdown}s
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ) : selectedLink && (
+                                    {selectedLink && (
                                         <>
                                             {showLoginPrompt && !user && (
                                                 <div className="absolute inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-6 text-center animate-in fade-in backdrop-blur-xl">
@@ -545,7 +490,7 @@ export const LiveSection: React.FC = () => {
                                             {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
                                                 <HLSPlayer src={selectedLink.youtubeUrl || selectedLink.iframeUrl} className="w-full h-full [&>video]:object-cover" autoPlay={true} muted={isMuted} />
                                             ) : (
-                                                <iframe ref={iframeRef} key={playerKey} src={selectedLink.youtubeUrl || selectedLink.iframeUrl} title={selectedLink.heading} className="w-full h-full border-0 absolute top-0 left-0 scale-[1.35] md:scale-100" allowFullScreen referrerPolicy="no-referrer" />
+                                                <iframe ref={iframeRef} key={playerKey} src={selectedLink.youtubeUrl || selectedLink.iframeUrl} title={selectedLink.heading} className="w-full h-full border-0 absolute top-0 left-0" allowFullScreen referrerPolicy="no-referrer" />
                                             )}
                                         </>
                                     )}
@@ -795,9 +740,9 @@ export const LiveSection: React.FC = () => {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <Tv size={24} className="text-secondary-light" />
-                                    <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.length})</h2>
+                                    <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.filter(c => hasFullList || c.isTrending).length})</h2>
                                 </div>
-                                {user?.role === 'admin' && iptvChannels.length < 50 && (
+                                {user?.role === 'admin' && !hasFullList && (
                                     <button
                                         onClick={async () => {
                                             try {
@@ -812,6 +757,7 @@ export const LiveSection: React.FC = () => {
                                                     isDefault: !!c.isDefault,
                                                     trendingOrder: c.trendingOrder
                                                 })));
+                                                setHasFullList(true);
                                             } catch (err) {
                                                 console.error('Failed to load full IPTV list:', err);
                                             }
@@ -825,6 +771,9 @@ export const LiveSection: React.FC = () => {
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                                 {iptvChannels
                                     .filter(c => {
+                                        // Only show trending if full list filter is not active
+                                        if (!hasFullList && !c.isTrending) return false;
+
                                         const matchesSearch = c.name.toLowerCase().includes(iptvSearch.toLowerCase());
                                         const matchesTag = iptvTag === 'All'
                                             || (iptvTag === 'Trending' && !!c.isTrending)

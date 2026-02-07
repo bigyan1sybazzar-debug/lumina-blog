@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob';
+import { storage } from '@/lib/storage';
 import admin from 'firebase-admin';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
@@ -72,8 +72,8 @@ export async function POST(req: Request) {
   </url>`).join('')}
 </urlset>`.trim();
 
-        // 4. Upload to Vercel Blob
-        await put('sitemap.xml', xml, {
+        // 4. Upload to Storage
+        const result = await storage.put('sitemap.xml', xml, {
             access: 'public',
             addRandomSuffix: false,
             contentType: 'application/xml',
@@ -89,9 +89,9 @@ export async function POST(req: Request) {
             success: true,
             posts: posts.length,
             totalUrls: posts.length + polls.length + 2, // + static routes
-            blobUrl: BLOB_URL,
+            blobUrl: result.url,
             publicUrl: `${BASE_URL}/sitemap.xml`,
-            message: 'Sitemap updated on Blob and cache purged for /sitemap.xml',
+            message: 'Sitemap updated in storage and cache purged for /sitemap.xml',
         });
 
     } catch (error: any) {

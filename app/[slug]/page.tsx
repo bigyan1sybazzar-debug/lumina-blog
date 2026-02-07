@@ -1,6 +1,6 @@
 import { BlogPostPage } from '../../components/BlogPost';
 import { Metadata } from 'next';
-import { getPostBySlug } from '../../services/db';
+import { getR2PostBySlug } from '../../services/r2-data';
 import { generateArticleSchema } from '../../lib/schemaGenerator';
 
 export const revalidate = 3600; // revalidate every hour
@@ -11,7 +11,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug } = await params;
-    const post = await getPostBySlug(slug);
+    const post = await getR2PostBySlug(slug);
 
     if (!post) {
         return {
@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page({ params }: Props) {
     const { slug } = await params;
-    const post = await getPostBySlug(slug);
+    const post = await getR2PostBySlug(slug);
 
     if (!post) {
         return <BlogPostPage />;

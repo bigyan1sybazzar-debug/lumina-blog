@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { getPosts, getPolls, getPostById } from '../services/db';
+import { getR2Posts, getR2Polls } from '../services/r2-data'; // Use R2 data
 import { BlogPost, Poll } from '../types';
 import dynamic from 'next/dynamic';
 import { PostCard } from '../components/PostCard';
@@ -15,13 +15,13 @@ const LiveMatchPopup = dynamic(() => import('../components/LiveMatchPopup').then
   ssr: false
 });
 
-import { ArrowRight, Loader2, Sparkles, Send, Languages, Mail, ChevronLeft, ChevronRight, Hash, TrendingUp, BookOpen, Vote, ShoppingBag, Clock, Calendar } from 'lucide-react';
+import { ArrowRight, Loader2, Sparkles, Send, BookOpen, Vote, ShoppingBag, Clock, Calendar, Hash, TrendingUp, ChevronLeft, ChevronRight, Languages, LogIn, Edit } from 'lucide-react'; // Consolidated imports
 import Link from 'next/link';
 import Image from 'next/image';
-import { db } from '../services/firebase';
-import { Calculator, RefreshCw, Tv, Terminal, LogIn, FileText, Edit } from 'lucide-react';
+import { Calculator, RefreshCw, Tv, Terminal, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import GoogleAdSense from '../components/GoogleAdSense';
+
 interface HomeProps {
   initialPosts?: BlogPost[];
   initialHeroFeatured?: BlogPost[];
@@ -50,90 +50,47 @@ export const Home: React.FC<HomeProps> = ({
     setCurrentPage(1);
   }, [selectedCategory]);
 
-  // REPLACE your fake isLoggedIn with real auth
   const { user, isLoading: authLoading } = useAuth();
-
-  const fetchPosts = async (): Promise<BlogPost[]> => {
-    for (let i = 0; i < 3; i++) {
-      try {
-        // Fetch more posts on client-side to support pagination
-        const result = await getPosts(100, true);
-        return Array.isArray(result) ? result : [];
-      } catch (err) {
-        if (i === 2) {
-          console.error('Failed to fetch posts after 3 attempts');
-          return [];
-        }
-        await new Promise(r => setTimeout(r, 1000 * (i + 1)));
-      }
-    }
-    return [];
-  };
-
-
 
   useEffect(() => {
     const load = async () => {
-      // Don't show loading spinner if we already have initial posts
-      if (initialPosts.length === 0) setLoading(true);
+      // If we have initial data, we don't need to show loading, but we might want to fetch FULL list for client-side filtering
+      // initialPosts from server (page.tsx) is likely sliced (e.g. 20), so we need the full list for category filtering.
 
-      const data = await fetchPosts();
-      const sorted = data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const shouldFetch = posts.length <= 20; // If we only have limited posts, fetch all
 
-      // Update states
-      setPosts(sorted);
-      setEditorPicks(sorted.slice(0, 8));
+      if (shouldFetch) {
+        try {
+          // Fetch all posts from R2 (fast JSON)
+          const allPosts = await getR2Posts();
+          const sorted = allPosts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-      // Load Admin-selected Hero Posts
-      try {
-        const configDoc = await db.collection('config').doc('featured').get();
-        if (configDoc.exists) {
-          const ids: string[] = configDoc.data()?.postIds || [];
-          const ordered: BlogPost[] = [];
+          setPosts(sorted);
+          setEditorPicks(sorted.slice(0, 8));
 
-          // Fetch each featured post specifically if not already in 'data'
-          await Promise.all(ids.map(async (id) => {
-            let post: BlogPost | null | undefined = data.find(p => p.id === id);
-            if (!post) {
-              // Fetch individually if older than the recent 24
-              post = await getPostById(id);
-            }
-            if (post) ordered.push(post);
-          }));
-
-          // Re-sort 'ordered' to match the specific 'ids' order (since Promise.all might finish out of order)
-          const finalOrdered = ids
-            .map(id => ordered.find(p => p.id === id))
-            .filter((p): p is BlogPost => p !== undefined && p !== null);
-
-          if (finalOrdered.length >= 3) {
-            setHeroFeatured(finalOrdered.slice(0, 3));
-          } else {
-            const remaining = sorted.filter(p => !ids.includes(p.id)).slice(0, 3 - finalOrdered.length);
-            setHeroFeatured([...finalOrdered, ...remaining]);
+          // If we didn't have hero featured (fallback), try to derive from posts or stick to props
+          if (heroFeatured.length === 0 && initialHeroFeatured.length === 0) {
+            setHeroFeatured(sorted.slice(0, 3));
           }
-        } else {
-          setHeroFeatured(sorted.slice(0, 3));
+        } catch (err) {
+          console.error("Failed to fetch R2 posts on client:", err);
         }
-      } catch (err) {
-        console.error('Failed to load hero posts:', err);
-        setHeroFeatured(sorted.slice(0, 3));
       }
 
-      // Load Polls
-      try {
-        const pollsData = await getPolls(undefined, 'approved', true);
-        setPolls(pollsData.slice(0, 8)); // Latest 8 featured polls for slider
-      } catch (err) {
-        console.error('Failed to load polls:', err);
+      // Load Polls if missing
+      if (polls.length === 0) {
+        try {
+          const allPolls = await getR2Polls();
+          setPolls(allPolls.slice(0, 8));
+        } catch (err) {
+          console.error("Failed to fetch R2 polls on client:", err);
+        }
       }
 
       setLoading(false);
     };
     load();
-
-
-  }, []);
+  }, [initialPosts.length, initialHeroFeatured.length, polls.length]);
 
   const categories = useMemo(() => {
     const cats = new Set<string>(posts.map(p => p.category).filter(Boolean) as string[]);

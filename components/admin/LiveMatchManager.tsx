@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Plus, Trash2, Power, ExternalLink } from 'lucide-react';
+import { Trophy, Plus, Trash2, Power, ExternalLink, Upload, Loader2 } from 'lucide-react';
 import { LiveMatch } from '../../types';
 
 interface LiveMatchManagerProps {
@@ -14,6 +14,7 @@ export const LiveMatchManager: React.FC<LiveMatchManagerProps> = ({ matches, onC
     const [team1, setTeam1] = useState('');
     const [team2, setTeam2] = useState('');
     const [matchUrl, setMatchUrl] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
 
     const handleCreate = async () => {
         if (!title || !matchUrl) {
@@ -51,13 +52,46 @@ export const LiveMatchManager: React.FC<LiveMatchManagerProps> = ({ matches, onC
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Live URL (Required)
                         </label>
-                        <input
-                            type="text"
-                            placeholder="https://example.com/live"
-                            value={matchUrl}
-                            onChange={(e) => setMatchUrl(e.target.value)}
-                            className="input-field"
-                        />
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                placeholder="https://example.com/live"
+                                value={matchUrl}
+                                onChange={(e) => setMatchUrl(e.target.value)}
+                                className="input-field flex-1"
+                            />
+                            <label className="flex items-center justify-center px-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Upload File">
+                                {isUploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} className="text-gray-500 dark:text-gray-400" />}
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    disabled={isUploading}
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+
+                                        try {
+                                            setIsUploading(true);
+                                            const filename = encodeURIComponent(file.name);
+                                            const res = await fetch(`/api/upload?filename=${filename}`, {
+                                                method: 'POST',
+                                                body: file,
+                                            });
+
+                                            if (!res.ok) throw new Error('Upload failed');
+
+                                            const data = await res.json();
+                                            setMatchUrl(data.url);
+                                        } catch (error) {
+                                            console.error('Upload error:', error);
+                                            alert('Failed to upload file.');
+                                        } finally {
+                                            setIsUploading(false);
+                                        }
+                                    }}
+                                />
+                            </label>
+                        </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
