@@ -40,33 +40,6 @@ const splideCustomStyles = `
     padding-left: 0 !important;
     padding-right: 0 !important;
   }
-  
-  /* Top Ad Slimming */
-  #top-ad-container,
-  #top-ad-container > div,
-  #top-ad-container .ad-container,
-  #top-ad-container .adsbygoogle,
-  #top-ad-container iframe,
-  #top-ad-container ins {
-    height: 90px !important;
-    min-height: 90px !important;
-    max-height: 90px !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-  }
-  
-  @media (min-width: 768px) {
-    #top-ad-container,
-    #top-ad-container > div,
-    #top-ad-container .ad-container,
-    #top-ad-container .adsbygoogle,
-    #top-ad-container iframe,
-    #top-ad-container ins {
-      height: 90px !important;
-      min-height: 90px !important;
-      max-height: 90px !important;
-    }
-  }
 `;
 
 const splideOptionsHighlights = {
@@ -456,28 +429,12 @@ export const LiveSection: React.FC = () => {
 
     if (!isMounted) return null;
 
-    if (isDataLoading) {
-        return (
-            <div className="min-h-[80vh] flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950">
-                <div className="relative">
-                    <div className="w-16 h-16 border-4 border-primary-200 dark:border-primary-900 border-t-primary-600 rounded-full animate-spin"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Activity size={24} className="text-primary-600 animate-pulse" />
-                    </div>
-                </div>
-                <h3 className="mt-6 text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest animate-pulse">Loading Please Wait...</h3>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 font-medium">Fetching the latest matches & channels</p>
-            </div>
-        );
-    }
-
     return (
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen relative overflow-hidden">
-            <style>{splideCustomStyles}</style>
             <div className="absolute inset-0 bg-gradient-to-b from-primary-light/5 via-transparent opacity-50 pointer-events-none" />
 
-            <div className="py-4 md:py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="space-y-4 md:space-y-4">
+            <div className="py-6 md:py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="space-y-4 md:space-y-8">
 
                     {/* HD Alert */}
                     <div className="bg-accent-success/5 border-accent-success/20 border rounded-card p-4 flex items-center gap-4">
@@ -486,552 +443,567 @@ export const LiveSection: React.FC = () => {
                     </div>
 
                     {/* Top Ad */}
-                    <div id="top-ad-container" className="w-full flex justify-center items-center overflow-hidden" style={{ height: '90px', minHeight: '90px', maxHeight: '90px' }}>
-                        <GoogleAdSense slot="7838572857" format="auto" minHeight="90px" responsive={false} style={{ display: 'block', width: '100%', height: '90px' }} />
+                    <div className="w-full flex justify-center items-center overflow-hidden" style={{ minHeight: '110px' }}>
+                        <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
                     </div>
 
-                    {/* Trending Slider */}
-                    {trendingItems.length > 0 && (
-                        <div className="flex flex-col md:flex-row md:items-center gap-4">
-                            <div className="shrink-0">
-                                <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-bold uppercase"><TrendingUp size={16} className="animate-pulse" /> Trending Now</button>
-                            </div>
-                            <div className="w-full md:flex-1 min-w-0">
-                                <Splide id="trending-slider" options={splideOptionsTrending}>
-                                    {trendingItems.sort((a, b) => (a.trendingOrder ?? 999) - (b.trendingOrder ?? 999)).map((link) => (
-                                        <SplideSlide key={link.id}>
-                                            <button onClick={() => handleLinkClick(link)} className="w-full block group text-left">
-                                                <div className={`relative flex items-center gap-2 md:gap-3 p-2 md:p-2.5 bg-white dark:bg-surface-dark-900 rounded-xl md:rounded-2xl border transition-all ${selectedLink?.id === link.id ? 'border-primary-light ring-2 ring-primary-light/20 bg-primary-50/10 shadow-md' : 'border-slate-200 dark:border-slate-800'}`}>
-                                                    <div className={`w-8 h-8 rounded-lg flex flex-col items-center justify-center transition-all ${selectedLink?.id === link.id ? 'bg-gradient-to-br from-primary-600 to-orange-500 text-white shadow-lg' : 'bg-gray-100 dark:bg-white/5 text-primary-light'}`}>
-                                                        <span className="text-[5px] font-black tracking-widest mb-0.5">LIVE</span>
-                                                        <div className={`h-1.5 w-1.5 rounded-full ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`} />
-                                                    </div>
-                                                    <h3 className={`text-[10px] font-bold line-clamp-2 dark:text-white`}>{link.heading}</h3>
-                                                </div>
-                                            </button>
-                                        </SplideSlide>
-                                    ))}
-                                </Splide>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* MAIN PLAYER & DISCUSSION WRAPPER */}
-                    {(selectedLink) && (
-                        <div className="flex flex-col lg:flex-row gap-6 items-stretch">
-                            <div className="w-full lg:w-[60%] flex flex-col gap-4">
-                                <div ref={playerRef} className="relative bg-black rounded-[32px] overflow-hidden shadow-2xl border border-gray-200/50 dark:border-white/10 w-full aspect-video lg:aspect-[16/11.5]">
-                                    {selectedLink && (
-                                        <>
-                                            {showLoginPrompt && !user && (
-                                                <div className="absolute inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-6 text-center animate-in fade-in backdrop-blur-xl">
-                                                    <div className="w-16 h-16 bg-primary-600 rounded-full flex items-center justify-center mb-6 shadow-2xl animate-bounce"><User size={32} className="text-white" /></div>
-                                                    <h2 className="text-2xl font-black text-white mb-4 uppercase">Login Required</h2>
-                                                    <div className="w-full max-w-sm mb-6 bg-white/5 rounded-xl overflow-hidden"><GoogleAdSense slot="7838572857" format="rectangle" responsive={true} /></div>
-                                                    <p className="text-gray-400 mb-8 max-w-sm">Sign in to watch <span className="text-white font-bold">{selectedLink.heading}</span>.</p>
-                                                    <div className="flex gap-4 w-full max-w-xs"><Link href="/login" className="flex-1 bg-primary-600 text-white py-3 rounded-xl font-black uppercase text-sm">Log In</Link><Link href="/signup" className="flex-1 bg-white/10 text-white py-3 rounded-xl font-black uppercase text-sm">Sign Up</Link></div>
-                                                </div>
-                                            )}
-                                            {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
-                                                <HLSPlayer src={selectedLink.youtubeUrl || selectedLink.iframeUrl} className="w-full h-full [&>video]:object-cover" autoPlay={true} muted={isMuted} />
-                                            ) : (
-                                                <iframe ref={iframeRef} key={playerKey} src={selectedLink.youtubeUrl || selectedLink.iframeUrl} title={selectedLink.heading} className="w-full h-full border-0 absolute top-0 left-0" allowFullScreen referrerPolicy="no-referrer" />
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                                {selectedLink && (
-                                    <div className="bg-white dark:bg-surface-dark-900 rounded-[32px] p-4 md:p-6 border border-gray-200 dark:border-white/10 shadow-xl transition-all">
-                                        <div className="flex flex-wrap items-center gap-2 mb-6 p-2 bg-gray-100/50 dark:bg-white/5 rounded-2xl">
-                                            <button onClick={handleRefresh} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase text-gray-700 dark:text-gray-200 border dark:border-white/5 group shadow-sm transition-all"><RefreshCw size={14} className="group-active:rotate-180 duration-500" /> Refresh</button>
-                                            <button onClick={toggleMute} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase text-gray-700 dark:text-gray-200 border dark:border-white/5 shadow-sm transition-all">{isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} {isMuted ? 'Unmute' : 'Mute'}</button>
-                                            <button onClick={toggleFullscreen} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase text-gray-700 dark:text-gray-200 border dark:border-white/5 shadow-sm transition-all"><Maximize size={14} /> View</button>
-                                        </div>
-                                        <div className="flex flex-col md:flex-row items-start justify-between gap-4">
-                                            <div className="w-full md:flex-1 min-w-0">
-                                                <Link href="/" className="inline-flex items-center text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md mb-2"><ArrowLeft size={10} className="mr-1" /> Home</Link>
-                                                <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white leading-tight truncate">{selectedLink.heading || selectedLink.title}</h3>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <button onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')} className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shadow-sm"><Facebook size={16} /></button>
-                                                <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(window.location.href)}`, '_blank')} className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-green-600 hover:bg-green-500 hover:text-white transition-all shadow-sm"><MessageCircle size={16} /></button>
-                                                <button onClick={() => { navigator.clipboard.writeText(window.location.href); alert("Copied!"); }} className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-primary-600 hover:bg-primary-500 hover:text-white transition-all shadow-sm"><Link2 size={16} /></button>
-                                                <button onClick={() => setSelectedLink(null)} className="p-2.5 bg-gray-100 dark:bg-white/5 text-gray-400 hover:bg-red-500 hover:text-white rounded-xl shadow-sm transition-all"><X size={20} /></button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="w-full lg:w-[40%] flex flex-col h-auto">
-                                <div className="relative h-full flex flex-col bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-900 dark:via-red-950/20 dark:to-orange-950/20 rounded-[32px] border-2 border-red-200 dark:border-red-900/50 shadow-xl overflow-hidden min-h-[500px] lg:min-h-[690px] lg:max-h-[1100px]">
-                                    <div className="relative p-4 md:p-6 flex flex-col h-full">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2.5 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl shadow-lg text-white shadow-red-500/20"><MessageCircle size={18} /></div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter">Discussion</h4>
-                                                        <span className="px-1.5 py-0.5 bg-red-600 text-[8px] font-black text-white rounded-md animate-pulse">LIVE</span>
-                                                    </div>
-                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{getChannelComments().length} Points</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                {user?.role === 'admin' && <button onClick={handleClearComments} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Shield size={16} /></button>}
-                                                <button onClick={() => setShowDiscussions(!showDiscussions)} className="text-[10px] font-black uppercase text-red-600 dark:text-red-400 lg:hidden">{showDiscussions ? 'Hide Feed' : 'Show Feed'}</button>
-                                            </div>
-                                        </div>
-                                        <div className={`flex flex-col h-full overflow-hidden ${showDiscussions ? '' : 'hidden lg:flex'}`}>
-                                            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-4 border border-red-100 dark:border-red-800/30 shadow-sm mb-4">
-                                                <div className="flex gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-black">{(user?.name?.[0] || 'Y').toUpperCase()}</div>
-                                                    <textarea
-                                                        value={commentText} onChange={(e) => setCommentText(e.target.value)}
-                                                        placeholder="Share thoughts..."
-                                                        className="flex-1 bg-gray-50 dark:bg-gray-900 border-none rounded-xl p-3 text-xs dark:text-white outline-none focus:ring-1 focus:ring-red-500 resize-none transition-all"
-                                                        rows={2}
-                                                    />
-                                                </div>
-                                                <div className="flex justify-end mt-3">
-                                                    <button
-                                                        onClick={(e) => handlePostComment(e)}
-                                                        disabled={!commentText.trim()}
-                                                        className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white text-[10px] font-black uppercase rounded-lg shadow-lg active:scale-95 disabled:opacity-50"
-                                                    >Post Comment</button>
-                                                </div>
-                                            </div>
-                                            <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide space-y-4 pb-4">
-                                                {getChannelComments().length > 0 ? (
-                                                    getChannelComments().filter(c => !c.parentId).map((comment) => (
-                                                        <div key={comment.id} className="bg-white dark:bg-gray-800 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:border-red-500/20">
-                                                            <div className="flex items-start gap-3">
-                                                                <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-black overflow-hidden shrink-0">
-                                                                    {comment.userAvatar ? <img src={comment.userAvatar} className="w-full h-full object-cover" /> : comment.userName?.[0]}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="flex items-center justify-between mb-1">
-                                                                        <span className={`text-[11px] font-black truncate ${comment.userRole === 'admin' ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>{comment.userName}</span>
-                                                                        <span className="text-[9px] text-gray-400 font-bold uppercase whitespace-nowrap">{formatTimeAgo(comment.timestamp)}</span>
-                                                                    </div>
-                                                                    <p className="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">{comment.text}</p>
-                                                                    <div className="flex gap-4 mt-2">
-                                                                        <button onClick={() => handleLikeComment(comment.id)} className={`flex items-center gap-1 text-[9px] font-black ${comment.likes?.includes(user?.id) ? 'text-red-500' : 'text-gray-400'}`}><Heart size={10} fill={comment.likes?.includes(user?.id) ? "currentColor" : "none"} /> {comment.likes?.length || 0}</button>
-                                                                        <button onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)} className="text-[9px] font-black text-gray-400 hover:text-red-600 flex items-center gap-1"><Reply size={10} /> Reply</button>
-                                                                    </div>
-                                                                    {replyingTo === comment.id && (
-                                                                        <div className="mt-2 flex gap-2"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Reply..." className="flex-1 bg-gray-50 dark:bg-gray-900 p-2 text-[10px] rounded-lg border outline-none" /><button onClick={(e) => handlePostComment(e, comment.id)} className="px-3 bg-red-600 text-white rounded-lg text-[9px] font-bold">Send</button></div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="flex flex-col items-center justify-center h-full opacity-30 select-none grayscale"><MessageCircle size={40} className="mb-2" /><p className="text-[10px] font-black uppercase tracking-widest text-center">No messages yet. Be the first!</p></div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
+                    {isDataLoading ? (
+                        <div className="w-full min-h-[300px] flex flex-col items-center justify-center bg-white/50 dark:bg-gray-900/50 rounded-[40px] border-2 border-dashed border-gray-200 dark:border-gray-800 backdrop-blur-sm">
+                            <div className="relative mb-4">
+                                <div className="w-16 h-16 border-4 border-red-100 dark:border-red-900/30 border-t-red-600 rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <Activity size={24} className="text-red-600 animate-pulse" />
                                 </div>
                             </div>
-                        </div>
-                    )}
-
-                    {/* CHANNEL PICKER & GRID */}
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-4 bg-gray-100/50 dark:bg-white/5 p-1.5 rounded-2xl w-fit border border-gray-200 dark:border-white/5">
-                            <button onClick={() => setIsIPTVMode(false)} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${!isIPTVMode ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Live Sports</button>
-                            <button onClick={() => setIsIPTVMode(true)} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${isIPTVMode ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>IPTV Channels</button>
-                        </div>
-                        {isIPTVMode && (
-                            <div className="relative w-full max-w-md">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                <input type="text" placeholder="Search Channels..." value={iptvSearch} onChange={(e) => setIptvSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border dark:border-white/10 rounded-xl text-sm outline-none dark:text-white" />
-                            </div>
-                        )}
-                        {!isIPTVMode && (
-                            <div className="flex flex-wrap gap-2">
-                                {allTags.map(tag => (
-                                    <button key={tag} onClick={() => setSelectedTag(tag)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${selectedTag === tag ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200'}`}>{tag}</button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* GRID - Live Sports */}
-                    {!isIPTVMode ? (
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-3">
-                                <Tv size={24} className="text-secondary-light" />
-                                <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                {filteredLinks
-                                    .sort((a, b) => {
-                                        const isAActive = selectedLink?.id === a.id;
-                                        const isBActive = selectedLink?.id === b.id;
-                                        if (isAActive !== isBActive) return isAActive ? -1 : 1;
-                                        return 0;
-                                    })
-                                    .map((link) => (
-                                        <div key={link.id} className="relative group/channel">
-                                            <button
-                                                onClick={() => handleLinkClick(link)}
-                                                className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
-                                                    ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
-                                                    : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
-                                                    }`}
-                                            >
-                                                {link.isTrending && (
-                                                    <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
-                                                        <TrendingUp size={8} fill="currentColor" />
-                                                        <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
-                                                    </div>
-                                                )}
-                                                {link.isDefault && (
-                                                    <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
-                                                        <Sparkles size={8} fill="currentColor" />
-                                                        <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
-                                                    </div>
-                                                )}
-                                                {selectedLink?.id === link.id && (
-                                                    <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
-                                                        <span className="relative flex h-1.5 w-1.5">
-                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
-                                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
-                                                        </span>
-                                                        <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
-                                                    <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
-                                                        ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
-                                                        : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
-                                                        }`}>
-                                                        {selectedLink?.id === link.id && (
-                                                            <div className="absolute inset-0 bg-white/10 animate-pulse" />
-                                                        )}
-                                                        <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0 w-full">
-                                                        <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
-                                                            ? 'text-primary-dark'
-                                                            : 'text-gray-900 dark:text-white group-hover:text-primary-light'
-                                                            }`}>
-                                                            {link.heading}
-                                                        </h4>
-                                                    </div>
-                                                </div>
-                                            </button>
-                                            {user?.role === 'admin' && (
-                                                <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
-                                                    <button
-                                                        onClick={async (e) => {
-                                                            e.stopPropagation();
-                                                            try {
-                                                                await updateLiveLink(link.id, { isTrending: !link.isTrending });
-                                                                setLinks(prev => prev.map(l =>
-                                                                    l.id === link.id ? { ...l, isTrending: !link.isTrending } : l
-                                                                ));
-                                                            } catch (err) {
-                                                                console.error('Failed to toggle trending:', err);
-                                                            }
-                                                        }}
-                                                        className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isTrending
-                                                            ? 'bg-amber-500 text-white border-amber-400'
-                                                            : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
-                                                        title={link.isTrending ? "Remove Trending" : "Mark as Trending"}
-                                                    >
-                                                        <TrendingUp size={14} />
-                                                    </button>
-                                                    <button
-                                                        onClick={async (e) => {
-                                                            e.stopPropagation();
-                                                            try {
-                                                                if (link.isDefault) {
-                                                                    await updateLiveLink(link.id, { isDefault: false });
-                                                                    setLinks(prev => prev.map(l =>
-                                                                        l.id === link.id ? { ...l, isDefault: false } : l
-                                                                    ));
-                                                                } else {
-                                                                    await setLiveLinkDefault(link.id, true);
-                                                                    setLinks(prev => prev.map(l => ({
-                                                                        ...l,
-                                                                        isDefault: l.id === link.id
-                                                                    })));
-                                                                    setIptvChannels(prev => prev.map(c => ({
-                                                                        ...c,
-                                                                        isDefault: false
-                                                                    })));
-                                                                }
-                                                            } catch (err) {
-                                                                console.error('Failed to toggle default:', err);
-                                                            }
-                                                        }}
-                                                        className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isDefault
-                                                            ? 'bg-primary-600 text-white border-primary-400'
-                                                            : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
-                                                        title={link.isDefault ? "Remove Default" : "Set as Default"}
-                                                    >
-                                                        <Sparkles size={14} />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                            </div>
+                            <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] animate-pulse">Initializing Live Center</h3>
+                            <p className="text-sm text-gray-500 font-medium mt-2">Connecting to streaming servers...</p>
                         </div>
                     ) : (
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <Tv size={24} className="text-secondary-light" />
-                                    <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.filter(c => hasFullList || c.isTrending).length})</h2>
+                        <>
+                            {/* Trending Slider */}
+                            {trendingItems.length > 0 && (
+                                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                    <div className="shrink-0">
+                                        <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-bold uppercase"><TrendingUp size={16} className="animate-pulse" /> Trending Now</button>
+                                    </div>
+                                    <div className="w-full md:flex-1 min-w-0">
+                                        <Splide id="trending-slider" options={splideOptionsTrending}>
+                                            {trendingItems.sort((a, b) => (a.trendingOrder ?? 999) - (b.trendingOrder ?? 999)).map((link) => (
+                                                <SplideSlide key={link.id}>
+                                                    <button onClick={() => handleLinkClick(link)} className="w-full block group text-left">
+                                                        <div className={`relative flex items-center gap-2 md:gap-3 p-2 md:p-2.5 bg-white dark:bg-surface-dark-900 rounded-xl md:rounded-2xl border transition-all ${selectedLink?.id === link.id ? 'border-primary-light ring-2 ring-primary-light/20 bg-primary-50/10 shadow-md' : 'border-slate-200 dark:border-slate-800'}`}>
+                                                            <div className={`w-8 h-8 rounded-lg flex flex-col items-center justify-center transition-all ${selectedLink?.id === link.id ? 'bg-gradient-to-br from-primary-600 to-orange-500 text-white shadow-lg' : 'bg-gray-100 dark:bg-white/5 text-primary-light'}`}>
+                                                                <span className="text-[5px] font-black tracking-widest mb-0.5">LIVE</span>
+                                                                <div className={`h-1.5 w-1.5 rounded-full ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`} />
+                                                            </div>
+                                                            <h3 className={`text-[10px] font-bold line-clamp-2 dark:text-white`}>{link.heading}</h3>
+                                                        </div>
+                                                    </button>
+                                                </SplideSlide>
+                                            ))}
+                                        </Splide>
+                                    </div>
                                 </div>
-                                {user?.role === 'admin' && !hasFullList && (
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                const allChannels = await getIPTVChannels();
-                                                setIptvChannels(allChannels.map((c: any) => ({
-                                                    id: c.id,
-                                                    name: c.name,
-                                                    url: c.url,
-                                                    logo: c.logo || '',
-                                                    group: c.category || 'Uncategorized',
-                                                    isTrending: !!c.isTrending,
-                                                    isDefault: !!c.isDefault,
-                                                    trendingOrder: c.trendingOrder
-                                                })));
-                                                setHasFullList(true);
-                                            } catch (err) {
-                                                console.error('Failed to load full IPTV list:', err);
-                                            }
-                                        }}
-                                        className="px-4 py-2 bg-primary-600/10 text-primary-600 rounded-xl text-xs font-bold hover:bg-primary-600 hover:text-white transition-all border border-primary-600/20"
-                                    >
-                                        Load Full Channel List (Saves Data)
-                                    </button>
-                                )}
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-                                {iptvChannels
-                                    .filter(c => {
-                                        // Only show trending if full list filter is not active
-                                        if (!hasFullList && !c.isTrending) return false;
+                            )}
 
-                                        const matchesSearch = c.name.toLowerCase().includes(iptvSearch.toLowerCase());
-                                        const matchesTag = iptvTag === 'All'
-                                            || (iptvTag === 'Trending' && !!c.isTrending)
-                                            || (iptvTag === 'Default' && !!c.isDefault)
-                                            || c.group === iptvTag;
-                                        return matchesSearch && matchesTag;
-                                    })
-                                    .sort((a, b) => {
-                                        const isAActive = selectedLink?.id === a.id;
-                                        const isBActive = selectedLink?.id === b.id;
-                                        if (isAActive !== isBActive) return isAActive ? -1 : 1;
-                                        if (!!b.isTrending !== !!a.isTrending) return b.isTrending ? 1 : -1;
-                                        if (!!b.isDefault !== !!a.isDefault) return b.isDefault ? 1 : -1;
-                                        return a.name.localeCompare(b.name);
-                                    })
-                                    .slice(0, 300)
-                                    .map((channel) => (
-                                        <div key={channel.id} className="relative group/channel">
-                                            <button
-                                                onClick={() => handleIptvClick(channel)}
-                                                className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 ${selectedLink?.id === channel.id
-                                                    ? 'border-primary-light ring-2 ring-primary-light/20 shadow-md'
-                                                    : channel.isTrending
-                                                        ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50/10'
-                                                        : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
-                                                    }`}
-                                            >
-                                                {channel.isTrending && (
-                                                    <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
-                                                        <TrendingUp size={8} fill="currentColor" />
-                                                        <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
-                                                    </div>
-                                                )}
-                                                {channel.isDefault && (
-                                                    <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
-                                                        <Sparkles size={8} fill="currentColor" />
-                                                        <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex flex-col items-center text-center gap-3">
-                                                    <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 ${channel.isTrending ? 'ring-2 ring-amber-500/20' : ''}`}>
-                                                        {channel.logo ? (
-                                                            <img
-                                                                src={channel.logo}
-                                                                alt={channel.name}
-                                                                className="w-full h-full object-contain p-1"
-                                                                onError={(e) => {
-                                                                    (e.target as HTMLImageElement).src = 'https://i.imgur.com/guz2ajm.png';
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <Play size={18} className="text-primary-light" />
-                                                        )}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0 w-full">
-                                                        <h4 className={`font-bold text-[11px] md:text-xs line-clamp-1 transition-colors ${selectedLink?.id === channel.id
-                                                            ? 'text-primary-dark'
-                                                            : 'text-gray-900 dark:text-white group-hover:text-primary-light'
-                                                            }`}>
-                                                            {channel.name}
-                                                        </h4>
-                                                    </div>
-                                                </div>
-                                            </button>
-
-                                            {user?.role === 'admin' && (
-                                                <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
-                                                    <button
-                                                        onClick={async (e) => {
-                                                            e.stopPropagation();
-                                                            try {
-                                                                await upsertIPTVChannel(channel, { isTrending: !channel.isTrending });
-                                                                setIptvChannels(prev => prev.map(c =>
-                                                                    c.id === channel.id ? { ...c, isTrending: !channel.isTrending } : c
-                                                                ));
-                                                            } catch (err) {
-                                                                console.error('Failed to toggle trending:', err);
-                                                            }
-                                                        }}
-                                                        className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isTrending
-                                                            ? 'bg-amber-500 text-white border-amber-400'
-                                                            : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
-                                                        title={channel.isTrending ? "Remove Trending" : "Mark as Trending"}
-                                                    >
-                                                        <TrendingUp size={14} />
-                                                    </button>
-                                                    <button
-                                                        onClick={async (e) => {
-                                                            e.stopPropagation();
-                                                            try {
-                                                                if (channel.isDefault) {
-                                                                    await upsertIPTVChannel(channel, { isDefault: false });
-                                                                    setIptvChannels(prev => prev.map(c =>
-                                                                        c.id === channel.id ? { ...c, isDefault: false } : c
-                                                                    ));
-                                                                } else {
-                                                                    await setDefaultIPTVChannel(channel);
-                                                                    setIptvChannels(prev => prev.map(c => ({
-                                                                        ...c,
-                                                                        isDefault: c.id === channel.id
-                                                                    })));
-                                                                    setLinks(prev => prev.map(l => ({
-                                                                        ...l,
-                                                                        isDefault: false
-                                                                    })));
-                                                                }
-                                                            } catch (err) {
-                                                                console.error('Failed to toggle default:', err);
-                                                            }
-                                                        }}
-                                                        className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isDefault
-                                                            ? 'bg-primary-600 text-white border-primary-400'
-                                                            : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
-                                                        title={channel.isDefault ? "Remove Default" : "Set as Default"}
-                                                    >
-                                                        <Sparkles size={14} />
-                                                    </button>
-                                                </div>
+                            {/* MAIN PLAYER & DISCUSSION WRAPPER */}
+                            {(selectedLink) && (
+                                <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+                                    <div className="w-full lg:w-[60%] flex flex-col gap-4">
+                                        <div ref={playerRef} className="relative bg-black rounded-[32px] overflow-hidden shadow-2xl border border-gray-200/50 dark:border-white/10 w-full aspect-video lg:aspect-[16/10]">
+                                            {selectedLink && (
+                                                <>
+                                                    {showLoginPrompt && !user && (
+                                                        <div className="absolute inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-6 text-center animate-in fade-in backdrop-blur-xl">
+                                                            <div className="w-16 h-16 bg-primary-600 rounded-full flex items-center justify-center mb-6 shadow-2xl animate-bounce"><User size={32} className="text-white" /></div>
+                                                            <h2 className="text-2xl font-black text-white mb-4 uppercase">Login Required</h2>
+                                                            <div className="w-full max-w-sm mb-6 bg-white/5 rounded-xl overflow-hidden"><GoogleAdSense slot="7838572857" format="rectangle" responsive={true} /></div>
+                                                            <p className="text-gray-400 mb-8 max-w-sm">Sign in to watch <span className="text-white font-bold">{selectedLink.heading}</span>.</p>
+                                                            <div className="flex gap-4 w-full max-w-xs"><Link href="/login" className="flex-1 bg-primary-600 text-white py-3 rounded-xl font-black uppercase text-sm">Log In</Link><Link href="/signup" className="flex-1 bg-white/10 text-white py-3 rounded-xl font-black uppercase text-sm">Sign Up</Link></div>
+                                                        </div>
+                                                    )}
+                                                    {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
+                                                        <HLSPlayer src={selectedLink.youtubeUrl || selectedLink.iframeUrl} className="w-full h-full [&>video]:object-cover" autoPlay={true} muted={isMuted} />
+                                                    ) : (
+                                                        <iframe ref={iframeRef} key={playerKey} src={selectedLink.youtubeUrl || selectedLink.iframeUrl} title={selectedLink.heading} className="w-full h-full border-0 absolute top-0 left-0" allowFullScreen referrerPolicy="no-referrer" />
+                                                    )}
+                                                </>
                                             )}
                                         </div>
-                                    ))}
-                                {iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length === 0 && (
-                                    <div className="col-span-full py-12 text-center">
-                                        <div className="bg-gray-100 dark:bg-white/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Search size={32} className="text-gray-400" />
+                                        {selectedLink && (
+                                            <div className="bg-white dark:bg-surface-dark-900 rounded-[32px] p-4 md:p-6 border border-gray-200 dark:border-white/10 shadow-xl transition-all">
+                                                <div className="flex flex-wrap items-center gap-2 mb-6 p-2 bg-gray-100/50 dark:bg-white/5 rounded-2xl">
+                                                    <button onClick={handleRefresh} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase text-gray-700 dark:text-gray-200 border dark:border-white/5 group shadow-sm transition-all"><RefreshCw size={14} className="group-active:rotate-180 duration-500" /> Refresh</button>
+                                                    <button onClick={toggleMute} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase text-gray-700 dark:text-gray-200 border dark:border-white/5 shadow-sm transition-all">{isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} {isMuted ? 'Unmute' : 'Mute'}</button>
+                                                    <button onClick={toggleFullscreen} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 rounded-xl text-[10px] font-black uppercase text-gray-700 dark:text-gray-200 border dark:border-white/5 shadow-sm transition-all"><Maximize size={14} /> View</button>
+                                                </div>
+                                                <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+                                                    <div className="w-full md:flex-1 min-w-0">
+                                                        <Link href="/" className="inline-flex items-center text-[10px] font-black text-gray-400 hover:text-red-500 uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-md mb-2"><ArrowLeft size={10} className="mr-1" /> Home</Link>
+                                                        <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white leading-tight truncate">{selectedLink.heading || selectedLink.title}</h3>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')} className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-blue-600 hover:bg-blue-500 hover:text-white transition-all shadow-sm"><Facebook size={16} /></button>
+                                                        <button onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(window.location.href)}`, '_blank')} className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-green-600 hover:bg-green-500 hover:text-white transition-all shadow-sm"><MessageCircle size={16} /></button>
+                                                        <button onClick={() => { navigator.clipboard.writeText(window.location.href); alert("Copied!"); }} className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-primary-600 hover:bg-primary-500 hover:text-white transition-all shadow-sm"><Link2 size={16} /></button>
+                                                        <button onClick={() => setSelectedLink(null)} className="p-2.5 bg-gray-100 dark:bg-white/5 text-gray-400 hover:bg-red-500 hover:text-white rounded-xl shadow-sm transition-all"><X size={20} /></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="w-full lg:w-[40%] flex flex-col h-auto">
+                                        <div className="relative h-full flex flex-col bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-900 dark:via-red-950/20 dark:to-orange-950/20 rounded-[32px] border-2 border-red-200 dark:border-red-900/50 shadow-xl overflow-hidden min-h-[500px] lg:min-h-[690px] lg:max-h-[1100px]">
+                                            <div className="relative p-4 md:p-6 flex flex-col h-full">
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2.5 bg-gradient-to-br from-red-600 to-orange-600 rounded-xl shadow-lg text-white shadow-red-500/20"><MessageCircle size={18} /></div>
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter">Discussion</h4>
+                                                                <span className="px-1.5 py-0.5 bg-red-600 text-[8px] font-black text-white rounded-md animate-pulse">LIVE</span>
+                                                            </div>
+                                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{getChannelComments().length} Points</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        {user?.role === 'admin' && <button onClick={handleClearComments} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Shield size={16} /></button>}
+                                                        <button onClick={() => setShowDiscussions(!showDiscussions)} className="text-[10px] font-black uppercase text-red-600 dark:text-red-400 lg:hidden">{showDiscussions ? 'Hide Feed' : 'Show Feed'}</button>
+                                                    </div>
+                                                </div>
+                                                <div className={`flex flex-col h-full overflow-hidden ${showDiscussions ? '' : 'hidden lg:flex'}`}>
+                                                    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-4 border border-red-100 dark:border-red-800/30 shadow-sm mb-4">
+                                                        <div className="flex gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-black">{(user?.name?.[0] || 'Y').toUpperCase()}</div>
+                                                            <textarea
+                                                                value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                                                                placeholder="Share thoughts..."
+                                                                className="flex-1 bg-gray-50 dark:bg-gray-900 border-none rounded-xl p-3 text-xs dark:text-white outline-none focus:ring-1 focus:ring-red-500 resize-none transition-all"
+                                                                rows={2}
+                                                            />
+                                                        </div>
+                                                        <div className="flex justify-end mt-3">
+                                                            <button
+                                                                onClick={(e) => handlePostComment(e)}
+                                                                disabled={!commentText.trim()}
+                                                                className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white text-[10px] font-black uppercase rounded-lg shadow-lg active:scale-95 disabled:opacity-50"
+                                                            >Post Comment</button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide space-y-4 pb-4">
+                                                        {getChannelComments().length > 0 ? (
+                                                            getChannelComments().filter(c => !c.parentId).map((comment) => (
+                                                                <div key={comment.id} className="bg-white dark:bg-gray-800 p-3 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:border-red-500/20">
+                                                                    <div className="flex items-start gap-3">
+                                                                        <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] font-black overflow-hidden shrink-0">
+                                                                            {comment.userAvatar ? <img src={comment.userAvatar} className="w-full h-full object-cover" /> : comment.userName?.[0]}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center justify-between mb-1">
+                                                                                <span className={`text-[11px] font-black truncate ${comment.userRole === 'admin' ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>{comment.userName}</span>
+                                                                                <span className="text-[9px] text-gray-400 font-bold uppercase whitespace-nowrap">{formatTimeAgo(comment.timestamp)}</span>
+                                                                            </div>
+                                                                            <p className="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">{comment.text}</p>
+                                                                            <div className="flex gap-4 mt-2">
+                                                                                <button onClick={() => handleLikeComment(comment.id)} className={`flex items-center gap-1 text-[9px] font-black ${comment.likes?.includes(user?.id) ? 'text-red-500' : 'text-gray-400'}`}><Heart size={10} fill={comment.likes?.includes(user?.id) ? "currentColor" : "none"} /> {comment.likes?.length || 0}</button>
+                                                                                <button onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)} className="text-[9px] font-black text-gray-400 hover:text-red-600 flex items-center gap-1"><Reply size={10} /> Reply</button>
+                                                                            </div>
+                                                                            {replyingTo === comment.id && (
+                                                                                <div className="mt-2 flex gap-2"><input value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Reply..." className="flex-1 bg-gray-50 dark:bg-gray-900 p-2 text-[10px] rounded-lg border outline-none" /><button onClick={(e) => handlePostComment(e, comment.id)} className="px-3 bg-red-600 text-white rounded-lg text-[9px] font-bold">Send</button></div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <div className="flex flex-col items-center justify-center h-full opacity-30 select-none grayscale"><MessageCircle size={40} className="mb-2" /><p className="text-[10px] font-black uppercase tracking-widest text-center">No messages yet. Be the first!</p></div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <h3 className="text-gray-900 dark:text-white font-bold mb-1">No channels found</h3>
-                                        <p className="text-gray-500 text-sm">Try searching for a different keyword</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* CHANNEL PICKER & GRID */}
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center gap-4 bg-gray-100/50 dark:bg-white/5 p-1.5 rounded-2xl w-fit border border-gray-200 dark:border-white/5">
+                                    <button onClick={() => setIsIPTVMode(false)} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${!isIPTVMode ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Live Sports</button>
+                                    <button onClick={() => setIsIPTVMode(true)} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${isIPTVMode ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>IPTV Channels</button>
+                                </div>
+                                {isIPTVMode && (
+                                    <div className="relative w-full max-w-md">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                        <input type="text" placeholder="Search Channels..." value={iptvSearch} onChange={(e) => setIptvSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border dark:border-white/10 rounded-xl text-sm outline-none dark:text-white" />
+                                    </div>
+                                )}
+                                {!isIPTVMode && (
+                                    <div className="flex flex-wrap gap-2">
+                                        {allTags.map(tag => (
+                                            <button key={tag} onClick={() => setSelectedTag(tag)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${selectedTag === tag ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200'}`}>{tag}</button>
+                                        ))}
                                     </div>
                                 )}
                             </div>
-                        </div>
-                    )}
 
-                    {/* ON DEMAND REQUEST */}
-                    <div className="mt-8 grid lg:grid-cols-2 gap-8 items-center bg-white dark:bg-gray-800/50 p-8 md:p-12 rounded-[32px] border dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
-                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover/ondemand:scale-110 transition-all"><MessageCircle size={150} className="text-red-500" /></div>
-                        <div>
-                            <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-4">On <span className="text-red-600">Demand</span> Request</h2>
-                            <p className="text-gray-500 dark:text-gray-400 mb-6">Can't find your match? Send us a request and we'll try to add it for you instantly.</p>
-                            <div className="flex gap-4"><div className="flex items-center gap-2 text-xs font-bold text-accent-success"><CheckCircle size={16} /> Fast Support</div><div className="flex items-center gap-2 text-xs font-bold text-accent-success"><CheckCircle size={16} /> 24/7 Monitoring</div></div>
-                        </div>
-                        <form onSubmit={handleOnDemandSubmit} className="space-y-4 bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-2xl relative z-10">
-                            <input type="text" placeholder="Your Name" value={onDemandName} onChange={(e) => setOnDemandName(e.target.value)} className="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 dark:text-white outline-none border border-gray-100 dark:border-gray-700 focus:border-red-500 transition-all" required />
-                            <textarea placeholder="Match or Channel Name (e.g. Star Sports HD, IPL Match)" value={onDemandMessage} onChange={(e) => setOnDemandMessage(e.target.value)} rows={3} className="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 dark:text-white outline-none border border-gray-100 dark:border-gray-700 focus:border-red-500 transition-all" required />
-                            <button type="submit" className="w-full py-4 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700 transition-all uppercase shadow-xl flex items-center justify-center gap-2">Send Request <MessageCircle size={18} /></button>
-                        </form>
-                    </div>
-
-                    {/* LIVESCORE TAB */}
-                    <div className="space-y-4 mt-10">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div className="flex items-center gap-4"><div className="p-3 rounded-2xl bg-primary-light/10 text-primary-light border border-primary-light/20"><Activity className="w-7 h-7" /></div><h2 className="text-gray-900 dark:text-white">Live Match <span className="gradient-text">Scores</span></h2></div>
-                            <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl shadow-inner">
-                                <button onClick={() => setActiveScoreTab('football')} className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeScoreTab === 'football' ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500'}`}>⚽ Football</button>
-                                <button onClick={() => setActiveScoreTab('cricket')} className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeScoreTab === 'cricket' ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500'}`}>🏏 Cricket</button>
-                            </div>
-                        </div>
-                        <div className="bg-white dark:bg-surface-dark-900 rounded-[32px] p-6 border border-slate-200 dark:border-slate-800 min-h-[400px]">
-                            {activeScoreTab === 'football' ? (
-                                <iframe src="https://www.scorebat.com/embed/livescore/" className="w-full h-[650px] rounded-2xl border-0" sandbox="allow-scripts allow-same-origin" />
+                            {/* GRID - Live Sports */}
+                            {!isIPTVMode ? (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3">
+                                        <Tv size={24} className="text-secondary-light" />
+                                        <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {filteredLinks
+                                            .sort((a, b) => {
+                                                const isAActive = selectedLink?.id === a.id;
+                                                const isBActive = selectedLink?.id === b.id;
+                                                if (isAActive !== isBActive) return isAActive ? -1 : 1;
+                                                return 0;
+                                            })
+                                            .map((link) => (
+                                                <div key={link.id} className="relative group/channel">
+                                                    <button
+                                                        onClick={() => handleLinkClick(link)}
+                                                        className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
+                                                            ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
+                                                            : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                            }`}
+                                                    >
+                                                        {link.isTrending && (
+                                                            <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
+                                                                <TrendingUp size={8} fill="currentColor" />
+                                                                <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
+                                                            </div>
+                                                        )}
+                                                        {link.isDefault && (
+                                                            <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
+                                                                <Sparkles size={8} fill="currentColor" />
+                                                                <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
+                                                            </div>
+                                                        )}
+                                                        {selectedLink?.id === link.id && (
+                                                            <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
+                                                                <span className="relative flex h-1.5 w-1.5">
+                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
+                                                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
+                                                                </span>
+                                                                <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
+                                                            <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
+                                                                ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
+                                                                : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
+                                                                }`}>
+                                                                {selectedLink?.id === link.id && (
+                                                                    <div className="absolute inset-0 bg-white/10 animate-pulse" />
+                                                                )}
+                                                                <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0 w-full">
+                                                                <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
+                                                                    ? 'text-primary-dark'
+                                                                    : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                                    }`}>
+                                                                    {link.heading}
+                                                                </h4>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                    {user?.role === 'admin' && (
+                                                        <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
+                                                            <button
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    try {
+                                                                        await updateLiveLink(link.id, { isTrending: !link.isTrending });
+                                                                        setLinks(prev => prev.map(l =>
+                                                                            l.id === link.id ? { ...l, isTrending: !link.isTrending } : l
+                                                                        ));
+                                                                    } catch (err) {
+                                                                        console.error('Failed to toggle trending:', err);
+                                                                    }
+                                                                }}
+                                                                className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isTrending
+                                                                    ? 'bg-amber-500 text-white border-amber-400'
+                                                                    : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
+                                                                title={link.isTrending ? "Remove Trending" : "Mark as Trending"}
+                                                            >
+                                                                <TrendingUp size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    try {
+                                                                        if (link.isDefault) {
+                                                                            await updateLiveLink(link.id, { isDefault: false });
+                                                                            setLinks(prev => prev.map(l =>
+                                                                                l.id === link.id ? { ...l, isDefault: false } : l
+                                                                            ));
+                                                                        } else {
+                                                                            await setLiveLinkDefault(link.id, true);
+                                                                            setLinks(prev => prev.map(l => ({
+                                                                                ...l,
+                                                                                isDefault: l.id === link.id
+                                                                            })));
+                                                                            setIptvChannels(prev => prev.map(c => ({
+                                                                                ...c,
+                                                                                isDefault: false
+                                                                            })));
+                                                                        }
+                                                                    } catch (err) {
+                                                                        console.error('Failed to toggle default:', err);
+                                                                    }
+                                                                }}
+                                                                className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isDefault
+                                                                    ? 'bg-primary-600 text-white border-primary-400'
+                                                                    : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
+                                                                title={link.isDefault ? "Remove Default" : "Set as Default"}
+                                                            >
+                                                                <Sparkles size={14} />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                    </div>
+                                </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {loadingCricket ? <div className="col-span-full py-20 text-center dark:text-white">Fetching Live Cricket...</div> : cricketScores.map((m) => (
-                                        <a key={m.id} href={m.link} target="_blank" className="p-5 bg-white dark:bg-white/5 rounded-2xl border dark:border-white/5 hover:border-red-500/30 transition-all flex flex-col group">
-                                            <span className="text-[10px] font-black text-red-600 mb-2 uppercase animate-pulse">● Live</span>
-                                            <span className="text-sm font-bold dark:text-white group-hover:text-red-600">{m.title}</span>
-                                        </a>
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <Tv size={24} className="text-secondary-light" />
+                                            <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.filter(c => hasFullList || c.isTrending).length})</h2>
+                                        </div>
+                                        {user?.role === 'admin' && !hasFullList && (
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const allChannels = await getIPTVChannels();
+                                                        setIptvChannels(allChannels.map((c: any) => ({
+                                                            id: c.id,
+                                                            name: c.name,
+                                                            url: c.url,
+                                                            logo: c.logo || '',
+                                                            group: c.category || 'Uncategorized',
+                                                            isTrending: !!c.isTrending,
+                                                            isDefault: !!c.isDefault,
+                                                            trendingOrder: c.trendingOrder
+                                                        })));
+                                                        setHasFullList(true);
+                                                    } catch (err) {
+                                                        console.error('Failed to load full IPTV list:', err);
+                                                    }
+                                                }}
+                                                className="px-4 py-2 bg-primary-600/10 text-primary-600 rounded-xl text-xs font-bold hover:bg-primary-600 hover:text-white transition-all border border-primary-600/20"
+                                            >
+                                                Load Full Channel List (Saves Data)
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                                        {iptvChannels
+                                            .filter(c => {
+                                                // Only show trending if full list filter is not active
+                                                if (!hasFullList && !c.isTrending) return false;
+
+                                                const matchesSearch = c.name.toLowerCase().includes(iptvSearch.toLowerCase());
+                                                const matchesTag = iptvTag === 'All'
+                                                    || (iptvTag === 'Trending' && !!c.isTrending)
+                                                    || (iptvTag === 'Default' && !!c.isDefault)
+                                                    || c.group === iptvTag;
+                                                return matchesSearch && matchesTag;
+                                            })
+                                            .sort((a, b) => {
+                                                const isAActive = selectedLink?.id === a.id;
+                                                const isBActive = selectedLink?.id === b.id;
+                                                if (isAActive !== isBActive) return isAActive ? -1 : 1;
+                                                if (!!b.isTrending !== !!a.isTrending) return b.isTrending ? 1 : -1;
+                                                if (!!b.isDefault !== !!a.isDefault) return b.isDefault ? 1 : -1;
+                                                return a.name.localeCompare(b.name);
+                                            })
+                                            .slice(0, 300)
+                                            .map((channel) => (
+                                                <div key={channel.id} className="relative group/channel">
+                                                    <button
+                                                        onClick={() => handleIptvClick(channel)}
+                                                        className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 ${selectedLink?.id === channel.id
+                                                            ? 'border-primary-light ring-2 ring-primary-light/20 shadow-md'
+                                                            : channel.isTrending
+                                                                ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50/10'
+                                                                : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                            }`}
+                                                    >
+                                                        {channel.isTrending && (
+                                                            <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
+                                                                <TrendingUp size={8} fill="currentColor" />
+                                                                <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
+                                                            </div>
+                                                        )}
+                                                        {channel.isDefault && (
+                                                            <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
+                                                                <Sparkles size={8} fill="currentColor" />
+                                                                <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex flex-col items-center text-center gap-3">
+                                                            <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 ${channel.isTrending ? 'ring-2 ring-amber-500/20' : ''}`}>
+                                                                {channel.logo ? (
+                                                                    <img
+                                                                        src={channel.logo}
+                                                                        alt={channel.name}
+                                                                        className="w-full h-full object-contain p-1"
+                                                                        onError={(e) => {
+                                                                            (e.target as HTMLImageElement).src = 'https://i.imgur.com/guz2ajm.png';
+                                                                        }}
+                                                                    />
+                                                                ) : (
+                                                                    <Play size={18} className="text-primary-light" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0 w-full">
+                                                                <h4 className={`font-bold text-[11px] md:text-xs line-clamp-1 transition-colors ${selectedLink?.id === channel.id
+                                                                    ? 'text-primary-dark'
+                                                                    : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                                    }`}>
+                                                                    {channel.name}
+                                                                </h4>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+
+                                                    {user?.role === 'admin' && (
+                                                        <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
+                                                            <button
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    try {
+                                                                        await upsertIPTVChannel(channel, { isTrending: !channel.isTrending });
+                                                                        setIptvChannels(prev => prev.map(c =>
+                                                                            c.id === channel.id ? { ...c, isTrending: !channel.isTrending } : c
+                                                                        ));
+                                                                    } catch (err) {
+                                                                        console.error('Failed to toggle trending:', err);
+                                                                    }
+                                                                }}
+                                                                className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isTrending
+                                                                    ? 'bg-amber-500 text-white border-amber-400'
+                                                                    : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
+                                                                title={channel.isTrending ? "Remove Trending" : "Mark as Trending"}
+                                                            >
+                                                                <TrendingUp size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    try {
+                                                                        if (channel.isDefault) {
+                                                                            await upsertIPTVChannel(channel, { isDefault: false });
+                                                                            setIptvChannels(prev => prev.map(c =>
+                                                                                c.id === channel.id ? { ...c, isDefault: false } : c
+                                                                            ));
+                                                                        } else {
+                                                                            await setDefaultIPTVChannel(channel);
+                                                                            setIptvChannels(prev => prev.map(c => ({
+                                                                                ...c,
+                                                                                isDefault: c.id === channel.id
+                                                                            })));
+                                                                            setLinks(prev => prev.map(l => ({
+                                                                                ...l,
+                                                                                isDefault: false
+                                                                            })));
+                                                                        }
+                                                                    } catch (err) {
+                                                                        console.error('Failed to toggle default:', err);
+                                                                    }
+                                                                }}
+                                                                className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isDefault
+                                                                    ? 'bg-primary-600 text-white border-primary-400'
+                                                                    : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
+                                                                title={channel.isDefault ? "Remove Default" : "Set as Default"}
+                                                            >
+                                                                <Sparkles size={14} />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        {iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length === 0 && (
+                                            <div className="col-span-full py-12 text-center">
+                                                <div className="bg-gray-100 dark:bg-white/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                    <Search size={32} className="text-gray-400" />
+                                                </div>
+                                                <h3 className="text-gray-900 dark:text-white font-bold mb-1">No channels found</h3>
+                                                <p className="text-gray-500 text-sm">Try searching for a different keyword</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ON DEMAND REQUEST */}
+                            <div className="mt-8 grid lg:grid-cols-2 gap-8 items-center bg-white dark:bg-gray-800/50 p-8 md:p-12 rounded-[32px] border dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
+                                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover/ondemand:scale-110 transition-all"><MessageCircle size={150} className="text-red-500" /></div>
+                                <div>
+                                    <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-4">On <span className="text-red-600">Demand</span> Request</h2>
+                                    <p className="text-gray-500 dark:text-gray-400 mb-6">Can't find your match? Send us a request and we'll try to add it for you instantly.</p>
+                                    <div className="flex gap-4"><div className="flex items-center gap-2 text-xs font-bold text-accent-success"><CheckCircle size={16} /> Fast Support</div><div className="flex items-center gap-2 text-xs font-bold text-accent-success"><CheckCircle size={16} /> 24/7 Monitoring</div></div>
+                                </div>
+                                <form onSubmit={handleOnDemandSubmit} className="space-y-4 bg-white dark:bg-gray-900 p-8 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-2xl relative z-10">
+                                    <input type="text" placeholder="Your Name" value={onDemandName} onChange={(e) => setOnDemandName(e.target.value)} className="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 dark:text-white outline-none border border-gray-100 dark:border-gray-700 focus:border-red-500 transition-all" required />
+                                    <textarea placeholder="Match or Channel Name (e.g. Star Sports HD, IPL Match)" value={onDemandMessage} onChange={(e) => setOnDemandMessage(e.target.value)} rows={3} className="w-full p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 dark:text-white outline-none border border-gray-100 dark:border-gray-700 focus:border-red-500 transition-all" required />
+                                    <button type="submit" className="w-full py-4 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700 transition-all uppercase shadow-xl flex items-center justify-center gap-2">Send Request <MessageCircle size={18} /></button>
+                                </form>
+                            </div>
+
+                            {/* LIVESCORE TAB */}
+                            <div className="space-y-4 mt-10">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                    <div className="flex items-center gap-4"><div className="p-3 rounded-2xl bg-primary-light/10 text-primary-light border border-primary-light/20"><Activity className="w-7 h-7" /></div><h2 className="text-gray-900 dark:text-white">Live Match <span className="gradient-text">Scores</span></h2></div>
+                                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl shadow-inner">
+                                        <button onClick={() => setActiveScoreTab('football')} className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeScoreTab === 'football' ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500'}`}>⚽ Football</button>
+                                        <button onClick={() => setActiveScoreTab('cricket')} className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeScoreTab === 'cricket' ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500'}`}>🏏 Cricket</button>
+                                    </div>
+                                </div>
+                                <div className="bg-white dark:bg-surface-dark-900 rounded-[32px] p-6 border border-slate-200 dark:border-slate-800 min-h-[400px]">
+                                    {activeScoreTab === 'football' ? (
+                                        <iframe src="https://www.scorebat.com/embed/livescore/" className="w-full h-[650px] rounded-2xl border-0" sandbox="allow-scripts allow-same-origin" />
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {loadingCricket ? <div className="col-span-full py-20 text-center dark:text-white">Fetching Live Cricket...</div> : cricketScores.map((m) => (
+                                                <a key={m.id} href={m.link} target="_blank" className="p-5 bg-white dark:bg-white/5 rounded-2xl border dark:border-white/5 hover:border-red-500/30 transition-all flex flex-col group">
+                                                    <span className="text-[10px] font-black text-red-600 mb-2 uppercase animate-pulse">● Live</span>
+                                                    <span className="text-sm font-bold dark:text-white group-hover:text-red-600">{m.title}</span>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* MATCH HIGHLIGHTS */}
+                            {highlights.length > 0 && (
+                                <div className="space-y-8 mt-10">
+                                    <h2 className="text-gray-900 dark:text-white">Match <span className="text-red-600">Highlights</span></h2>
+                                    {Object.entries(groupedHighlights).map(([category, items]) => (
+                                        <div key={category} className="space-y-4">
+                                            <span className="text-lg font-bold dark:text-gray-200 uppercase flex items-center gap-2 mb-4"><span className="w-1 h-6 bg-red-600" /> {category}</span>
+                                            <Splide options={splideOptionsHighlights}>
+                                                {items.map((item) => (
+                                                    <SplideSlide key={item.id}>
+                                                        <div onClick={() => handleLinkClick(item as any)} className="bg-white dark:bg-surface-dark-900 rounded-3xl overflow-hidden border dark:border-slate-800 cursor-pointer group shadow-sm hover:shadow-2xl transition-all">
+                                                            <div className="aspect-video relative">
+                                                                <Image src={item.thumbnailUrl || `https://img.youtube.com/vi/${item.youtubeUrl.split('/').pop()?.split('?')[0]}/mqdefault.jpg`} alt={item.title} fill className="object-cover group-hover:scale-105 transition-all duration-500" />
+                                                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Play size={32} className="text-white" fill="white" /></div>
+                                                            </div>
+                                                            <div className="p-5"><h4 className="font-bold text-sm dark:text-white line-clamp-2">{item.title}</h4></div>
+                                                        </div>
+                                                    </SplideSlide>
+                                                ))}
+                                            </Splide>
+                                        </div>
                                     ))}
                                 </div>
                             )}
-                        </div>
-                    </div>
 
-                    {/* MATCH HIGHLIGHTS */}
-                    {highlights.length > 0 && (
-                        <div className="space-y-8 mt-10">
-                            <h2 className="text-gray-900 dark:text-white">Match <span className="text-red-600">Highlights</span></h2>
-                            {Object.entries(groupedHighlights).map(([category, items]) => (
-                                <div key={category} className="space-y-4">
-                                    <span className="text-lg font-bold dark:text-gray-200 uppercase flex items-center gap-2 mb-4"><span className="w-1 h-6 bg-red-600" /> {category}</span>
-                                    <Splide options={splideOptionsHighlights}>
-                                        {items.map((item) => (
-                                            <SplideSlide key={item.id}>
-                                                <div onClick={() => handleLinkClick(item as any)} className="bg-white dark:bg-surface-dark-900 rounded-3xl overflow-hidden border dark:border-slate-800 cursor-pointer group shadow-sm hover:shadow-2xl transition-all">
-                                                    <div className="aspect-video relative">
-                                                        <Image src={item.thumbnailUrl || `https://img.youtube.com/vi/${item.youtubeUrl.split('/').pop()?.split('?')[0]}/mqdefault.jpg`} alt={item.title} fill className="object-cover group-hover:scale-105 transition-all duration-500" />
-                                                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Play size={32} className="text-white" fill="white" /></div>
-                                                    </div>
-                                                    <div className="p-5"><h4 className="font-bold text-sm dark:text-white line-clamp-2">{item.title}</h4></div>
-                                                </div>
-                                            </SplideSlide>
-                                        ))}
-                                    </Splide>
+                            {/* NEWSLETTER */}
+                            <div className="relative group/cta mt-16 pb-10">
+                                <div className="relative bg-gradient-to-br from-red-600 to-orange-600 rounded-[2.5rem] p-10 md:p-16 text-white text-center shadow-2xl overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32" />
+                                    <h2 className="text-3xl md:text-5xl font-black mb-4">Stay <span className="text-yellow-300">Updated</span></h2>
+                                    <p className="max-w-2xl mx-auto mb-10 text-white/80">Get instant notifications for match starts and exclusive streaming links.</p>
+                                    {isSubscribed ? <div className="text-xl font-bold flex items-center justify-center gap-2"><CheckCircle size={24} /> You're on the list!</div> : (
+                                        <form onSubmit={handleSubscribe} className="flex flex-col md:flex-row gap-4 max-w-lg mx-auto">
+                                            <input type="email" value={newsletterEmail} onChange={(e) => setNewsletterEmail(e.target.value)} placeholder="Email address" className="flex-1 px-6 py-4 rounded-2xl bg-white/10 border border-white/20 text-white outline-none focus:bg-white/20 transition-all" required />
+                                            <button type="submit" disabled={submitting} className="px-10 py-4 bg-white text-primary-600 font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl">{submitting ? <RefreshCw className="animate-spin" /> : 'Subscribe Now'}</button>
+                                        </form>
+                                    )}
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        </>
                     )}
-
-                    {/* NEWSLETTER */}
-                    <div className="relative group/cta mt-16 pb-10">
-                        <div className="relative bg-gradient-to-br from-red-600 to-orange-600 rounded-[2.5rem] p-10 md:p-16 text-white text-center shadow-2xl overflow-hidden">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32" />
-                            <h2 className="text-3xl md:text-5xl font-black mb-4">Stay <span className="text-yellow-300">Updated</span></h2>
-                            <p className="max-w-2xl mx-auto mb-10 text-white/80">Get instant notifications for match starts and exclusive streaming links.</p>
-                            {isSubscribed ? <div className="text-xl font-bold flex items-center justify-center gap-2"><CheckCircle size={24} /> You're on the list!</div> : (
-                                <form onSubmit={handleSubscribe} className="flex flex-col md:flex-row gap-4 max-w-lg mx-auto">
-                                    <input type="email" value={newsletterEmail} onChange={(e) => setNewsletterEmail(e.target.value)} placeholder="Email address" className="flex-1 px-6 py-4 rounded-2xl bg-white/10 border border-white/20 text-white outline-none focus:bg-white/20 transition-all" required />
-                                    <button type="submit" disabled={submitting} className="px-10 py-4 bg-white text-primary-600 font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl">{submitting ? <RefreshCw className="animate-spin" /> : 'Subscribe Now'}</button>
-                                </form>
-                            )}
-                        </div>
-                    </div>
                 </div>
             </div>
         </section>
