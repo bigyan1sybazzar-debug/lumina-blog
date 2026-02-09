@@ -37,7 +37,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   email: firebaseUser.email || '',
                   role: 'user',
                   status: firebaseUser.email === 'admin@lumina.blog' ? 'approved' : 'pending',
-                  avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${firebaseUser.email}&background=random`
+                  avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${firebaseUser.email}&background=random`,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString()
                 };
                 // Save to DB
                 await db.collection('users').doc(firebaseUser.uid).set(newUser);
@@ -108,6 +110,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role,
         status: role === 'admin' ? 'approved' : 'pending',
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       await db.collection('users').doc(firebaseUser.uid).set(newUserProfile);

@@ -6,11 +6,11 @@ const R2_PUBLIC_DOMAIN = "https://pub-b2a714905946497d980c717ac1abfd8f.r2.dev";
 
 // Helper to fetch JSON from R2 with fallback
 async function fetchR2<T>(filename: string, fallbackFn: () => Promise<T>): Promise<T> {
+    const isServer = typeof window === 'undefined';
     try {
-        const res = await fetch(`${R2_PUBLIC_DOMAIN}/${filename}`, {
-            next: { revalidate: 3600 },
-            // headers: { 'Cache-Control': 'no-cache' } // REMOVED: Allow caching to save costs
-        });
+        const cacheBuster = `?t=${Date.now()}`;
+        const url = isServer ? `${R2_PUBLIC_DOMAIN}/${filename}${cacheBuster}` : `/api/r2-proxy?file=${filename}&t=${Date.now()}`;
+        const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
         if (!res.ok) throw new Error(`${filename} fetch failed`);
         const data = await res.json();
         return Array.isArray(data) ? data as T : [] as unknown as T;
@@ -36,6 +36,62 @@ export const getR2PostBySlug = async (slug: string): Promise<BlogPost | null> =>
     } catch (error) {
         console.error("Error fetching post by slug from R2:", error);
         return null;
+    }
+};
+
+// Helper to get a single poll by slug using R2 data
+export const getR2PollBySlug = async (slug: string): Promise<Poll | null> => {
+    try {
+        const polls = await getR2Polls();
+        return polls.find(p => p.slug === slug) || null;
+    } catch (error) {
+        console.error("Error fetching poll by slug from R2:", error);
+        return null;
+    }
+};
+
+// Helper to get posts by category using R2 data
+export const getR2PostsByCategory = async (category: string): Promise<BlogPost[]> => {
+    try {
+        const posts = await getR2Posts();
+        if (category === 'all') return posts;
+        return posts.filter(p => p.category === category);
+    } catch (error) {
+        console.error("Error fetching posts by category from R2:", error);
+        return [];
+    }
+};
+
+// Helper to get a single live link by ID using R2 data
+export const getR2LiveLinkById = async (id: string): Promise<LiveLink | null> => {
+    try {
+        const links = await getR2LiveLinks();
+        return links.find(l => l.id === id) || null;
+    } catch (error) {
+        console.error("Error fetching live link by ID from R2:", error);
+        return null;
+    }
+};
+
+// Helper to get trending live links using R2 data
+export const getR2TrendingLiveLinks = async (): Promise<LiveLink[]> => {
+    try {
+        const links = await getR2LiveLinks();
+        return links.filter(l => l.isTrending).sort((a, b) => (a.trendingOrder ?? 999) - (b.trendingOrder ?? 999));
+    } catch (error) {
+        console.error("Error fetching trending live links from R2:", error);
+        return [];
+    }
+};
+
+// Helper to get trending IPTV channels using R2 data
+export const getR2TrendingIPTVChannels = async (): Promise<IPTVChannel[]> => {
+    try {
+        const channels = await getR2IPTVChannels(false); // Get all channels
+        return channels.filter(c => c.isTrending).sort((a, b) => (a.trendingOrder ?? 999) - (b.trendingOrder ?? 999));
+    } catch (error) {
+        console.error("Error fetching trending IPTV channels from R2:", error);
+        return [];
     }
 };
 

@@ -6,6 +6,9 @@ import { BlogPost, Category, User, BlogPostComment, BlogPostReview, Poll, PollOp
 import { MOCK_POSTS, CATEGORIES } from '../constants';
 import { slugify } from '../lib/slugify'; // <-- NEW IMPORT
 
+const R2_PUBLIC_DOMAIN = process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN || process.env.R2_PUBLIC_DOMAIN || 'https://pub-b2a714905946497d980c717ac1abfd8f.r2.dev';
+const isServer = typeof window === 'undefined';
+
 const POSTS_COLLECTION = 'posts';
 const USERS_COLLECTION = 'users';
 const CATEGORIES_COLLECTION = 'categories';
@@ -111,11 +114,10 @@ export const getAllPostsFromFirestore = async (): Promise<BlogPost[]> => {
 
 export const getAllPostsAdmin = async (): Promise<BlogPost[]> => {
   try {
-    // We can fetch the JSON directly since it's public, or use the API if we want consistent structure
-    // Since we just wrote to API, let's use the public JSON url for reading to be fast
-    // But API route ensures we get the latest if we implemented revalidation there
-    // For now, fetch from public R2 URL
-    const res = await fetch('https://pub-b2a714905946497d980c717ac1abfd8f.r2.dev/posts.json', { next: { revalidate: 3600 } });
+    // Use a timestamp to bust browser cache when fetched from client
+    const cacheBuster = `?t=${Date.now()}`;
+    const url = isServer ? `${R2_PUBLIC_DOMAIN}/posts.json${cacheBuster}` : `/api/r2-proxy?file=posts.json&t=${Date.now()}`;
+    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
     if (!res.ok) throw new Error('Failed to fetch from R2');
     const posts = await res.json();
     return Array.isArray(posts) ? posts.sort(sortByDateDesc) : [];
@@ -258,18 +260,26 @@ const getVotingUrl = (slug: string) => `https://bigyann.com.np/voting/${slug}`;
  * Updates post status and notifies IndexNow if changed to published.
  */
 export const updatePostStatus = async (postId: string, status: 'published' | 'pending' | 'draft' | 'hidden') => {
-  await db.collection(POSTS_COLLECTION).doc(postId).update({
-    status,
-    updatedAt: new Date().toISOString(),
-  });
+  try {
+    const res = await fetch('/api/posts/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', id: postId, post: { status } })
+    });
 
-  if (status === 'published') {
-    await generateAndUploadSitemap();
-    const post = await getPostById(postId);
-    if (post?.slug) {
-      await notifyIndexNow([getFullUrl(post.slug)]); // Real-time indexing
-      await notifyBingWebmaster([getFullUrl(post.slug)]); // Bing Webmaster notification
+    if (!res.ok) throw new Error('Failed to update post status on R2');
+
+    if (status === 'published') {
+      await generateAndUploadSitemap();
+      const post = await getPostBySlug(postId);
+      if (post?.slug) {
+        await notifyIndexNow([getFullUrl(post.slug)]); // Real-time indexing
+        await notifyBingWebmaster([getFullUrl(post.slug)]); // Bing Webmaster notification
+      }
     }
+  } catch (error) {
+    console.error('Error updating post status (R2):', error);
+    throw error;
   }
 };
 
@@ -309,43 +319,44 @@ export const incrementViewCount = async (id: string) => {
 
 export const getCategories = async (): Promise<Category[]> => {
   try {
-    const snapshot = await db.collection(CATEGORIES_COLLECTION).get();
-    if (snapshot.empty) return CATEGORIES;
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+    const url = isServer ? `${R2_PUBLIC_DOMAIN}/categories.json?t=${Date.now()}` : `/api/r2-proxy?file=categories.json&t=${Date.now()}`;
+    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    if (!res.ok) throw new Error('Failed to fetch categories from R2');
+    const categories = await res.json();
+    return Array.isArray(categories) && categories.length > 0 ? categories : CATEGORIES;
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error('Error fetching categories from R2:', error);
     return CATEGORIES;
   }
 };
 
 export const createCategory = async (category: Omit<Category, 'id' | 'count'>) => {
-  await db.collection(CATEGORIES_COLLECTION).add({ ...category, count: 0 });
+  try {
+    const res = await fetch('/api/categories/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create', category })
+    });
+    if (!res.ok) throw new Error('Failed to create category on R2');
+    await generateAndUploadSitemap();
+  } catch (error) {
+    console.error('Error creating category (R2):', error);
+    throw error;
+  }
 };
 
 // Delete a category (with validation)
 export const deleteCategory = async (categoryId: string): Promise<void> => {
   try {
-    // Get the category name first
-    const categoryDoc = await db.collection(CATEGORIES_COLLECTION).doc(categoryId).get();
-    if (!categoryDoc.exists) {
-      throw new Error('Category not found');
-    }
-
-    const categoryData = categoryDoc.data() as Category;
-
-    // Check if any posts use this category (by category name)
-    const postsSnapshot = await db.collection(POSTS_COLLECTION)
-      .where('category', '==', categoryData.name)
-      .get();
-
-    if (!postsSnapshot.empty) {
-      throw new Error('Cannot delete category: Some posts are still using it. Please reassign posts first.');
-    }
-
-    await db.collection(CATEGORIES_COLLECTION).doc(categoryId).delete();
-    console.log(`Category ${categoryId} deleted successfully`);
+    const res = await fetch('/api/categories/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id: categoryId })
+    });
+    if (!res.ok) throw new Error('Failed to delete category from R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error deleting category:', error);
+    console.error('Error deleting category (R2):', error);
     throw error;
   }
 };
@@ -778,31 +789,22 @@ export const getTrafficStats = async (period: 'daily' | 'weekly' | 'monthly'): P
 
 export const getPolls = async (category?: string, status: Poll['status'] = 'approved', isFeatured?: boolean): Promise<Poll[]> => {
   try {
-    let query: firebase.firestore.Query = db.collection(POLLS_COLLECTION);
+    const polls = await getAllPollsAdmin();
+    let filtered = polls;
 
-    // Admin can see everything, but for UI we might want to filter
     if (status) {
-      query = query.where('status', '==', status);
+      filtered = filtered.filter(p => p.status === status);
     }
 
     if (category && category !== 'all') {
-      query = query.where('category', '==', category);
+      filtered = filtered.filter(p => p.category === category);
     }
 
     if (isFeatured !== undefined) {
-      query = query.where('isFeatured', '==', isFeatured);
+      filtered = filtered.filter(p => p.isFeatured === isFeatured);
     }
 
-    // Apply sorting in Firestore where possible (requires index)
-    // Falling back to manual sort for complex filters if index isn't present
-    // But for performance, it's better to limit the results
-    query = query.limit(40);
-
-    const snapshot = await query.get();
-    const polls = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
-
-    // Sort logic
-    return polls.sort((a, b) => {
+    return filtered.sort((a, b) => {
       if (isFeatured) {
         const orderA = a.featuredOrder ?? 999;
         const orderB = b.featuredOrder ?? 999;
@@ -811,57 +813,40 @@ export const getPolls = async (category?: string, status: Poll['status'] = 'appr
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   } catch (error) {
-    console.error('Error fetching polls:', error);
+    console.error('Error fetching polls (R2):', error);
     return [];
   }
 };
 
 export const getAllPollsAdmin = async (): Promise<Poll[]> => {
   try {
-    const snapshot = await db.collection(POLLS_COLLECTION).get();
-    const polls = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Poll));
-    return polls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const url = isServer ? `${R2_PUBLIC_DOMAIN}/polls.json?t=${Date.now()}` : `/api/r2-proxy?file=polls.json&t=${Date.now()}`;
+    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    if (!res.ok) throw new Error('Failed to fetch polls from R2');
+    const polls = await res.json();
+    return Array.isArray(polls) ? polls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
   } catch (error) {
-    console.error('Error fetching all polls (admin):', error);
+    console.error('Error fetching all polls (R2):', error);
     return [];
   }
 };
 
 export const getPollById = async (id: string): Promise<Poll | null> => {
   try {
-    const doc = await db.collection(POLLS_COLLECTION).doc(id).get();
-    if (doc.exists) {
-      return { id: doc.id, ...doc.data() } as Poll;
-    }
-    return null;
+    const polls = await getAllPollsAdmin();
+    return polls.find(p => p.id === id) || null;
   } catch (error) {
-    console.error('Error fetching poll by ID:', error);
+    console.error('Error fetching poll by ID (R2):', error);
     return null;
   }
 };
 
 export const getPollBySlug = async (slugOrId: string): Promise<Poll | null> => {
   try {
-    // 1. Try by slug
-    const bySlug = await db.collection(POLLS_COLLECTION)
-      .where('slug', '==', slugOrId)
-      .limit(1)
-      .get();
-
-    if (!bySlug.empty) {
-      const doc = bySlug.docs[0];
-      return { id: doc.id, ...doc.data() } as Poll;
-    }
-
-    // 2. Fallback to document ID
-    const byId = await db.collection(POLLS_COLLECTION).doc(slugOrId).get();
-    if (byId.exists) {
-      return { id: byId.id, ...byId.data() } as Poll;
-    }
-
-    return null;
+    const polls = await getAllPollsAdmin();
+    return polls.find(p => p.slug === slugOrId || p.id === slugOrId) || null;
   } catch (error) {
-    console.error('Error fetching poll by slug/ID:', error);
+    console.error('Error fetching poll by slug/ID (R2):', error);
     return null;
   }
 };
@@ -894,6 +879,17 @@ export const voteInPoll = async (pollId: string, optionId: string, userId: strin
       totalVotes: firebase.firestore.FieldValue.increment(1)
     });
 
+    // ALSO SYNC TO R2 in REAL-TIME (so results show up globally)
+    try {
+      await fetch('/api/polls/manage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'vote', id: pollId, optionId })
+      });
+    } catch (e) {
+      console.warn('Silent failure: Could not sync vote to R2, standard sync will catch it later.', e);
+    }
+
     return true;
   } catch (error) {
     console.error('Error voting in poll:', error);
@@ -905,79 +901,73 @@ export const voteInPoll = async (pollId: string, optionId: string, userId: strin
 
 export const getLiveLinks = async (): Promise<LiveLink[]> => {
   try {
-    const snapshot = await db.collection(LIVE_LINKS_COLLECTION)
-      .orderBy('createdAt', 'desc')
-      .get();
-
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as LiveLink));
+    const url = isServer ? `${R2_PUBLIC_DOMAIN}/live-data.json?t=${Date.now()}` : `/api/r2-proxy?file=live-data.json&t=${Date.now()}`;
+    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    if (!res.ok) throw new Error('Failed to fetch live links from R2');
+    const links = await res.json();
+    return Array.isArray(links) ? links.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()) : [];
   } catch (error) {
-    console.error('Error fetching live links:', error);
+    console.error('Error fetching live links (R2):', error);
     return [];
   }
 };
 
 export const addLiveLink = async (link: Omit<LiveLink, 'id'>) => {
   try {
-    await db.collection(LIVE_LINKS_COLLECTION).add({
-      ...link,
-      createdAt: new Date().toISOString()
+    const res = await fetch('/api/live-links/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create', link })
     });
+    if (!res.ok) throw new Error('Failed to add live link to R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error adding live link:', error);
+    console.error('Error adding live link (R2):', error);
     throw error;
   }
 };
 
 export const updateLiveLink = async (id: string, data: Partial<Omit<LiveLink, 'id' | 'createdAt'>>) => {
   try {
-    await db.collection(LIVE_LINKS_COLLECTION).doc(id).update({
-      ...data,
-      updatedAt: new Date().toISOString()
+    const res = await fetch('/api/live-links/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', id, link: data })
     });
+    if (!res.ok) throw new Error('Failed to update live link on R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error updating live link:', error);
+    console.error('Error updating live link (R2):', error);
     throw error;
   }
 };
 
 export const deleteLiveLink = async (id: string) => {
   try {
-    await db.collection(LIVE_LINKS_COLLECTION).doc(id).delete();
+    const res = await fetch('/api/live-links/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id })
+    });
+    if (!res.ok) throw new Error('Failed to delete live link from R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error deleting live link:', error);
+    console.error('Error deleting live link (R2):', error);
     throw error;
   }
 };
 
 export const setLiveLinkDefault = async (id: string, isDefault: boolean) => {
   try {
-    const batch = db.batch();
-
-    if (isDefault) {
-      // Unset all other defaults in live_links collection
-      const liveSnapshot = await db.collection(LIVE_LINKS_COLLECTION).where('isDefault', '==', true).get();
-      liveSnapshot.docs.forEach(doc => {
-        batch.update(doc.ref, { isDefault: false });
-      });
-
-      // Also unset defaults in iptv_channels collection
-      const iptvSnapshot = await db.collection(IPTV_CHANNELS_COLLECTION).where('isDefault', '==', true).get();
-      iptvSnapshot.docs.forEach(doc => {
-        batch.update(doc.ref, { isDefault: false });
-      });
-    }
-
-    batch.update(db.collection(LIVE_LINKS_COLLECTION).doc(id), {
-      isDefault: isDefault,
-      updatedAt: new Date().toISOString()
+    const res = await fetch('/api/live-links/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'setDefault', id, isDefault })
     });
-
-    await batch.commit();
+    if (!res.ok) throw new Error('Failed to set default live link on R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error setting live link default:', error);
+    console.error('Error setting live link default (R2):', error);
     throw error;
   }
 };
@@ -987,78 +977,62 @@ export const setLiveLinkDefault = async (id: string, isDefault: boolean) => {
 export const createPoll = async (poll: Omit<Poll, 'id' | 'createdAt' | 'totalVotes' | 'votedUserIds' | 'slug' | 'status'>) => {
   try {
     const baseSlug = slugify(poll.question);
-    let slug = baseSlug;
-    let counter = 1;
-
-    while (await checkPollSlugExists(slug)) {
-      counter++;
-      slug = `${baseSlug}-${counter}`;
-    }
-
-    const newPoll = {
-      ...poll,
-      slug,
-      status: 'pending',
-      totalVotes: 0,
-      votedUserIds: [],
-      createdAt: new Date().toISOString(),
-    };
-    const docRef = await db.collection(POLLS_COLLECTION).add(newPoll);
-    return docRef.id;
+    const res = await fetch('/api/polls/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create', poll: { ...poll, slug: baseSlug, status: 'pending' } })
+    });
+    if (!res.ok) throw new Error('Failed to create poll on R2');
+    await generateAndUploadSitemap();
+    const data = await res.json();
+    return data.poll.id;
   } catch (error) {
-    console.error('Error creating poll:', error);
+    console.error('Error creating poll (R2):', error);
     throw error;
   }
 };
 
 export const updatePollStatus = async (pollId: string, status: Poll['status']): Promise<void> => {
   try {
-    await db.collection(POLLS_COLLECTION).doc(pollId).update({
-      status,
-      updatedAt: new Date().toISOString(),
+    const res = await fetch('/api/polls/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateStatus', id: pollId, status })
     });
-
-    if (status === 'approved') {
-      await generateAndUploadSitemap();
-      const poll = await getPollById(pollId);
-      if (poll?.slug) {
-        await notifyIndexNow([getVotingUrl(poll.slug)]); // Real-time indexing
-        await notifyBingWebmaster([getVotingUrl(poll.slug)]); // Bing Webmaster notification
-      }
-    }
+    if (!res.ok) throw new Error('Failed to update poll status on R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error updating poll status:', error);
+    console.error('Error updating poll status (R2):', error);
     throw error;
   }
 };
 
 export const updatePoll = async (pollId: string, data: Partial<Omit<Poll, 'id'>>): Promise<void> => {
   try {
-    const updateData = {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
-    await db.collection(POLLS_COLLECTION).doc(pollId).update(updateData);
-
-    const poll = await getPollById(pollId);
-    if (poll?.status === 'approved' && (data.question || data.slug)) {
-      await generateAndUploadSitemap();
-      if (poll.slug) {
-        await notifyIndexNow([getVotingUrl(poll.slug)]);
-        await notifyBingWebmaster([getVotingUrl(poll.slug)]);
-      }
-    }
+    const res = await fetch('/api/polls/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', id: pollId, poll: data })
+    });
+    if (!res.ok) throw new Error('Failed to update poll on R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error updating poll:', error);
+    console.error('Error updating poll (R2):', error);
     throw error;
   }
 };
 
 export const deletePoll = async (pollId: string): Promise<void> => {
   try {
-    await db.collection(POLLS_COLLECTION).doc(pollId).delete();
+    const res = await fetch('/api/polls/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id: pollId })
+    });
+    if (!res.ok) throw new Error('Failed to delete poll from R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error deleting poll:', error);
+    console.error('Error deleting poll (R2):', error);
     throw error;
   }
 };
@@ -1186,37 +1160,41 @@ export const clearLiveComments = async (channelId: string) => {
 
 export const getKeywords = async (): Promise<{ id: string; name: string; count: number }[]> => {
   try {
-    const snapshot = await db.collection(KEYWORDS_COLLECTION).orderBy('name').get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as { id: string; name: string; count: number }));
+    const url = isServer ? `${R2_PUBLIC_DOMAIN}/keywords.json?t=${Date.now()}` : `/api/r2-proxy?file=keywords.json&t=${Date.now()}`;
+    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    if (!res.ok) throw new Error('Failed to fetch keywords from R2');
+    const keywords = await res.json();
+    return Array.isArray(keywords) ? keywords.sort((a, b) => a.name.localeCompare(b.name)) : [];
   } catch (error) {
-    console.error('Error fetching keywords:', error);
+    console.error('Error fetching keywords (R2):', error);
     return [];
   }
 };
 
 export const createKeyword = async (name: string) => {
   try {
-    const normalizedName = name.trim().toLowerCase();
-    // Check if exists
-    const snapshot = await db.collection(KEYWORDS_COLLECTION).where('name', '==', normalizedName).limit(1).get();
-    if (!snapshot.empty) return; // Already exists
-
-    await db.collection(KEYWORDS_COLLECTION).add({
-      name: normalizedName,
-      count: 0,
-      createdAt: new Date().toISOString()
+    const res = await fetch('/api/keywords/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create', name })
     });
+    if (!res.ok) throw new Error('Failed to create keyword on R2');
   } catch (error) {
-    console.error('Error creating keyword:', error);
+    console.error('Error creating keyword (R2):', error);
     throw error;
   }
 };
 
 export const deleteKeyword = async (id: string) => {
   try {
-    await db.collection(KEYWORDS_COLLECTION).doc(id).delete();
+    const res = await fetch('/api/keywords/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id })
+    });
+    if (!res.ok) throw new Error('Failed to delete keyword from R2');
   } catch (error) {
-    console.error('Error deleting keyword:', error);
+    console.error('Error deleting keyword (R2):', error);
     throw error;
   }
 };
@@ -1545,34 +1523,45 @@ export const incrementPromptUsage = async (promptId: string): Promise<void> => {
 
 export const getHighlights = async (): Promise<Highlight[]> => {
   try {
-    const snapshot = await db.collection(HIGHLIGHTS_COLLECTION)
-      .orderBy('createdAt', 'desc')
-      .get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Highlight));
+    const url = isServer ? `${R2_PUBLIC_DOMAIN}/highlights.json?t=${Date.now()}` : `/api/r2-proxy?file=highlights.json&t=${Date.now()}`;
+    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    if (!res.ok) throw new Error('Failed to fetch highlights from R2');
+    const highlights = await res.json();
+    return Array.isArray(highlights) ? highlights.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()) : [];
   } catch (error) {
-    console.error('Error fetching highlights:', error);
+    console.error('Error fetching highlights (R2):', error);
     return [];
   }
 };
 
 export const addHighlight = async (highlight: Omit<Highlight, 'id' | 'createdAt'>) => {
   try {
-    const docRef = await db.collection(HIGHLIGHTS_COLLECTION).add({
-      ...highlight,
-      createdAt: new Date().toISOString()
+    const res = await fetch('/api/highlights/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create', highlight })
     });
-    return docRef.id;
+    if (!res.ok) throw new Error('Failed to add highlight to R2');
+    await generateAndUploadSitemap();
+    const data = await res.json();
+    return data.highlight.id;
   } catch (error) {
-    console.error('Error adding highlight:', error);
+    console.error('Error adding highlight (R2):', error);
     throw error;
   }
 };
 
 export const deleteHighlight = async (id: string) => {
   try {
-    await db.collection(HIGHLIGHTS_COLLECTION).doc(id).delete();
+    const res = await fetch('/api/highlights/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id })
+    });
+    if (!res.ok) throw new Error('Failed to delete highlight from R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error deleting highlight:', error);
+    console.error('Error deleting highlight (R2):', error);
     throw error;
   }
 };
@@ -1706,64 +1695,41 @@ export const updateIPTVConfig = async (settings: { m3uUrl: string; guestLimitMin
 
 export const getIPTVChannels = async (onlyActive = true): Promise<IPTVChannel[]> => {
   try {
-    let query = db.collection(IPTV_CHANNELS_COLLECTION) as any;
-    if (onlyActive) {
-      query = query.where('status', '==', 'active');
-    }
-
-    const snapshot = await query.get();
-    return snapshot.docs.map((doc: any) => ({
-      id: doc.id,
-      ...doc.data()
-    } as IPTVChannel));
+    const url = isServer ? `${R2_PUBLIC_DOMAIN}/iptv-data.json?t=${Date.now()}` : `/api/r2-proxy?file=iptv-data.json&t=${Date.now()}`;
+    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    if (!res.ok) throw new Error('Failed to fetch IPTV channels from R2');
+    const channels = await res.json();
+    if (!Array.isArray(channels)) return [];
+    return onlyActive ? channels.filter(c => c.status === 'active') : channels;
   } catch (error) {
-    console.error('Error fetching IPTV channels:', error);
+    console.error('Error fetching IPTV channels (R2):', error);
     return [];
   }
 };
 
 export const getTrendingIPTVChannels = async (): Promise<IPTVChannel[]> => {
   try {
-    // Fetch both trending and default channels to ensure they're available for initial load
-    const [trendingSnapshot, defaultSnapshot] = await Promise.all([
-      db.collection(IPTV_CHANNELS_COLLECTION)
-        .where('isTrending', '==', true)
-        .where('status', '==', 'active')
-        .get(),
-      db.collection(IPTV_CHANNELS_COLLECTION)
-        .where('isDefault', '==', true)
-        .where('status', '==', 'active')
-        .get()
-    ]);
-
-    const channelsMap = new Map<string, IPTVChannel>();
-
-    trendingSnapshot.docs.forEach(doc => {
-      channelsMap.set(doc.id, { id: doc.id, ...doc.data() } as IPTVChannel);
-    });
-
-    defaultSnapshot.docs.forEach(doc => {
-      channelsMap.set(doc.id, { id: doc.id, ...doc.data() } as IPTVChannel);
-    });
-
-    return Array.from(channelsMap.values());
+    const channels = await getIPTVChannels(true);
+    return channels.filter(c => c.isTrending || c.isDefault);
   } catch (error) {
-    console.error('Error fetching trending IPTV channels:', error);
+    console.error('Error fetching trending IPTV channels (R2):', error);
     return [];
   }
 };
 
 export const addIPTVChannel = async (channel: Omit<IPTVChannel, 'id' | 'createdAt' | 'updatedAt'>) => {
   try {
-    const now = new Date().toISOString();
-    const docRef = await db.collection(IPTV_CHANNELS_COLLECTION).add({
-      ...channel,
-      createdAt: now,
-      updatedAt: now
+    const res = await fetch('/api/iptv/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create', channel })
     });
-    return docRef.id;
+    if (!res.ok) throw new Error('Failed to add IPTV channel to R2');
+    await generateAndUploadSitemap();
+    const data = await res.json();
+    return data.channel.id;
   } catch (error) {
-    console.error('Error adding IPTV channel:', error);
+    console.error('Error adding IPTV channel (R2):', error);
     throw error;
   }
 };
@@ -1792,96 +1758,60 @@ export const batchAddIPTVChannels = async (channels: Omit<IPTVChannel, 'id' | 'c
 
 export const updateIPTVChannel = async (id: string, updates: Partial<IPTVChannel>) => {
   try {
-    await db.collection(IPTV_CHANNELS_COLLECTION).doc(id).update({
-      ...updates,
-      updatedAt: new Date().toISOString()
+    const res = await fetch('/api/iptv/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', id, channel: updates })
     });
+    if (!res.ok) throw new Error('Failed to update IPTV channel on R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error updating IPTV channel:', error);
+    console.error('Error updating IPTV channel (R2):', error);
     throw error;
   }
 };
 
 export async function upsertIPTVChannel(channel: any, updates: Partial<IPTVChannel>) {
   try {
-    const docRef = db.collection(IPTV_CHANNELS_COLLECTION).doc(channel.id);
-    const doc = await docRef.get();
-
-    if (doc.exists) {
-      await docRef.update({
-        ...updates,
-        updatedAt: new Date().toISOString()
-      });
-    } else {
-      await docRef.set({
-        name: channel.name,
-        url: channel.url,
-        logo: channel.logo || '',
-        category: channel.group || 'Uncategorized',
-        status: 'active',
-        isTrending: false,
-        isDefault: false,
-        ...updates,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-    }
+    const res = await fetch('/api/iptv/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'upsert', channel: { ...channel, ...updates } })
+    });
+    if (!res.ok) throw new Error('Failed to upsert IPTV channel on R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error upserting IPTV channel:', error);
+    console.error('Error upserting IPTV channel (R2):', error);
     throw error;
   }
 }
 
 export const setDefaultIPTVChannel = async (channel: any) => {
   try {
-    const batch = db.batch();
-
-    // Unset current defaults in IPTV collection
-    const iptvSnapshot = await db.collection(IPTV_CHANNELS_COLLECTION).where('isDefault', '==', true).get();
-    iptvSnapshot.docs.forEach(doc => {
-      if (doc.id !== channel.id) {
-        batch.update(doc.ref, { isDefault: false, updatedAt: new Date().toISOString() });
-      }
+    const res = await fetch('/api/iptv/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'setDefault', id: channel.id })
     });
-
-    // Also unset defaults in live_links collection
-    const liveSnapshot = await db.collection(LIVE_LINKS_COLLECTION).where('isDefault', '==', true).get();
-    liveSnapshot.docs.forEach(doc => {
-      batch.update(doc.ref, { isDefault: false, updatedAt: new Date().toISOString() });
-    });
-
-    // Set new default
-    const newDefaultRef = db.collection(IPTV_CHANNELS_COLLECTION).doc(channel.id);
-    const doc = await newDefaultRef.get();
-
-    if (!doc.exists) {
-      batch.set(newDefaultRef, {
-        name: channel.name,
-        url: channel.url,
-        logo: channel.logo || '',
-        category: channel.group || 'Uncategorized',
-        status: 'active',
-        isTrending: !!channel.isTrending,
-        isDefault: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-    } else {
-      batch.update(newDefaultRef, { isDefault: true, updatedAt: new Date().toISOString() });
-    }
-
-    await batch.commit();
+    if (!res.ok) throw new Error('Failed to set default IPTV channel on R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error setting default IPTV channel:', error);
+    console.error('Error setting default IPTV channel (R2):', error);
     throw error;
   }
 };
 
 export const deleteIPTVChannel = async (id: string) => {
   try {
-    await db.collection(IPTV_CHANNELS_COLLECTION).doc(id).delete();
+    const res = await fetch('/api/iptv/manage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id })
+    });
+    if (!res.ok) throw new Error('Failed to delete IPTV channel from R2');
+    await generateAndUploadSitemap();
   } catch (error) {
-    console.error('Error deleting IPTV channel:', error);
+    console.error('Error deleting IPTV channel (R2):', error);
     throw error;
   }
 };
@@ -1890,10 +1820,11 @@ export const deleteIPTVChannel = async (id: string) => {
 
 export const getIPTVCategories = async (): Promise<IPTVCategory[]> => {
   try {
-    const snapshot = await db.collection(IPTV_CATEGORIES_COLLECTION).get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as IPTVCategory));
+    const channels = await getIPTVChannels(true);
+    const categories = Array.from(new Set(channels.map(c => c.category)));
+    return categories.map(name => ({ id: name, name, slug: slugify(name) }));
   } catch (error) {
-    console.error('Error fetching IPTV categories:', error);
+    console.error('Error fetching IPTV categories (derived):', error);
     return [];
   }
 };

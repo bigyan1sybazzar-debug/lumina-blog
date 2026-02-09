@@ -31,7 +31,6 @@ import '@splidejs/react-splide/css';
 import HLSPlayer from './HLSPlayer';
 import { M3UChannel } from '../lib/m3uParser';
 
-// Custom styles to remove Splide padding
 const splideCustomStyles = `
   #trending-slider .splide__track {
     padding-left: 0 !important;
@@ -40,6 +39,33 @@ const splideCustomStyles = `
   #trending-slider .splide__list {
     padding-left: 0 !important;
     padding-right: 0 !important;
+  }
+  
+  /* Top Ad Slimming */
+  #top-ad-container,
+  #top-ad-container > div,
+  #top-ad-container .ad-container,
+  #top-ad-container .adsbygoogle,
+  #top-ad-container iframe,
+  #top-ad-container ins {
+    height: 90px !important;
+    min-height: 90px !important;
+    max-height: 90px !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  @media (min-width: 768px) {
+    #top-ad-container,
+    #top-ad-container > div,
+    #top-ad-container .ad-container,
+    #top-ad-container .adsbygoogle,
+    #top-ad-container iframe,
+    #top-ad-container ins {
+      height: 90px !important;
+      min-height: 90px !important;
+      max-height: 90px !important;
+    }
   }
 `;
 
@@ -116,6 +142,7 @@ export const LiveSection: React.FC = () => {
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
     const [iptvConfig, setIptvConfig] = useState<any>(null);
     const [hasFullList, setHasFullList] = useState(false);
+    const [isDataLoading, setIsDataLoading] = useState(true);
     const { user } = useAuth();
     const playerRef = React.useRef<HTMLDivElement>(null);
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
@@ -226,6 +253,8 @@ export const LiveSection: React.FC = () => {
 
             } catch (error) {
                 console.error('Error in initial load:', error);
+            } finally {
+                setIsDataLoading(false);
             }
         };
         loadInitialData();
@@ -289,15 +318,15 @@ export const LiveSection: React.FC = () => {
                     if (iframeDoc) {
                         const style = iframeDoc.createElement('style');
                         style.textContent = `
-                            [id*="ad-"], [class*="ad-"], [class*="popup"], [class*="overlay"]:not([class*="video"]),
-                            [id*="popup"], div[style*="position: fixed"][style*="z-index: 9"],
-                            iframe[src*="ads"], iframe[src*="doubleclick"], iframe[src*="googlesyndication"] {
-                                display: none !important;
-                                visibility: hidden !important;
-                                opacity: 0 !important;
-                                pointer-events: none !important;
-                            }
-                        `;
+[id *= "ad-"], [class*= "ad-"], [class*= "popup"], [class*= "overlay"]: not([class*= "video"]),
+    [id *= "popup"], div[style *= "position: fixed"][style *= "z-index: 9"],
+    iframe[src *= "ads"], iframe[src *= "doubleclick"], iframe[src *= "googlesyndication"] {
+    display: none!important;
+    visibility: hidden!important;
+    opacity: 0!important;
+    pointer - events: none!important;
+}
+`;
                         iframeDoc.head?.appendChild(style);
                     }
                 } catch (e) { }
@@ -329,7 +358,7 @@ export const LiveSection: React.FC = () => {
 
     const handleOnDemandSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const prefilledMessage = `*ON DEMAND REQUEST*%0A%0A*Name:* ${onDemandName}%0A*Channel Name:* ${onDemandMessage}`;
+        const prefilledMessage = `* ON DEMAND REQUEST *% 0A % 0A * Name:* ${onDemandName}% 0A * Channel Name:* ${onDemandMessage} `;
         window.open(`https://wa.me/9779805671898?text=${encodeURIComponent(prefilledMessage)}`, '_blank');
         setOnDemandName(''); setOnDemandMessage('');
     };
@@ -427,6 +456,21 @@ export const LiveSection: React.FC = () => {
 
     if (!isMounted) return null;
 
+    if (isDataLoading) {
+        return (
+            <div className="min-h-[80vh] flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-primary-200 dark:border-primary-900 border-t-primary-600 rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Activity size={24} className="text-primary-600 animate-pulse" />
+                    </div>
+                </div>
+                <h3 className="mt-6 text-lg font-black text-gray-900 dark:text-white uppercase tracking-widest animate-pulse">Loading Please Wait...</h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 font-medium">Fetching the latest matches & channels</p>
+            </div>
+        );
+    }
+
     return (
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-primary-light/5 via-transparent opacity-50 pointer-events-none" />
@@ -441,8 +485,8 @@ export const LiveSection: React.FC = () => {
                     </div>
 
                     {/* Top Ad */}
-                    <div className="w-full flex justify-center min-h-[110px] my-4 bg-gray-50 dark:bg-white/5 rounded-xl items-center overflow-hidden">
-                        <GoogleAdSense slot="7838572857" format="horizontal" style={{ display: 'block', width: '100%', height: '110px' }} />
+                    <div id="top-ad-container" className="w-full flex justify-center items-center overflow-hidden" style={{ height: '90px', minHeight: '90px', maxHeight: '90px' }}>
+                        <GoogleAdSense slot="7838572857" format="auto" minHeight="90px" responsive={false} style={{ display: 'block', width: '100%', height: '90px' }} />
                     </div>
 
                     {/* Trending Slider */}

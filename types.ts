@@ -10,6 +10,8 @@ export interface User {
   status: 'approved' | 'pending' | 'rejected';
   friendIds?: string[];
   bio?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface DirectMessage {
@@ -82,6 +84,8 @@ export interface Category {
   count: number;
   description: string;
   icon: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BlogPostComment {
@@ -160,6 +164,7 @@ export interface Poll {
   allowMultiple?: boolean;
   expiresAt?: string; // ISO string
   createdAt: string; // ISO string
+  updatedAt?: string; // ISO string
   votedUserIds?: string[]; // To prevent duplicate voting
   status: 'pending' | 'approved' | 'rejected';
   isFeatured?: boolean;
@@ -229,6 +234,8 @@ export interface Keyword {
   id: string;
   name: string;
   count: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SEOData {
