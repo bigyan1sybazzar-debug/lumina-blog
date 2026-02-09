@@ -473,10 +473,11 @@ export const LiveSection: React.FC = () => {
 
     return (
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen relative overflow-hidden">
+            <style>{splideCustomStyles}</style>
             <div className="absolute inset-0 bg-gradient-to-b from-primary-light/5 via-transparent opacity-50 pointer-events-none" />
 
-            <div className="py-6 md:py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="space-y-4 md:space-y-8">
+            <div className="py-4 md:py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="space-y-4 md:space-y-4">
 
                     {/* HD Alert */}
                     <div className="bg-accent-success/5 border-accent-success/20 border rounded-card p-4 flex items-center gap-4">
