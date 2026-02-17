@@ -1,12 +1,6 @@
-'use client';
-
 import { Suspense } from 'react';
 import Categories from '../../pages/Categories';
 import { Loader2 } from 'lucide-react';
-
-function CategoriesContent() {
-    return <Categories />;
-}
 
 export default function Page() {
     return (
@@ -15,7 +9,7 @@ export default function Page() {
                 <Loader2 className="animate-spin" size={48} />
             </div>
         }>
-            <CategoriesContent />
+            <Categories />
         </Suspense>
     );
 }

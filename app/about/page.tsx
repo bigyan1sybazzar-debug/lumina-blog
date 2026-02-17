@@ -1,2 +1,10 @@
 import About from '../../pages/About';
-export default function Page() { return <About />; }
+import { Suspense } from 'react';
+
+export default function Page() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <About />
+        </Suspense>
+    );
+}

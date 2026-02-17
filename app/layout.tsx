@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Inter, Merriweather } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -115,7 +116,9 @@ export default function RootLayout({
                 <Providers>
                     <Header />
                     <FriendsSidebar />
-                    <Analytics />
+                    <Suspense fallback={null}>
+                        <Analytics />
+                    </Suspense>
                     <Script src="https://js.puter.com/v2/" strategy="lazyOnload" />
                     <Script
                         id="json-ld"

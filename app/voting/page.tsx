@@ -1,5 +1,6 @@
 import VotingPage from '../../components/voting/VotingPage';
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 
 export const revalidate = 60; // revalidate every minute
 
@@ -12,5 +13,13 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-    return <VotingPage />;
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-900">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            </div>
+        }>
+            <VotingPage />
+        </Suspense>
+    );
 }

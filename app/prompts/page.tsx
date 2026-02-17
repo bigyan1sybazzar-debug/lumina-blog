@@ -1,5 +1,6 @@
 import PromptsPage from '../../pages/_prompts_base';
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
     title: 'AI Prompt Library - Best ChatGPT, Claude & Gemini Prompts',
@@ -15,4 +16,10 @@ export const metadata: Metadata = {
     }
 };
 
-export default function Page() { return <PromptsPage />; }
+export default function Page() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <PromptsPage />
+        </Suspense>
+    );
+}
