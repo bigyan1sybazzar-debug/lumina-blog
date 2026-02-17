@@ -1,0 +1,67 @@
+{
+  "version": 2,
+  "crons": [
+    {
+      "path": "/api/cron/autopilot",
+      "schedule": "0 0 * * *"
+    }
+  ],
+  "framework": "nextjs",
+  "redirects": [
+    {
+      "source": "/default",
+      "destination": "/",
+      "statusCode": 301
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "statusCode": 301
+    },
+    {
+      "source": "/blog/:path*",
+      "destination": "/:path*",
+      "statusCode": 301
+    },
+    {
+      "source": "/blog/fm3g9qgx4JGycFGkc3M3",
+      "destination": "/samsung-galaxy-a24-price-in-nepal",
+      "statusCode": 301
+    },
+    {
+      "source": "/2025/11/Yono-tv-live.html",
+      "destination": "/yono-tv-live-html",
+      "statusCode": 301
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/e35d69cc7c89486cba626398fe444e70.txt",
+      "destination": "/e35d69cc7c89486cba626398fe444e70.txt"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/e35d69cc7c89486cba626398fe444e70.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "index, follow"
+        }
+      ]
+    }
+  ]
+}

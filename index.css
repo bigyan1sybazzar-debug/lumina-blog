@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans antialiased text-slate-900 bg-surface-light-50 dark:bg-surface-dark-950 dark:text-slate-100 transition-colors duration-300;
+  }
+
+  h1 {
+    @apply text-[2.5rem] md:text-[3rem] font-bold tracking-tight leading-tight;
+  }
+
+  h2 {
+    @apply text-[2rem] font-bold leading-snug;
+  }
+
+  h3 {
+    @apply text-[1.5rem] font-semibold leading-normal;
+  }
+
+  p {
+    @apply text-base leading-relaxed;
+  }
+}
+
+@layer components {
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-light to-primary-dark font-bold tracking-tight;
+  }
+
+  .label-micro {
+    @apply text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400;
+  }
+
+  .btn-primary {
+    @apply px-6 py-2.5 bg-gradient-to-r from-primary-light to-primary-dark text-white font-bold rounded-2xl hover:shadow-lg hover:shadow-primary-light/30 active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-light/50;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-white font-bold rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200 shadow-sm;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-700 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-600;
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}

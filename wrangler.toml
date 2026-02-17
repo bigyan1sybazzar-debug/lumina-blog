@@ -1,0 +1,13 @@
+name = "bigyann"
+compatibility_date = "2024-04-03"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[vars]
+# Public environment variables (non-sensitive)
+# For sensitive keys, add them via Cloudflare Dashboard: Settings > Environment Variables
+
+# Note: Add these as secrets in Cloudflare Dashboard for production:
+# - NEXT_PUBLIC_GEMINI_API_KEY
+# - BING_WEBMASTER_API_KEY
+# - BLOB_READ_WRITE_TOKEN

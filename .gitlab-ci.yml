@@ -1,0 +1,80 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  NODE_VERSION: "20"
+
+# Cache node_modules for faster builds
+cache:
+  paths:
+    - node_modules/
+    - .next/cache/
+
+# Build job - runs on every push
+build:
+  stage: build
+  image: node:20
+  script:
+    - node -v
+    - npm -v
+    - echo "Installing dependencies..."
+    - npm install --legacy-peer-deps
+    - echo "Building Next.js application..."
+    - npm run build || (echo "Build failed! Check if env variables are missing." && exit 1)
+  artifacts:
+    paths:
+      - .next/
+      - public/
+    expire_in: 1 hour
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Deploy to Cloudflare Pages - Production
+deploy_production:
+  stage: deploy
+  image: node:20
+  dependencies:
+    - build
+  script:
+    - echo "Installing Wrangler CLI..."
+    - npm install -g wrangler
+    - echo "Authenticating with Cloudflare..."
+    - export CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN
+    - export CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID
+    - echo "Building for Cloudflare Pages..."
+    - npx @cloudflare/next-on-pages
+    - echo "Deploying to Cloudflare Pages (Production)..."
+    - npx wrangler pages deploy .vercel/output/static --project-name=bigyann --branch=main
+  environment:
+    name: production
+    url: https://bigyann.pages.dev
+  only:
+    - main
+  when: manual  # Requires manual trigger for safety
+
+# Deploy to Cloudflare Pages - Preview
+deploy_preview:
+  stage: deploy
+  image: node:20
+  dependencies:
+    - build
+  script:
+    - echo "Installing Wrangler CLI..."
+    - npm install -g wrangler
+    - echo "Authenticating with Cloudflare..."
+    - export CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN
+    - export CLOUDFLARE_ACCOUNT_ID=$CLOUDFLARE_ACCOUNT_ID
+    - echo "Building for Cloudflare Pages..."
+    - npx @cloudflare/next-on-pages
+    - echo "Deploying to Cloudflare Pages (Preview)..."
+    - npx wrangler pages deploy .vercel/output/static --project-name=bigyann --branch=$CI_COMMIT_REF_NAME
+  environment:
+    name: preview/$CI_COMMIT_REF_NAME
+    url: https://$CI_COMMIT_REF_SLUG.bigyann.pages.dev
+  only:
+    - develop
+    - merge_requests
+  when: manual  # Requires manual trigger
