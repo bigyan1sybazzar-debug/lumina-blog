@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+
 import { LiveSection } from '../../../components/LiveSection';
 
 export default function LiveTVPage() {

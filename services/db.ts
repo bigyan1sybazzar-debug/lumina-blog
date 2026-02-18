@@ -642,6 +642,7 @@ export const recordPageView = async (data: {
   postId?: string;
   userId?: string;
   device?: string;
+  isWatching?: boolean;
 }): Promise<string> => {
   try {
     const now = new Date();
@@ -656,6 +657,7 @@ export const recordPageView = async (data: {
       lastHeartbeat: now.toISOString(),
       duration: 0,
       isActive: true,
+      isWatching: data.isWatching || false,
       date: now.toISOString().split('T')[0]
     };
 
@@ -676,13 +678,16 @@ export const recordPageView = async (data: {
   }
 };
 
-export const updatePageHeartbeat = async (sessionId: string, duration: number, isActive: boolean = true) => {
+export const updatePageHeartbeat = async (sessionId: string, duration: number, isActive: boolean = true, isWatching?: boolean) => {
   try {
-    await db.collection(TRAFFIC_COLLECTION).doc(sessionId).update({
+    const updateData: any = {
       lastHeartbeat: new Date().toISOString(),
       duration: duration,
       isActive: isActive
-    });
+    };
+    if (isWatching !== undefined) updateData.isWatching = isWatching;
+
+    await db.collection(TRAFFIC_COLLECTION).doc(sessionId).update(updateData);
   } catch (error) {
     console.error('Error updating heartbeat:', error);
   }
@@ -698,13 +703,16 @@ export const getRealtimeTraffic = async (): Promise<{ activeUsers: number; activ
     const sessions = snapshot.docs
       .map(doc => doc.data() as TrafficSession)
       .filter(s => s.isActive);
-    const pageCounts: Record<string, { title: string, count: number }> = {};
+    const pageCounts: Record<string, { title: string, count: number, watchingCount: number }> = {};
 
     sessions.forEach(s => {
       if (!pageCounts[s.slug]) {
-        pageCounts[s.slug] = { title: s.title, count: 0 };
+        pageCounts[s.slug] = { title: s.title, count: 0, watchingCount: 0 };
       }
       pageCounts[s.slug].count += 1;
+      if (s.isWatching) {
+        pageCounts[s.slug].watchingCount += 1;
+      }
     });
 
     return {
@@ -712,7 +720,8 @@ export const getRealtimeTraffic = async (): Promise<{ activeUsers: number; activ
       activePages: Object.entries(pageCounts).map(([slug, data]) => ({
         slug,
         title: data.title,
-        count: data.count
+        count: data.count,
+        watchingCount: data.watchingCount
       })).sort((a, b) => b.count - a.count)
     };
   } catch (error) {

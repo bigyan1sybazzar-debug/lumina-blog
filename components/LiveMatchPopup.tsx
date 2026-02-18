@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, X, ExternalLink, Siren } from 'lucide-react';
-import { getLiveMatches } from '../services/db';
-import { LiveMatch } from '../types';
+import { getLiveMatches } from '../services/matches';
+import { APIMatch } from '../types';
 
 export const LiveMatchPopup: React.FC = () => {
-    const [matches, setMatches] = useState<LiveMatch[]>([]);
+    const [matches, setMatches] = useState<APIMatch[]>([]);
     const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
         const fetchMatches = async () => {
             const data = await getLiveMatches();
-            // Only show active matches
-            const activeMatches = data.filter((m: any) => m.isActive);
-            setMatches(activeMatches);
+            // In the new API, all matches from /live are theoretically active
+            setMatches(data.slice(0, 3)); // Show top 3 live matches
         };
         fetchMatches();
 
@@ -53,20 +52,28 @@ export const LiveMatchPopup: React.FC = () => {
                                 {match.title}
                             </p>
 
-                            {match.team1 && match.team2 ? (
+                            {match.teams?.home && match.teams?.away ? (
                                 <div className="flex items-center justify-between gap-2 mb-3">
                                     <div className="flex-1 text-center">
-                                        <div className="w-8 h-8 mx-auto bg-gray-100 dark:bg-gray-700/50 rounded-lg flex items-center justify-center mb-1 group-hover:rotate-3 transition-transform">
-                                            <Trophy size={16} className="text-yellow-500" />
+                                        <div className="w-8 h-8 mx-auto bg-gray-100 dark:bg-gray-700/50 rounded-lg flex items-center justify-center mb-1 group-hover:rotate-3 transition-transform overflow-hidden">
+                                            {match.teams.home.badge ? (
+                                                <img src={`https://streamed.pk/api/images/badge/${match.teams.home.badge}.webp`} alt={match.teams.home.name} className="w-full h-full object-contain" />
+                                            ) : (
+                                                <Trophy size={16} className="text-yellow-500" />
+                                            )}
                                         </div>
-                                        <p className="text-[10px] font-bold dark:text-white truncate px-1">{match.team1}</p>
+                                        <p className="text-[10px] font-bold dark:text-white truncate px-1 uppercase">{match.teams.home.name}</p>
                                     </div>
                                     <div className="text-primary-600 font-black text-[10px] italic opacity-50">VS</div>
                                     <div className="flex-1 text-center">
-                                        <div className="w-8 h-8 mx-auto bg-gray-100 dark:bg-gray-700/50 rounded-lg flex items-center justify-center mb-1 group-hover:-rotate-3 transition-transform">
-                                            <Trophy size={16} className="text-primary-500" />
+                                        <div className="w-8 h-8 mx-auto bg-gray-100 dark:bg-gray-700/50 rounded-lg flex items-center justify-center mb-1 group-hover:-rotate-3 transition-transform overflow-hidden">
+                                            {match.teams.away.badge ? (
+                                                <img src={`https://streamed.pk/api/images/badge/${match.teams.away.badge}.webp`} alt={match.teams.away.name} className="w-full h-full object-contain" />
+                                            ) : (
+                                                <Trophy size={16} className="text-primary-500" />
+                                            )}
                                         </div>
-                                        <p className="text-[10px] font-bold dark:text-white truncate px-1">{match.team2}</p>
+                                        <p className="text-[10px] font-bold dark:text-white truncate px-1 uppercase">{match.teams.away.name}</p>
                                     </div>
                                 </div>
                             ) : (
@@ -75,20 +82,20 @@ export const LiveMatchPopup: React.FC = () => {
                                         <Siren size={16} className="text-primary-600" />
                                     </div>
                                     <p className="text-xs font-bold dark:text-gray-200 line-clamp-2">
-                                        Click to watch the live stream
+                                        {match.title}
                                     </p>
                                 </div>
                             )}
 
-                            <a
-                                href={match.matchUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            {/* <button
+                                onClick={() => {
+                                    window.open(`/tools/live-tv?v=${match.id}`, '_blank');
+                                }}
                                 className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-gray-900 hover:bg-black dark:bg-primary-600 dark:hover:bg-primary-700 text-white text-[11px] font-bold rounded-xl transition-all shadow-lg hover:shadow-primary-500/20"
                             >
                                 <ExternalLink size={12} />
                                 Watch Stream
-                            </a>
+                            </button> */}
                         </div>
                     </div>
                 ))}

@@ -18,6 +18,23 @@ export const Analytics = () => {
     const sessionIdRef = useRef<string | null>(null);
     const startTimeRef = useRef<number>(0);
     const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const isWatchingRef = useRef<boolean>(false);
+
+    useEffect(() => {
+        const handleWatchState = (e: any) => {
+            if (e.detail && typeof e.detail.isWatching === 'boolean') {
+                isWatchingRef.current = e.detail.isWatching;
+                // Trigger immediate heartbeat update if session exists
+                if (sessionIdRef.current) {
+                    const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+                    updatePageHeartbeat(sessionIdRef.current, duration, true, isWatchingRef.current);
+                }
+            }
+        };
+
+        window.addEventListener('analytics_watch_state', handleWatchState);
+        return () => window.removeEventListener('analytics_watch_state', handleWatchState);
+    }, []);
 
     useEffect(() => {
         // Scroll to top
@@ -30,9 +47,12 @@ export const Analytics = () => {
             // Clean up previous session if it exists
             if (sessionIdRef.current) {
                 const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
-                updatePageHeartbeat(sessionIdRef.current, duration, false);
+                updatePageHeartbeat(sessionIdRef.current, duration, false, isWatchingRef.current);
                 if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
             }
+
+            // Reset watching state when page changes (until user plays on new page)
+            isWatchingRef.current = false;
 
             // Start new session
             startTimeRef.current = Date.now();
@@ -42,7 +62,8 @@ export const Analytics = () => {
                 slug: fullPath,
                 title: title,
                 userId: user?.id || undefined,
-                device: typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop'
+                device: typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop',
+                isWatching: false
             });
 
             sessionIdRef.current = sessionId;
@@ -51,7 +72,7 @@ export const Analytics = () => {
             heartbeatIntervalRef.current = setInterval(() => {
                 if (sessionIdRef.current) {
                     const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
-                    updatePageHeartbeat(sessionIdRef.current, duration, true);
+                    updatePageHeartbeat(sessionIdRef.current, duration, true, isWatchingRef.current);
                 }
             }, 30000); // Every 30 seconds
         };

@@ -1,9 +1,9 @@
 'use client';
 
+
 import React, { useState, useEffect } from 'react';
 import {
     getLiveLinks,
-    getHighlights,
     subscribeToNewsletter,
     getIPTVChannels,
     getIPTVConfig,
@@ -20,19 +20,20 @@ import {
     getRealtimeTraffic,
     voteLiveLinkPoll
 } from '../services/db';
-import { getR2LiveLinks, getR2IPTVChannels, getR2Highlights } from '../services/r2-data';
+import { getLiveMatches } from '../services/matches';
+import { getR2LiveLinks, getR2IPTVChannels } from '../services/r2-data';
 import { useAuth } from '../context/AuthContext';
 import { parseM3U } from '../lib/m3uParser';
-import { LiveLink, Highlight } from '../types';
+import { LiveLink } from '../types';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import GoogleAdSense from './GoogleAdSense';
-import { X, Play, Radio, Vote, Trophy, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search, User, Hand, Heart, Reply } from 'lucide-react';
+import { X, Play, Radio, Vote, Trophy, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search, User, Users, Hand, Heart, Reply } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 import HLSPlayer from './HLSPlayer';
 import { M3UChannel } from '../lib/m3uParser';
+import { APIMatch } from '../types';
 
 const splideCustomStyles = `
   #trending-slider .splide__track {
@@ -45,20 +46,7 @@ const splideCustomStyles = `
   }
 `;
 
-const splideOptionsHighlights = {
-    perPage: 4,
-    perMove: 1,
-    gap: '1rem',
-    arrows: true,
-    pagination: false,
-    drag: 'free',
-    snap: false,
-    breakpoints: {
-        1024: { perPage: 3 },
-        768: { perPage: 2 },
-        480: { perPage: 1.5, gap: '0.75rem', arrows: false, pagination: true },
-    },
-};
+
 
 const splideOptionsTrending = {
     type: 'slide',
@@ -89,14 +77,19 @@ const splideOptionsTrending = {
 export const LiveSection: React.FC = () => {
     const [isMounted, setIsMounted] = useState(false);
     const [links, setLinks] = useState<LiveLink[]>([]);
-    const [highlights, setHighlights] = useState<Highlight[]>([]);
+
     const [selectedLink, setSelectedLink] = useState<any>(null);
 
     const [newsletterEmail, setNewsletterEmail] = useState('');
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [activeScoreTab, setActiveScoreTab] = useState<'football' | 'cricket'>('football');
-    const [cricketScores, setCricketScores] = useState<any[]>([]);
+    const [cricketScores, setCricketScores] = useState<APIMatch[]>([]);
+    const [liveMatches, setLiveMatches] = useState<APIMatch[]>([]);
+    const [loadingMatches, setLoadingMatches] = useState(false);
+    const [loadingSports, setLoadingSports] = useState(false);
+    const [sports, setSports] = useState<{ id: string; name: string }[]>([]);
+    const [selectedSport, setSelectedSport] = useState<string>('all');
     const [loadingCricket, setLoadingCricket] = useState(false);
     const [selectedTag, setSelectedTag] = useState<string>('All');
     const [showAd, setShowAd] = useState(false); // Kept for compatibility but unused
@@ -114,6 +107,19 @@ export const LiveSection: React.FC = () => {
     const [isIPTVMode, setIsIPTVMode] = useState(false);
     const [iptvTag, setIptvTag] = useState<string>('All');
     const [iptvSearch, setIptvSearch] = useState('');
+    const [isWatching, setIsWatching] = useState(false);
+
+    // Track watching state
+    useEffect(() => {
+        window.dispatchEvent(new CustomEvent('analytics_watch_state', {
+            detail: { isWatching: isWatching }
+        }));
+    }, [isWatching]);
+
+    // Reset watching state when link changes
+    useEffect(() => {
+        setIsWatching(false);
+    }, [selectedLink?.id]);
     const [iptvWatchTime, setIptvWatchTime] = useState(0);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
     const [iptvConfig, setIptvConfig] = useState<any>(null);
@@ -200,15 +206,14 @@ export const LiveSection: React.FC = () => {
         setIsMounted(true);
         const loadInitialData = async () => {
             try {
-                const [fetchedLinks, fetchedHighlights, config, r2Channels] = await Promise.all([
+                const [fetchedLinks, config, r2Channels] = await Promise.all([
                     getR2LiveLinks(),
-                    getR2Highlights(),
                     getIPTVConfig(),
                     getR2IPTVChannels()
                 ]);
 
                 setLinks(fetchedLinks);
-                setHighlights(fetchedHighlights);
+
                 setIptvConfig(config);
 
                 const mappedChannels: M3UChannel[] = r2Channels.map((c: any) => ({
@@ -287,6 +292,35 @@ export const LiveSection: React.FC = () => {
         };
         loadInitialData();
 
+        // Fetch Live Matches from new API
+        const fetchLiveMatches = async () => {
+            setLoadingMatches(true);
+            try {
+                const data = await getLiveMatches();
+                setLiveMatches(data);
+            } catch (err) {
+                console.error('Failed to fetch live matches:', err);
+            } finally {
+                setLoadingMatches(false);
+            }
+        };
+
+        const fetchSportsList = async () => {
+            setLoadingSports(true);
+            try {
+                const { getSports } = await import('../services/matches');
+                const data = await getSports();
+                setSports(data);
+            } catch (err) {
+                console.error('Failed to fetch sports:', err);
+            } finally {
+                setLoadingSports(false);
+            }
+        };
+
+        fetchLiveMatches();
+        fetchSportsList();
+
         // Fetch realtime traffic stats
         const fetchTraffic = async () => {
             try {
@@ -312,20 +346,33 @@ export const LiveSection: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (activeScoreTab === 'cricket' && cricketScores.length === 0) {
-            setLoadingCricket(true);
-            fetch('/api/cricket-scores')
-                .then(res => res.json())
-                .then(data => {
-                    setCricketScores(data);
-                    setLoadingCricket(false);
-                })
-                .catch(err => {
-                    console.error(err);
-                    setLoadingCricket(false);
-                });
+        if (selectedSport !== 'all') {
+            const fetchBySport = async () => {
+                setLoadingMatches(true);
+                try {
+                    const { getMatchesBySport } = await import('../services/matches');
+                    const data = await getMatchesBySport(selectedSport);
+                    setLiveMatches(data);
+                } catch (err) {
+                    console.error('Failed to fetch matches:', err);
+                } finally {
+                    setLoadingMatches(false);
+                }
+            };
+            fetchBySport();
+        } else {
+            // Re-fetch all live matches if switching back to 'all'
+            const fetchAll = async () => {
+                setLoadingMatches(true);
+                try {
+                    const data = await getLiveMatches();
+                    setLiveMatches(data);
+                } catch (err) { }
+                finally { setLoadingMatches(false); }
+            };
+            fetchAll();
         }
-    }, [activeScoreTab, cricketScores.length]);
+    }, [selectedSport]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -478,28 +525,25 @@ export const LiveSection: React.FC = () => {
         return hours < 24 ? `${hours}h ago` : `${Math.floor(hours / 24)}d ago`;
     };
 
-    const groupedHighlights = highlights.reduce((acc, h) => {
-        if (!acc[h.category]) acc[h.category] = [];
-        acc[h.category].push(h);
-        return acc;
-    }, {} as Record<string, Highlight[]>);
+
 
     const allTags = ['All', ...Array.from(new Set(links.flatMap(link => link.tags || [])))];
     const filteredLinks = selectedTag === 'All' ? links : links.filter(link => link.tags?.includes(selectedTag));
 
-    const trendingItems = [
+    const trendingItems = Array.from(new Map([
         ...links.filter(l => l.isTrending).map(l => ({ ...l, itemType: 'sports' })),
         ...iptvChannels.filter(c => c.isTrending).map(c => ({
             id: c.id, heading: c.name, iframeUrl: c.url, isHLS: c.url.includes('.m3u8'),
             tags: [c.group], isIPTV: true, itemType: 'iptv', trendingOrder: c.trendingOrder
         }))
-    ];
+    ].map(item => [`${item.itemType}-${item.id}`, item])).values());
 
-    const getWatchingCount = (id: string) => {
+    const getWatchingCount = (id: string, onlyWatching: boolean = true) => {
         if (!realtimeStats.activePages) return 0;
         // Search for users on /tools/live-tv?v=ID
         const match = realtimeStats.activePages.find(p => p.slug.includes(`v=${id}`));
-        return match ? match.count : 0;
+        if (!match) return 0;
+        return onlyWatching ? (match.watchingCount || 0) : (match.count || 0);
     };
 
     if (!isMounted) return null;
@@ -578,9 +622,9 @@ export const LiveSection: React.FC = () => {
                                                         </div>
                                                     )}
                                                     {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
-                                                        <HLSPlayer src={selectedLink.youtubeUrl || selectedLink.iframeUrl} className="w-full h-full [&>video]:object-cover" autoPlay={true} muted={isMuted} />
+                                                        <HLSPlayer src={selectedLink.youtubeUrl || selectedLink.iframeUrl} className="w-full h-full [&>video]:object-cover" autoPlay={true} muted={isMuted} onReady={() => setIsWatching(true)} />
                                                     ) : (
-                                                        <iframe ref={iframeRef} key={playerKey} src={selectedLink.youtubeUrl || selectedLink.iframeUrl} title={selectedLink.heading} className="w-full h-full border-0 absolute top-0 left-0" allowFullScreen referrerPolicy="no-referrer" />
+                                                        <iframe ref={iframeRef} key={playerKey} src={selectedLink.youtubeUrl || selectedLink.iframeUrl} title={selectedLink.heading} className="w-full h-full border-0 absolute top-0 left-0" allowFullScreen referrerPolicy="no-referrer" onLoad={() => setTimeout(() => setIsWatching(true), 2000)} />
                                                     )}
                                                 </>
                                             )}
@@ -611,7 +655,12 @@ export const LiveSection: React.FC = () => {
                                                                 )}
                                                                 {user?.role === 'admin' && (
                                                                     <span className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[9px] font-black uppercase rounded-md border border-green-200 dark:border-green-800/50">
-                                                                        <User size={10} /> {Math.max(1, getWatchingCount(selectedLink.id))} Watching this
+                                                                        <User size={10} /> {Math.max(1, getWatchingCount(selectedLink.id, true))} Watching now
+                                                                    </span>
+                                                                )}
+                                                                {user?.role === 'admin' && (
+                                                                    <span className="flex items-center gap-1.5 px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-[9px] font-black uppercase rounded-md border border-orange-200 dark:border-orange-800/50">
+                                                                        <Users size={10} /> {getWatchingCount(selectedLink.id, false)} on Page
                                                                     </span>
                                                                 )}
                                                                 {user?.role === 'admin' && (
@@ -1100,6 +1149,208 @@ export const LiveSection: React.FC = () => {
                                 </div>
                             )}
 
+                            {/* AdSense: Above Live Scores */}
+                            <div className="w-full flex justify-center items-center overflow-hidden my-6" style={{ minHeight: '110px' }}>
+                                <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
+                            </div>
+
+                            {/* LIVESCORE TAB */}
+                            <div className="space-y-4 mt-10">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 rounded-2xl bg-primary-light/10 text-primary-light border border-primary-light/20">
+                                            <Activity className="w-7 h-7" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-gray-900 dark:text-white">Live Match <span className="gradient-text">Scores</span></h2>
+                                            {liveMatches.length > 0 && (
+                                                <p className="text-[10px] font-bold text-accent-success uppercase tracking-widest mt-0.5 flex items-center gap-1.5">
+                                                    <span className="flex h-1.5 w-1.5 rounded-full bg-accent-success animate-pulse" />
+                                                    {liveMatches.length} matches currently live
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl shadow-inner overflow-x-auto no-scrollbar max-w-full">
+                                        <button onClick={() => setSelectedSport('all')} className={`px-6 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap ${selectedSport === 'all' ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500'}`}>🔥 Live Now</button>
+                                        {sports.map((sport) => (
+                                            <button
+                                                key={sport.id}
+                                                onClick={() => setSelectedSport(sport.id)}
+                                                className={`px-6 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap ${selectedSport === sport.id ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500'}`}
+                                            >
+                                                {sport.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="bg-white dark:bg-surface-dark-900 rounded-[32px] p-6 border border-slate-200 dark:border-slate-800 min-h-[400px]">
+                                    {activeScoreTab === 'football' ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {loadingMatches ? (
+                                                <div className="col-span-full py-20 text-center dark:text-white flex flex-col items-center justify-center gap-4">
+                                                    <RefreshCw className="w-8 h-8 animate-spin text-primary-600" />
+                                                    <p className="text-sm font-bold uppercase tracking-widest opacity-50">Syncing Live Matches...</p>
+                                                </div>
+                                            ) : liveMatches.length > 0 ? (
+                                                liveMatches.map((match) => (
+                                                    <div key={match.id} className="group relative bg-gray-50 dark:bg-white/5 rounded-[2.5rem] p-6 border border-transparent hover:border-primary-600/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary-600/10">
+                                                        <div className="flex flex-col gap-6">
+                                                            {/* Match Status & Category */}
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="flex items-center gap-2 px-3 py-1 bg-primary-600 text-white text-[10px] font-black uppercase rounded-full animate-pulse shadow-lg shadow-primary-600/20">
+                                                                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+                                                                    Live
+                                                                </span>
+                                                                <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{match.category}</span>
+                                                            </div>
+
+                                                            {/* Teams Grid */}
+                                                            <div className="flex items-center justify-between gap-4">
+                                                                {/* Home Team */}
+                                                                <div className="flex-1 flex flex-col items-center gap-3">
+                                                                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-gray-800 p-3 shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 overflow-hidden">
+                                                                        {match.teams?.home?.badge ? (
+                                                                            <img src={`https://streamed.pk/api/images/badge/${match.teams.home.badge}.webp`} alt={match.teams.home.name} className="w-full h-full object-contain" />
+                                                                        ) : (
+                                                                            <div className="text-2xl font-black text-primary-600">{(match.teams?.home?.name || 'H')[0]}</div>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-xs font-black text-gray-900 dark:text-white text-center line-clamp-1 uppercase">{match.teams?.home?.name || 'Home'}</span>
+                                                                </div>
+
+                                                                {/* VS Badge */}
+                                                                <div className="flex flex-col items-center gap-1">
+                                                                    <div className="px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-800 text-[10px] font-black text-gray-500 uppercase tracking-tighter">VS</div>
+                                                                    <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-700 to-transparent" />
+                                                                </div>
+
+                                                                {/* Away Team */}
+                                                                <div className="flex-1 flex flex-col items-center gap-3">
+                                                                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-gray-800 p-3 shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 overflow-hidden">
+                                                                        {match.teams?.away?.badge ? (
+                                                                            <img src={`https://streamed.pk/api/images/badge/${match.teams.away.badge}.webp`} alt={match.teams.away.name} className="w-full h-full object-contain" />
+                                                                        ) : (
+                                                                            <div className="text-2xl font-black text-primary-600">{(match.teams?.away?.name || 'A')[0]}</div>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-xs font-black text-gray-900 dark:text-white text-center line-clamp-1 uppercase">{match.teams?.away?.name || 'Away'}</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Match Title & Info */}
+                                                            <div className="text-center pt-2">
+                                                                <h4 className="text-sm font-black text-gray-900 dark:text-white mb-4 line-clamp-2 min-h-[2.5rem]">{match.title}</h4>
+                                                                <div className="flex items-center justify-center gap-4">
+                                                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                                                                        <Clock size={12} />
+                                                                        {new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                    </div>
+                                                                    <div className="w-1 h-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
+                                                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                                                                        <Share2 size={12} />
+                                                                        {match.sources.length} Sources
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Action Button */}
+                                                            {/* Action Button hidden for now as requested */}
+                                                            {/* <button
+                                                                onClick={() => {
+                                                                    console.log('Match sources:', match.sources);
+                                                                }}
+                                                                className="w-full py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-[10px] font-black uppercase rounded-2xl border border-gray-200 dark:border-gray-700 hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all duration-300 shadow-sm"
+                                                            >
+                                                                Watch Stream
+                                                            </button> */}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="col-span-full py-20 text-center">
+                                                    <p className="text-gray-500 font-bold uppercase tracking-[0.2em]">No Live Matches Right Now</p>
+                                                    <p className="text-[10px] text-gray-400 mt-2">Check back later for upcoming fixtures</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {loadingCricket ? (
+                                                <div className="col-span-full py-20 text-center dark:text-white flex flex-col items-center justify-center gap-4">
+                                                    <RefreshCw className="w-8 h-8 animate-spin text-primary-600" />
+                                                    <p className="text-sm font-bold uppercase tracking-widest opacity-50">Syncing Cricket Matches...</p>
+                                                </div>
+                                            ) : cricketScores.length > 0 ? (
+                                                cricketScores.map((match) => (
+                                                    <div key={match.id} className="group relative bg-gray-50 dark:bg-white/5 rounded-[2.5rem] p-6 border border-transparent hover:border-primary-600/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary-600/10">
+                                                        <div className="flex flex-col gap-6">
+                                                            {/* Match Status & Category */}
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="flex items-center gap-2 px-3 py-1 bg-primary-600 text-white text-[10px] font-black uppercase rounded-full animate-pulse shadow-lg shadow-primary-600/20">
+                                                                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
+                                                                    Live
+                                                                </span>
+                                                                <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{match.category}</span>
+                                                            </div>
+
+                                                            {/* Teams Grid */}
+                                                            <div className="flex items-center justify-between gap-4">
+                                                                <div className="flex-1 flex flex-col items-center gap-3">
+                                                                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-gray-800 p-3 shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 overflow-hidden">
+                                                                        {match.teams?.home?.badge ? (
+                                                                            <img src={`https://streamed.pk/api/images/badge/${match.teams.home.badge}.webp`} alt={match.teams.home.name} className="w-full h-full object-contain" />
+                                                                        ) : (
+                                                                            <div className="text-2xl font-black text-primary-600">{(match.teams?.home?.name || 'H')[0]}</div>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-xs font-black text-gray-900 dark:text-white text-center line-clamp-1 uppercase">{match.teams?.home?.name || 'Home'}</span>
+                                                                </div>
+
+                                                                <div className="flex flex-col items-center gap-1">
+                                                                    <div className="px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-800 text-[10px] font-black text-gray-500 uppercase tracking-tighter">VS</div>
+                                                                    <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-700 to-transparent" />
+                                                                </div>
+
+                                                                <div className="flex-1 flex flex-col items-center gap-3">
+                                                                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-gray-800 p-3 shadow-md border border-gray-100 dark:border-gray-700 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 overflow-hidden">
+                                                                        {match.teams?.away?.badge ? (
+                                                                            <img src={`https://streamed.pk/api/images/badge/${match.teams.away.badge}.webp`} alt={match.teams.away.name} className="w-full h-full object-contain" />
+                                                                        ) : (
+                                                                            <div className="text-2xl font-black text-primary-600">{(match.teams?.away?.name || 'A')[0]}</div>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-xs font-black text-gray-900 dark:text-white text-center line-clamp-1 uppercase">{match.teams?.away?.name || 'Away'}</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="text-center pt-2">
+                                                                <h4 className="text-sm font-black text-gray-900 dark:text-white mb-4 line-clamp-2 min-h-[2.5rem]">{match.title}</h4>
+                                                            </div>
+
+                                                            {/* <button
+                                                                className="w-full py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-[10px] font-black uppercase rounded-2xl border border-gray-200 dark:border-gray-700 hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all duration-300 shadow-sm"
+                                                            >
+                                                                Watch Stream
+                                                            </button> */}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="col-span-full py-20 text-center">
+                                                    <p className="text-gray-500 font-bold uppercase tracking-[0.2em]">No Cricket Matches Right Now</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* AdSense: Below Live Scores */}
+                            <div className="w-full flex justify-center items-center overflow-hidden my-8" style={{ minHeight: '110px' }}>
+                                <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
+                            </div>
+
                             {/* ON DEMAND REQUEST */}
                             <div className="mt-8 grid lg:grid-cols-2 gap-8 items-center bg-white dark:bg-gray-800/50 p-8 md:p-12 rounded-[32px] border dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
                                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover/ondemand:scale-110 transition-all"><MessageCircle size={150} className="text-red-500" /></div>
@@ -1115,55 +1366,12 @@ export const LiveSection: React.FC = () => {
                                 </form>
                             </div>
 
-                            {/* LIVESCORE TAB */}
-                            <div className="space-y-4 mt-10">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                    <div className="flex items-center gap-4"><div className="p-3 rounded-2xl bg-primary-light/10 text-primary-light border border-primary-light/20"><Activity className="w-7 h-7" /></div><h2 className="text-gray-900 dark:text-white">Live Match <span className="gradient-text">Scores</span></h2></div>
-                                    <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl shadow-inner">
-                                        <button onClick={() => setActiveScoreTab('football')} className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeScoreTab === 'football' ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500'}`}>⚽ Football</button>
-                                        <button onClick={() => setActiveScoreTab('cricket')} className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${activeScoreTab === 'cricket' ? 'bg-primary-600 text-white shadow-lg' : 'text-gray-500'}`}>🏏 Cricket</button>
-                                    </div>
-                                </div>
-                                <div className="bg-white dark:bg-surface-dark-900 rounded-[32px] p-6 border border-slate-200 dark:border-slate-800 min-h-[400px]">
-                                    {activeScoreTab === 'football' ? (
-                                        <iframe src="https://www.scorebat.com/embed/livescore/" className="w-full h-[650px] rounded-2xl border-0" sandbox="allow-scripts allow-same-origin" />
-                                    ) : (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {loadingCricket ? <div className="col-span-full py-20 text-center dark:text-white">Fetching Live Cricket...</div> : cricketScores.map((m) => (
-                                                <a key={m.id} href={m.link} target="_blank" className="p-5 bg-white dark:bg-white/5 rounded-2xl border dark:border-white/5 hover:border-red-500/30 transition-all flex flex-col group">
-                                                    <span className="text-[10px] font-black text-red-600 mb-2 uppercase animate-pulse">● Live</span>
-                                                    <span className="text-sm font-bold dark:text-white group-hover:text-red-600">{m.title}</span>
-                                                </a>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
+                            {/* AdSense: After On Demand Request */}
+                            <div className="w-full flex justify-center items-center overflow-hidden my-10" style={{ minHeight: '110px' }}>
+                                <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
                             </div>
 
-                            {/* MATCH HIGHLIGHTS */}
-                            {highlights.length > 0 && (
-                                <div className="space-y-8 mt-10">
-                                    <h2 className="text-gray-900 dark:text-white">Match <span className="text-red-600">Highlights</span></h2>
-                                    {Object.entries(groupedHighlights).map(([category, items]) => (
-                                        <div key={category} className="space-y-4">
-                                            <span className="text-lg font-bold dark:text-gray-200 uppercase flex items-center gap-2 mb-4"><span className="w-1 h-6 bg-red-600" /> {category}</span>
-                                            <Splide options={splideOptionsHighlights}>
-                                                {items.map((item) => (
-                                                    <SplideSlide key={item.id}>
-                                                        <div onClick={() => handleLinkClick(item as any)} className="bg-white dark:bg-surface-dark-900 rounded-3xl overflow-hidden border dark:border-slate-800 cursor-pointer group shadow-sm hover:shadow-2xl transition-all">
-                                                            <div className="aspect-video relative">
-                                                                <Image src={item.thumbnailUrl || `https://img.youtube.com/vi/${item.youtubeUrl.split('/').pop()?.split('?')[0]}/mqdefault.jpg`} alt={item.title} fill className="object-cover group-hover:scale-105 transition-all duration-500" />
-                                                                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Play size={32} className="text-white" fill="white" /></div>
-                                                            </div>
-                                                            <div className="p-5"><h4 className="font-bold text-sm dark:text-white line-clamp-2">{item.title}</h4></div>
-                                                        </div>
-                                                    </SplideSlide>
-                                                ))}
-                                            </Splide>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+
 
                             {/* NEWSLETTER */}
                             <div className="relative group/cta mt-16 pb-10">
@@ -1178,6 +1386,11 @@ export const LiveSection: React.FC = () => {
                                         </form>
                                     )}
                                 </div>
+                            </div>
+
+                            {/* AdSense: Bottom Ad */}
+                            <div className="w-full flex justify-center items-center overflow-hidden mt-10" style={{ minHeight: '110px' }}>
+                                <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
                             </div>
                         </>
                     )}
