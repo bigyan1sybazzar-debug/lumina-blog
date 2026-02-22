@@ -46,11 +46,11 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                 const hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
-                    // Buffer settings increased for live web stability
-                    backBufferLength: 60,
-                    maxBufferLength: 40,
-                    maxMaxBufferLength: 120,
-                    maxBufferSize: 80 * 1000 * 1000, // 80 MB
+                    // Ultra-robust buffer settings for live web stability (4 mins)
+                    backBufferLength: 90,
+                    maxBufferLength: 120,
+                    maxMaxBufferLength: 240,
+                    maxBufferSize: 200 * 1000 * 1000, // 200 MB
                     maxBufferHole: 0.5,
                     // Aggressive retry strategy for unreliable streams
                     manifestLoadingMaxRetry: 5,
