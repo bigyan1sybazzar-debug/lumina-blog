@@ -24,11 +24,21 @@ export async function GET(request: NextRequest) {
         const urlObj = new URL(targetUrl);
 
         const fetchHeaders: Record<string, string> = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
             'Origin': urlObj.origin,
             'Referer': urlObj.origin + '/',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
         };
 
         const rangeHeader = request.headers.get('range');
@@ -36,7 +46,7 @@ export async function GET(request: NextRequest) {
 
         const response = await fetch(targetUrl, {
             headers: fetchHeaders,
-            signal: AbortSignal.timeout(20000)
+            signal: AbortSignal.timeout(30000)
         });
 
         if (!response.ok) {
