@@ -115,19 +115,29 @@ export async function GET(request: NextRequest) {
                 headers: responseHeaders,
             });
         } else {
-            // Binary segment / key / other data — stream it directly
-            if (contentType) responseHeaders.set('Content-Type', contentType);
+            // === PERFORMANCE FIX FOR LIVE SITE ===
+            // Use streaming (body) instead of buffering (arrayBuffer).
+            // This starts sending video to the user IMMEDIATELY as it arrives from the source server.
+            const headersToForward = [
+                'Content-Type',
+                'Content-Length',
+                'Content-Range',
+                'Accept-Ranges',
+                'Cache-Control'
+            ];
 
-            // Pass through content-range if present
-            const contentRange = response.headers.get('content-range');
-            if (contentRange) responseHeaders.set('Content-Range', contentRange);
+            headersToForward.forEach(h => {
+                const val = response.headers.get(h);
+                if (val) responseHeaders.set(h, val);
+            });
 
-            responseHeaders.set('Cache-Control', 'public, max-age=60');
+            // If origin didn't specify, set a default cache
+            if (!responseHeaders.has('Cache-Control')) {
+                responseHeaders.set('Cache-Control', 'public, max-age=60');
+            }
 
-            const data = await response.arrayBuffer();
-
-            return new NextResponse(data, {
-                status: contentRange ? 206 : 200,
+            return new NextResponse(response.body, {
+                status: response.status,
                 headers: responseHeaders,
             });
         }

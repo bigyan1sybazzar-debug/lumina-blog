@@ -46,21 +46,21 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                 const hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
-                    // Buffer settings tuned for live streaming
-                    backBufferLength: 30,
-                    maxBufferLength: 30,
-                    maxMaxBufferLength: 60,
-                    maxBufferSize: 60 * 1000 * 1000, // 60 MB
+                    // Buffer settings increased for live web stability
+                    backBufferLength: 60,
+                    maxBufferLength: 40,
+                    maxMaxBufferLength: 120,
+                    maxBufferSize: 80 * 1000 * 1000, // 80 MB
                     maxBufferHole: 0.5,
                     // Aggressive retry strategy for unreliable streams
                     manifestLoadingMaxRetry: 5,
-                    manifestLoadingRetryDelay: 500,
-                    manifestLoadingMaxRetryTimeout: 8000,
+                    manifestLoadingRetryDelay: 1000,
+                    manifestLoadingMaxRetryTimeout: 15000,
                     levelLoadingMaxRetry: 5,
-                    levelLoadingRetryDelay: 500,
-                    levelLoadingMaxRetryTimeout: 8000,
+                    levelLoadingRetryDelay: 1000,
+                    levelLoadingMaxRetryTimeout: 15000,
                     fragLoadingMaxRetry: 6,
-                    fragLoadingRetryDelay: 500,
+                    fragLoadingRetryDelay: 1000,
                     // Since we proxy all URLs in the m3u8, no need to re-proxy in xhrSetup
                     // (all segment URLs in the playlist already point to /api/proxy)
                 });
