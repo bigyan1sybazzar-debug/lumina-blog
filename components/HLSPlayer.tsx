@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
-import { AlertTriangle, RefreshCw, Loader2, CheckCircle, Radio } from 'lucide-react';
+import {
+    AlertTriangle, RefreshCw, Loader2, CheckCircle, Radio,
+    Play, Pause, Volume2, Volume1, VolumeX, Maximize
+} from 'lucide-react';
 
 interface HLSPlayerProps {
     src: string;
@@ -23,11 +26,21 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
     const [isLoading, setIsLoading] = useState(true);
     const [isLive, setIsLive] = useState(false);
     const [retryCount, setRetryCount] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(autoPlay);
+    const [isMuted, setIsMuted] = useState(muted);
+    const [volume, setVolume] = useState(1);
+    const [showControls, setShowControls] = useState(false);
+    const [liveGap, setLiveGap] = useState(0);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const controlsTimeout = useRef<NodeJS.Timeout | null>(null);
 
     // Always proxy the src through our server to avoid CORS issues
     const proxiedSrc = src.startsWith('blob:') || src.startsWith('data:') || src.includes('/api/proxy')
         ? src
         : `/api/proxy?url=${encodeURIComponent(src)}`;
+
+    const onReadyRef = useRef(onReady);
+    useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -37,123 +50,150 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
         setIsLoading(true);
         setIsLive(false);
 
+        let hls: Hls | null = null;
+        let stallCheckInterval: NodeJS.Timeout | null = null;
+
         const initPlayer = () => {
             if (Hls.isSupported()) {
-                if (hlsRef.current) {
-                    hlsRef.current.destroy();
-                }
-
-                const hls = new Hls({
+                hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
-                    // Ultra-robust buffer settings for live web stability (4 mins)
                     backBufferLength: 90,
                     maxBufferLength: 120,
                     maxMaxBufferLength: 240,
-                    maxBufferSize: 200 * 1000 * 1000, // 200 MB
+                    maxBufferSize: 250 * 1000 * 1000,
                     maxBufferHole: 0.5,
-                    // Aggressive retry strategy for unreliable streams
-                    manifestLoadingMaxRetry: 5,
-                    manifestLoadingRetryDelay: 1000,
-                    manifestLoadingMaxRetryTimeout: 15000,
-                    levelLoadingMaxRetry: 5,
-                    levelLoadingRetryDelay: 1000,
-                    levelLoadingMaxRetryTimeout: 15000,
-                    fragLoadingMaxRetry: 6,
+                    liveSyncDurationCount: 3,
+                    liveMaxLatencyDurationCount: 8,
+                    manifestLoadingMaxRetry: 10,
+                    manifestLoadingRetryDelay: 2000,
+                    levelLoadingMaxRetry: 10,
+                    levelLoadingRetryDelay: 2000,
+                    fragLoadingMaxRetry: 10,
                     fragLoadingRetryDelay: 1000,
-                    // Since we proxy all URLs in the m3u8, no need to re-proxy in xhrSetup
-                    // (all segment URLs in the playlist already point to /api/proxy)
                 });
 
                 hls.loadSource(proxiedSrc);
                 hls.attachMedia(video);
                 hlsRef.current = hls;
 
+                stallCheckInterval = setInterval(() => {
+                    if (video.paused || video.ended) return;
+                    if (video.readyState < 3 && !isLoading) {
+                        video.currentTime += 0.5;
+                    }
+                    if (isLive && hls && hls.liveSyncPosition) {
+                        const gap = hls.liveSyncPosition - video.currentTime;
+                        setLiveGap(Math.floor(gap));
+                        if (gap > 20) {
+                            video.currentTime = hls.liveSyncPosition - 3;
+                        }
+                    }
+                }, 2000);
+
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     setIsLoading(false);
-                    // Treat as live by default since all our streams are live m3u8
                     setIsLive(true);
                     if (autoPlay) {
-                        video.play().catch(e => {
-                            console.log('Autoplay blocked, user interaction needed:', e);
-                        });
+                        video.play().catch(() => setIsPlaying(false));
                     }
-                    if (onReady) onReady();
+                    if (onReadyRef.current) onReadyRef.current();
                 });
 
                 hls.on(Hls.Events.ERROR, (_event, data) => {
-                    console.warn(`HLS Error (${data.type}):`, data.details, data);
-
                     if (data.fatal) {
                         switch (data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
-                                // Try to recover first
-                                console.warn('Fatal network error, trying to recover...');
-                                hls.startLoad();
-                                // Only show error after some time if recovery fails
-                                setTimeout(() => {
-                                    if (hls && hlsRef.current === hls) {
-                                        setError('Network error: Stream is unreachable or offline. Try refreshing.');
-                                        setIsLoading(false);
-                                    }
-                                }, 8000);
+                                hls?.startLoad();
                                 break;
                             case Hls.ErrorTypes.MEDIA_ERROR:
-                                console.warn('Fatal media error, trying to recover...');
-                                hls.recoverMediaError();
+                                hls?.recoverMediaError();
                                 break;
                             default:
-                                setError('An error occurred while loading this stream.');
+                                setError('Connection lost. Source might be offline.');
                                 setIsLoading(false);
-                                hls.destroy();
+                                hls?.destroy();
                                 break;
                         }
                     }
                 });
 
-                // Detect live stream from level details
                 hls.on(Hls.Events.LEVEL_LOADED, (_event, data) => {
                     if (data.details?.live) setIsLive(true);
                 });
 
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // Native HLS support (Safari / iOS)
                 video.src = proxiedSrc;
-                video.addEventListener('loadedmetadata', () => {
+                const handleMetadata = () => {
                     setIsLoading(false);
-                    // Safari can't reliably detect live, assume true for .m3u8
                     setIsLive(true);
-                    if (autoPlay) {
-                        video.play().catch(e => console.log('Autoplay blocked:', e));
-                    }
-                    if (onReady) onReady();
-                });
+                    if (autoPlay) video.play().catch(() => setIsPlaying(false));
+                    if (onReadyRef.current) onReadyRef.current();
+                };
+                video.addEventListener('loadedmetadata', handleMetadata);
                 video.addEventListener('error', () => {
-                    setError('This stream is incompatible with your browser or currently offline.');
+                    setError('Stream incompatible or offline.');
                     setIsLoading(false);
                 });
-            } else {
-                setError('Your browser does not support HLS playback.');
-                setIsLoading(false);
+                return () => video.removeEventListener('loadedmetadata', handleMetadata);
             }
         };
 
-        initPlayer();
+        const cleanupResult = initPlayer();
 
         return () => {
-            if (hlsRef.current) {
-                hlsRef.current.destroy();
-                hlsRef.current = null;
-            }
+            if (hls) hls.destroy();
+            if (stallCheckInterval) clearInterval(stallCheckInterval);
+            if (typeof cleanupResult === 'function') cleanupResult();
         };
     }, [proxiedSrc, autoPlay, retryCount]);
 
-    // Sync muted state to video element
-    useEffect(() => {
+    const togglePlay = (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        if (!videoRef.current) return;
+        if (isPlaying) videoRef.current.pause();
+        else videoRef.current.play();
+        setIsPlaying(!isPlaying);
+    };
+
+    const toggleMute = (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        if (!videoRef.current) return;
+        const newMute = !isMuted;
+        videoRef.current.muted = newMute;
+        setIsMuted(newMute);
+    };
+
+    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.stopPropagation();
+        const val = parseFloat(e.target.value);
         if (videoRef.current) {
-            videoRef.current.muted = muted;
+            videoRef.current.volume = val;
+            videoRef.current.muted = val === 0;
         }
-    }, [muted]);
+        setVolume(val);
+        setIsMuted(val === 0);
+    };
+
+    const toggleFullscreen = (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        if (!containerRef.current) return;
+        if (document.fullscreenElement) document.exitFullscreen();
+        else containerRef.current.requestFullscreen();
+    };
+
+    const handleMouseMove = () => {
+        setShowControls(true);
+        if (controlsTimeout.current) clearTimeout(controlsTimeout.current);
+        controlsTimeout.current = setTimeout(() => setShowControls(false), 3000);
+    };
+
+    const jumpToLive = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (hlsRef.current?.liveSyncPosition && videoRef.current) {
+            videoRef.current.currentTime = hlsRef.current.liveSyncPosition - 1;
+        }
+    };
 
     const handleRetry = () => {
         setError(null);
@@ -162,55 +202,119 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
     };
 
     return (
-        <div className={`relative group bg-black overflow-hidden ${className}`}>
+        <div
+            ref={containerRef}
+            className={`relative group bg-black overflow-hidden select-none ${className} rounded-xl`}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => setShowControls(false)}
+        >
             <video
                 ref={videoRef}
-                className="w-full h-full"
-                controls
+                className="w-full h-full cursor-pointer"
                 playsInline
-                muted={muted}
+                onClick={() => togglePlay()}
+                onContextMenu={(e) => e.preventDefault()}
             />
 
-            {/* Live Now indicator */}
-            {isLive && !isLoading && !error && (
-                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-red-600/90 backdrop-blur-sm rounded-full shadow-lg z-20 pointer-events-none">
-                    <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
-                    </span>
-                    <CheckCircle size={10} className="text-white" fill="white" />
-                    <span className="text-white text-[9px] font-black uppercase tracking-wider">Live Now</span>
-                </div>
-            )}
+            {/* Premium Control Overlay */}
+            <div className={`absolute inset-0 transition-opacity duration-500 pointer-events-none bg-gradient-to-t from-black/90 via-transparent to-black/20 ${showControls || !isPlaying || isLoading ? 'opacity-100' : 'opacity-0'}`}>
 
-            {/* Loading overlay */}
-            {isLoading && !error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-10">
-                    <div className="relative mb-3">
-                        <Loader2 className="w-10 h-10 text-red-500 animate-spin" />
-                        <Radio className="w-4 h-4 text-white absolute inset-0 m-auto animate-pulse" />
+                {/* Top Info Bar */}
+                <div className="absolute top-0 inset-x-0 p-4 flex justify-between items-start pointer-events-auto">
+                    {isLive && (
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-600/95 backdrop-blur-md rounded-lg shadow-xl border border-white/20">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                </span>
+                                <span className="text-[10px] font-black uppercase text-white tracking-[0.15em]">Live Now</span>
+                            </div>
+                            {liveGap > 5 && (
+                                <button
+                                    onClick={jumpToLive}
+                                    className="text-[9px] font-bold bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-2 py-1 rounded-md border border-white/10 transition-all active:scale-95"
+                                >
+                                    SYNC TO LIVE ({liveGap}s behind)
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Center Play/Pause Button (Large) */}
+                {!isPlaying && !isLoading && !error && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
+                        <button onClick={() => togglePlay()} className="w-20 h-20 bg-red-600/90 hover:bg-red-600 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/20 shadow-2xl shadow-red-600/40 transition-all hover:scale-110 active:scale-90 group/play">
+                            <Play fill="white" className="w-8 h-8 text-white ml-1 group-hover/play:scale-110 transition-transform" />
+                        </button>
                     </div>
-                    <span className="text-white text-xs font-bold tracking-widest uppercase">Connecting to Stream...</span>
-                    <span className="text-gray-400 text-[10px] mt-1">Please wait a moment</span>
+                )}
+
+                {/* Bottom Control Bar */}
+                <div className="absolute bottom-0 inset-x-0 p-5 lg:p-7 pointer-events-auto">
+                    <div className="flex items-center justify-between gap-6">
+                        {/* Left Controls */}
+                        <div className="flex items-center gap-5 lg:gap-8">
+                            <button onClick={() => togglePlay()} className="text-white hover:text-red-500 transition-all transform active:scale-75">
+                                {isPlaying ? <Pause size={26} fill="white" /> : <Play size={26} fill="white" />}
+                            </button>
+
+                            <div className="flex items-center gap-3 group/volume">
+                                <button onClick={() => toggleMute()} className="text-white hover:text-red-500 transition-colors">
+                                    {isMuted || volume === 0 ? <VolumeX size={22} /> : volume < 0.5 ? <Volume1 size={22} /> : <Volume2 size={22} />}
+                                </button>
+                                <input
+                                    type="range" min="0" max="1" step="0.05" value={isMuted ? 0 : volume}
+                                    onChange={handleVolumeChange}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-0 group-hover/volume:w-24 transition-all duration-500 accent-red-600 cursor-pointer h-1 rounded-full bg-white/20"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Right Controls */}
+                        <div className="flex items-center gap-5">
+                            <button onClick={() => toggleFullscreen()} className="text-white hover:text-red-500 transition-all transform active:scale-75">
+                                <Maximize size={22} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Loading / Stall UI */}
+            {(isLoading || (videoRef.current && videoRef.current.readyState < 3 && isPlaying)) && !error && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[3px] z-10 transition-all duration-700">
+                    <div className="relative mb-5 scale-125">
+                        <Loader2 className="w-12 h-12 text-red-600 animate-spin" />
+                        <Radio className="w-5 h-5 text-white absolute inset-0 m-auto animate-pulse" />
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                        <span className="text-white text-[10px] font-black tracking-[0.3em] uppercase opacity-80">Smooth-Sync Active</span>
+                        <div className="flex gap-1.5 mt-1">
+                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce"></span>
+                        </div>
+                    </div>
                 </div>
             )}
 
-            {/* Error overlay */}
+            {/* Error Display */}
             {error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/95 z-20 p-6 text-center">
-                    <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
-                        <AlertTriangle className="w-8 h-8 text-red-500" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950 z-30 p-8 text-center">
+                    <div className="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center mb-6 border border-red-600/20">
+                        <AlertTriangle className="w-10 h-10 text-red-600" />
                     </div>
-                    <h3 className="text-white font-bold mb-2">Stream Unavailable</h3>
-                    <p className="text-gray-400 text-xs mb-6 max-w-[260px] leading-relaxed">
-                        {error}
-                    </p>
+                    <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight">Stream Connection Lost</h3>
+                    <p className="text-gray-400 text-sm mb-8 max-w-xs leading-relaxed font-medium">{error}</p>
                     <button
                         onClick={handleRetry}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-lg shadow-red-600/20"
+                        className="group flex items-center gap-3 px-8 py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-sm font-black transition-all active:scale-95 shadow-2xl shadow-red-600/40"
                     >
-                        <RefreshCw size={14} />
-                        Retry Connection
+                        <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-700" />
+                        RE-CONNECT NOW
                     </button>
                 </div>
             )}

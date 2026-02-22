@@ -128,12 +128,19 @@ export async function GET(request: NextRequest) {
 
             headersToForward.forEach(h => {
                 const val = response.headers.get(h);
-                if (val) responseHeaders.set(h, val);
+                if (val && h !== 'Cache-Control') responseHeaders.set(h, val);
             });
 
-            // If origin didn't specify, set a default cache
-            if (!responseHeaders.has('Cache-Control')) {
-                responseHeaders.set('Cache-Control', 'public, max-age=60');
+            // === CRITICAL FIX FOR 6s STOPPING ===
+            // Playlists (.m3u8) must NEVER be cached, otherwise the player 
+            // won't see new segments and will stop after the first 6-10 seconds.
+            if (targetUrl.includes('.m3u8')) {
+                responseHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+                responseHeaders.set('Pragma', 'no-cache');
+                responseHeaders.set('Expires', '0');
+            } else if (!responseHeaders.has('Cache-Control')) {
+                // Segments (.ts) CAN be cached for performance
+                responseHeaders.set('Cache-Control', 'public, max-age=3600');
             }
 
             return new NextResponse(response.body, {
