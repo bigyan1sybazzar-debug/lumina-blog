@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
     try {
         const urlObj = new URL(targetUrl);
 
-        // Headers to mimic a real browser request to the stream server
         const fetchHeaders: Record<string, string> = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': '*/*',
@@ -32,7 +31,6 @@ export async function GET(request: NextRequest) {
             'Referer': urlObj.origin + '/',
         };
 
-        // Forward Range header if present (needed for video seeking)
         const rangeHeader = request.headers.get('range');
         if (rangeHeader) fetchHeaders['Range'] = rangeHeader;
 
@@ -49,8 +47,6 @@ export async function GET(request: NextRequest) {
         }
 
         const contentType = response.headers.get('content-type') || '';
-
-        // Detect if this is an HLS playlist by extension or content type
         const isPlaylist = targetUrl.includes('.m3u8') ||
             targetUrl.includes('.m3u') ||
             contentType.includes('mpegurl') ||
@@ -60,94 +56,75 @@ export async function GET(request: NextRequest) {
         const responseHeaders = new Headers(CORS_HEADERS);
 
         if (isPlaylist) {
-            // === CRITICAL FIX ===
-            // Rewrite ALL URLs inside the m3u8 to go through our proxy.
-            // This ensures segments, sub-playlists, and encryption keys are all
-            // fetched server-side — bypassing any CORS block on the origin.
             const text = await response.text();
-            const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
 
             const getProxiedUrl = (url: string) => {
-                // Resolve to absolute first
                 let absoluteUrl: string;
-                if (url.startsWith('http')) {
+                try {
+                    new URL(url);
                     absoluteUrl = url;
-                } else if (url.startsWith('//')) {
-                    absoluteUrl = urlObj.protocol + url;
-                } else if (url.startsWith('/')) {
-                    absoluteUrl = urlObj.origin + url;
-                } else {
-                    absoluteUrl = baseUrl + url;
+                } catch {
+                    if (url.startsWith('//')) {
+                        absoluteUrl = urlObj.protocol + url;
+                    } else if (url.startsWith('/')) {
+                        absoluteUrl = urlObj.origin + url;
+                    } else {
+                        const parts = targetUrl.split('/');
+                        parts.pop();
+                        absoluteUrl = parts.join('/') + '/' + url;
+                    }
                 }
-                // Then wrap in proxy
                 return `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
             };
 
             const rewrittenText = text.split('\n').map(line => {
-                const trimmedLine = line.trim();
+                const trimmed = line.trim();
+                if (!trimmed) return line;
 
-                // Handle EXT-X-KEY URI= attribute (encryption key)
-                if (trimmedLine.startsWith('#EXT-X-KEY')) {
-                    return line.replace(/URI="([^"]+)"/, (_: string, uri: string) => {
-                        return `URI="${getProxiedUrl(uri)}"`;
+                if (trimmed.includes('URI=')) {
+                    return line.replace(/URI=["']?([^"']+)["']?/, (match, uri) => {
+                        const quote = match.includes('"') ? '"' : match.includes("'") ? "'" : '';
+                        return `URI=${quote}${getProxiedUrl(uri)}${quote}`;
                     });
                 }
 
-                // Handle EXT-X-MAP URI= attribute (initialization segment)
-                if (trimmedLine.startsWith('#EXT-X-MAP')) {
-                    return line.replace(/URI="([^"]+)"/, (_: string, uri: string) => {
-                        return `URI="${getProxiedUrl(uri)}"`;
-                    });
-                }
-
-                // Skip other tags and empty lines
-                if (!trimmedLine || trimmedLine.startsWith('#')) return line;
-
-                // Rewrite segment / sub-playlist URLs through proxy
-                return getProxiedUrl(trimmedLine);
+                if (trimmed.startsWith('#')) return line;
+                return getProxiedUrl(trimmed);
             }).join('\n');
 
             responseHeaders.set('Content-Type', 'application/vnd.apple.mpegurl');
-            responseHeaders.set('Cache-Control', 'no-cache, no-store');
+            responseHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+            responseHeaders.set('Pragma', 'no-cache');
+            responseHeaders.set('Expires', '0');
 
             return new NextResponse(rewrittenText, {
                 status: 200,
                 headers: responseHeaders,
             });
-        } else {
-            // === PERFORMANCE FIX FOR LIVE SITE ===
-            // Use streaming (body) instead of buffering (arrayBuffer).
-            // This starts sending video to the user IMMEDIATELY as it arrives from the source server.
-            const headersToForward = [
-                'Content-Type',
-                'Content-Length',
-                'Content-Range',
-                'Accept-Ranges',
-                'Cache-Control'
-            ];
-
-            headersToForward.forEach(h => {
-                const val = response.headers.get(h);
-                if (val && h !== 'Cache-Control') responseHeaders.set(h, val);
-            });
-
-            // === CRITICAL FIX FOR 6s STOPPING ===
-            // Playlists (.m3u8) must NEVER be cached, otherwise the player 
-            // won't see new segments and will stop after the first 6-10 seconds.
-            if (targetUrl.includes('.m3u8')) {
-                responseHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
-                responseHeaders.set('Pragma', 'no-cache');
-                responseHeaders.set('Expires', '0');
-            } else if (!responseHeaders.has('Cache-Control')) {
-                // Segments (.ts) CAN be cached for performance
-                responseHeaders.set('Cache-Control', 'public, max-age=3600');
-            }
-
-            return new NextResponse(response.body, {
-                status: response.status,
-                headers: responseHeaders,
-            });
         }
+
+        const headersToForward = [
+            'Content-Type',
+            'Content-Length',
+            'Accept-Ranges',
+            'Content-Range',
+            'Cache-Control'
+        ];
+
+        headersToForward.forEach(h => {
+            const val = response.headers.get(h);
+            if (val) responseHeaders.set(h, val);
+        });
+
+        if (!targetUrl.includes('.m3u8')) {
+            responseHeaders.set('Cache-Control', 'public, max-age=60');
+        }
+
+        return new NextResponse(response.body, {
+            status: response.status,
+            headers: responseHeaders,
+        });
+
     } catch (error: any) {
         console.error(`Proxy Error for ${targetUrl}:`, error.message);
         return new NextResponse(`Proxy error: ${error.message}`, {
