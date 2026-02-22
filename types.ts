@@ -235,6 +235,9 @@ export interface LiveLink {
     votesB: number;
     votedUserIds?: string[];
   };
+  isLiveNow?: boolean;
+  matchStartTime?: string;
+  matchDurationMinutes?: number;
 }
 
 export interface Keyword {

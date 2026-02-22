@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+
+const CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': '*',
+};
+
+export async function OPTIONS() {
+    return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const targetUrl = searchParams.get('url');
@@ -11,8 +23,8 @@ export async function GET(request: NextRequest) {
     try {
         const urlObj = new URL(targetUrl);
 
-        // Headers to mimic a real browser
-        const headers = {
+        // Headers to mimic a real browser request to the stream server
+        const fetchHeaders: Record<string, string> = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -20,66 +32,110 @@ export async function GET(request: NextRequest) {
             'Referer': urlObj.origin + '/',
         };
 
+        // Forward Range header if present (needed for video seeking)
+        const rangeHeader = request.headers.get('range');
+        if (rangeHeader) fetchHeaders['Range'] = rangeHeader;
+
         const response = await fetch(targetUrl, {
-            headers,
-            signal: AbortSignal.timeout(15000)
+            headers: fetchHeaders,
+            signal: AbortSignal.timeout(20000)
         });
 
         if (!response.ok) {
-            return new NextResponse(`Stream provider returned ${response.status}`, { status: response.status });
+            return new NextResponse(`Stream provider returned ${response.status}`, {
+                status: response.status,
+                headers: CORS_HEADERS
+            });
         }
 
         const contentType = response.headers.get('content-type') || '';
+
         // Detect if this is an HLS playlist by extension or content type
         const isPlaylist = targetUrl.includes('.m3u8') ||
             targetUrl.includes('.m3u') ||
             contentType.includes('mpegurl') ||
-            contentType.includes('application/x-mpegURL');
+            contentType.includes('x-mpegURL') ||
+            contentType.includes('vnd.apple.mpegurl');
 
-        let data: any;
+        const responseHeaders = new Headers(CORS_HEADERS);
 
         if (isPlaylist) {
-            // HLS playlists use relative paths for segments.
-            // When we proxy, the browser resolves relative paths against OUR server.
-            // We must rewrite relative URLs to be absolute to the ORIGINAL server.
+            // === CRITICAL FIX ===
+            // Rewrite ALL URLs inside the m3u8 to go through our proxy.
+            // This ensures segments, sub-playlists, and encryption keys are all
+            // fetched server-side — bypassing any CORS block on the origin.
             const text = await response.text();
             const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
 
+            const getProxiedUrl = (url: string) => {
+                // Resolve to absolute first
+                let absoluteUrl: string;
+                if (url.startsWith('http')) {
+                    absoluteUrl = url;
+                } else if (url.startsWith('//')) {
+                    absoluteUrl = urlObj.protocol + url;
+                } else if (url.startsWith('/')) {
+                    absoluteUrl = urlObj.origin + url;
+                } else {
+                    absoluteUrl = baseUrl + url;
+                }
+                // Then wrap in proxy
+                return `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
+            };
+
             const rewrittenText = text.split('\n').map(line => {
                 const trimmedLine = line.trim();
-                // Skip comments/tags and empty lines
+
+                // Handle EXT-X-KEY URI= attribute (encryption key)
+                if (trimmedLine.startsWith('#EXT-X-KEY')) {
+                    return line.replace(/URI="([^"]+)"/, (_: string, uri: string) => {
+                        return `URI="${getProxiedUrl(uri)}"`;
+                    });
+                }
+
+                // Handle EXT-X-MAP URI= attribute (initialization segment)
+                if (trimmedLine.startsWith('#EXT-X-MAP')) {
+                    return line.replace(/URI="([^"]+)"/, (_: string, uri: string) => {
+                        return `URI="${getProxiedUrl(uri)}"`;
+                    });
+                }
+
+                // Skip other tags and empty lines
                 if (!trimmedLine || trimmedLine.startsWith('#')) return line;
 
-                // If it's already an absolute URL, leave it
-                if (trimmedLine.startsWith('http')) return line;
-
-                // If it's an absolute path from root, prepend origin
-                if (trimmedLine.startsWith('/')) return urlObj.origin + trimmedLine;
-
-                // It's a relative path, prepend base URL
-                return baseUrl + trimmedLine;
+                // Rewrite segment / sub-playlist URLs through proxy
+                return getProxiedUrl(trimmedLine);
             }).join('\n');
 
-            data = Buffer.from(rewrittenText);
+            responseHeaders.set('Content-Type', 'application/vnd.apple.mpegurl');
+            responseHeaders.set('Cache-Control', 'no-cache, no-store');
+
+            return new NextResponse(rewrittenText, {
+                status: 200,
+                headers: responseHeaders,
+            });
         } else {
-            // It's a video segment or other binary data
-            data = await response.arrayBuffer();
+            // Binary segment / key / other data — stream it directly
+            if (contentType) responseHeaders.set('Content-Type', contentType);
+
+            // Pass through content-range if present
+            const contentRange = response.headers.get('content-range');
+            if (contentRange) responseHeaders.set('Content-Range', contentRange);
+
+            responseHeaders.set('Cache-Control', 'public, max-age=60');
+
+            const data = await response.arrayBuffer();
+
+            return new NextResponse(data, {
+                status: contentRange ? 206 : 200,
+                headers: responseHeaders,
+            });
         }
-
-        const responseHeaders = new Headers();
-        if (contentType) responseHeaders.set('Content-Type', contentType);
-
-        // Critical headers for cross-origin playback
-        responseHeaders.set('Access-Control-Allow-Origin', '*');
-        responseHeaders.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        responseHeaders.set('Cache-Control', 'public, max-age=30');
-
-        return new NextResponse(data, {
-            status: 200,
-            headers: responseHeaders,
-        });
     } catch (error: any) {
         console.error(`Proxy Error for ${targetUrl}:`, error.message);
-        return new NextResponse(`Proxy error: ${error.message}`, { status: 500 });
+        return new NextResponse(`Proxy error: ${error.message}`, {
+            status: 502,
+            headers: CORS_HEADERS
+        });
     }
 }

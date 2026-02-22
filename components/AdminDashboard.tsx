@@ -142,6 +142,9 @@ export const Admin: React.FC = () => {
   const [newLiveIframe, setNewLiveIframe] = useState('');
   const [newLiveTags, setNewLiveTags] = useState('');
   const [newLiveIsTrending, setNewLiveIsTrending] = useState(false);
+  const [newLiveIsLive, setNewLiveIsLive] = useState(true);
+  const [newLiveMatchStart, setNewLiveMatchStart] = useState('');
+  const [newLiveDuration, setNewLiveDuration] = useState('90');
   const [newLivePollTeamA, setNewLivePollTeamA] = useState('');
   const [newLivePollTeamB, setNewLivePollTeamB] = useState('');
   const [editingLiveLink, setEditingLiveLink] = useState<LiveLink | null>(null);
@@ -1017,6 +1020,9 @@ export const Admin: React.FC = () => {
         status: 'active',
         tags,
         isTrending: newLiveIsTrending,
+        isLiveNow: newLiveIsLive,
+        matchStartTime: newLiveMatchStart || undefined,
+        matchDurationMinutes: newLiveDuration ? parseInt(newLiveDuration) : 90,
         poll,
         createdAt: new Date().toISOString()
       });
@@ -1025,6 +1031,9 @@ export const Admin: React.FC = () => {
       setNewLiveIframe('');
       setNewLiveTags('');
       setNewLiveIsTrending(false);
+      setNewLiveIsLive(true);
+      setNewLiveMatchStart('');
+      setNewLiveDuration('90');
       setNewLivePollTeamA('');
       setNewLivePollTeamB('');
       getLiveLinks().then(setLiveLinks);
@@ -1054,6 +1063,9 @@ export const Admin: React.FC = () => {
         iframeUrl: newLiveIframe,
         tags,
         isTrending: newLiveIsTrending,
+        isLiveNow: newLiveIsLive,
+        matchStartTime: newLiveMatchStart || undefined,
+        matchDurationMinutes: newLiveDuration ? parseInt(newLiveDuration) : 90,
         poll
       });
       alert('Live Link updated!');
@@ -1062,6 +1074,9 @@ export const Admin: React.FC = () => {
       setNewLiveIframe('');
       setNewLiveTags('');
       setNewLiveIsTrending(false);
+      setNewLiveIsLive(true);
+      setNewLiveMatchStart('');
+      setNewLiveDuration('90');
       setNewLivePollTeamA('');
       setNewLivePollTeamB('');
       getLiveLinks().then(setLiveLinks);
@@ -2141,16 +2156,59 @@ export const Admin: React.FC = () => {
                         </label>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Is Live toggle */}
+                      <button
+                        onClick={() => setNewLiveIsLive(!newLiveIsLive)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${newLiveIsLive
+                          ? 'bg-red-600 text-white shadow-lg shadow-red-500/30'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                          }`}
+                      >
+                        <span className={`relative flex h-2 w-2 ${newLiveIsLive ? 'inline-flex' : 'hidden'}`}>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                        </span>
+                        {newLiveIsLive ? '✔ Is Live Now' : '○ Mark as Live'}
+                      </button>
+
+                      {/* Trending toggle */}
                       <button
                         onClick={() => setNewLiveIsTrending(!newLiveIsTrending)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${newLiveIsTrending
-                          ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                          ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
                       >
                         <TrendingUp size={16} />
                         {newLiveIsTrending ? 'Trending Enabled' : 'Mark as Trending'}
                       </button>
+                    </div>
+
+                    {/* Match Time & Duration */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30">
+                      <div>
+                        <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 mb-1 uppercase tracking-wide">Match Start Time (HH:MM — 24hr)</label>
+                        <input
+                          type="time"
+                          value={newLiveMatchStart}
+                          onChange={(e) => setNewLiveMatchStart(e.target.value)}
+                          className="input-field text-sm"
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1">e.g. 18:30 → shows "4 hrs 3 min left" on site. Valid for 24 hrs.</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 mb-1 uppercase tracking-wide">Match Duration (minutes)</label>
+                        <input
+                          type="number"
+                          value={newLiveDuration}
+                          onChange={(e) => setNewLiveDuration(e.target.value)}
+                          placeholder="90"
+                          min="1"
+                          max="300"
+                          className="input-field text-sm"
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1">Default 90 min (football). Cricket: 450+ etc.</p>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
@@ -2199,6 +2257,9 @@ export const Admin: React.FC = () => {
                               setNewLivePollTeamA('');
                               setNewLivePollTeamB('');
                               setNewLiveIsTrending(false);
+                              setNewLiveIsLive(true);
+                              setNewLiveMatchStart('');
+                              setNewLiveDuration('90');
                             }}
                             className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                           >
@@ -2225,7 +2286,8 @@ export const Admin: React.FC = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heading</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Iframe URL</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Info</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Default</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trending</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -2248,7 +2310,32 @@ export const Admin: React.FC = () => {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={link.iframeUrl}>{link.iframeUrl}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(link.createdAt).toLocaleDateString()}</td>
+                            {/* Status column */}
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${(link as any).isLiveNow
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                                : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                                }`}>
+                                {(link as any).isLiveNow && (
+                                  <span className="relative flex h-1.5 w-1.5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+                                  </span>
+                                )}
+                                {(link as any).isLiveNow ? '✔ Live Now' : 'Offline'}
+                              </span>
+                            </td>
+                            {/* Time Info column */}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {(link as any).matchStartTime ? (
+                                <div className="text-xs">
+                                  <div className="font-bold text-gray-700 dark:text-gray-300">{new Date((link as any).matchStartTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                                  <div className="text-gray-400">{(link as any).matchDurationMinutes || 90} min</div>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 italic text-xs">Not set</span>
+                              )}
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <button
                                 onClick={() => handleSetLiveLinkDefault(link.id, !link.isDefault)}
@@ -2281,6 +2368,9 @@ export const Admin: React.FC = () => {
                                     setNewLiveIframe(link.iframeUrl);
                                     setNewLiveTags(link.tags?.join(', ') || '');
                                     setNewLiveIsTrending(!!link.isTrending);
+                                    setNewLiveIsLive(!!(link as any).isLiveNow);
+                                    setNewLiveMatchStart((link as any).matchStartTime || '');
+                                    setNewLiveDuration(String((link as any).matchDurationMinutes || 90));
                                     setNewLivePollTeamA(link.poll?.teamA || '');
                                     setNewLivePollTeamB(link.poll?.teamB || '');
                                     window.scrollTo({ top: 0, behavior: 'smooth' });

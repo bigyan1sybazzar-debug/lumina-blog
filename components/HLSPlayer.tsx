@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-
 import Hls from 'hls.js';
-import { AlertTriangle, RefreshCw, Loader2 } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Loader2, CheckCircle, Radio } from 'lucide-react';
 
 interface HLSPlayerProps {
     src: string;
@@ -22,7 +21,13 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
     const hlsRef = useRef<Hls | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLive, setIsLive] = useState(false);
     const [retryCount, setRetryCount] = useState(0);
+
+    // Always proxy the src through our server to avoid CORS issues
+    const proxiedSrc = src.startsWith('blob:') || src.startsWith('data:') || src.includes('/api/proxy')
+        ? src
+        : `/api/proxy?url=${encodeURIComponent(src)}`;
 
     useEffect(() => {
         const video = videoRef.current;
@@ -30,6 +35,7 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
 
         setError(null);
         setIsLoading(true);
+        setIsLive(false);
 
         const initPlayer = () => {
             if (Hls.isSupported()) {
@@ -40,65 +46,85 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                 const hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
-                    backBufferLength: 90,
-                    manifestLoadingMaxRetry: 2,
-                    levelLoadingMaxRetry: 2,
-                    xhrSetup: (xhr, url) => {
-                        // Skip blobs, data URLs, and already proxied/local URLs
-                        if (url.startsWith('blob:') || url.startsWith('data:')) return;
-
-                        const isExternal = url.startsWith('http') &&
-                            !url.includes(window.location.host) &&
-                            !url.includes('/api/proxy');
-
-                        if (isExternal) {
-                            const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
-                            xhr.open('GET', proxyUrl, true);
-                        }
-                    }
+                    // Buffer settings tuned for live streaming
+                    backBufferLength: 30,
+                    maxBufferLength: 30,
+                    maxMaxBufferLength: 60,
+                    maxBufferSize: 60 * 1000 * 1000, // 60 MB
+                    maxBufferHole: 0.5,
+                    // Aggressive retry strategy for unreliable streams
+                    manifestLoadingMaxRetry: 5,
+                    manifestLoadingRetryDelay: 500,
+                    manifestLoadingMaxRetryTimeout: 8000,
+                    levelLoadingMaxRetry: 5,
+                    levelLoadingRetryDelay: 500,
+                    levelLoadingMaxRetryTimeout: 8000,
+                    fragLoadingMaxRetry: 6,
+                    fragLoadingRetryDelay: 500,
+                    // Since we proxy all URLs in the m3u8, no need to re-proxy in xhrSetup
+                    // (all segment URLs in the playlist already point to /api/proxy)
                 });
 
-                hls.loadSource(src);
+                hls.loadSource(proxiedSrc);
                 hls.attachMedia(video);
                 hlsRef.current = hls;
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     setIsLoading(false);
+                    // Treat as live by default since all our streams are live m3u8
+                    setIsLive(true);
                     if (autoPlay) {
                         video.play().catch(e => {
-                            console.log("Autoplay blocked:", e);
+                            console.log('Autoplay blocked, user interaction needed:', e);
                         });
                     }
                     if (onReady) onReady();
                 });
 
-                hls.on(Hls.Events.ERROR, (event, data) => {
-                    console.warn(`HLS Error (${data.type}):`, data.details);
+                hls.on(Hls.Events.ERROR, (_event, data) => {
+                    console.warn(`HLS Error (${data.type}):`, data.details, data);
 
                     if (data.fatal) {
                         switch (data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
-                                setError('Network error: This stream is unreachable (CORS or Offline).');
-                                setIsLoading(false);
+                                // Try to recover first
+                                console.warn('Fatal network error, trying to recover...');
+                                hls.startLoad();
+                                // Only show error after some time if recovery fails
+                                setTimeout(() => {
+                                    if (hls && hlsRef.current === hls) {
+                                        setError('Network error: Stream is unreachable or offline. Try refreshing.');
+                                        setIsLoading(false);
+                                    }
+                                }, 8000);
                                 break;
                             case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.warn('Fatal media error, trying to recover...');
                                 hls.recoverMediaError();
                                 break;
                             default:
-                                setError('An error occurred while trying to play this stream.');
+                                setError('An error occurred while loading this stream.');
                                 setIsLoading(false);
                                 hls.destroy();
                                 break;
                         }
                     }
                 });
+
+                // Detect live stream from level details
+                hls.on(Hls.Events.LEVEL_LOADED, (_event, data) => {
+                    if (data.details?.live) setIsLive(true);
+                });
+
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // Native support (Safari)
-                video.src = src;
+                // Native HLS support (Safari / iOS)
+                video.src = proxiedSrc;
                 video.addEventListener('loadedmetadata', () => {
                     setIsLoading(false);
+                    // Safari can't reliably detect live, assume true for .m3u8
+                    setIsLive(true);
                     if (autoPlay) {
-                        video.play().catch(e => console.log("Autoplay blocked:", e));
+                        video.play().catch(e => console.log('Autoplay blocked:', e));
                     }
                     if (onReady) onReady();
                 });
@@ -117,11 +143,21 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
         return () => {
             if (hlsRef.current) {
                 hlsRef.current.destroy();
+                hlsRef.current = null;
             }
         };
-    }, [src, autoPlay, onReady, retryCount]);
+    }, [proxiedSrc, autoPlay, retryCount]);
+
+    // Sync muted state to video element
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.muted = muted;
+        }
+    }, [muted]);
 
     const handleRetry = () => {
+        setError(null);
+        setIsLoading(true);
         setRetryCount(prev => prev + 1);
     };
 
@@ -135,20 +171,38 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                 muted={muted}
             />
 
-            {isLoading && !error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10">
-                    <Loader2 className="w-10 h-10 text-primary-light animate-spin mb-3" />
-                    <span className="text-white text-xs font-medium tracking-widest uppercase">Loading Stream...</span>
+            {/* Live Now indicator */}
+            {isLive && !isLoading && !error && (
+                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-red-600/90 backdrop-blur-sm rounded-full shadow-lg z-20 pointer-events-none">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                    </span>
+                    <CheckCircle size={10} className="text-white" fill="white" />
+                    <span className="text-white text-[9px] font-black uppercase tracking-wider">Live Now</span>
                 </div>
             )}
 
+            {/* Loading overlay */}
+            {isLoading && !error && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-10">
+                    <div className="relative mb-3">
+                        <Loader2 className="w-10 h-10 text-red-500 animate-spin" />
+                        <Radio className="w-4 h-4 text-white absolute inset-0 m-auto animate-pulse" />
+                    </div>
+                    <span className="text-white text-xs font-bold tracking-widest uppercase">Connecting to Stream...</span>
+                    <span className="text-gray-400 text-[10px] mt-1">Please wait a moment</span>
+                </div>
+            )}
+
+            {/* Error overlay */}
             {error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90 z-20 p-6 text-center">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/95 z-20 p-6 text-center">
                     <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
                         <AlertTriangle className="w-8 h-8 text-red-500" />
                     </div>
-                    <h3 className="text-white font-bold mb-2">Streaming Error</h3>
-                    <p className="text-gray-400 text-xs mb-6 max-w-[250px]">
+                    <h3 className="text-white font-bold mb-2">Stream Unavailable</h3>
+                    <p className="text-gray-400 text-xs mb-6 max-w-[260px] leading-relaxed">
                         {error}
                     </p>
                     <button

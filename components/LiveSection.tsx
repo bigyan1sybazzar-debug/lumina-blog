@@ -76,6 +76,8 @@ const splideOptionsTrending = {
 
 export const LiveSection: React.FC = () => {
     const [isMounted, setIsMounted] = useState(false);
+    const [liveTime, setLiveTime] = useState(new Date());
+
     const [links, setLinks] = useState<LiveLink[]>([]);
 
     const [selectedLink, setSelectedLink] = useState<any>(null);
@@ -201,6 +203,12 @@ export const LiveSection: React.FC = () => {
             return () => unsubscribe();
         }
     }, [selectedLink?.id]);
+
+    // Real-time clock ticker
+    useEffect(() => {
+        const tick = setInterval(() => setLiveTime(new Date()), 1000);
+        return () => clearInterval(tick);
+    }, []);
 
     useEffect(() => {
         setIsMounted(true);
@@ -525,6 +533,49 @@ export const LiveSection: React.FC = () => {
         return hours < 24 ? `${hours}h ago` : `${Math.floor(hours / 24)}d ago`;
     };
 
+    // Resolve a stored time value to a JS timestamp.
+    // Handles both full ISO datetime strings AND HH:MM time-only strings.
+    const resolveMatchStart = (value: string): number => {
+        if (!value) return 0;
+        // Looks like HH:MM (time only, max 5 chars like "23:59")
+        if (/^\d{1,2}:\d{2}$/.test(value)) {
+            const [h, m] = value.split(':').map(Number);
+            const d = new Date();
+            d.setHours(h, m, 0, 0);
+            // If the time already passed today, use tomorrow
+            // But only roll to tomorrow if the match hasn't ended yet
+            // (we only want to roll if start is in the future)
+            return d.getTime();
+        }
+        return new Date(value).getTime();
+    };
+
+    // Time left until match ends — shown as "Xhr Ymin left"
+    const getTimeLeft = (matchDate: string | number, durationMinutes = 90) => {
+        const start = typeof matchDate === 'number' ? matchDate : resolveMatchStart(String(matchDate));
+        const now = liveTime.getTime();
+        const endMs = start + durationMinutes * 60 * 1000;
+        const remainingMs = endMs - now;
+        if (remainingMs <= 0) return null;
+        const totalSeconds = Math.floor(remainingMs / 1000);
+        const hrs = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
+        if (hrs > 0) return `${hrs}h ${mins}m left`;
+        if (mins > 0) return `${mins}m ${secs}s left`;
+        return `${secs}s left`;
+    };
+
+    // Match minute elapsed (e.g. 47') — only shown if match is currently in progress
+    const getMatchMinute = (matchDate: string | number, durationMinutes = 90) => {
+        const start = typeof matchDate === 'number' ? matchDate : resolveMatchStart(String(matchDate));
+        const now = liveTime.getTime();
+        const elapsed = Math.floor((now - start) / 60000);
+        if (elapsed < 0) return null;  // not started yet
+        if (elapsed > durationMinutes + 5) return null; // likely finished
+        return elapsed;
+    };
+
 
 
     const allTags = ['All', ...Array.from(new Set(links.flatMap(link => link.tags || [])))];
@@ -555,10 +606,22 @@ export const LiveSection: React.FC = () => {
             <div className="py-6 md:py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="space-y-4 md:space-y-8">
 
-                    {/* HD Alert */}
+                    {/* HD Alert + Live Clock */}
                     <div className="bg-accent-success/5 border-accent-success/20 border rounded-card p-4 flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-accent-success/20 flex items-center justify-center text-accent-success"><Clock size={20} /></div>
-                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Please be patient — HD channels may take a moment to load</p>
+                        <div className="flex-1">
+                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Please be patient — HD channels may take a moment to load</p>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-red-600 rounded-full ml-auto shrink-0">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                            </span>
+                            <span className="text-white text-[10px] font-black uppercase tracking-wider">Live</span>
+                            <span className="text-white text-[10px] font-mono font-bold">
+                                {liveTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            </span>
+                        </div>
                     </div>
 
                     {/* Top Ad */}
@@ -866,12 +929,13 @@ export const LiveSection: React.FC = () => {
                                                             </div>
                                                         )}
                                                         {selectedLink?.id === link.id && (
-                                                            <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800/50">
+                                                            <div className="absolute bottom-6 left-3 flex items-center gap-1.5 px-2 py-0.5 bg-red-600 rounded-full shadow-lg shadow-red-600/30 z-20">
                                                                 <span className="relative flex h-1.5 w-1.5">
-                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-600 opacity-75"></span>
-                                                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary-600"></span>
+                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
                                                                 </span>
-                                                                <span className="text-[8px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-tighter">NOW</span>
+                                                                <CheckCircle size={9} className="text-white" fill="white" />
+                                                                <span className="text-[8px] font-black text-white uppercase tracking-tighter">Live Now</span>
                                                             </div>
                                                         )}
                                                         <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
@@ -1198,10 +1262,24 @@ export const LiveSection: React.FC = () => {
                                                         <div className="flex flex-col gap-6">
                                                             {/* Match Status & Category */}
                                                             <div className="flex items-center justify-between">
-                                                                <span className="flex items-center gap-2 px-3 py-1 bg-primary-600 text-white text-[10px] font-black uppercase rounded-full animate-pulse shadow-lg shadow-primary-600/20">
-                                                                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
-                                                                    Live
-                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="flex items-center gap-1.5 px-3 py-1 bg-red-600 text-white text-[10px] font-black uppercase rounded-full shadow-lg shadow-red-600/20">
+                                                                        <span className="relative flex h-1.5 w-1.5">
+                                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                                                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
+                                                                        </span>
+                                                                        <CheckCircle size={9} fill="white" className="text-white" />
+                                                                        Live Now
+                                                                    </span>
+                                                                    {(() => {
+                                                                        const minute = getMatchMinute(match.date);
+                                                                        return minute !== null ? (
+                                                                            <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[9px] font-black rounded-full border border-amber-200 dark:border-amber-700/50">
+                                                                                {minute}&apos;
+                                                                            </span>
+                                                                        ) : null;
+                                                                    })()}
+                                                                </div>
                                                                 <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{match.category}</span>
                                                             </div>
 
@@ -1241,7 +1319,7 @@ export const LiveSection: React.FC = () => {
                                                             {/* Match Title & Info */}
                                                             <div className="text-center pt-2">
                                                                 <h4 className="text-sm font-black text-gray-900 dark:text-white mb-4 line-clamp-2 min-h-[2.5rem]">{match.title}</h4>
-                                                                <div className="flex items-center justify-center gap-4">
+                                                                <div className="flex items-center justify-center gap-4 flex-wrap">
                                                                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
                                                                         <Clock size={12} />
                                                                         {new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1251,6 +1329,18 @@ export const LiveSection: React.FC = () => {
                                                                         <Share2 size={12} />
                                                                         {match.sources.length} Sources
                                                                     </div>
+                                                                    {(() => {
+                                                                        const timeLeft = getTimeLeft(match.date);
+                                                                        return timeLeft ? (
+                                                                            <>
+                                                                                <div className="w-1 h-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
+                                                                                <div className="flex items-center gap-1 text-[10px] font-black text-red-500">
+                                                                                    <Clock size={10} className="animate-pulse" />
+                                                                                    {timeLeft}
+                                                                                </div>
+                                                                            </>
+                                                                        ) : null;
+                                                                    })()}
                                                                 </div>
                                                             </div>
 
