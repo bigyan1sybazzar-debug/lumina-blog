@@ -17,8 +17,8 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
     className = '',
     onReady
 }) => {
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const hlsRef = useRef<any>(null);
+    const playerRef = useRef<any>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [retryCount, setRetryCount] = useState(0);
@@ -26,157 +26,205 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
     const proxiedSrc = src.includes('/api/proxy') || src.startsWith('blob:') || src.startsWith('data:')
         ? src
         : `/api/proxy?url=${encodeURIComponent(src)}`;
+    const errorRef = useRef<string | null>(null);
+    useEffect(() => { errorRef.current = error; }, [error]);
 
-    const onReadyRef = useRef(onReady);
-    useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
-
-    useEffect(() => {
-        const video = videoRef.current;
-        if (!video) return;
-
+    const handleRetry = () => {
+        setRetryCount(prev => prev + 1);
         setError(null);
         setIsLoading(true);
+    };
 
-        let hls: any = null;
-        let stallInterval: ReturnType<typeof setInterval> | null = null;
+    useEffect(() => {
+        if (typeof window === 'undefined' || !containerRef.current) return;
 
-        const loadStream = async (streamUrl: string) => {
-            // Clean up any existing instance
-            if (hlsRef.current) {
-                hlsRef.current.destroy();
-                hlsRef.current = null;
-            }
+        let player: any = null;
 
-            const Hls = (await import('hls.js')).default;
+        const initPlayer = async () => {
+            try {
+                // Dynamically import xgplayer and its HLS plugin
+                const { default: Player } = await import('xgplayer');
+                const { default: HlsPlugin } = await import('xgplayer-hls');
+                // Import default theme
+                // @ts-ignore
+                await import('xgplayer/dist/index.min.css');
 
-            if (!Hls.isSupported()) {
-                // Native HLS (Safari)
-                video.src = streamUrl;
-                video.addEventListener('loadedmetadata', () => {
-                    setIsLoading(false);
-                    if (onReadyRef.current) onReadyRef.current();
-                    if (autoPlay) video.play().catch(() => { });
-                }, { once: true });
-                return;
-            }
-
-            hls = new Hls({
-                // === DIRECT URL, NO PROXY - same as browser ===
-                enableWorker: true,
-                lowLatencyMode: false,       // Off = prioritize stability
-
-                // === 120s BUFFER SHIELD ===
-                backBufferLength: 120,
-                maxBufferLength: 120,
-                maxMaxBufferLength: 180,
-                maxBufferSize: 300 * 1000 * 1000, // 300MB
-                maxBufferHole: 0.5,
-                highBufferWatchdogPeriod: 2,
-
-                // === LIVE SYNC ===
-                liveSyncDurationCount: 5,
-                liveMaxLatencyDurationCount: 15,
-
-                // === FAST RECOVERY ===
-                manifestLoadingMaxRetry: 10,
-                manifestLoadingRetryDelay: 500,  // Retry fast after 502
-                levelLoadingMaxRetry: 10,
-                levelLoadingRetryDelay: 500,
-                fragLoadingMaxRetry: 8,
-                fragLoadingRetryDelay: 300,
-            });
-
-            hlsRef.current = hls;
-            hls.loadSource(streamUrl);
-            hls.attachMedia(video);
-
-            hls.on('hlsManifestParsed', () => {
-                setIsLoading(false);
-                if (onReadyRef.current) onReadyRef.current();
-                if (autoPlay) video.play().catch(() => { });
-            });
-
-            hls.on('hlsError', (_: any, data: any) => {
-                if (!data.fatal) return;
-
-                if (data.type === 'networkError') {
-                    hls.startLoad();
-                } else if (data.type === 'mediaError') {
-                    hls.recoverMediaError();
-                } else {
-                    setError('Stream connection lost. Please retry.');
-                    setIsLoading(false);
-                    hls.destroy();
+                if (playerRef.current) {
+                    playerRef.current.destroy();
                 }
-            });
 
-            // Stall detector: nudge forward if stuck for >3s
-            stallInterval = setInterval(() => {
-                if (!video.paused && video.readyState < 3) {
-                    video.currentTime += 0.1;
-                }
-            }, 3000);
+                player = new Player({
+                    el: containerRef.current!,
+                    url: proxiedSrc,
+                    isLive: true,
+                    autoplay: autoPlay,
+                    volume: muted ? 0 : 0.6,
+                    width: '100%',
+                    height: '100%',
+                    playsinline: true,
+                    // Match the snippet exactly
+                    videoAttributes: {
+                        'webkit-playsinline': 'true',
+                        'x5-playsinline': 'true',
+                        'playsinline': 'true',
+                        'tabindex': '2',
+                        'mediatype': 'video'
+                    },
+                    plugins: [HlsPlugin],
+                    hls: {
+                        retryCount: 20,
+                        retryDelay: 1000,
+                        loadTimeout: 20000,
+                        initialLiveManifestSize: 5, // Wait for 5 segments
+                        bufferBeforePlaying: 5,     // Start after 5s
+                        maxBufferLength: 120,
+                        backBufferLength: 60,
+                        enableWorker: true,
+                        customHlsConfig: {
+                            enableWorker: true,
+                            maxBufferLength: 120,
+                            maxMaxBufferLength: 180,
+                            liveSyncDurationCount: 6, // 6 segments behind live edge for stability
+                            fragLoadingMaxRetry: 15,
+                            manifestLoadingMaxRetry: 15,
+                            levelLoadingMaxRetry: 15,
+                        }
+                    },
+                    commonStyle: {
+                        progressColor: '#dc2626',
+                        playedColor: '#dc2626',
+                    },
+                    ignores: ['playbackrate'],
+                });
+
+                playerRef.current = player;
+
+                player.on('complete', () => {
+                    setIsLoading(false);
+                    setError(null);
+                    if (onReady) onReady();
+                });
+
+                player.on('error', (err: any) => {
+                    const errorCode = err?.code || 'STREAM_ERROR';
+                    const errorMsg = err?.message || err?.errorType || 'The stream could not be reached or is currently offline.';
+                    console.error('[xgplayer] Detailed Error:', { code: errorCode, msg: errorMsg, details: err });
+
+                    setError(`Stream connection issue (${errorCode})`);
+
+                    // Auto-recover after 3 seconds if an error still exists
+                    setTimeout(() => {
+                        if (playerRef.current && errorRef.current) {
+                            handleRetry();
+                        }
+                    }, 3000);
+                });
+
+                player.on('waiting', () => {
+                    setIsLoading(true);
+                });
+
+                player.on('playing', () => {
+                    setIsLoading(false);
+                    setError(null);
+                });
+
+            } catch (err) {
+                console.error('Failed to init xgplayer:', err);
+                setError('Player initialization failed.');
+            }
         };
 
-        // Start with DIRECT URL — no proxy overhead
-        loadStream(proxiedSrc);
+        initPlayer();
 
         return () => {
-            if (hls) hls.destroy();
-            if (hlsRef.current) hlsRef.current = null;
-            if (stallInterval) clearInterval(stallInterval);
+            if (playerRef.current) {
+                playerRef.current.destroy();
+                playerRef.current = null;
+            }
         };
-    }, [proxiedSrc, autoPlay, muted, retryCount]);
-
-    // Sync muted
-    useEffect(() => {
-        if (videoRef.current) videoRef.current.muted = muted;
-    }, [muted]);
+    }, [proxiedSrc, autoPlay, muted, retryCount, onReady]);
 
     return (
-        <div className={`relative bg-black overflow-hidden ${className}`}>
-            <video
-                ref={videoRef}
-                className="w-full h-full"
-                playsInline
-                muted={muted}
-                controls
-            />
+        <div className={`relative bg-black group transition-all duration-500 rounded-xl overflow-hidden shadow-2xl ${className}`}>
+            {/* The xgplayer instance will mount here */}
+            <div ref={containerRef} className="w-full h-full" id="mse" />
 
-            {/* LIVE Badge */}
-            <div className="absolute top-3 left-3 z-10 flex items-center gap-2 px-3 py-1.5 bg-red-600 rounded-lg border border-white/20 shadow-lg pointer-events-none">
+            {/* Premium Loading Overlay (Custom for branding) */}
+            {isLoading && !error && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md z-10 pointer-events-none">
+                    <div className="relative mb-6">
+                        <Loader2 className="w-14 h-14 text-red-600 animate-spin" />
+                        <Radio className="w-6 h-6 text-white absolute inset-0 m-auto animate-pulse" />
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                        <span className="text-white text-[10px] font-black tracking-[0.4em] uppercase opacity-80">
+                            Synchronizing Stream
+                        </span>
+                        <div className="flex gap-2">
+                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce"></span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Error Overlay with Auto-Reconnect Logic */}
+            {error && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/95 z-20 p-8 text-center backdrop-blur-xl">
+                    <div className="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center mb-6 border border-red-600/20 shadow-2xl shadow-red-600/10">
+                        <AlertTriangle className="w-10 h-10 text-red-600" />
+                    </div>
+                    <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight italic">Connection Failed</h3>
+                    <p className="text-gray-400 text-sm mb-8 max-w-xs">{error}</p>
+                    <button
+                        onClick={handleRetry}
+                        className="group flex items-center gap-3 px-8 py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-sm font-black transition-all active:scale-95 shadow-2xl shadow-red-600/40"
+                    >
+                        <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-700" />
+                        RE-CONNECT PLAYER
+                    </button>
+                </div>
+            )}
+
+            {/* Live Indicator (Overlay) */}
+            <div className="absolute top-4 left-4 z-20 flex items-center gap-2.5 px-3 py-1.5 bg-red-600 rounded-lg border border-white/20 shadow-xl pointer-events-none select-none">
                 <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                 </span>
-                <span className="text-[10px] font-black uppercase text-white tracking-widest">Live</span>
+                <span className="text-[10px] font-black uppercase text-white tracking-[0.1em]">Live Now</span>
             </div>
 
-            {/* Loading */}
-            {isLoading && !error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm z-20">
-                    <div className="relative mb-4">
-                        <Loader2 className="w-10 h-10 text-red-600 animate-spin" />
-                        <Radio className="w-4 h-4 text-white absolute inset-0 m-auto animate-pulse" />
-                    </div>
-                    <span className="text-white text-[10px] font-bold tracking-[0.2em] uppercase opacity-70">Connecting...</span>
-                </div>
-            )}
-
-            {/* Error */}
-            {error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950 z-30 p-8 text-center">
-                    <AlertTriangle className="w-10 h-10 text-red-600 mb-4" />
-                    <h3 className="text-lg font-bold text-white mb-2">Stream Unavailable</h3>
-                    <p className="text-gray-400 text-sm mb-6">{error}</p>
-                    <button
-                        onClick={() => setRetryCount(p => p + 1)}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm transition-all"
-                    >
-                        <RefreshCw size={16} /> Retry
-                    </button>
-                </div>
-            )}
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                .xgplayer {
+                    background-color: transparent !important;
+                }
+                .xgplayer .xg-inner-controls {
+                    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent) !important;
+                    height: 60px !important;
+                }
+                .xgplayer .xgplayer-loading {
+                    display: none !important; /* Use our custom loader instead */
+                }
+                .xgplayer .xgplayer-start {
+                    background: rgba(220, 38, 38, 0.9) !important;
+                    width: 70px !important;
+                    height: 70px !important;
+                    border-radius: 50% !important;
+                }
+                .xgplayer .xgplayer-start svg {
+                    width: 30px !important;
+                    height: 30px !important;
+                }
+                .xgplayer .xg-tips {
+                    background: rgba(0,0,0,0.8) !important;
+                    backdrop-filter: blur(4px);
+                    border: 1px solid rgba(255,255,255,0.1);
+                }
+            ` }} />
         </div>
     );
 };

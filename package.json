@@ -45,7 +45,9 @@
     "sitemap": "^9.0.0",
     "video.js": "^8.23.7",
     "videojs-contrib-quality-levels": "^4.1.0",
-    "videojs-hls-quality-selector": "^2.0.0"
+    "videojs-hls-quality-selector": "^2.0.0",
+    "xgplayer": "^3.0.23",
+    "xgplayer-hls": "^3.0.23"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
