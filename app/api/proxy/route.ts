@@ -69,21 +69,7 @@ export async function GET(request: NextRequest) {
             const text = await response.text();
 
             const getProxiedUrl = (url: string) => {
-                let absoluteUrl: string;
-                try {
-                    new URL(url);
-                    absoluteUrl = url;
-                } catch {
-                    if (url.startsWith('//')) {
-                        absoluteUrl = urlObj.protocol + url;
-                    } else if (url.startsWith('/')) {
-                        absoluteUrl = urlObj.origin + url;
-                    } else {
-                        const parts = targetUrl.split('/');
-                        parts.pop();
-                        absoluteUrl = parts.join('/') + '/' + url;
-                    }
-                }
+                const absoluteUrl = new URL(url, targetUrl).href;
                 return `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
             };
 
@@ -127,7 +113,11 @@ export async function GET(request: NextRequest) {
         });
 
         if (!targetUrl.includes('.m3u8')) {
-            responseHeaders.set('Cache-Control', 'public, max-age=60');
+            // Force correct MIME type for segments to prevent player rejection
+            if (targetUrl.includes('.ts')) {
+                responseHeaders.set('Content-Type', 'video/mp2t');
+            }
+            responseHeaders.set('Cache-Control', 'public, max-age=10');
         }
 
         return new NextResponse(response.body, {

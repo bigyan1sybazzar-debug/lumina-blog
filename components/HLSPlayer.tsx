@@ -29,6 +29,9 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
     const errorRef = useRef<string | null>(null);
     useEffect(() => { errorRef.current = error; }, [error]);
 
+    const onReadyRef = useRef(onReady);
+    useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
+
     const handleRetry = () => {
         setRetryCount(prev => prev + 1);
         setError(null);
@@ -62,7 +65,6 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                     width: '100%',
                     height: '100%',
                     playsinline: true,
-                    // Match the snippet exactly
                     videoAttributes: {
                         'webkit-playsinline': 'true',
                         'x5-playsinline': 'true',
@@ -72,23 +74,14 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                     },
                     plugins: [HlsPlugin],
                     hls: {
-                        retryCount: 20,
+                        retryCount: 15,
                         retryDelay: 1000,
                         loadTimeout: 20000,
-                        initialLiveManifestSize: 5, // Wait for 5 segments
-                        bufferBeforePlaying: 5,     // Start after 5s
-                        maxBufferLength: 120,
-                        backBufferLength: 60,
+                        liveSyncDurationCount: 7, // Stable distance from live edge
+                        maxBufferLength: 60,      // Constant safety buffer
+                        initialLiveManifestSize: 3,
+                        bufferBeforePlaying: 5,   // Wait for 5s of data
                         enableWorker: true,
-                        customHlsConfig: {
-                            enableWorker: true,
-                            maxBufferLength: 120,
-                            maxMaxBufferLength: 180,
-                            liveSyncDurationCount: 6, // 6 segments behind live edge for stability
-                            fragLoadingMaxRetry: 15,
-                            manifestLoadingMaxRetry: 15,
-                            levelLoadingMaxRetry: 15,
-                        }
                     },
                     commonStyle: {
                         progressColor: '#dc2626',
@@ -102,22 +95,25 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                 player.on('complete', () => {
                     setIsLoading(false);
                     setError(null);
-                    if (onReady) onReady();
+                    if (onReadyRef.current) onReadyRef.current();
                 });
 
                 player.on('error', (err: any) => {
-                    const errorCode = err?.code || 'STREAM_ERROR';
-                    const errorMsg = err?.message || err?.errorType || 'The stream could not be reached or is currently offline.';
-                    console.error('[xgplayer] Detailed Error:', { code: errorCode, msg: errorMsg, details: err });
+                    console.warn('[xgplayer] Playback error:', err);
+                    // Silently ignore minor errors, only show fatal ones
+                    if (err?.code === 4004 || err?.code === 4003) {
+                        setError('The stream is currently unreachable.');
+                    }
+                });
 
-                    setError(`Stream connection issue (${errorCode})`);
+                // The player's internal loading state is sufficient, no need for manual stall detection
+                player.on('play', () => {
+                    setIsLoading(false);
+                    setError(null);
+                });
 
-                    // Auto-recover after 3 seconds if an error still exists
-                    setTimeout(() => {
-                        if (playerRef.current && errorRef.current) {
-                            handleRetry();
-                        }
-                    }, 3000);
+                player.on('pause', () => {
+                    setIsLoading(false);
                 });
 
                 player.on('waiting', () => {
