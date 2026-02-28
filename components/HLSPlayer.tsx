@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, memo } from 'react';
 import Hls from 'hls.js';
 import { AlertTriangle, RefreshCw, Loader2, Radio } from 'lucide-react';
 
@@ -57,7 +57,7 @@ function buildProxyLoader(HlsLib: typeof Hls) {
     };
 }
 
-const HLSPlayer: React.FC<HLSPlayerProps> = ({
+const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
     src,
     autoPlay = true,
     muted = false,
@@ -100,19 +100,21 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                 loader: buildProxyLoader(Hls) as any,
 
                 // Live stream config
-                liveSyncDurationCount: 3,
-                liveMaxLatencyDurationCount: 10,
-                maxBufferLength: 60,
-                maxMaxBufferLength: 120,
+                // Live stream config - Tuned for maximum stability
+                liveSyncDurationCount: 6, // 6 segments buffer (more stable than 3)
+                liveMaxLatencyDurationCount: 15,
+                maxBufferLength: 90,
+                maxMaxBufferLength: 180,
                 enableWorker: true,
                 lowLatencyMode: false,
+                backBufferLength: 90,
 
-                // Retry config
-                fragLoadingMaxRetry: 6,
-                manifestLoadingMaxRetry: 4,
-                levelLoadingMaxRetry: 4,
-                fragLoadingRetryDelay: 1000,
-                manifestLoadingRetryDelay: 1000,
+                // Retry config - Aggressive recovery
+                fragLoadingMaxRetry: 10,
+                manifestLoadingMaxRetry: 6,
+                levelLoadingMaxRetry: 6,
+                fragLoadingRetryDelay: 500,
+                manifestLoadingRetryDelay: 500,
             });
 
             hlsRef.current = hls;
@@ -240,6 +242,6 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
             </div>
         </div>
     );
-};
+});
 
 export default HLSPlayer;

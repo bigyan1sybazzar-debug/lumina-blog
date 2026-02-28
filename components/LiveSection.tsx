@@ -726,7 +726,7 @@ export const LiveSection: React.FC = () => {
                                                         </div>
                                                     )}
                                                     {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
-                                                        <HLSPlayer src={selectedLink.youtubeUrl || selectedLink.iframeUrl} className="w-full h-full [&>video]:object-cover" autoPlay={true} muted={isMuted} onReady={() => setIsWatching(true)} />
+                                                        <HLSPlayer key={playerKey} src={selectedLink.youtubeUrl || selectedLink.iframeUrl} className="w-full h-full [&>video]:object-cover" autoPlay={true} muted={isMuted} onReady={() => setIsWatching(true)} />
                                                     ) : (
                                                         <iframe ref={iframeRef} key={playerKey} src={selectedLink.youtubeUrl || selectedLink.iframeUrl} title={selectedLink.heading} className="w-full h-full border-0 absolute top-0 left-0" allowFullScreen referrerPolicy="no-referrer" onLoad={() => setTimeout(() => setIsWatching(true), 2000)} />
                                                     )}
