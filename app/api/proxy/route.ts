@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'edge';
+// export const runtime = 'edge'; // Use Node.js runtime for better streaming stability on live sites
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -15,6 +15,8 @@ export async function OPTIONS() {
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const targetUrl = searchParams.get('url');
+    // Optional: original referrer origin passed from rewritten playlist URLs
+    const refOverride = searchParams.get('ref');
 
     if (!targetUrl) {
         return new NextResponse('Missing URL parameter', { status: 400 });
@@ -23,22 +25,21 @@ export async function GET(request: NextRequest) {
     try {
         const urlObj = new URL(targetUrl);
 
+        // Use the override referer if provided (e.g., when a sub-CDN needs
+        // the original embedding site's origin, not its own origin)
+        const effectiveOrigin = refOverride || urlObj.origin;
+
         const fetchHeaders: Record<string, string> = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Origin': urlObj.origin,
-            'Referer': urlObj.origin + '/',
+            'Accept-Encoding': 'identity', // Disable compression to prevent streaming issues
+            'Origin': effectiveOrigin,
+            'Referer': effectiveOrigin + '/',
             'Sec-Fetch-Dest': 'empty',
             'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-origin',
-            'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-            'Sec-Ch-Ua-Mobile': '?0',
-            'Sec-Ch-Ua-Platform': '"Windows"',
+            'Sec-Fetch-Site': 'cross-site',
             'Connection': 'keep-alive',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
         };
 
         const rangeHeader = request.headers.get('range');
@@ -56,26 +57,45 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        const contentType = response.headers.get('content-type') || '';
-        const isPlaylist = targetUrl.includes('.m3u8') ||
-            targetUrl.includes('.m3u') ||
-            contentType.includes('mpegurl') ||
-            contentType.includes('x-mpegURL') ||
-            contentType.includes('vnd.apple.mpegurl');
-
+        const isPlaylist = targetUrl.includes('.m3u8');
         const responseHeaders = new Headers(CORS_HEADERS);
+
+        // Forward essential headers
+        const headersToForward = [
+            'Content-Type',
+            'Content-Length',
+            'Accept-Ranges',
+            'Content-Range',
+        ];
+
+        headersToForward.forEach(h => {
+            const val = response.headers.get(h);
+            if (val) responseHeaders.set(h, val);
+        });
 
         if (isPlaylist) {
             const text = await response.text();
 
+            // Pass the effective origin (the original embedding site, e.g. live.inplyr.com)
+            // through all rewritten sub-URLs so sub-CDNs receive the correct Referer header.
             const getProxiedUrl = (url: string) => {
-                const absoluteUrl = new URL(url, targetUrl).href;
-                return `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
+                try {
+                    const absoluteUrl = new URL(url, targetUrl).href;
+                    const proxyUrl = `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
+                    // If the sub-resource is on a different domain, carry the referer override
+                    const subDomain = new URL(absoluteUrl).origin;
+                    if (subDomain !== effectiveOrigin) {
+                        return `${proxyUrl}&ref=${encodeURIComponent(effectiveOrigin)}`;
+                    }
+                    return proxyUrl;
+                } catch {
+                    return url;
+                }
             };
 
             const rewrittenText = text.split('\n').map(line => {
                 const trimmed = line.trim();
-                if (!trimmed) return line;
+                if (!trimmed || trimmed.startsWith('#EXT-X-KEY')) return line;
 
                 if (trimmed.includes('URI=')) {
                     return line.replace(/URI=["']?([^"']+)["']?/, (match, uri) => {
@@ -90,34 +110,13 @@ export async function GET(request: NextRequest) {
 
             responseHeaders.set('Content-Type', 'application/vnd.apple.mpegurl');
             responseHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-            responseHeaders.set('Pragma', 'no-cache');
-            responseHeaders.set('Expires', '0');
-
-            return new NextResponse(rewrittenText, {
-                status: 200,
-                headers: responseHeaders,
-            });
+            return new NextResponse(rewrittenText, { status: 200, headers: responseHeaders });
         }
 
-        const headersToForward = [
-            'Content-Type',
-            'Content-Length',
-            'Accept-Ranges',
-            'Content-Range',
-            'Cache-Control'
-        ];
-
-        headersToForward.forEach(h => {
-            const val = response.headers.get(h);
-            if (val) responseHeaders.set(h, val);
-        });
-
-        if (!targetUrl.includes('.m3u8')) {
-            // Force correct MIME type for segments to prevent player rejection
-            if (targetUrl.includes('.ts')) {
-                responseHeaders.set('Content-Type', 'video/mp2t');
-            }
-            responseHeaders.set('Cache-Control', 'public, max-age=10');
+        // For segments (.ts)
+        if (targetUrl.includes('.ts')) {
+            responseHeaders.set('Content-Type', 'video/mp2t');
+            responseHeaders.set('Cache-Control', 'public, max-age=60');
         }
 
         return new NextResponse(response.body, {
@@ -126,10 +125,6 @@ export async function GET(request: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error(`Proxy Error for ${targetUrl}:`, error.message);
-        return new NextResponse(`Proxy error: ${error.message}`, {
-            status: 502,
-            headers: CORS_HEADERS
-        });
+        return new NextResponse(`Proxy error: ${error.message}`, { status: 502, headers: CORS_HEADERS });
     }
 }

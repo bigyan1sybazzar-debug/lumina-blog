@@ -220,6 +220,7 @@ export const LiveSection: React.FC = () => {
                     getR2IPTVChannels()
                 ]);
 
+                console.log('DEBUG: Fetched live links from R2:', fetchedLinks);
                 setLinks(fetchedLinks);
 
                 setIptvConfig(config);
@@ -542,9 +543,12 @@ export const LiveSection: React.FC = () => {
             const [h, m] = value.split(':').map(Number);
             const d = new Date();
             d.setHours(h, m, 0, 0);
-            // If the time already passed today, use tomorrow
-            // But only roll to tomorrow if the match hasn't ended yet
-            // (we only want to roll if start is in the future)
+
+            // If the calculated time is more than 12 hours in the past,
+            // it's almost certainly meant for tomorrow (e.g. entering 01:00 at 10 PM).
+            if (Date.now() - d.getTime() > 12 * 60 * 60 * 1000) {
+                d.setDate(d.getDate() + 1);
+            }
             return d.getTime();
         }
         return new Date(value).getTime();
@@ -617,10 +621,28 @@ export const LiveSection: React.FC = () => {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
                             </span>
-                            <span className="text-white text-[10px] font-black uppercase tracking-wider">Live</span>
-                            <span className="text-white text-[10px] font-mono font-bold">
-                                {liveTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                            </span>
+                            {selectedLink?.matchStartTime ? (() => {
+                                const tLeft = getTimeLeft(selectedLink.matchStartTime, selectedLink.matchDurationMinutes || 90);
+                                const startMs = resolveMatchStart(selectedLink.matchStartTime);
+                                const isFuture = startMs > liveTime.getTime();
+                                return (
+                                    <>
+                                        <span className="text-white text-[10px] font-black uppercase tracking-wider">
+                                            {isFuture ? 'Kick Off In' : 'Match Time'}
+                                        </span>
+                                        <span className={`text-white text-[10px] font-mono font-bold ${!isFuture && 'text-emerald-300 animate-pulse'}`}>
+                                            {isFuture ? getTimeLeft(selectedLink.matchStartTime, 0)?.replace(' left', '') : (tLeft || 'Ended')}
+                                        </span>
+                                    </>
+                                );
+                            })() : (
+                                <>
+                                    <span className="text-white text-[10px] font-black uppercase tracking-wider">Live</span>
+                                    <span className="text-white text-[10px] font-mono font-bold">
+                                        {liveTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    </span>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -658,7 +680,26 @@ export const LiveSection: React.FC = () => {
                                                                 <span className="text-[5px] font-black tracking-widest mb-0.5">LIVE</span>
                                                                 <div className={`h-1.5 w-1.5 rounded-full ${selectedLink?.id === link.id ? 'bg-white' : 'bg-primary-600'}`} />
                                                             </div>
-                                                            <h3 className={`text-[10px] font-bold line-clamp-2 dark:text-white`}>{link.heading}</h3>
+                                                            <div className="flex flex-col min-w-0">
+                                                                <h3 className={`text-[10px] font-bold line-clamp-2 dark:text-white`}>{link.heading}</h3>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[8px] text-gray-400 dark:text-gray-500 font-medium">#{link.tags?.[0]}</span>
+                                                                    {/* Mini time badge for trending slider */}
+                                                                    {(link as any).matchStartTime && (() => {
+                                                                        const startMs = resolveMatchStart(String((link as any).matchStartTime));
+                                                                        const dur = (link as any).matchDurationMinutes || 90;
+                                                                        const elapsedMins = Math.floor((liveTime.getTime() - startMs) / 60000);
+                                                                        if (elapsedMins < 0) {
+                                                                            const tLeft = getTimeLeft((link as any).matchStartTime, 0)?.replace(' left', '');
+                                                                            return <span className="text-[8px] text-blue-500 font-bold">{tLeft} to go</span>;
+                                                                        } else if (elapsedMins <= dur) {
+                                                                            const tLeft = getTimeLeft((link as any).matchStartTime, dur);
+                                                                            return <span className="text-[8px] text-emerald-500 font-bold animate-pulse">{tLeft}</span>;
+                                                                        }
+                                                                        return null;
+                                                                    })()}
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </button>
                                                 </SplideSlide>
@@ -731,6 +772,17 @@ export const LiveSection: React.FC = () => {
                                                                         <Activity size={10} /> Total Site: {realtimeStats.activeUsers}
                                                                     </span>
                                                                 )}
+                                                                {selectedLink.matchStartTime && (() => {
+                                                                    const tLeft = getTimeLeft(selectedLink.matchStartTime, selectedLink.matchDurationMinutes || 90);
+                                                                    const startMs = resolveMatchStart(selectedLink.matchStartTime);
+                                                                    const nowMs = liveTime.getTime();
+                                                                    const isFuture = startMs > nowMs;
+                                                                    return (
+                                                                        <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[9px] font-black uppercase ${isFuture ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200 animate-pulse'}`}>
+                                                                            <Clock size={10} /> {isFuture ? `Starts in ${getTimeLeft(selectedLink.matchStartTime, 0)?.replace(' left', '')}` : (tLeft ? tLeft : 'Match Ended')}
+                                                                        </span>
+                                                                    );
+                                                                })()}
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-2">
@@ -966,6 +1018,35 @@ export const LiveSection: React.FC = () => {
                                                                             <Activity size={8} /> {getWatchingCount(link.id)} watching
                                                                         </span>
                                                                     )}
+                                                                    {/* ── Time Left / Match Minute badge ── */}
+                                                                    {(link as any).matchStartTime && (() => {
+                                                                        const startMs = resolveMatchStart(String((link as any).matchStartTime));
+                                                                        const dur = (link as any).matchDurationMinutes || 90;
+                                                                        const nowMs = liveTime.getTime();
+                                                                        const elapsedMins = Math.floor((nowMs - startMs) / 60000);
+                                                                        if (elapsedMins < 0) {
+                                                                            // Before start — show countdown to kick-off
+                                                                            const msUntilStart = startMs - nowMs;
+                                                                            const totalSecs = Math.floor(msUntilStart / 1000);
+                                                                            const hrs = Math.floor(totalSecs / 3600);
+                                                                            const mins = Math.floor((totalSecs % 3600) / 60);
+                                                                            const label = hrs > 0 ? `${hrs}h ${mins}m to start` : `${mins}m to start`;
+                                                                            return (
+                                                                                <span className="flex items-center gap-1 text-[8px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded-md">
+                                                                                    <Clock size={8} /> {label}
+                                                                                </span>
+                                                                            );
+                                                                        } else if (elapsedMins <= dur) {
+                                                                            // Match in progress — show time remaining
+                                                                            const tLeft = getTimeLeft((link as any).matchStartTime, dur);
+                                                                            return tLeft ? (
+                                                                                <span className="flex items-center gap-1 text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded-md animate-pulse">
+                                                                                    <Clock size={8} /> {tLeft}
+                                                                                </span>
+                                                                            ) : null;
+                                                                        }
+                                                                        return null;
+                                                                    })()}
                                                                 </div>
                                                             </div>
                                                         </div>

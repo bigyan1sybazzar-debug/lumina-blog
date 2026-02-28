@@ -11,10 +11,6 @@ const PollCard = dynamic(() => import('../components/PollCard'), {
   ssr: false
 });
 
-const LiveMatchPopup = dynamic(() => import('../components/LiveMatchPopup').then(mod => mod.LiveMatchPopup), {
-  ssr: false
-});
-
 import { ArrowRight, Loader2, Sparkles, Send, BookOpen, Vote, ShoppingBag, Clock, Calendar, Hash, TrendingUp, ChevronLeft, ChevronRight, Languages, LogIn, Edit } from 'lucide-react'; // Consolidated imports
 import Link from 'next/link';
 import Image from 'next/image';
@@ -860,7 +856,7 @@ export const Home: React.FC<HomeProps> = ({
         </div>
       </section>
 
-      <LiveMatchPopup />
+
     </div>
   );
 };

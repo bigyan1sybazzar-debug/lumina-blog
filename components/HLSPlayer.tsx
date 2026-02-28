@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
+import Hls from 'hls.js';
 import { AlertTriangle, RefreshCw, Loader2, Radio } from 'lucide-react';
 
 interface HLSPlayerProps {
@@ -10,24 +11,63 @@ interface HLSPlayerProps {
     onReady?: () => void;
 }
 
+/**
+ * Turn any external URL into a /api/proxy?url=...&ref=... URL.
+ * This ensures EVERY request (manifest, sub-manifest, and segment)
+ * goes through our server proxy, which sets the correct Origin/Referer
+ * headers that CDNs require.
+ */
+function toProxyUrl(url: string): string {
+    if (!url) return url;
+    // Already a local/proxied URL — leave it alone
+    if (url.startsWith('/') || url.includes('/api/proxy')) return url;
+
+    try {
+        const parsed = new URL(url);
+        const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+        // Carry the CDN origin as `ref` so the server proxy uses it as Referer
+        return `${proxyUrl}&ref=${encodeURIComponent(parsed.origin)}`;
+    } catch {
+        return url;
+    }
+}
+
+/**
+ * Build a custom hls.js loader that intercepts EVERY network request
+ * before it fires and rewrites the URL through our proxy.
+ *
+ * This is the core fix for cross-CDN streams like live.inplyr.com →
+ * pull.niues.live: xgplayer was fetching absolute segment URLs directly
+ * from the CDN (bypassing the proxy), causing CORS failures. hls.js
+ * custom loaders intercept at the XHR/fetch level, so nothing escapes.
+ */
+function buildProxyLoader(HlsLib: typeof Hls) {
+    const DefaultLoader = HlsLib.DefaultConfig.loader as any;
+
+    return class ProxyLoader extends DefaultLoader {
+        constructor(config: any) {
+            super(config);
+        }
+
+        load(context: any, config: any, callbacks: any) {
+            context.url = toProxyUrl(context.url);
+            super.load(context, config, callbacks);
+        }
+    };
+}
+
 const HLSPlayer: React.FC<HLSPlayerProps> = ({
     src,
     autoPlay = true,
     muted = false,
     className = '',
-    onReady
+    onReady,
 }) => {
-    const playerRef = useRef<any>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const hlsRef = useRef<Hls | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [retryCount, setRetryCount] = useState(0);
-
-    const proxiedSrc = src.includes('/api/proxy') || src.startsWith('blob:') || src.startsWith('data:')
-        ? src
-        : `/api/proxy?url=${encodeURIComponent(src)}`;
-    const errorRef = useRef<string | null>(null);
-    useEffect(() => { errorRef.current = error; }, [error]);
 
     const onReadyRef = useRef(onReady);
     useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
@@ -39,114 +79,119 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
     };
 
     useEffect(() => {
-        if (typeof window === 'undefined' || !containerRef.current) return;
+        const video = videoRef.current;
+        if (!video || !src) return;
 
-        let player: any = null;
+        // Destroy any existing hls.js instance
+        if (hlsRef.current) {
+            hlsRef.current.destroy();
+            hlsRef.current = null;
+        }
 
-        const initPlayer = async () => {
-            try {
-                // Dynamically import xgplayer and its HLS plugin
-                const { default: Player } = await import('xgplayer');
-                const { default: HlsPlugin } = await import('xgplayer-hls');
-                // Import default theme
-                // @ts-ignore
-                await import('xgplayer/dist/index.min.css');
+        setError(null);
+        setIsLoading(true);
 
-                if (playerRef.current) {
-                    playerRef.current.destroy();
+        const proxiedSrc = toProxyUrl(src);
+
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                // Custom loader: EVERY request (manifest + segment) goes via /api/proxy
+                loader: buildProxyLoader(Hls) as any,
+
+                // Live stream config
+                liveSyncDurationCount: 3,
+                liveMaxLatencyDurationCount: 10,
+                maxBufferLength: 60,
+                maxMaxBufferLength: 120,
+                enableWorker: true,
+                lowLatencyMode: false,
+
+                // Retry config
+                fragLoadingMaxRetry: 6,
+                manifestLoadingMaxRetry: 4,
+                levelLoadingMaxRetry: 4,
+                fragLoadingRetryDelay: 1000,
+                manifestLoadingRetryDelay: 1000,
+            });
+
+            hlsRef.current = hls;
+            hls.loadSource(proxiedSrc);
+            hls.attachMedia(video);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                setIsLoading(false);
+                if (autoPlay) {
+                    video.play().catch(() => {
+                        // Autoplay blocked by browser — mute and retry
+                        video.muted = true;
+                        video.play().catch(() => { });
+                    });
                 }
+                if (onReadyRef.current) onReadyRef.current();
+            });
 
-                player = new Player({
-                    el: containerRef.current!,
-                    url: proxiedSrc,
-                    isLive: true,
-                    autoplay: autoPlay,
-                    volume: muted ? 0 : 0.6,
-                    width: '100%',
-                    height: '100%',
-                    playsinline: true,
-                    videoAttributes: {
-                        'webkit-playsinline': 'true',
-                        'x5-playsinline': 'true',
-                        'playsinline': 'true',
-                        'tabindex': '2',
-                        'mediatype': 'video'
-                    },
-                    plugins: [HlsPlugin],
-                    hls: {
-                        retryCount: 15,
-                        retryDelay: 1000,
-                        loadTimeout: 20000,
-                        liveSyncDurationCount: 7, // Stable distance from live edge
-                        maxBufferLength: 60,      // Constant safety buffer
-                        initialLiveManifestSize: 3,
-                        bufferBeforePlaying: 5,   // Wait for 5s of data
-                        enableWorker: true,
-                    },
-                    commonStyle: {
-                        progressColor: '#dc2626',
-                        playedColor: '#dc2626',
-                    },
-                    ignores: ['playbackrate'],
-                });
-
-                playerRef.current = player;
-
-                player.on('complete', () => {
-                    setIsLoading(false);
-                    setError(null);
-                    if (onReadyRef.current) onReadyRef.current();
-                });
-
-                player.on('error', (err: any) => {
-                    console.warn('[xgplayer] Playback error:', err);
-                    // Silently ignore minor errors, only show fatal ones
-                    if (err?.code === 4004 || err?.code === 4003) {
-                        setError('The stream is currently unreachable.');
+            hls.on(Hls.Events.ERROR, (_event, data) => {
+                if (data.fatal) {
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.warn('[hls.js] Network error, recovering...');
+                            hls.startLoad();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.warn('[hls.js] Media error, recovering...');
+                            hls.recoverMediaError();
+                            break;
+                        default:
+                            console.error('[hls.js] Fatal error:', data);
+                            setError('The stream is currently unreachable.');
+                            hls.destroy();
+                            break;
                     }
-                });
+                }
+            });
 
-                // The player's internal loading state is sufficient, no need for manual stall detection
-                player.on('play', () => {
-                    setIsLoading(false);
-                    setError(null);
-                });
-
-                player.on('pause', () => {
-                    setIsLoading(false);
-                });
-
-                player.on('waiting', () => {
-                    setIsLoading(true);
-                });
-
-                player.on('playing', () => {
-                    setIsLoading(false);
-                    setError(null);
-                });
-
-            } catch (err) {
-                console.error('Failed to init xgplayer:', err);
-                setError('Player initialization failed.');
-            }
-        };
-
-        initPlayer();
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Safari: native HLS support — still proxy the src
+            video.src = proxiedSrc;
+            video.addEventListener('loadedmetadata', () => {
+                setIsLoading(false);
+                if (autoPlay) video.play().catch(() => { });
+                if (onReadyRef.current) onReadyRef.current();
+            }, { once: true });
+            video.addEventListener('error', () => {
+                setError('The stream is currently unreachable.');
+            }, { once: true });
+        } else {
+            setError('HLS is not supported in this browser.');
+        }
 
         return () => {
-            if (playerRef.current) {
-                playerRef.current.destroy();
-                playerRef.current = null;
+            if (hlsRef.current) {
+                hlsRef.current.destroy();
+                hlsRef.current = null;
             }
         };
-    }, [proxiedSrc, autoPlay, muted, retryCount, onReady]);
+    }, [src, autoPlay, muted, retryCount]);
+
+    // Sync muted state without recreating the player
+    useEffect(() => {
+        if (videoRef.current) videoRef.current.muted = muted;
+    }, [muted]);
 
     return (
         <div className={`relative bg-black group transition-all duration-500 rounded-xl overflow-hidden shadow-2xl ${className}`}>
-            {/* The xgplayer instance will mount here */}
-            <div ref={containerRef} className="w-full h-full" id="mse" />
+            <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                playsInline
+                muted={muted}
+                controls={false}
+                onWaiting={() => setIsLoading(true)}
+                onPlaying={() => { setIsLoading(false); setError(null); }}
+                onPause={() => setIsLoading(false)}
+            />
 
-            {/* Premium Loading Overlay (Custom for branding) */}
+            {/* Premium Loading Overlay */}
             {isLoading && !error && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md z-10 pointer-events-none">
                     <div className="relative mb-6">
@@ -166,7 +211,7 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                 </div>
             )}
 
-            {/* Error Overlay with Auto-Reconnect Logic */}
+            {/* Error Overlay */}
             {error && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/95 z-20 p-8 text-center backdrop-blur-xl">
                     <div className="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center mb-6 border border-red-600/20 shadow-2xl shadow-red-600/10">
@@ -184,7 +229,7 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                 </div>
             )}
 
-            {/* Live Indicator (Overlay) */}
+            {/* Live Indicator */}
             <div className="absolute top-4 left-4 z-20 flex items-center gap-2.5 px-3 py-1.5 bg-red-600 rounded-lg border border-white/20 shadow-xl pointer-events-none select-none">
                 <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
@@ -192,35 +237,6 @@ const HLSPlayer: React.FC<HLSPlayerProps> = ({
                 </span>
                 <span className="text-[10px] font-black uppercase text-white tracking-[0.1em]">Live Now</span>
             </div>
-
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                .xgplayer {
-                    background-color: transparent !important;
-                }
-                .xgplayer .xg-inner-controls {
-                    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent) !important;
-                    height: 60px !important;
-                }
-                .xgplayer .xgplayer-loading {
-                    display: none !important; /* Use our custom loader instead */
-                }
-                .xgplayer .xgplayer-start {
-                    background: rgba(220, 38, 38, 0.9) !important;
-                    width: 70px !important;
-                    height: 70px !important;
-                    border-radius: 50% !important;
-                }
-                .xgplayer .xgplayer-start svg {
-                    width: 30px !important;
-                    height: 30px !important;
-                }
-                .xgplayer .xg-tips {
-                    background: rgba(0,0,0,0.8) !important;
-                    backdrop-filter: blur(4px);
-                    border: 1px solid rgba(255,255,255,0.1);
-                }
-            ` }} />
         </div>
     );
 };

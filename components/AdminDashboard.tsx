@@ -148,6 +148,7 @@ export const Admin: React.FC = () => {
   const [newLivePollTeamA, setNewLivePollTeamA] = useState('');
   const [newLivePollTeamB, setNewLivePollTeamB] = useState('');
   const [editingLiveLink, setEditingLiveLink] = useState<LiveLink | null>(null);
+  const [newLiveQuickTime, setNewLiveQuickTime] = useState('');
   const [isLiveUploading, setIsLiveUploading] = useState(false);
 
   // Highlights State
@@ -1033,6 +1034,7 @@ export const Admin: React.FC = () => {
       setNewLiveIsTrending(false);
       setNewLiveIsLive(true);
       setNewLiveMatchStart('');
+      setNewLiveQuickTime('');
       setNewLiveDuration('90');
       setNewLivePollTeamA('');
       setNewLivePollTeamB('');
@@ -1076,6 +1078,7 @@ export const Admin: React.FC = () => {
       setNewLiveIsTrending(false);
       setNewLiveIsLive(true);
       setNewLiveMatchStart('');
+      setNewLiveQuickTime('');
       setNewLiveDuration('90');
       setNewLivePollTeamA('');
       setNewLivePollTeamB('');
@@ -1100,12 +1103,39 @@ export const Admin: React.FC = () => {
 
   const handleSetLiveLinkDefault = async (id: string, isDefault: boolean) => {
     try {
-      await setLiveLinkDefault(id, isDefault);
-      alert(isDefault ? 'Link set as default!' : 'Default status removed.');
+      await updateLiveLink(id, { isDefault });
       getLiveLinks().then(setLiveLinks);
-    } catch (error) {
-      console.error(error);
-      alert('Failed to update default status');
+    } catch (e) { }
+  };
+
+  const doQuickMatchTime = (val: string) => {
+    setNewLiveQuickTime(val);
+    if (!val.trim()) return;
+
+    // Supports: "3h 30m", "3h30", "3.5h", "210m", "3 30"
+    let totalMinutes = 0;
+    const hMatch = val.match(/(\d+)\s*h/i);
+    const mMatch = val.match(/(\d+)\s*m/i);
+
+    if (hMatch) totalMinutes += parseInt(hMatch[1]) * 60;
+    if (mMatch) totalMinutes += parseInt(mMatch[1]);
+
+    // If no h/m indicators, try "H M" or just "M"
+    if (!hMatch && !mMatch) {
+      const parts = val.trim().split(/\s+/);
+      if (parts.length === 2) {
+        totalMinutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      } else if (parts.length === 1 && !isNaN(parseInt(parts[0]))) {
+        totalMinutes = parseInt(parts[0]);
+      }
+    }
+
+    if (totalMinutes > 0) {
+      const targetDate = new Date();
+      targetDate.setMinutes(targetDate.getMinutes() + totalMinutes);
+      const hh = String(targetDate.getHours()).padStart(2, '0');
+      const mm = String(targetDate.getMinutes()).padStart(2, '0');
+      setNewLiveMatchStart(`${hh}:${mm}`);
     }
   };
 
@@ -2186,6 +2216,19 @@ export const Admin: React.FC = () => {
 
                     {/* Match Time & Duration */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30">
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-red-600 dark:text-red-400 mb-1 uppercase tracking-wide flex items-center gap-2">
+                          <Wand2 size={12} /> Quick Entry: Time Left (e.g. 3h 30m)
+                        </label>
+                        <input
+                          type="text"
+                          value={newLiveQuickTime}
+                          onChange={(e) => doQuickMatchTime(e.target.value)}
+                          placeholder="e.g. 3h 15m left"
+                          className="input-field text-sm border-red-200 focus:border-red-500 bg-red-50/10 placeholder:text-gray-400"
+                        />
+                        <p className="text-[10px] text-gray-500 mt-1 italic">Type how many hours/minutes are left and the clock below will set itself!</p>
+                      </div>
                       <div>
                         <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 mb-1 uppercase tracking-wide">Match Start Time (HH:MM — 24hr)</label>
                         <input
@@ -2194,7 +2237,7 @@ export const Admin: React.FC = () => {
                           onChange={(e) => setNewLiveMatchStart(e.target.value)}
                           className="input-field text-sm"
                         />
-                        <p className="text-[10px] text-gray-400 mt-1">e.g. 18:30 → shows "4 hrs 3 min left" on site. Valid for 24 hrs.</p>
+                        <p className="text-[10px] text-gray-400 mt-1">e.g. 18:30. Valid for 24 hrs.</p>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 mb-1 uppercase tracking-wide">Match Duration (minutes)</label>
@@ -2327,12 +2370,31 @@ export const Admin: React.FC = () => {
                             </td>
                             {/* Time Info column */}
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {(link as any).matchStartTime ? (
-                                <div className="text-xs">
-                                  <div className="font-bold text-gray-700 dark:text-gray-300">{new Date((link as any).matchStartTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
-                                  <div className="text-gray-400">{(link as any).matchDurationMinutes || 90} min</div>
-                                </div>
-                              ) : (
+                              {(link as any).matchStartTime ? (() => {
+                                const raw = String((link as any).matchStartTime);
+                                // HH:MM time-only string (stored by the time input)
+                                const isTimeOnly = /^\d{1,2}:\d{2}$/.test(raw);
+                                let displayLabel: string;
+                                if (isTimeOnly) {
+                                  // Convert to a proper Date using today's date
+                                  const [h, m] = raw.split(':').map(Number);
+                                  const d = new Date();
+                                  d.setHours(h, m, 0, 0);
+                                  const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                  displayLabel = `${timeStr} (today)`;
+                                } else {
+                                  const parsed = new Date(raw);
+                                  displayLabel = isNaN(parsed.getTime())
+                                    ? raw
+                                    : parsed.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                }
+                                return (
+                                  <div className="text-xs">
+                                    <div className="font-bold text-gray-700 dark:text-gray-300">{displayLabel}</div>
+                                    <div className="text-gray-400">{(link as any).matchDurationMinutes || 90} min</div>
+                                  </div>
+                                );
+                              })() : (
                                 <span className="text-gray-400 italic text-xs">Not set</span>
                               )}
                             </td>
@@ -2370,6 +2432,7 @@ export const Admin: React.FC = () => {
                                     setNewLiveIsTrending(!!link.isTrending);
                                     setNewLiveIsLive(!!(link as any).isLiveNow);
                                     setNewLiveMatchStart((link as any).matchStartTime || '');
+                                    setNewLiveQuickTime('');
                                     setNewLiveDuration(String((link as any).matchDurationMinutes || 90));
                                     setNewLivePollTeamA(link.poll?.teamA || '');
                                     setNewLivePollTeamB(link.poll?.teamB || '');
