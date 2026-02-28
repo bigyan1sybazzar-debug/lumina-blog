@@ -1017,7 +1017,7 @@ export const Admin: React.FC = () => {
 
       await addLiveLink({
         heading: newLiveHeading,
-        iframeUrl: newLiveIframe,
+        iframeUrl: newLiveIframe.trim(),
         status: 'active',
         tags,
         isTrending: newLiveIsTrending,
@@ -1062,7 +1062,7 @@ export const Admin: React.FC = () => {
 
       await updateLiveLink(editingLiveLink.id, {
         heading: newLiveHeading,
-        iframeUrl: newLiveIframe,
+        iframeUrl: newLiveIframe.trim(),
         tags,
         isTrending: newLiveIsTrending,
         isLiveNow: newLiveIsLive,

@@ -22,15 +22,19 @@ export async function GET(request: NextRequest) {
         return new NextResponse('Missing URL parameter', { status: 400 });
     }
 
+    const trimmedUrl = targetUrl.trim();
+
     try {
-        const urlObj = new URL(targetUrl);
+        const urlObj = new URL(trimmedUrl);
 
         // Use the override referer if provided (e.g., when a sub-CDN needs
         // the original embedding site's origin, not its own origin)
         const effectiveOrigin = refOverride || urlObj.origin;
 
+        const incomingUserAgent = request.headers.get('user-agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+
         const fetchHeaders: Record<string, string> = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'User-Agent': incomingUserAgent,
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'identity', // Disable compression to prevent streaming issues
@@ -45,7 +49,7 @@ export async function GET(request: NextRequest) {
         const rangeHeader = request.headers.get('range');
         if (rangeHeader) fetchHeaders['Range'] = rangeHeader;
 
-        const response = await fetch(targetUrl, {
+        const response = await fetch(trimmedUrl, {
             headers: fetchHeaders,
             signal: AbortSignal.timeout(30000)
         });
@@ -57,7 +61,7 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        const isPlaylist = targetUrl.includes('.m3u8');
+        const isPlaylist = trimmedUrl.includes('.m3u8');
         const responseHeaders = new Headers(CORS_HEADERS);
 
         // Forward essential headers
@@ -80,7 +84,7 @@ export async function GET(request: NextRequest) {
             // through all rewritten sub-URLs so sub-CDNs receive the correct Referer header.
             const getProxiedUrl = (url: string) => {
                 try {
-                    const absoluteUrl = new URL(url, targetUrl).href;
+                    const absoluteUrl = new URL(url, trimmedUrl).href;
                     const proxyUrl = `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
                     // If the sub-resource is on a different domain, carry the referer override
                     const subDomain = new URL(absoluteUrl).origin;
@@ -95,8 +99,9 @@ export async function GET(request: NextRequest) {
 
             const rewrittenText = text.split('\n').map(line => {
                 const trimmed = line.trim();
-                if (!trimmed || trimmed.startsWith('#EXT-X-KEY')) return line;
+                if (!trimmed) return line;
 
+                // Handle ANY tag with a URI="..." attribute (Keys, Maps, Playlists, etc.)
                 if (trimmed.includes('URI=')) {
                     return line.replace(/URI=["']?([^"']+)["']?/, (match, uri) => {
                         const quote = match.includes('"') ? '"' : match.includes("'") ? "'" : '';
@@ -104,6 +109,7 @@ export async function GET(request: NextRequest) {
                     });
                 }
 
+                // Handle segment URLs or sub-playlist URLs (lines that don't start with #)
                 if (trimmed.startsWith('#')) return line;
                 return getProxiedUrl(trimmed);
             }).join('\n');
@@ -114,7 +120,7 @@ export async function GET(request: NextRequest) {
         }
 
         // For segments (.ts)
-        if (targetUrl.includes('.ts')) {
+        if (trimmedUrl.includes('.ts')) {
             responseHeaders.set('Content-Type', 'video/mp2t');
             responseHeaders.set('Cache-Control', 'public, max-age=60');
         }

@@ -19,6 +19,7 @@ interface HLSPlayerProps {
  */
 function toProxyUrl(url: string): string {
     if (!url) return url;
+    url = url.trim();
     // Already a local/proxied URL — leave it alone
     if (url.startsWith('/') || url.includes('/api/proxy')) return url;
 
