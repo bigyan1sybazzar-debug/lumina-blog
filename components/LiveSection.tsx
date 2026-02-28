@@ -48,6 +48,148 @@ const splideCustomStyles = `
 
 
 
+// --- STATIC HELPERS (Outside to prevent re-renders) ---
+
+const resolveMatchStart = (value: string): number => {
+    if (!value) return 0;
+    if (/^\d{1,2}:\d{2}$/.test(value)) {
+        const [h, m] = value.split(':').map(Number);
+        const d = new Date();
+        d.setHours(h, m, 0, 0);
+        if (Date.now() - d.getTime() > 12 * 60 * 60 * 1000) {
+            d.setDate(d.getDate() + 1);
+        }
+        return d.getTime();
+    }
+    return new Date(value).getTime();
+};
+
+const getTimeLeft = (matchDate: string | number, durationMinutes = 90, now: Date = new Date()) => {
+    const start = typeof matchDate === 'number' ? matchDate : resolveMatchStart(String(matchDate));
+    const endMs = start + durationMinutes * 60 * 1000;
+    const remainingMs = endMs - now.getTime();
+    if (remainingMs <= 0) return null;
+    const totalSeconds = Math.floor(remainingMs / 1000);
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    if (hrs > 0) return `${hrs}h ${mins}m left`;
+    if (mins > 0) return `${mins}m ${secs}s left`;
+    return `${secs}s left`;
+};
+
+const getMatchMinute = (matchDate: string | number, durationMinutes = 90, now: Date = new Date()) => {
+    const start = typeof matchDate === 'number' ? matchDate : resolveMatchStart(String(matchDate));
+    const elapsed = Math.floor((now.getTime() - start) / 60000);
+    if (elapsed < 0) return null;
+    if (elapsed > durationMinutes + 5) return null;
+    return elapsed;
+};
+
+// Isolated Timer Components to prevent Re-renders of the whole page
+const MatchCardTimer = React.memo(({ matchDate, duration = 90 }: any) => {
+    const [now, setNow] = React.useState(new Date());
+    React.useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(t);
+    }, []);
+
+    const startMs = resolveMatchStart(String(matchDate));
+    const elapsedMins = Math.floor((now.getTime() - startMs) / 60000);
+
+    if (elapsedMins < 0) {
+        const tLeft = getTimeLeft(matchDate, 0, now)?.replace(' left', '');
+        return <span className="text-[8px] text-blue-500 font-bold">{tLeft} to go</span>;
+    } else if (elapsedMins <= duration) {
+        const tLeft = getTimeLeft(matchDate, duration, now);
+        return <span className="text-[8px] text-emerald-500 font-bold animate-pulse">{tLeft}</span>;
+    }
+    return null;
+});
+
+const MatchMinuteIndicator = React.memo(({ date }: any) => {
+    const [now, setNow] = React.useState(new Date());
+    React.useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(t);
+    }, []);
+    const minute = getMatchMinute(date, 90, now);
+    return minute !== null ? (
+        <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[9px] font-black rounded-full border border-amber-200 dark:border-amber-700/50">
+            {minute}&apos;
+        </span>
+    ) : null;
+});
+
+const MatchTimeDisplay = React.memo(({ date }: any) => {
+    const [now, setNow] = React.useState(new Date());
+    React.useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(t);
+    }, []);
+    const timeLeft = getTimeLeft(date, 90, now);
+    return timeLeft ? (
+        <>
+            <div className="w-1 h-1 bg-gray-300 dark:bg-gray-700 rounded-full" />
+            <div className="flex items-center gap-1 text-[10px] font-black text-red-500">
+                <Clock size={10} className="animate-pulse" />
+                {timeLeft}
+            </div>
+        </>
+    ) : null;
+});
+
+const PlayerStatusBanner = React.memo(({ matchStartTime, duration = 90 }: any) => {
+    const [now, setNow] = React.useState(new Date());
+    React.useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(t);
+    }, []);
+    const tLeft = getTimeLeft(matchStartTime, duration, now);
+    if (!tLeft) return <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Please be patient — HD channels may take a moment to load</p>;
+
+    return (
+        <div className="flex flex-col">
+            <span className="text-[10px] font-black text-red-500 uppercase tracking-tighter animate-pulse">Live Match Active</span>
+            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{tLeft} remaining in match</span>
+        </div>
+    );
+});
+
+const MatchCountdown = React.memo(({ matchStartTime, duration = 90 }: any) => {
+    const [now, setNow] = React.useState(new Date());
+    React.useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(t);
+    }, []);
+    const tLeft = getTimeLeft(matchStartTime, duration, now);
+    const startMs = resolveMatchStart(matchStartTime);
+    const isFuture = startMs > now.getTime();
+    return (
+        <>
+            <span className="text-white text-[10px] font-black uppercase tracking-wider">
+                {isFuture ? 'Kick Off In' : 'Match Time'}
+            </span>
+            <span className={`text-white text-[10px] font-mono font-bold ${!isFuture && 'text-emerald-300 animate-pulse'}`}>
+                {isFuture ? getTimeLeft(matchStartTime, 0, now)?.replace(' left', '') : (tLeft || 'Ended')}
+            </span>
+        </>
+    );
+});
+
+const MainLiveClock = React.memo(() => {
+    const [now, setNow] = React.useState(new Date());
+    React.useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(t);
+    }, []);
+    return (
+        <span className="text-white text-[10px] font-mono font-bold">
+            {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        </span>
+    );
+});
+
 const splideOptionsTrending = {
     type: 'slide',
     rewind: true,
@@ -76,7 +218,8 @@ const splideOptionsTrending = {
 
 export const LiveSection: React.FC = () => {
     const [isMounted, setIsMounted] = useState(false);
-    const [liveTime, setLiveTime] = useState(new Date());
+    // Global liveTime removed to prevent massive re-renders
+
 
     const [links, setLinks] = useState<LiveLink[]>([]);
 
@@ -136,6 +279,10 @@ export const LiveSection: React.FC = () => {
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
     // Removed adCountdown
+
+    const handlePlayerReady = React.useCallback(() => {
+        setIsWatching(true);
+    }, []);
 
     const handleLinkClick = (link: any) => {
         if (selectedLink?.id === link.id) return;
@@ -204,11 +351,7 @@ export const LiveSection: React.FC = () => {
         }
     }, [selectedLink?.id]);
 
-    // Real-time clock ticker
-    useEffect(() => {
-        const tick = setInterval(() => setLiveTime(new Date()), 1000);
-        return () => clearInterval(tick);
-    }, []);
+    // Real-time clock ticker removed (Moved to localized components)
 
     useEffect(() => {
         setIsMounted(true);
@@ -534,51 +677,7 @@ export const LiveSection: React.FC = () => {
         return hours < 24 ? `${hours}h ago` : `${Math.floor(hours / 24)}d ago`;
     };
 
-    // Resolve a stored time value to a JS timestamp.
-    // Handles both full ISO datetime strings AND HH:MM time-only strings.
-    const resolveMatchStart = (value: string): number => {
-        if (!value) return 0;
-        // Looks like HH:MM (time only, max 5 chars like "23:59")
-        if (/^\d{1,2}:\d{2}$/.test(value)) {
-            const [h, m] = value.split(':').map(Number);
-            const d = new Date();
-            d.setHours(h, m, 0, 0);
-
-            // If the calculated time is more than 12 hours in the past,
-            // it's almost certainly meant for tomorrow (e.g. entering 01:00 at 10 PM).
-            if (Date.now() - d.getTime() > 12 * 60 * 60 * 1000) {
-                d.setDate(d.getDate() + 1);
-            }
-            return d.getTime();
-        }
-        return new Date(value).getTime();
-    };
-
-    // Time left until match ends — shown as "Xhr Ymin left"
-    const getTimeLeft = (matchDate: string | number, durationMinutes = 90) => {
-        const start = typeof matchDate === 'number' ? matchDate : resolveMatchStart(String(matchDate));
-        const now = liveTime.getTime();
-        const endMs = start + durationMinutes * 60 * 1000;
-        const remainingMs = endMs - now;
-        if (remainingMs <= 0) return null;
-        const totalSeconds = Math.floor(remainingMs / 1000);
-        const hrs = Math.floor(totalSeconds / 3600);
-        const mins = Math.floor((totalSeconds % 3600) / 60);
-        const secs = totalSeconds % 60;
-        if (hrs > 0) return `${hrs}h ${mins}m left`;
-        if (mins > 0) return `${mins}m ${secs}s left`;
-        return `${secs}s left`;
-    };
-
-    // Match minute elapsed (e.g. 47') — only shown if match is currently in progress
-    const getMatchMinute = (matchDate: string | number, durationMinutes = 90) => {
-        const start = typeof matchDate === 'number' ? matchDate : resolveMatchStart(String(matchDate));
-        const now = liveTime.getTime();
-        const elapsed = Math.floor((now - start) / 60000);
-        if (elapsed < 0) return null;  // not started yet
-        if (elapsed > durationMinutes + 5) return null; // likely finished
-        return elapsed;
-    };
+    // Static helpers moved outside component for performance
 
 
 
@@ -621,26 +720,12 @@ export const LiveSection: React.FC = () => {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
                             </span>
-                            {selectedLink?.matchStartTime ? (() => {
-                                const tLeft = getTimeLeft(selectedLink.matchStartTime, selectedLink.matchDurationMinutes || 90);
-                                const startMs = resolveMatchStart(selectedLink.matchStartTime);
-                                const isFuture = startMs > liveTime.getTime();
-                                return (
-                                    <>
-                                        <span className="text-white text-[10px] font-black uppercase tracking-wider">
-                                            {isFuture ? 'Kick Off In' : 'Match Time'}
-                                        </span>
-                                        <span className={`text-white text-[10px] font-mono font-bold ${!isFuture && 'text-emerald-300 animate-pulse'}`}>
-                                            {isFuture ? getTimeLeft(selectedLink.matchStartTime, 0)?.replace(' left', '') : (tLeft || 'Ended')}
-                                        </span>
-                                    </>
-                                );
-                            })() : (
+                            {selectedLink?.matchStartTime ? (
+                                <MatchCountdown matchStartTime={selectedLink.matchStartTime} duration={selectedLink.matchDurationMinutes || 90} />
+                            ) : (
                                 <>
                                     <span className="text-white text-[10px] font-black uppercase tracking-wider">Live</span>
-                                    <span className="text-white text-[10px] font-mono font-bold">
-                                        {liveTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                    </span>
+                                    <MainLiveClock />
                                 </>
                             )}
                         </div>
@@ -685,19 +770,9 @@ export const LiveSection: React.FC = () => {
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="text-[8px] text-gray-400 dark:text-gray-500 font-medium">#{link.tags?.[0]}</span>
                                                                     {/* Mini time badge for trending slider */}
-                                                                    {(link as any).matchStartTime && (() => {
-                                                                        const startMs = resolveMatchStart(String((link as any).matchStartTime));
-                                                                        const dur = (link as any).matchDurationMinutes || 90;
-                                                                        const elapsedMins = Math.floor((liveTime.getTime() - startMs) / 60000);
-                                                                        if (elapsedMins < 0) {
-                                                                            const tLeft = getTimeLeft((link as any).matchStartTime, 0)?.replace(' left', '');
-                                                                            return <span className="text-[8px] text-blue-500 font-bold">{tLeft} to go</span>;
-                                                                        } else if (elapsedMins <= dur) {
-                                                                            const tLeft = getTimeLeft((link as any).matchStartTime, dur);
-                                                                            return <span className="text-[8px] text-emerald-500 font-bold animate-pulse">{tLeft}</span>;
-                                                                        }
-                                                                        return null;
-                                                                    })()}
+                                                                    {(link as any).matchStartTime && (
+                                                                        <MatchCardTimer matchDate={(link as any).matchStartTime} duration={(link as any).matchDurationMinutes || 90} />
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -726,7 +801,7 @@ export const LiveSection: React.FC = () => {
                                                         </div>
                                                     )}
                                                     {selectedLink.isHLS || (typeof selectedLink.iframeUrl === 'string' && selectedLink.iframeUrl.includes('.m3u8')) ? (
-                                                        <HLSPlayer key={playerKey} src={selectedLink.youtubeUrl || selectedLink.iframeUrl} className="w-full h-full [&>video]:object-cover" autoPlay={true} muted={isMuted} onReady={() => setIsWatching(true)} />
+                                                        <HLSPlayer key={playerKey} src={selectedLink.youtubeUrl || selectedLink.iframeUrl} className="w-full h-full [&>video]:object-cover" autoPlay={true} muted={isMuted} onReady={handlePlayerReady} />
                                                     ) : (
                                                         <iframe ref={iframeRef} key={playerKey} src={selectedLink.youtubeUrl || selectedLink.iframeUrl} title={selectedLink.heading} className="w-full h-full border-0 absolute top-0 left-0" allowFullScreen referrerPolicy="no-referrer" onLoad={() => setTimeout(() => setIsWatching(true), 2000)} />
                                                     )}
@@ -772,17 +847,9 @@ export const LiveSection: React.FC = () => {
                                                                         <Activity size={10} /> Total Site: {realtimeStats.activeUsers}
                                                                     </span>
                                                                 )}
-                                                                {selectedLink.matchStartTime && (() => {
-                                                                    const tLeft = getTimeLeft(selectedLink.matchStartTime, selectedLink.matchDurationMinutes || 90);
-                                                                    const startMs = resolveMatchStart(selectedLink.matchStartTime);
-                                                                    const nowMs = liveTime.getTime();
-                                                                    const isFuture = startMs > nowMs;
-                                                                    return (
-                                                                        <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[9px] font-black uppercase ${isFuture ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200 animate-pulse'}`}>
-                                                                            <Clock size={10} /> {isFuture ? `Starts in ${getTimeLeft(selectedLink.matchStartTime, 0)?.replace(' left', '')}` : (tLeft ? tLeft : 'Match Ended')}
-                                                                        </span>
-                                                                    );
-                                                                })()}
+                                                                {selectedLink.matchStartTime && (
+                                                                    <MatchTimeDisplay date={selectedLink.matchStartTime} />
+                                                                )}
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-2">
@@ -1019,34 +1086,9 @@ export const LiveSection: React.FC = () => {
                                                                         </span>
                                                                     )}
                                                                     {/* ── Time Left / Match Minute badge ── */}
-                                                                    {(link as any).matchStartTime && (() => {
-                                                                        const startMs = resolveMatchStart(String((link as any).matchStartTime));
-                                                                        const dur = (link as any).matchDurationMinutes || 90;
-                                                                        const nowMs = liveTime.getTime();
-                                                                        const elapsedMins = Math.floor((nowMs - startMs) / 60000);
-                                                                        if (elapsedMins < 0) {
-                                                                            // Before start — show countdown to kick-off
-                                                                            const msUntilStart = startMs - nowMs;
-                                                                            const totalSecs = Math.floor(msUntilStart / 1000);
-                                                                            const hrs = Math.floor(totalSecs / 3600);
-                                                                            const mins = Math.floor((totalSecs % 3600) / 60);
-                                                                            const label = hrs > 0 ? `${hrs}h ${mins}m to start` : `${mins}m to start`;
-                                                                            return (
-                                                                                <span className="flex items-center gap-1 text-[8px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded-md">
-                                                                                    <Clock size={8} /> {label}
-                                                                                </span>
-                                                                            );
-                                                                        } else if (elapsedMins <= dur) {
-                                                                            // Match in progress — show time remaining
-                                                                            const tLeft = getTimeLeft((link as any).matchStartTime, dur);
-                                                                            return tLeft ? (
-                                                                                <span className="flex items-center gap-1 text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded-md animate-pulse">
-                                                                                    <Clock size={8} /> {tLeft}
-                                                                                </span>
-                                                                            ) : null;
-                                                                        }
-                                                                        return null;
-                                                                    })()}
+                                                                    {(link as any).matchStartTime && (
+                                                                        <MatchCardTimer matchDate={(link as any).matchStartTime} duration={(link as any).matchDurationMinutes || 90} />
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>

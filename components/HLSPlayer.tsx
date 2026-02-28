@@ -24,8 +24,12 @@ function toProxyUrl(url: string): string {
     if (url.startsWith('/') || url.includes('/api/proxy')) return url;
 
     try {
-        const parsed = new URL(url);
-        const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+        let absoluteUrl = url;
+        if (url.startsWith('//')) {
+            absoluteUrl = window.location.protocol + url;
+        }
+        const parsed = new URL(absoluteUrl);
+        const proxyUrl = `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
         // Carry the CDN origin as `ref` so the server proxy uses it as Referer
         return `${proxyUrl}&ref=${encodeURIComponent(parsed.origin)}`;
     } catch {
@@ -100,19 +104,21 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
                 loader: buildProxyLoader(Hls) as any,
 
                 // Live stream config
-                // Live stream config - Tuned for maximum stability
-                liveSyncDurationCount: 6, // 6 segments buffer (more stable than 3)
-                liveMaxLatencyDurationCount: 15,
-                maxBufferLength: 90,
-                maxMaxBufferLength: 180,
+                // Standard Stable HLS Config (IPTV Grade)
+                liveSyncDurationCount: 3,
+                maxBufferLength: 40,
+                maxMaxBufferLength: 120,
+                maxBufferSize: 60 * 1024 * 1024,
+                maxBufferHole: 0.5,
                 enableWorker: true,
-                lowLatencyMode: false,
-                backBufferLength: 90,
+                lowLatencyMode: true,
+                backBufferLength: 60,
 
-                // Retry config - Aggressive recovery
+                // Stability & Recovery
+                highBufferWatchdogPeriod: 1,
                 fragLoadingMaxRetry: 10,
-                manifestLoadingMaxRetry: 6,
-                levelLoadingMaxRetry: 6,
+                manifestLoadingMaxRetry: 5,
+                levelLoadingMaxRetry: 5,
                 fragLoadingRetryDelay: 500,
                 manifestLoadingRetryDelay: 500,
             });
@@ -174,7 +180,7 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
                 hlsRef.current = null;
             }
         };
-    }, [src, autoPlay, muted, retryCount]);
+    }, [src, retryCount]); // Only restart if source or manual retry changes
 
     // Sync muted state without recreating the player
     useEffect(() => {

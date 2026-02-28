@@ -1000,12 +1000,41 @@ export const Admin: React.FC = () => {
   }
 
 
+  // Helper to sync .m3u8 links to IPTV section
+  const syncToIPTV = async (heading: string, url: string, tags: string[], isTrending: boolean) => {
+    if (!url.toLowerCase().includes('.m3u8')) return;
+    try {
+      const channels = await getIPTVChannels(false);
+      const existing = channels.find(c => c.url === url);
+
+      const channelData = {
+        name: heading,
+        url: url,
+        logo: tags[0] || '', // Use first tag as category/logo hint
+        category: tags[0] || 'Live Sports',
+        group: tags[0] || 'Live Sports',
+        status: 'active' as const,
+        isTrending: isTrending,
+        isDefault: false
+      };
+
+      if (existing) {
+        await updateIPTVChannel(existing.id, channelData);
+      } else {
+        await addIPTVChannel(channelData);
+      }
+    } catch (err) {
+      console.warn('Silent sync to IPTV failed:', err);
+    }
+  };
+
   const handleAddLiveLink = async () => {
     if (!newLiveHeading || !newLiveIframe) {
       alert('Please fill in both Heading and Iframe URL');
       return;
     }
     try {
+      const trimmedIframe = newLiveIframe.trim();
       const tags = newLiveTags.split(',').map(t => t.trim()).filter(t => t.length > 0);
       const poll = (newLivePollTeamA && newLivePollTeamB) ? {
         teamA: newLivePollTeamA,
@@ -1017,7 +1046,7 @@ export const Admin: React.FC = () => {
 
       await addLiveLink({
         heading: newLiveHeading,
-        iframeUrl: newLiveIframe.trim(),
+        iframeUrl: trimmedIframe,
         status: 'active',
         tags,
         isTrending: newLiveIsTrending,
@@ -1027,6 +1056,10 @@ export const Admin: React.FC = () => {
         poll,
         createdAt: new Date().toISOString()
       });
+
+      // Synchronize to IPTV section if it's an HLS link
+      await syncToIPTV(newLiveHeading, trimmedIframe, tags, newLiveIsTrending);
+
       alert('Live Link added!');
       setNewLiveHeading('');
       setNewLiveIframe('');
@@ -1051,6 +1084,7 @@ export const Admin: React.FC = () => {
       return;
     }
     try {
+      const trimmedIframe = newLiveIframe.trim();
       const tags = newLiveTags.split(',').map(t => t.trim()).filter(t => t.length > 0);
       const poll = (newLivePollTeamA && newLivePollTeamB) ? {
         teamA: newLivePollTeamA,
@@ -1062,7 +1096,7 @@ export const Admin: React.FC = () => {
 
       await updateLiveLink(editingLiveLink.id, {
         heading: newLiveHeading,
-        iframeUrl: newLiveIframe.trim(),
+        iframeUrl: trimmedIframe,
         tags,
         isTrending: newLiveIsTrending,
         isLiveNow: newLiveIsLive,
@@ -1070,6 +1104,10 @@ export const Admin: React.FC = () => {
         matchDurationMinutes: newLiveDuration ? parseInt(newLiveDuration) : 90,
         poll
       });
+
+      // Synchronize to IPTV section if it's an HLS link
+      await syncToIPTV(newLiveHeading, trimmedIframe, tags, newLiveIsTrending);
+
       alert('Live Link updated!');
       setEditingLiveLink(null);
       setNewLiveHeading('');

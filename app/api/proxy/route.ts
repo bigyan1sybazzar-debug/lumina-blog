@@ -119,10 +119,22 @@ export async function GET(request: NextRequest) {
             return new NextResponse(rewrittenText, { status: 200, headers: responseHeaders });
         }
 
-        // For segments (.ts)
-        if (trimmedUrl.includes('.ts')) {
-            responseHeaders.set('Content-Type', 'video/mp2t');
-            responseHeaders.set('Cache-Control', 'public, max-age=60');
+        // For segments (.ts, .m4s, .mp4, or known binary types)
+        const isSegment = trimmedUrl.includes('.ts') ||
+            trimmedUrl.includes('.m4s') ||
+            trimmedUrl.includes('.mp4') ||
+            request.headers.get('accept')?.includes('video/') ||
+            (!isPlaylist && !trimmedUrl.includes('.key') && !trimmedUrl.includes('.m3u'));
+
+        if (isSegment) {
+            // Prioritize original Content-Type if it's relevant, otherwise fallback
+            const originalType = response.headers.get('Content-Type');
+            if (!originalType || originalType.includes('application/octet-stream') || originalType.includes('text/plain')) {
+                const contentType = trimmedUrl.includes('.m4s') ? 'video/iso.segment' : 'video/mp2t';
+                responseHeaders.set('Content-Type', contentType);
+            }
+            // Cache segments for 1 hour — crucial for smooth playback once buffered
+            responseHeaders.set('Cache-Control', 'public, max-age=3600');
         }
 
         return new NextResponse(response.body, {
