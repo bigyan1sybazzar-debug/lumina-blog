@@ -29,6 +29,9 @@ export const IPTVManager: React.FC<IPTVManagerProps> = ({
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
+    const [bulkUrls, setBulkUrls] = useState('');
+    const [bulkCategory, setBulkCategory] = useState('');
+    const [isBulkAdding, setIsBulkAdding] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -130,6 +133,53 @@ export const IPTVManager: React.FC<IPTVManagerProps> = ({
             alert('Failed to import channels. Please check the URL and try again.');
         } finally {
             setIsImporting(false);
+        }
+    };
+
+    const handleBulkAdd = async () => {
+        if (!bulkUrls.trim()) {
+            alert('Please provide at least one URL');
+            return;
+        }
+
+        const urls = bulkUrls.split('\n').map(u => u.trim()).filter(u => u.startsWith('http'));
+        if (urls.length === 0) {
+            alert('No valid URLs found. Make sure they start with http:// or https://');
+            return;
+        }
+
+        setIsBulkAdding(true);
+        try {
+            const newChannels = urls.map(url => {
+                // Try to infer name from URL
+                const filename = url.split('/').pop()?.split('?')[0] || 'Unknown';
+                const name = filename.replace(/\.(m3u8|ts|mp4|m3u)$/i, '').replace(/[-_]/g, ' ');
+
+                return {
+                    name: name || 'New Channel',
+                    url: url,
+                    category: bulkCategory || 'Bulk Imported',
+                    logo: '',
+                    status: 'active' as const,
+                    isTrending: false
+                };
+            });
+
+            // Add category if it doesn't exist
+            const catToAdd = bulkCategory || 'Bulk Imported';
+            if (!categories.find(c => c.name === catToAdd)) {
+                await addIPTVCategory(catToAdd);
+            }
+
+            await onBatchCreate(newChannels);
+            setBulkUrls('');
+            alert(`Successfully added ${newChannels.length} channels!`);
+            await onRefresh();
+        } catch (error) {
+            console.error('Bulk add failed:', error);
+            alert('Failed to add channels.');
+        } finally {
+            setIsBulkAdding(false);
         }
     };
 
@@ -330,6 +380,61 @@ export const IPTVManager: React.FC<IPTVManagerProps> = ({
                                 </>
                             )}
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* BULK ADD SECTION */}
+            <div className="bg-white dark:bg-gray-800 rounded-[32px] border border-gray-200 dark:border-gray-700 p-8 shadow-sm">
+                <div className="flex items-center gap-4 mb-8">
+                    <div className="p-3 bg-indigo-500/10 rounded-2xl">
+                        <Plus className="text-indigo-500" size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Bulk Add Channels</h2>
+                        <p className="text-gray-500 text-sm">Paste multiple stream URLs (one per line) to add them instantly.</p>
+                    </div>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Stream URLs (One per line)</label>
+                        <textarea
+                            value={bulkUrls}
+                            onChange={(e) => setBulkUrls(e.target.value)}
+                            placeholder="https://example.com/stream1.m3u8&#10;https://example.com/stream2.m3u8"
+                            className="w-full px-6 py-5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-primary-500 outline-none transition-all font-mono text-sm h-48 resize-none"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Assigned Category</label>
+                            <div className="relative">
+                                <select
+                                    value={bulkCategory}
+                                    onChange={(e) => setBulkCategory(e.target.value)}
+                                    className="w-full pl-6 pr-12 py-5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-primary-500 outline-none transition-all font-bold text-sm appearance-none"
+                                >
+                                    <option value="">Bulk Import (Default)</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                    ))}
+                                </select>
+                                <Filter size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            </div>
+                        </div>
+
+                        <div className="flex items-end">
+                            <button
+                                onClick={handleBulkAdd}
+                                disabled={isBulkAdding || !bulkUrls.trim()}
+                                className="w-full flex items-center justify-center gap-3 bg-primary-600 hover:bg-primary-700 text-white px-6 py-5 rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-primary-600/25 active:scale-95 disabled:opacity-50"
+                            >
+                                {isBulkAdding ? <Loader2 className="animate-spin" size={20} /> : <Plus size={20} />}
+                                <span>Add All Channels</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -17,7 +17,7 @@ import {
   PenTool, Image as ImageIcon, Menu, X, ArrowLeft, Plus, Edit3, Wand2, RefreshCw,
   Users, CheckCircle, Shield, Tag, Globe, ExternalLink, Trash2, Eye,
   Calendar, TrendingUp, MessageSquare, Download, Upload, Search, Filter,
-  Bot, Vote, Hash, Trophy, Send, Tv, Link as LinkIcon
+  Bot, Vote, Hash, Trophy, Send, Tv, Link as LinkIcon, Radio, Zap
 } from 'lucide-react';
 import { AnalyticsDashboard } from './admin/AnalyticsDashboard';
 import { UserManagement } from './admin/UserManagement';
@@ -29,6 +29,7 @@ import { KeywordsManager } from './admin/KeywordsManager';
 import { LiveMatchManager } from './admin/LiveMatchManager';
 import { IPTVManager } from './admin/IPTVManager';
 import { TrendingManager } from './admin/TrendingManager';
+import { StreamedMatchImporter } from './admin/StreamedMatchImporter';
 
 import { ANALYTICS_DATA } from '../constants';
 import { deleteCategory, updatePost, deletePost, getPostById } from '../services/db';
@@ -48,7 +49,7 @@ interface AutoLog {
 }
 
 export const Admin: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'keywords' | 'live-matches' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section' | 'highlights' | 'subscribers' | 'iptv-manager' | 'trending-manager'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'editor' | 'posts' | 'users' | 'categories' | 'keywords' | 'live-matches' | 'approvals' | 'analytics' | 'automation' | 'featured' | 'chat-history' | 'reviews-comments' | 'polls' | 'social' | 'live-section' | 'highlights' | 'subscribers' | 'iptv-manager' | 'trending-manager' | 'stream-importer'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
@@ -1432,6 +1433,18 @@ export const Admin: React.FC = () => {
                   </button>
 
                   <button
+                    onClick={() => { setActiveTab('stream-importer'); setIsSidebarOpen(false); }}
+                    className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'stream-importer'
+                      ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    <Zap size={18} className="mr-3" />
+                    <span>Stream Importer</span>
+                    <span className="ml-auto px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[8px] font-black uppercase rounded tracking-wider">Live</span>
+                  </button>
+
+                  <button
                     onClick={() => { setActiveTab('chat-history'); setIsSidebarOpen(false); }}
                     className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'chat-history'
                       ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400'
@@ -1490,6 +1503,7 @@ export const Admin: React.FC = () => {
                   >
                     <Globe size={18} className="mr-3" /> Live Section
                   </button>
+
                   <button
                     onClick={() => { setActiveTab('trending-manager'); setIsSidebarOpen(false); }}
                     className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'trending-manager'
@@ -3935,6 +3949,11 @@ export const Admin: React.FC = () => {
               </div>
             )
           }
+
+          {/* ── Streamed Match Importer ── */}
+          {activeTab === 'stream-importer' && isAdmin && (
+            <StreamedMatchImporter />
+          )}
         </div>
       </main >
     </div >
