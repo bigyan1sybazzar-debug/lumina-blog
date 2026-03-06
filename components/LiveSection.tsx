@@ -671,9 +671,9 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Top Ad - Better Integrated */}
-                    <div className="w-full flex justify-center items-center overflow-hidden bg-white/50 dark:bg-white/5 rounded-[32px] border border-gray-200 dark:border-white/10" style={{ minHeight: '100px' }}>
-                        <GoogleAdSense slot="7838572857" format="horizontal" minHeight="100px" responsive={true} />
+                    {/* Top Ad - Matches Backup (Perfect) */}
+                    <div className="w-full flex justify-center items-center overflow-hidden" style={{ minHeight: '110px' }}>
+                        <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
                     </div>
 
                     {isDataLoading ? (
@@ -929,10 +929,6 @@ export const LiveSection: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Middle Ad - Visible after Player/Discussion */}
-                            <div className="w-full flex justify-center items-center overflow-hidden my-6 bg-white/50 dark:bg-white/5 rounded-[32px] border border-gray-200 dark:border-white/10" style={{ minHeight: '100px' }}>
-                                <GoogleAdSense slot="7838572857" format="auto" minHeight="100px" responsive={true} />
-                            </div>
 
                             {/* CHANNEL PICKER & GRID */}
                             <div className="flex flex-col gap-6">
@@ -1001,7 +997,7 @@ export const LiveSection: React.FC = () => {
                                             <Tv size={24} className="text-secondary-light" />
                                             <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
                                         </div>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 transition-all duration-500">
+                                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 transition-all duration-500">
                                             {Array.from(new Map(filteredLinks.map(l => [l.id, l])).values())
                                                 .sort((a, b) => {
                                                     const isAActive = selectedLink?.id === a.id;
@@ -1010,74 +1006,78 @@ export const LiveSection: React.FC = () => {
                                                     return 0;
                                                 })
                                                 .map((link) => (
-                                                    <div key={link.id} className="relative group/channel">
+                                                    <div key={link.id} className="relative group/channel h-full">
                                                         <button
                                                             onClick={() => handleLinkClick(link)}
-                                                            className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-card border transition-all duration-300 ${selectedLink?.id === link.id
-                                                                ? 'border-primary-light ring-2 ring-primary-light/20 shadow-lg'
-                                                                : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                                                            className={`w-full h-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-[2.5rem] border transition-all duration-300 min-h-[160px] flex flex-col justify-center ${selectedLink?.id === link.id
+                                                                ? 'border-red-500 ring-2 ring-red-500/10 shadow-2xl shadow-red-500/20'
+                                                                : 'border-slate-200 dark:border-white/5 hover:border-red-500/50 hover:shadow-xl hover:shadow-black/5'
                                                                 }`}
                                                         >
                                                             {link.isTrending && (
-                                                                <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
-                                                                    <TrendingUp size={8} fill="currentColor" />
-                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
+                                                                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2 py-0.5 bg-amber-500 text-white rounded-full shadow-lg z-10 animate-pulse">
+                                                                    <TrendingUp size={10} fill="currentColor" />
+                                                                    <span className="text-[8px] font-black uppercase tracking-tighter">HOT</span>
                                                                 </div>
                                                             )}
                                                             {link.isDefault && (
-                                                                <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
-                                                                    <Sparkles size={8} fill="currentColor" />
-                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
+                                                                <div className="absolute top-4 left-4 flex items-center gap-1.5 px-2 py-0.5 bg-primary-600 text-white rounded-full shadow-lg z-10">
+                                                                    <Sparkles size={10} fill="currentColor" />
+                                                                    <span className="text-[8px] font-black uppercase tracking-tighter">STARTUP</span>
                                                                 </div>
                                                             )}
                                                             {selectedLink?.id === link.id && (
-                                                                <div className="absolute bottom-6 left-3 flex items-center gap-1.5 px-2 py-0.5 bg-red-600 rounded-full shadow-lg shadow-red-600/30 z-20">
-                                                                    <span className="relative flex h-1.5 w-1.5">
+                                                                <div className="absolute bottom-6 left-3 md:left-6 flex items-center gap-1.5 px-2.5 py-1 bg-red-600 rounded-full shadow-xl shadow-red-600/30 z-20">
+                                                                    <span className="relative flex h-2 w-2">
                                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                                                                     </span>
-                                                                    <CheckCircle size={9} className="text-white" fill="white" />
-                                                                    <span className="text-[8px] font-black text-white uppercase tracking-tighter">Live Now</span>
+                                                                    <CheckCircle size={10} className="text-white" fill="white" />
+                                                                    <span className="text-[9px] font-black text-white uppercase tracking-tighter">Live Now</span>
                                                                 </div>
                                                             )}
-                                                            <div className="flex flex-col items-center text-center gap-4 md:flex-row md:text-left md:gap-4">
-                                                                <div className={`flex-shrink-0 w-12 h-12 rounded-[1rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
-                                                                    ? 'bg-gradient-to-br from-primary-600 to-primary-dark text-white ring-2 ring-primary-light/30 shadow-lg'
-                                                                    : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/10 group-hover:text-primary-600 text-primary-light group-hover:scale-110'
+                                                            <div className="flex flex-col items-center text-center gap-5 md:flex-row md:text-left md:gap-6">
+                                                                <div className={`flex-shrink-0 w-16 h-16 rounded-[1.5rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
+                                                                    ? 'bg-gradient-to-br from-red-600 to-orange-600 text-white ring-4 ring-red-500/20 shadow-xl'
+                                                                    : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-red-50 dark:group-hover:bg-red-900/10 group-hover:text-red-600'
                                                                     }`}>
                                                                     {selectedLink?.id === link.id && (
                                                                         <div className="absolute inset-0 bg-white/10 animate-pulse" />
                                                                     )}
-                                                                    <Play size={20} fill="currentColor" className="relative z-10 ml-0.5" />
+                                                                    <Play size={28} fill="currentColor" className="relative z-10 ml-1" />
                                                                 </div>
-                                                                <div className="flex-1 min-w-0 w-full">
-                                                                    <h4 className={`font-bold text-sm md:text-base line-clamp-2 transition-colors ${selectedLink?.id === link.id
-                                                                        ? 'text-primary-dark'
-                                                                        : 'text-gray-900 dark:text-white group-hover:text-primary-light'
+                                                                <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full">
+                                                                    <h4 className={`font-black text-sm md:text-lg leading-tight transition-colors ${selectedLink?.id === link.id
+                                                                        ? 'text-red-500'
+                                                                        : 'text-gray-900 dark:text-white group-hover:text-red-500'
                                                                         }`}>
-                                                                        {link.heading}
+                                                                        {link.heading.trim().split(/\s+/).length > 5
+                                                                            ? link.heading.trim().split(/\s+/).slice(0, 5).join(' ') + '...'
+                                                                            : link.heading}
                                                                     </h4>
-                                                                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-auto pt-2">
                                                                         {link.tags && link.tags.slice(0, 2).map((tag) => (
-                                                                            <span key={tag} className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                                                                                #{tag}
+                                                                            <span key={tag} className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-md">
+                                                                                {tag}
                                                                             </span>
                                                                         ))}
                                                                         {user?.role === 'admin' && (
-                                                                            <span className="flex items-center gap-1 text-[8px] font-bold text-green-600 dark:text-green-500 uppercase tracking-wider">
-                                                                                <Activity size={8} /> {getWatchingCount(link.id)} watching
+                                                                            <span className="flex items-center gap-1.5 text-[9px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                                                                                <Activity size={10} /> {getWatchingCount(link.id)} LIVE
                                                                             </span>
                                                                         )}
                                                                         {/* ── Time Left / Match Minute badge ── */}
                                                                         {(link as any).matchStartTime && (
-                                                                            <MatchCardTimer matchDate={(link as any).matchStartTime} duration={(link as any).matchDurationMinutes || 90} />
+                                                                            <div className="w-full md:w-auto">
+                                                                                <MatchCardTimer matchDate={(link as any).matchStartTime} duration={(link as any).matchDurationMinutes || 90} />
+                                                                            </div>
                                                                         )}
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </button>
                                                         {user?.role === 'admin' && (
-                                                            <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
+                                                            <div className="absolute top-4 right-4 flex flex-col gap-2 z-30 opacity-0 group-hover/channel:opacity-100 transition-opacity translate-x-12 group-hover/channel:translate-x-0 duration-300">
                                                                 <button
                                                                     onClick={async (e) => {
                                                                         e.stopPropagation();
@@ -1090,12 +1090,11 @@ export const LiveSection: React.FC = () => {
                                                                             console.error('Failed to toggle trending:', err);
                                                                         }
                                                                     }}
-                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isTrending
+                                                                    className={`p-2.5 rounded-2xl shadow-2xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isTrending
                                                                         ? 'bg-amber-500 text-white border-amber-400'
                                                                         : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
-                                                                    title={link.isTrending ? "Remove Trending" : "Mark as Trending"}
                                                                 >
-                                                                    <TrendingUp size={14} />
+                                                                    <TrendingUp size={16} />
                                                                 </button>
                                                                 <button
                                                                     onClick={async (e) => {
@@ -1112,21 +1111,16 @@ export const LiveSection: React.FC = () => {
                                                                                     ...l,
                                                                                     isDefault: l.id === link.id
                                                                                 })));
-                                                                                setIptvChannels(prev => prev.map(c => ({
-                                                                                    ...c,
-                                                                                    isDefault: false
-                                                                                })));
                                                                             }
                                                                         } catch (err) {
                                                                             console.error('Failed to toggle default:', err);
                                                                         }
                                                                     }}
-                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isDefault
+                                                                    className={`p-2.5 rounded-2xl shadow-2xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isDefault
                                                                         ? 'bg-primary-600 text-white border-primary-400'
                                                                         : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
-                                                                    title={link.isDefault ? "Remove Default" : "Set as Default"}
                                                                 >
-                                                                    <Sparkles size={14} />
+                                                                    <Sparkles size={16} />
                                                                 </button>
                                                             </div>
                                                         )}
@@ -1319,6 +1313,11 @@ export const LiveSection: React.FC = () => {
                                     </div>
                                 )}
 
+                                {/* In-Content Ad - Matches Backup (Perfect) */}
+                                <div className="w-full flex justify-center items-center overflow-hidden my-12" style={{ minHeight: '110px' }}>
+                                    <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
+                                </div>
+
 
 
                                 {/* ON DEMAND REQUEST */}
@@ -1336,37 +1335,23 @@ export const LiveSection: React.FC = () => {
                                     </form>
                                 </div>
 
-                                {/* AdSense: After On Demand Request */}
-                                <div className="w-full flex justify-center items-center overflow-hidden my-10 bg-white/50 dark:bg-white/5 rounded-[2.5rem] border dark:border-white/10" style={{ minHeight: '100px' }}>
-                                    <GoogleAdSense slot="7539189957" format="autorelaxed" minHeight="100px" />
+                                {/* Bottom Ad Section - Clean Styling */}
+                                <div className="w-full flex justify-center items-center overflow-hidden mt-6 mb-8" style={{ minHeight: '250px' }}>
+                                    <GoogleAdSense slot="7539189957" format="autorelaxed" minHeight="250px" responsive={true} />
                                 </div>
 
 
 
-                                {/* NEWSLETTER */}
-                                <div className="relative group/cta mt-16 pb-10">
-                                    <div className="relative bg-gradient-to-br from-red-600 to-orange-600 rounded-[2.5rem] p-10 md:p-16 text-white text-center shadow-2xl overflow-hidden">
-                                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32" />
-                                        <h2 className="text-3xl md:text-5xl font-black mb-4">Stay <span className="text-yellow-300">Updated</span></h2>
-                                        <p className="max-w-2xl mx-auto mb-10 text-white/80">Get instant notifications for match starts and exclusive streaming links.</p>
-                                        {isSubscribed ? <div className="text-xl font-bold flex items-center justify-center gap-2"><CheckCircle size={24} /> You're on the list!</div> : (
-                                            <form onSubmit={handleSubscribe} className="flex flex-col md:flex-row gap-4 max-w-lg mx-auto">
-                                                <input type="email" value={newsletterEmail} onChange={(e) => setNewsletterEmail(e.target.value)} placeholder="Email address" className="flex-1 px-6 py-4 rounded-2xl bg-white/10 border border-white/20 text-white outline-none focus:bg-white/20 transition-all" required />
-                                                <button type="submit" disabled={submitting} className="px-10 py-4 bg-white text-primary-600 font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl">{submitting ? <RefreshCw className="animate-spin" /> : 'Subscribe Now'}</button>
-                                            </form>
-                                        )}
-                                    </div>
-                                </div>
 
-                                {/* AdSense: Bottom Ad */}
-                                <div className="w-full flex justify-center items-center overflow-hidden mt-10" style={{ minHeight: '90px' }}>
-                                    <GoogleAdSense slot="7838572857" format="auto" minHeight="90px" responsive={true} />
+                                {/* Footer Ad - Matches Backup Style */}
+                                <div className="w-full flex justify-center items-center overflow-hidden mt-10" style={{ minHeight: '110px' }}>
+                                    <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
                                 </div>
                             </div>
                         </>
                     )}
                 </div>
-            </div>
-        </section>
+            </div >
+        </section >
     );
 };
