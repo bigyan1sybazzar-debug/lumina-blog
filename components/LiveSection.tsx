@@ -653,12 +653,14 @@ export const LiveSection: React.FC = () => {
                 <div className="space-y-4 md:space-y-8">
 
                     {/* HD Alert + Live Clock */}
-                    <div className="bg-accent-success/5 border-accent-success/20 border rounded-card p-4 flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-accent-success/20 flex items-center justify-center text-accent-success"><Clock size={20} /></div>
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Please be patient — HD channels may take a moment to load</p>
+                    <div className="bg-accent-success/5 border-accent-success/20 border rounded-card p-4 flex flex-col sm:flex-row items-center gap-4">
+                        <div className="flex items-center gap-4 w-full sm:w-auto">
+                            <div className="w-10 h-10 rounded-full bg-accent-success/20 flex items-center justify-center text-accent-success shrink-0"><Clock size={20} /></div>
+                            <div className="flex-1">
+                                <p className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">Please be patient — HD channels may take a moment to load</p>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 px-4 py-1.5 bg-red-600 rounded-full ml-auto shrink-0 shadow-lg shadow-red-600/20">
+                        <div className="flex items-center gap-2 px-4 py-1.5 bg-red-600 rounded-full sm:ml-auto shrink-0 shadow-lg shadow-red-600/20">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
@@ -669,9 +671,9 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Top Ad */}
-                    <div className="w-full flex justify-center items-center overflow-hidden" style={{ minHeight: '90px' }}>
-                        <GoogleAdSense slot="7838572857" format="horizontal" minHeight="90px" responsive={true} />
+                    {/* Top Ad - Better Integrated */}
+                    <div className="w-full flex justify-center items-center overflow-hidden bg-white/50 dark:bg-white/5 rounded-[32px] border border-gray-200 dark:border-white/10" style={{ minHeight: '100px' }}>
+                        <GoogleAdSense slot="7838572857" format="horizontal" minHeight="100px" responsive={true} />
                     </div>
 
                     {isDataLoading ? (
@@ -854,7 +856,7 @@ export const LiveSection: React.FC = () => {
                                         )}
                                     </div>
                                     <div className="w-full lg:w-[40%] flex flex-col h-auto">
-                                        <div className="relative h-full flex flex-col bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-900 dark:via-red-950/20 dark:to-orange-950/20 rounded-[32px] border-2 border-red-200 dark:border-red-900/50 shadow-xl overflow-hidden min-h-[500px] lg:min-h-[690px] lg:max-h-[1100px]">
+                                        <div className="relative h-full flex flex-col bg-gradient-to-br from-white via-red-50/30 to-orange-50/30 dark:from-gray-900 dark:via-red-950/20 dark:to-orange-950/20 rounded-[32px] border-2 border-red-200 dark:border-red-900/50 shadow-xl overflow-hidden min-h-[500px] lg:min-h-0 lg:h-full">
                                             <div className="relative p-4 md:p-6 flex flex-col h-full">
                                                 <div className="flex items-center justify-between mb-6">
                                                     <div className="flex items-center gap-3">
@@ -926,6 +928,11 @@ export const LiveSection: React.FC = () => {
                                     </div>
                                 </div>
                             )}
+
+                            {/* Middle Ad - Visible after Player/Discussion */}
+                            <div className="w-full flex justify-center items-center overflow-hidden my-6 bg-white/50 dark:bg-white/5 rounded-[32px] border border-gray-200 dark:border-white/10" style={{ minHeight: '100px' }}>
+                                <GoogleAdSense slot="7838572857" format="auto" minHeight="100px" responsive={true} />
+                            </div>
 
                             {/* CHANNEL PICKER & GRID */}
                             <div className="flex flex-col gap-6">
@@ -1330,8 +1337,8 @@ export const LiveSection: React.FC = () => {
                                 </div>
 
                                 {/* AdSense: After On Demand Request */}
-                                <div className="w-full flex justify-center items-center overflow-hidden my-10" style={{ minHeight: '90px' }}>
-                                    <GoogleAdSense slot="7838572857" format="auto" minHeight="90px" responsive={true} />
+                                <div className="w-full flex justify-center items-center overflow-hidden my-10 bg-white/50 dark:bg-white/5 rounded-[2.5rem] border dark:border-white/10" style={{ minHeight: '100px' }}>
+                                    <GoogleAdSense slot="7539189957" format="autorelaxed" minHeight="100px" />
                                 </div>
 
 
