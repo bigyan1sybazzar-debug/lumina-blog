@@ -21,124 +21,108 @@ interface GoogleAdSenseProps {
 const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
     client = 'ca-pub-8714969386201280',
     slot,
-    format,
+    format = 'auto',
     layoutKey,
     layout,
     responsive = true,
     style,
     className,
-    minHeight,
+    minHeight = '100px',
 }) => {
     const adRef = useRef<HTMLModElement>(null);
-    const initialized = useRef<string | null>(null);
-    const [adStatus, setAdStatus] = useState<'loading' | 'loaded' | 'error' | 'blocked'>('loading');
+    const [adStatus, setAdStatus] = useState<'loading' | 'loaded' | 'error' | 'blocked' | 'empty'>('loading');
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const pushAttempted = useRef(false);
 
     useEffect(() => {
-        // Prevent double initialization for the same slot
-        if (initialized.current === slot) return;
+        // We only want to push ONCE per mount of this component
+        if (pushAttempted.current) return;
 
-        const timer = setTimeout(() => {
+        const initAd = () => {
             try {
-                if (typeof window === 'undefined') {
-                    setAdStatus('error');
-                    setErrorMessage('Window is undefined');
-                    return;
-                }
+                if (typeof window === 'undefined') return;
 
-                // Check if AdSense script is loaded
+                // Ensure the Google script is available
                 if (!window.adsbygoogle) {
+                    console.warn('AdSense: adsbygoogle script not detected');
                     setAdStatus('blocked');
-                    setErrorMessage('AdSense script not loaded. Ad blocker may be active.');
-                    console.warn('AdSense script not loaded. Please check if ad blocker is enabled.');
-                    return;
-                }
-
-                // Check if the ad element exists
-                if (!adRef.current) {
-                    setAdStatus('error');
-                    setErrorMessage('Ad element not found');
                     return;
                 }
 
                 // Push the ad
                 (window.adsbygoogle = window.adsbygoogle || []).push({});
-                initialized.current = slot;
+                pushAttempted.current = true;
+                setAdStatus('loaded');
 
-                // Set a timeout to check if ad loaded
+                // Optional: Check 5 seconds later if it was actually filled
                 setTimeout(() => {
                     if (adRef.current) {
-                        const adFilled = adRef.current.getAttribute('data-ad-status') === 'filled';
-                        if (adFilled) {
-                            setAdStatus('loaded');
-                        } else {
-                            // Ad might still be loading or not filled
-                            setAdStatus('loaded'); // Assume loaded, Google will handle display
+                        const status = adRef.current.getAttribute('data-ad-status');
+                        if (status === 'unfilled') {
+                            setAdStatus('empty');
                         }
                     }
-                }, 2000);
+                }, 5000);
 
             } catch (err: any) {
-                console.error('AdSense error:', err);
+                console.error('AdSense Push Error:', err);
                 setAdStatus('error');
-                setErrorMessage(err?.message || 'Unknown error occurred');
+                setErrorMessage(err?.message || 'Push failed');
             }
-        }, 500); // 500ms delay for modal/animation stability
+        };
 
+        // Delay slightly to allow the DOM to settle
+        const timer = setTimeout(initAd, 300);
         return () => clearTimeout(timer);
-    }, [slot]);
+    }, [slot]); // Re-run if slot changes (though usually component remounts anyway)
 
     return (
         <div
-            className={`ad-container ${className || ''}`}
+            className={`adsense-wrapper ${className || ''}`}
             style={{
-                minHeight: minHeight || '100px',
+                minHeight: minHeight,
+                width: '100%',
                 display: 'block',
                 overflow: 'hidden',
-                width: '100%',
-                position: 'relative'
+                clear: 'both',
+                ...style
             }}
         >
             <ins
                 className="adsbygoogle"
-                style={{ display: 'block', ...style }}
+                style={{
+                    display: 'block',
+                    width: '100%',
+                    minHeight: minHeight,
+                    ...style
+                }}
                 data-ad-client={client}
                 data-ad-slot={slot}
                 data-ad-format={format}
-                data-full-width-responsive={responsive}
-                data-ad-layout-key={layoutKey}
-                data-ad-layout={layout}
+                data-full-width-responsive={responsive ? 'true' : 'false'}
+                {...(layoutKey ? { 'data-ad-layout-key': layoutKey } : {})}
+                {...(layout ? { 'data-ad-layout': layout } : {})}
                 ref={adRef}
             />
 
-            {/* Fallback content when ads don't load */}
+            {/* Debug/Fallback Info (Hidden by default, visible if blocked/empty) */}
             {adStatus === 'blocked' && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800/50 rounded-lg p-4">
-                    <div className="text-center">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            📢 Ad content unavailable
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            {errorMessage}
-                        </p>
-                    </div>
+                <div className="flex items-center justify-center p-4 bg-gray-50 dark:bg-white/5 border border-dashed border-gray-200 dark:border-white/10 rounded-xl" style={{ minHeight }}>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">
+                        Ads Blocked or Script Slow
+                    </p>
                 </div>
             )}
 
-            {adStatus === 'error' && (
-                <div className="absolute inset-0 flex items-center justify-center bg-red-50 dark:bg-red-900/10 rounded-lg p-4">
-                    <div className="text-center">
-                        <p className="text-sm text-red-600 dark:text-red-400">
-                            ⚠️ Ad loading error
-                        </p>
-                        <p className="text-xs text-red-500 dark:text-red-500 mt-1">
-                            {errorMessage}
-                        </p>
-                    </div>
+            {adStatus === 'empty' && (
+                <div className="flex items-center justify-center p-4 bg-gray-50 dark:bg-white/5 border border-dashed border-gray-200 dark:border-white/10 rounded-xl" style={{ minHeight }}>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">
+                        Seeking Best Ad Placement...
+                    </p>
                 </div>
             )}
         </div>
     );
 };
 
-export default GoogleAdSense;
+export default React.memo(GoogleAdSense);

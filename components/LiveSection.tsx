@@ -619,21 +619,21 @@ export const LiveSection: React.FC = () => {
 
 
 
-    const allTags = ['All', ...Array.from(new Set(links.flatMap(link => link.tags || [])))];
-    const filteredLinks = selectedTag === 'All' ? links : links.filter(link => link.tags?.includes(selectedTag));
+    const allTags = React.useMemo(() => ['All', ...Array.from(new Set(links.flatMap(link => link.tags || [])))], [links]);
+    const filteredLinks = React.useMemo(() => selectedTag === 'All' ? links : links.filter(link => link.tags?.includes(selectedTag)), [links, selectedTag]);
 
     const iptvTags = React.useMemo(() => {
         const groups = Array.from(new Set(iptvChannels.map(c => c.group).filter(Boolean)));
         return ['All', 'Trending', 'Default', ...groups.sort()];
     }, [iptvChannels]);
 
-    const trendingItems = Array.from(new Map([
+    const trendingItems = React.useMemo(() => Array.from(new Map([
         ...links.filter(l => l.isTrending).map(l => ({ ...l, itemType: 'sports' })),
         ...iptvChannels.filter(c => c.isTrending).map(c => ({
             id: c.id, heading: c.name, iframeUrl: c.url, isHLS: c.url.includes('.m3u8'),
             tags: [c.group], isIPTV: true, itemType: 'iptv', trendingOrder: c.trendingOrder
         }))
-    ].map(item => [`${item.itemType}-${item.id}`, item])).values());
+    ].map(item => [`${item.itemType}-${item.id}`, item])).values()), [links, iptvChannels]);
 
     const getWatchingCount = (id: string, onlyWatching: boolean = true) => {
         if (!realtimeStats.activePages) return 0;
@@ -658,25 +658,20 @@ export const LiveSection: React.FC = () => {
                         <div className="flex-1">
                             <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Please be patient — HD channels may take a moment to load</p>
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-red-600 rounded-full ml-auto shrink-0">
+                        <div className="flex items-center gap-2 px-4 py-1.5 bg-red-600 rounded-full ml-auto shrink-0 shadow-lg shadow-red-600/20">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
                             </span>
-                            {selectedLink?.matchStartTime ? (
-                                <MatchCountdown matchStartTime={selectedLink.matchStartTime} duration={selectedLink.matchDurationMinutes || 90} />
-                            ) : (
-                                <>
-                                    <span className="text-white text-[10px] font-black uppercase tracking-wider">Live</span>
-                                    <MainLiveClock />
-                                </>
-                            )}
+                            <span className="text-white text-[10px] font-black uppercase tracking-wider">
+                                {selectedLink?.matchStartTime ? 'Match Active' : 'Live'}
+                            </span>
                         </div>
                     </div>
 
                     {/* Top Ad */}
-                    <div className="w-full flex justify-center items-center overflow-hidden" style={{ minHeight: '110px' }}>
-                        <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
+                    <div className="w-full flex justify-center items-center overflow-hidden" style={{ minHeight: '90px' }}>
+                        <GoogleAdSense slot="7838572857" format="horizontal" minHeight="90px" responsive={true} />
                     </div>
 
                     {isDataLoading ? (
@@ -1335,8 +1330,8 @@ export const LiveSection: React.FC = () => {
                                 </div>
 
                                 {/* AdSense: After On Demand Request */}
-                                <div className="w-full flex justify-center items-center overflow-hidden my-10" style={{ minHeight: '110px' }}>
-                                    <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
+                                <div className="w-full flex justify-center items-center overflow-hidden my-10" style={{ minHeight: '90px' }}>
+                                    <GoogleAdSense slot="7838572857" format="auto" minHeight="90px" responsive={true} />
                                 </div>
 
 
@@ -1357,8 +1352,8 @@ export const LiveSection: React.FC = () => {
                                 </div>
 
                                 {/* AdSense: Bottom Ad */}
-                                <div className="w-full flex justify-center items-center overflow-hidden mt-10" style={{ minHeight: '110px' }}>
-                                    <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
+                                <div className="w-full flex justify-center items-center overflow-hidden mt-10" style={{ minHeight: '90px' }}>
+                                    <GoogleAdSense slot="7838572857" format="auto" minHeight="90px" responsive={true} />
                                 </div>
                             </div>
                         </>
