@@ -105,22 +105,7 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
                 ref={adRef}
             />
 
-            {/* Debug/Fallback Info (Hidden by default, visible if blocked/empty) */}
-            {adStatus === 'blocked' && (
-                <div className="flex items-center justify-center p-4 bg-gray-50 dark:bg-white/5 border border-dashed border-gray-200 dark:border-white/10 rounded-xl" style={{ minHeight }}>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">
-                        Ads Blocked or Script Slow
-                    </p>
-                </div>
-            )}
-
-            {adStatus === 'empty' && (
-                <div className="flex items-center justify-center p-4 bg-gray-50 dark:bg-white/5 border border-dashed border-gray-200 dark:border-white/10 rounded-xl" style={{ minHeight }}>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">
-                        Seeking Best Ad Placement...
-                    </p>
-                </div>
-            )}
+            {/* Fallback states are intentionally silent - no visible placeholder text */}
         </div>
     );
 };

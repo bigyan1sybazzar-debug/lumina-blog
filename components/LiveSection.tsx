@@ -671,9 +671,13 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Top Ad - Matches Backup (Perfect) */}
-                    <div className="w-full flex justify-center items-center overflow-hidden" style={{ minHeight: '110px' }}>
-                        <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
+                    {/* Top Ad */}
+                    <div className="flex justify-center mt-3">
+                        <GoogleAdSense
+                            slot="7838572857"
+                            format="horizontal"
+                            style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
+                        />
                     </div>
 
                     {isDataLoading ? (
@@ -734,7 +738,13 @@ export const LiveSection: React.FC = () => {
                                                         <div className="absolute inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-6 text-center animate-in fade-in backdrop-blur-xl">
                                                             <div className="w-16 h-16 bg-primary-600 rounded-full flex items-center justify-center mb-6 shadow-2xl animate-bounce"><User size={32} className="text-white" /></div>
                                                             <h2 className="text-2xl font-black text-white mb-4 uppercase">Login Required</h2>
-                                                            <div className="w-full max-w-sm mb-6 bg-white/5 rounded-xl overflow-hidden"><GoogleAdSense slot="7838572857" format="rectangle" responsive={true} /></div>
+                                                            <div className="flex justify-center mt-3 mb-6 w-full">
+                                                                <GoogleAdSense
+                                                                    slot="7838572857"
+                                                                    format="horizontal"
+                                                                    style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
+                                                                />
+                                                            </div>
                                                             <p className="text-gray-400 mb-8 max-w-sm">Sign in to watch <span className="text-white font-bold">{selectedLink.heading}</span>.</p>
                                                             <div className="flex gap-4 w-full max-w-xs"><Link href="/login" className="flex-1 bg-primary-600 text-white py-3 rounded-xl font-black uppercase text-sm">Log In</Link><Link href="/signup" className="flex-1 bg-white/10 text-white py-3 rounded-xl font-black uppercase text-sm">Sign Up</Link></div>
                                                         </div>
@@ -997,19 +1007,43 @@ export const LiveSection: React.FC = () => {
                                             <Tv size={24} className="text-secondary-light" />
                                             <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
                                         </div>
-                                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 transition-all duration-500">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 transition-all duration-500">
                                             {Array.from(new Map(filteredLinks.map(l => [l.id, l])).values())
                                                 .sort((a, b) => {
+                                                    // 1. Current Active Link at top
                                                     const isAActive = selectedLink?.id === a.id;
                                                     const isBActive = selectedLink?.id === b.id;
                                                     if (isAActive !== isBActive) return isAActive ? -1 : 1;
+
+                                                    // 2. Default status (Admin set)
+                                                    if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1;
+
+                                                    const now = Date.now();
+                                                    const startA = resolveMatchStart((a as any).matchStartTime);
+                                                    const startB = resolveMatchStart((b as any).matchStartTime);
+
+                                                    const isALive = startA > 0 && now >= startA && now <= (startA + ((a as any).matchDurationMinutes || 90) * 60000);
+                                                    const isBLive = startB > 0 && now >= startB && now <= (startB + ((b as any).matchDurationMinutes || 90) * 60000);
+
+                                                    // 3. Live Matches
+                                                    if (isALive !== isBLive) return isALive ? -1 : 1;
+
+                                                    // 4. Trending status
+                                                    if (a.isTrending !== b.isTrending) return a.isTrending ? -1 : 1;
+
+                                                    // 5. Upcoming matches by time
+                                                    if (startA > 0 && startB > 0) {
+                                                        if (startA !== startB) return startA - startB;
+                                                    } else if (startA > 0) return -1;
+                                                    else if (startB > 0) return 1;
+
                                                     return 0;
                                                 })
                                                 .map((link) => (
                                                     <div key={link.id} className="relative group/channel h-full">
                                                         <button
                                                             onClick={() => handleLinkClick(link)}
-                                                            className={`w-full h-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-6 rounded-[2.5rem] border transition-all duration-300 min-h-[160px] flex flex-col justify-center ${selectedLink?.id === link.id
+                                                            className={`w-full h-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 px-4 py-4 md:p-6 rounded-2xl md:rounded-[2.5rem] border transition-all duration-300 min-h-[90px] md:min-h-[160px] flex flex-col justify-center ${selectedLink?.id === link.id
                                                                 ? 'border-red-500 ring-2 ring-red-500/10 shadow-2xl shadow-red-500/20'
                                                                 : 'border-slate-200 dark:border-white/5 hover:border-red-500/50 hover:shadow-xl hover:shadow-black/5'
                                                                 }`}
@@ -1036,15 +1070,15 @@ export const LiveSection: React.FC = () => {
                                                                     <span className="text-[9px] font-black text-white uppercase tracking-tighter">Live Now</span>
                                                                 </div>
                                                             )}
-                                                            <div className="flex flex-col items-center text-center gap-5 md:flex-row md:text-left md:gap-6">
-                                                                <div className={`flex-shrink-0 w-16 h-16 rounded-[1.5rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
+                                                            <div className="flex flex-row md:flex-col items-center text-left md:text-center gap-4 md:gap-5">
+                                                                <div className={`flex-shrink-0 w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-[2rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
                                                                     ? 'bg-gradient-to-br from-red-600 to-orange-600 text-white ring-4 ring-red-500/20 shadow-xl'
                                                                     : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-red-50 dark:group-hover:bg-red-900/10 group-hover:text-red-600'
                                                                     }`}>
                                                                     {selectedLink?.id === link.id && (
                                                                         <div className="absolute inset-0 bg-white/10 animate-pulse" />
                                                                     )}
-                                                                    <Play size={28} fill="currentColor" className="relative z-10 ml-1" />
+                                                                    <Play size={24} fill="currentColor" className="relative z-10 md:ml-1 md:w-[32px] md:h-[32px]" />
                                                                 </div>
                                                                 <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full">
                                                                     <h4 className={`font-black text-sm md:text-lg leading-tight transition-colors ${selectedLink?.id === link.id
@@ -1077,7 +1111,7 @@ export const LiveSection: React.FC = () => {
                                                             </div>
                                                         </button>
                                                         {user?.role === 'admin' && (
-                                                            <div className="absolute top-4 right-4 flex flex-col gap-2 z-30 opacity-0 group-hover/channel:opacity-100 transition-opacity translate-x-12 group-hover/channel:translate-x-0 duration-300">
+                                                            <div className="absolute top-4 right-2 md:right-4 flex flex-col gap-2 z-30 md:opacity-0 group-hover/channel:opacity-100 transition-opacity translate-x-4 md:translate-x-12 group-hover/channel:translate-x-0 duration-300">
                                                                 <button
                                                                     onClick={async (e) => {
                                                                         e.stopPropagation();
@@ -1313,9 +1347,13 @@ export const LiveSection: React.FC = () => {
                                     </div>
                                 )}
 
-                                {/* In-Content Ad - Matches Backup (Perfect) */}
-                                <div className="w-full flex justify-center items-center overflow-hidden my-12" style={{ minHeight: '110px' }}>
-                                    <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
+                                {/* In-Content Ad */}
+                                <div className="flex justify-center mt-3">
+                                    <GoogleAdSense
+                                        slot="7838572857"
+                                        format="horizontal"
+                                        style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
+                                    />
                                 </div>
 
 
@@ -1335,17 +1373,25 @@ export const LiveSection: React.FC = () => {
                                     </form>
                                 </div>
 
-                                {/* Bottom Ad Section - Clean Styling */}
-                                <div className="w-full flex justify-center items-center overflow-hidden mt-6 mb-8" style={{ minHeight: '250px' }}>
-                                    <GoogleAdSense slot="7539189957" format="autorelaxed" minHeight="250px" responsive={true} />
+                                {/* Bottom Ad */}
+                                <div className="flex justify-center mt-3">
+                                    <GoogleAdSense
+                                        slot="7838572857"
+                                        format="horizontal"
+                                        style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
+                                    />
                                 </div>
 
 
 
 
-                                {/* Footer Ad - Matches Backup Style */}
-                                <div className="w-full flex justify-center items-center overflow-hidden mt-10" style={{ minHeight: '110px' }}>
-                                    <GoogleAdSense slot="7838572857" format="auto" minHeight="110px" responsive={false} style={{ display: 'block', width: '100%', height: '110px' }} />
+                                {/* Footer Ad */}
+                                <div className="flex justify-center mt-3">
+                                    <GoogleAdSense
+                                        slot="7838572857"
+                                        format="horizontal"
+                                        style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
+                                    />
                                 </div>
                             </div>
                         </>
