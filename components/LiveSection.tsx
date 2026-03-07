@@ -671,12 +671,13 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Top Ad */}
-                    <div className="flex justify-center mt-3">
+                    {/* Top Ad - Optimized size for smaller mobile footprint */}
+                    <div className="w-full flex justify-center items-center overflow-hidden" style={{ minHeight: '60px' }}>
                         <GoogleAdSense
                             slot="7838572857"
                             format="horizontal"
-                            style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
+                            minHeight="60px"
+                            style={{ width: '100%', maxWidth: '728px', minHeight: '60px' }}
                         />
                     </div>
 
@@ -1347,17 +1348,6 @@ export const LiveSection: React.FC = () => {
                                     </div>
                                 )}
 
-                                {/* In-Content Ad */}
-                                <div className="flex justify-center mt-3">
-                                    <GoogleAdSense
-                                        slot="7838572857"
-                                        format="horizontal"
-                                        style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
-                                    />
-                                </div>
-
-
-
                                 {/* ON DEMAND REQUEST */}
                                 <div className="mt-8 grid lg:grid-cols-2 gap-8 items-center bg-white dark:bg-gray-800/50 p-8 md:p-12 rounded-[32px] border dark:border-white/10 shadow-xl overflow-hidden relative group/ondemand">
                                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover/ondemand:scale-110 transition-all"><MessageCircle size={150} className="text-red-500" /></div>
@@ -1373,24 +1363,12 @@ export const LiveSection: React.FC = () => {
                                     </form>
                                 </div>
 
-                                {/* Bottom Ad */}
+                                {/* Bottom Ad - matching ChatAssistant style as requested */}
                                 <div className="flex justify-center mt-3">
                                     <GoogleAdSense
                                         slot="7838572857"
                                         format="horizontal"
-                                        style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
-                                    />
-                                </div>
-
-
-
-
-                                {/* Footer Ad */}
-                                <div className="flex justify-center mt-3">
-                                    <GoogleAdSense
-                                        slot="7838572857"
-                                        format="horizontal"
-                                        style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
+                                        style={{ width: '100%', maxWidth: '728px', minHeight: '60px' }}
                                     />
                                 </div>
                             </div>
