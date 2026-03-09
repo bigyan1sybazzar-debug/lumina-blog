@@ -431,12 +431,14 @@ export default function ChatAssistant() {
               )}
             </div>
 
-            {/* AdSense: Below Chat Input */}
+            {/* AdSense: Below Chat Input - Optimized for perfect mobile/desktop sizing */}
             <div className="flex justify-center mt-3">
               <GoogleAdSense
                 slot="7838572857"
                 format="horizontal"
-                style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
+                responsive={false}
+                fallbackImage="/cover.png"
+                style={{ width: '100%', maxWidth: '728px', height: '60px' }}
               />
             </div>
 

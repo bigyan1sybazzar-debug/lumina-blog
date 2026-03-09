@@ -16,6 +16,7 @@ interface GoogleAdSenseProps {
     style?: React.CSSProperties;
     className?: string;
     minHeight?: string | number;
+    fallbackImage?: string;
 }
 
 const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
@@ -28,6 +29,7 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
     style,
     className,
     minHeight = '100px',
+    fallbackImage,
 }) => {
     const adRef = useRef<HTMLModElement>(null);
     const [adStatus, setAdStatus] = useState<'loading' | 'loaded' | 'error' | 'blocked' | 'empty'>('loading');
@@ -54,15 +56,18 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
                 pushAttempted.current = true;
                 setAdStatus('loaded');
 
-                // Optional: Check 5 seconds later if it was actually filled
+                // Check 3 seconds later if it was actually filled
                 setTimeout(() => {
                     if (adRef.current) {
                         const status = adRef.current.getAttribute('data-ad-status');
-                        if (status === 'unfilled') {
+                        const isHidden = window.getComputedStyle(adRef.current).display === 'none';
+                        const isEmptyDOM = !adRef.current.innerHTML.trim() || adRef.current.offsetHeight < 10;
+
+                        if (status === 'unfilled' || isHidden || isEmptyDOM) {
                             setAdStatus('empty');
                         }
                     }
-                }, 5000);
+                }, 3000);
 
             } catch (err: any) {
                 console.error('AdSense Push Error:', err);
@@ -74,13 +79,20 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
         // Delay slightly to allow the DOM to settle
         const timer = setTimeout(initAd, 300);
         return () => clearTimeout(timer);
-    }, [slot]); // Re-run if slot changes (though usually component remounts anyway)
+    }, [slot]);
+
+    const showFallback = (adStatus === 'error' || adStatus === 'blocked' || adStatus === 'empty') && fallbackImage;
+
+    // Strict height clamps to completely block AdSense from expanding vertically
+    const strictHeight = minHeight === '60px' ? '60px' : style?.height;
 
     return (
         <div
-            className={`adsense-wrapper ${className || ''}`}
+            className={`adsense-wrapper relative flex justify-center items-center ${className || ''}`}
             style={{
                 minHeight: minHeight,
+                height: strictHeight,
+                maxHeight: strictHeight,
                 width: '100%',
                 display: 'block',
                 overflow: 'hidden',
@@ -88,12 +100,16 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
                 ...style
             }}
         >
+            {/* The Ad Container */}
             <ins
                 className="adsbygoogle"
                 style={{
-                    display: 'block',
+                    display: showFallback ? 'none' : 'block',
                     width: '100%',
                     minHeight: minHeight,
+                    height: strictHeight,
+                    maxHeight: strictHeight,
+                    overflow: 'hidden',
                     ...style
                 }}
                 data-ad-client={client}
@@ -105,7 +121,20 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
                 ref={adRef}
             />
 
-            {/* Fallback states are intentionally silent - no visible placeholder text */}
+            {/* Fallback Image */}
+            {showFallback && (
+                <div
+                    className="absolute inset-0 w-full h-full flex items-center justify-center animate-fade-in bg-transparent"
+                    style={{ minHeight: minHeight, maxHeight: strictHeight }}
+                >
+                    <img
+                        src={fallbackImage}
+                        alt="Ad Space"
+                        className="max-w-full w-full h-full object-cover sm:object-contain rounded-lg shadow-sm"
+                        style={{ maxHeight: strictHeight || minHeight }}
+                    />
+                </div>
+            )}
         </div>
     );
 };

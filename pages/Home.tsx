@@ -386,8 +386,10 @@ export const Home: React.FC<HomeProps> = ({
       <div className="max-w-7xl mx-auto px-4 my-8 text-center">
         <GoogleAdSense
           slot="7838572857"
-          format="auto"
-          responsive={true}
+          format="horizontal"
+          responsive={false}
+          fallbackImage="/cover.png"
+          style={{ width: '100%', maxWidth: '728px', height: '60px' }}
         />
       </div>
 
@@ -624,8 +626,10 @@ export const Home: React.FC<HomeProps> = ({
       <div className="max-w-7xl mx-auto px-4 my-8">
         <GoogleAdSense
           slot="7838572857"
-          format="auto"
-          responsive={true}
+          format="horizontal"
+          responsive={false}
+          fallbackImage="/cover.png"
+          style={{ width: '100%', maxWidth: '728px', height: '60px' }}
         />
       </div>
 
@@ -721,9 +725,10 @@ export const Home: React.FC<HomeProps> = ({
                           <GoogleAdSense
                             slot="7838572857"
                             className="w-full h-full flex justify-center items-center"
-                            format="auto"
-                            responsive={true}
-                            style={{ display: 'block', width: '100%', height: '100%' }}
+                            format="horizontal"
+                            responsive={false}
+                            fallbackImage="/cover.png"
+                            style={{ display: 'block', width: '100%', height: '60px' }}
                           />
                         </div>
                       </div>

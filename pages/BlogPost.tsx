@@ -384,8 +384,10 @@ export const BlogPostPage: React.FC = () => {
               <div className="my-12">
                 <GoogleAdSense
                   slot="7838572857"
-                  format="auto"
-                  responsive={true}
+                  format="horizontal"
+                  responsive={false}
+                  fallbackImage="/cover.png"
+                  style={{ width: '100%', maxWidth: '728px', height: '60px' }}
                 />
               </div>
 

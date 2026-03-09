@@ -155,7 +155,7 @@ service cloud.firestore {
     // --- ANALYTICS & TRAFFIC ---
     match /traffic/{sessionId} {
       allow create, update: if true;
-      allow get, list: if isSignedIn();
+      allow get, list: if true; // Publicly readable for watcher counts
       allow delete: if isAdmin();
     }
 

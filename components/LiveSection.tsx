@@ -26,7 +26,7 @@ import { useAuth } from '../context/AuthContext';
 import { parseM3U } from '../lib/m3uParser';
 import { LiveLink } from '../types';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import GoogleAdSense from './GoogleAdSense';
 import { X, Play, Radio, Vote, Trophy, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search, User, Users, Hand, Heart, Reply } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
@@ -268,6 +268,7 @@ export const LiveSection: React.FC = () => {
     const { user } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const pathname = usePathname();
     const playerRef = React.useRef<HTMLDivElement>(null);
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
@@ -426,6 +427,20 @@ export const LiveSection: React.FC = () => {
 
                     setPendingLink(null);
                     setSelectedLink(formattedLink);
+
+                    // If no V param is in URL, add it automatically to fix the user's reported ad loading issue
+                    if (!urlV && typeof window !== 'undefined') {
+                        const currentParams = new URLSearchParams(window.location.search);
+                        // Use usePathname() hook for reliable path construction, 
+                        // fallback to hardcoded path if for some reason pathname is home
+                        const safePath = (pathname && pathname !== '/') ? pathname : '/tools/live-tv';
+                        const newUrl = `${safePath}?${currentParams.toString()}`;
+
+                        setTimeout(() => {
+                            router.replace(newUrl, { scroll: false });
+                        }, 100);
+                    }
+
                     setShowAd(false);
                 }
 
@@ -637,10 +652,14 @@ export const LiveSection: React.FC = () => {
 
     const getWatchingCount = (id: string, onlyWatching: boolean = true) => {
         if (!realtimeStats.activePages) return 0;
-        // Search for users on /tools/live-tv?v=ID
-        const match = realtimeStats.activePages.find(p => p.slug.includes(`v=${id}`));
-        if (!match) return 0;
-        return onlyWatching ? (match.watchingCount || 0) : (match.count || 0);
+        // Search for users on /tools/live-tv?v=ID or other variants
+        const matchingPages = realtimeStats.activePages.filter(p => p.slug.includes(`v=${id}`));
+        if (matchingPages.length === 0) return 0;
+
+        // Sum the counts if multiple page variants match the same video ID
+        return matchingPages.reduce((acc, p) =>
+            acc + (onlyWatching ? (p.watchingCount || 0) : (p.count || 0)),
+            0);
     };
 
     if (!isMounted) return null;
@@ -649,15 +668,15 @@ export const LiveSection: React.FC = () => {
         <section id="live-section" className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-primary-light/5 via-transparent opacity-50 pointer-events-none" />
 
-            <div className="py-6 md:py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="space-y-4 md:space-y-8">
+            <div className="pt-0 pb-6 md:pb-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="space-y-3 md:space-y-6">
 
                     {/* HD Alert + Live Clock */}
                     <div className="bg-accent-success/5 border-accent-success/20 border rounded-card p-4 flex flex-col sm:flex-row items-center gap-4">
                         <div className="flex items-center gap-4 w-full sm:w-auto">
                             <div className="w-10 h-10 rounded-full bg-accent-success/20 flex items-center justify-center text-accent-success shrink-0"><Clock size={20} /></div>
                             <div className="flex-1">
-                                <p className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">Please be patient — HD channels may take a moment to load</p>
+                                <p className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">HD channels may take a moment to load and Ignore Onetime Ads. Also support us By sharing this Link</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-1.5 bg-red-600 rounded-full sm:ml-auto shrink-0 shadow-lg shadow-red-600/20">
@@ -671,13 +690,15 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Top Ad - Optimized size for smaller mobile footprint */}
-                    <div className="w-full flex justify-center items-center overflow-hidden" style={{ minHeight: '60px' }}>
+                    {/* Top Ad - Locked to horizontal format for perfect mobile/desktop sizing */}
+                    <div className="w-full flex justify-center items-center overflow-hidden !mt-2 !mb-4" style={{ minHeight: '60px' }}>
                         <GoogleAdSense
                             slot="7838572857"
                             format="horizontal"
+                            responsive={false}
                             minHeight="60px"
-                            style={{ width: '100%', maxWidth: '728px', minHeight: '60px' }}
+                            fallbackImage="/cover.png"
+                            style={{ width: '100%', maxWidth: '728px', height: '60px' }}
                         />
                     </div>
 
@@ -702,7 +723,38 @@ export const LiveSection: React.FC = () => {
                                     </div>
                                     <div className="w-full md:flex-1 min-w-0">
                                         <Splide id="trending-slider" options={splideOptionsTrending}>
-                                            {trendingItems.sort((a, b) => (a.trendingOrder ?? 999) - (b.trendingOrder ?? 999)).map((link) => (
+                                            {trendingItems.sort((a, b) => {
+                                                // 1. Current Active Link at top
+                                                const isAActive = selectedLink?.id === a.id;
+                                                const isBActive = selectedLink?.id === b.id;
+                                                if (isAActive !== isBActive) return isAActive ? -1 : 1;
+
+                                                // 2. Default status
+                                                if ((a as any).isDefault !== (b as any).isDefault) return (a as any).isDefault ? -1 : 1;
+
+                                                const now = Date.now();
+                                                const startA = resolveMatchStart((a as any).matchStartTime);
+                                                const startB = resolveMatchStart((b as any).matchStartTime);
+
+                                                const isALive = startA > 0 && now >= startA && now <= (startA + ((a as any).matchDurationMinutes || 90) * 60000);
+                                                const isBLive = startB > 0 && now >= startB && now <= (startB + ((b as any).matchDurationMinutes || 90) * 60000);
+
+                                                // 3. Live Matches
+                                                if (isALive !== isBLive) return isALive ? -1 : 1;
+
+                                                // 4. Manual Trending Order (Tie breaker)
+                                                const orderA = a.trendingOrder ?? 999;
+                                                const orderB = b.trendingOrder ?? 999;
+                                                if (orderA !== orderB) return orderA - orderB;
+
+                                                // 5. Upcoming matches by time
+                                                if (startA > 0 && startB > 0) {
+                                                    if (startA !== startB) return startA - startB;
+                                                } else if (startA > 0) return -1;
+                                                else if (startB > 0) return 1;
+
+                                                return 0;
+                                            }).map((link) => (
                                                 <SplideSlide key={`${link.itemType}-${link.id}`}>
                                                     <button onClick={() => handleLinkClick(link)} className="w-full block group text-left">
                                                         <div className={`relative flex items-center gap-2 md:gap-3 p-2 md:p-2.5 bg-white dark:bg-surface-dark-900 rounded-xl md:rounded-2xl border transition-all ${selectedLink?.id === link.id ? 'border-primary-light ring-2 ring-primary-light/20 bg-primary-50/10 shadow-md' : 'border-slate-200 dark:border-slate-800'}`}>
@@ -782,11 +834,13 @@ export const LiveSection: React.FC = () => {
                                                                         IPTV Channel
                                                                     </span>
                                                                 )}
-                                                                {user?.role === 'admin' && (
-                                                                    <span className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[9px] font-black uppercase rounded-md border border-green-200 dark:border-green-800/50">
-                                                                        <User size={10} /> {Math.max(1, getWatchingCount(selectedLink.id, true))} Watching now
-                                                                    </span>
-                                                                )}
+                                                                <span className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[9px] font-black uppercase rounded-md border border-green-200 dark:border-green-800/50 shadow-sm animate-in fade-in duration-500">
+                                                                    <div className="relative flex h-1.5 w-1.5">
+                                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                                                                    </div>
+                                                                    <User size={10} /> {Math.max(1, getWatchingCount(selectedLink.id, true))} Watching now
+                                                                </span>
                                                                 {user?.role === 'admin' && (
                                                                     <span className="flex items-center gap-1.5 px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-[9px] font-black uppercase rounded-md border border-orange-200 dark:border-orange-800/50">
                                                                         <Users size={10} /> {getWatchingCount(selectedLink.id, false)} on Page
@@ -1096,11 +1150,9 @@ export const LiveSection: React.FC = () => {
                                                                                 {tag}
                                                                             </span>
                                                                         ))}
-                                                                        {user?.role === 'admin' && (
-                                                                            <span className="flex items-center gap-1.5 text-[9px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                                                                                <Activity size={10} /> {getWatchingCount(link.id)} LIVE
-                                                                            </span>
-                                                                        )}
+                                                                        <span className="flex items-center gap-1.5 text-[9px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                                                                            <Activity size={10} className="animate-pulse" /> {getWatchingCount(link.id) || 1} LIVE
+                                                                        </span>
                                                                         {/* ── Time Left / Match Minute badge ── */}
                                                                         {(link as any).matchStartTime && (
                                                                             <div className="w-full md:w-auto">
@@ -1269,11 +1321,9 @@ export const LiveSection: React.FC = () => {
                                                                                 {channel.group}
                                                                             </span>
                                                                         )}
-                                                                        {user?.role === 'admin' && (
-                                                                            <span className="flex items-center gap-1 text-[8px] font-bold text-green-600 dark:text-green-500 uppercase tracking-wider">
-                                                                                <Activity size={8} /> {getWatchingCount(channel.id)} watching
-                                                                            </span>
-                                                                        )}
+                                                                        <span className="flex items-center gap-1 text-[8px] font-bold text-green-600 dark:text-green-500 uppercase tracking-wider bg-green-500/10 px-1.5 py-0.5 rounded-md">
+                                                                            <Activity size={8} className="animate-pulse" /> {getWatchingCount(channel.id) || 1} watching
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1368,7 +1418,9 @@ export const LiveSection: React.FC = () => {
                                     <GoogleAdSense
                                         slot="7838572857"
                                         format="horizontal"
-                                        style={{ width: '100%', maxWidth: '728px', minHeight: '60px' }}
+                                        responsive={false}
+                                        fallbackImage="/cover.png"
+                                        style={{ width: '100%', maxWidth: '728px', height: '60px' }}
                                     />
                                 </div>
                             </div>
