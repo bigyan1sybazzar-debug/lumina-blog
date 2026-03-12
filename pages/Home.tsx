@@ -236,7 +236,7 @@ export const Home: React.FC<HomeProps> = ({
                     <Send className="w-3 h-3 md:w-4 md:h-4 text-primary-600 group-hover:rotate-12 transition-transform" />
                     <span className="text-[9px] md:text-xs font-bold text-gray-700 dark:text-gray-300">Phone Price</span>
                   </Link>
-                  <Link href="/tools/live-tv" className="group flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl bg-gradient-to-r from-red-500/10 to-orange-500/10 hover:from-red-500/20 hover:to-orange-500/20 border border-red-200/50 dark:border-red-800/50 transition-all hover:scale-105 shrink-0">
+                  <Link href="/tools/live-tv-hd" className="group flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl bg-gradient-to-r from-red-500/10 to-orange-500/10 hover:from-red-500/20 hover:to-orange-500/20 border border-red-200/50 dark:border-red-800/50 transition-all hover:scale-105 shrink-0">
                     <div className="relative">
                       <div className="absolute -top-1 -right-1 w-1.5 md:w-2 h-1.5 md:h-2 bg-red-500 rounded-full animate-ping"></div>
                       <div className="w-3 h-3 md:w-4 md:h-4 flex items-center justify-center">🔴</div>
@@ -387,9 +387,9 @@ export const Home: React.FC<HomeProps> = ({
         <GoogleAdSense
           slot="7838572857"
           format="horizontal"
-          responsive={false}
+          responsive={true}
           fallbackImage="/cover.png"
-          style={{ width: '100%', maxWidth: '728px', height: '60px' }}
+          style={{ width: '100%', height: '60px' }}
         />
       </div>
 
@@ -532,7 +532,7 @@ export const Home: React.FC<HomeProps> = ({
 
             {/* Tab 7: Live TV Shortcut */}
             <Link
-              href="/tools/live-tv"
+              href="/tools/live-tv-hd"
               className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
                     transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
                     group rounded-2xl border border-gray-100 dark:border-gray-700/50"
@@ -627,9 +627,9 @@ export const Home: React.FC<HomeProps> = ({
         <GoogleAdSense
           slot="7838572857"
           format="horizontal"
-          responsive={false}
+          responsive={true}
           fallbackImage="/cover.png"
-          style={{ width: '100%', maxWidth: '728px', height: '60px' }}
+          style={{ width: '100%', height: '60px' }}
         />
       </div>
 

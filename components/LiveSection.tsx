@@ -285,7 +285,7 @@ export const LiveSection: React.FC = () => {
         // Update URL without full refresh to enable tracking per channel
         const params = new URLSearchParams(searchParams?.toString() || '');
         params.set('v', link.id);
-        router.push(`/tools/live-tv?${params.toString()}`, { scroll: false });
+        router.push(`/tools/live-tv-hd?${params.toString()}`, { scroll: false });
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -433,7 +433,7 @@ export const LiveSection: React.FC = () => {
                         const currentParams = new URLSearchParams(window.location.search);
                         // Use usePathname() hook for reliable path construction, 
                         // fallback to hardcoded path if for some reason pathname is home
-                        const safePath = (pathname && pathname !== '/') ? pathname : '/tools/live-tv';
+                        const safePath = (pathname && pathname !== '/') ? pathname : '/tools/live-tv-hd';
                         const newUrl = `${safePath}?${currentParams.toString()}`;
 
                         setTimeout(() => {
@@ -652,7 +652,7 @@ export const LiveSection: React.FC = () => {
 
     const getWatchingCount = (id: string, onlyWatching: boolean = true) => {
         if (!realtimeStats.activePages) return 0;
-        // Search for users on /tools/live-tv?v=ID or other variants
+        // Search for users on /tools/live-tv-hd?v=ID or other variants
         const matchingPages = realtimeStats.activePages.filter(p => p.slug.includes(`v=${id}`));
         if (matchingPages.length === 0) return 0;
 
