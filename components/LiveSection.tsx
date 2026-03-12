@@ -695,10 +695,10 @@ export const LiveSection: React.FC = () => {
                         <GoogleAdSense
                             slot="7838572857"
                             format="horizontal"
-                            responsive={false}
+                            responsive={true}
                             minHeight="60px"
                             fallbackImage="/cover.png"
-                            style={{ width: '100%', maxWidth: '728px', height: '60px' }}
+                            style={{ width: '100%', height: '60px' }}
                         />
                     </div>
 
@@ -834,13 +834,15 @@ export const LiveSection: React.FC = () => {
                                                                         IPTV Channel
                                                                     </span>
                                                                 )}
-                                                                <span className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[9px] font-black uppercase rounded-md border border-green-200 dark:border-green-800/50 shadow-sm animate-in fade-in duration-500">
-                                                                    <div className="relative flex h-1.5 w-1.5">
-                                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
-                                                                    </div>
-                                                                    <User size={10} /> {Math.max(1, getWatchingCount(selectedLink.id, true))} Watching now
-                                                                </span>
+                                                                {user?.role === 'admin' && (
+                                                                    <span className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[9px] font-black uppercase rounded-md border border-green-200 dark:border-green-800/50 shadow-sm animate-in fade-in duration-500">
+                                                                        <div className="relative flex h-1.5 w-1.5">
+                                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                                                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                                                                        </div>
+                                                                        <User size={10} /> {Math.max(1, getWatchingCount(selectedLink.id, true))} Watching now
+                                                                    </span>
+                                                                )}
                                                                 {user?.role === 'admin' && (
                                                                     <span className="flex items-center gap-1.5 px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-[9px] font-black uppercase rounded-md border border-orange-200 dark:border-orange-800/50">
                                                                         <Users size={10} /> {getWatchingCount(selectedLink.id, false)} on Page
