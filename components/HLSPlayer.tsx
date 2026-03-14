@@ -1,7 +1,9 @@
 'use client';
 import React, { useEffect, useRef, useState, memo } from 'react';
 import Hls from 'hls.js';
-import { AlertTriangle, RefreshCw, Loader2, Radio } from 'lucide-react';
+import * as Plyr from 'plyr';
+import 'plyr/dist/plyr.css';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface HLSPlayerProps {
     src: string;
@@ -10,8 +12,6 @@ interface HLSPlayerProps {
     className?: string;
     onReady?: () => void;
 }
-
-
 
 const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
     src,
@@ -22,18 +22,15 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
 }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
+    const plyrRef = useRef<Plyr | null>(null);
     const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [retryCount, setRetryCount] = useState(0);
 
-    // Debounced helpers — only show the spinner if we've been waiting >800 ms.
-    // This prevents the spinner from flashing on every normal HLS micro-buffer.
     const showLoadingDebounced = () => {
-        if (loadingTimerRef.current) return; // already pending
+        if (loadingTimerRef.current) return;
         loadingTimerRef.current = setTimeout(() => {
             loadingTimerRef.current = null;
-            setIsLoading(true);
         }, 800);
     };
 
@@ -42,7 +39,6 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
             clearTimeout(loadingTimerRef.current);
             loadingTimerRef.current = null;
         }
-        setIsLoading(false);
     };
 
     const onReadyRef = useRef(onReady);
@@ -51,7 +47,6 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
     const handleRetry = () => {
         setRetryCount(prev => prev + 1);
         setError(null);
-        setIsLoading(true);
         if (loadingTimerRef.current) {
             clearTimeout(loadingTimerRef.current);
             loadingTimerRef.current = null;
@@ -62,19 +57,49 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
         const video = videoRef.current;
         if (!video || !src) return;
 
-        // Destroy any existing hls.js instance
         if (hlsRef.current) {
             hlsRef.current.destroy();
             hlsRef.current = null;
         }
+        if (plyrRef.current) {
+            plyrRef.current.destroy();
+            plyrRef.current = null;
+        }
 
         setError(null);
-        setIsLoading(true);
+
+        const initPlyr = (availableQualities?: number[], hlsInstance?: Hls) => {
+            const plyrOptions: any = {
+                controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
+                settings: ['quality', 'speed'],
+                autoplay: autoPlay,
+                muted: muted,
+            };
+
+            if (availableQualities && availableQualities.length > 0 && hlsInstance) {
+                // Ensure unique values and sort descending (highest quality first)
+                const uniqueQualities = Array.from(new Set(availableQualities)).sort((a, b) => b - a);
+
+                plyrOptions.quality = {
+                    default: uniqueQualities[0],
+                    options: uniqueQualities,
+                    forced: true,
+                    onChange: (e: number) => {
+                        hlsInstance.levels.forEach((level, levelIndex) => {
+                            if (level.height === e) {
+                                hlsInstance.currentLevel = levelIndex;
+                            }
+                        });
+                    }
+                };
+            }
+
+            const PlyrClass = (Plyr as any).default || Plyr;
+            plyrRef.current = new PlyrClass(video, plyrOptions);
+        };
 
         if (Hls.isSupported()) {
             const hls = new Hls({
-                // Directly fetch from stream CDN (massive performance boost)
-                // Copied optimized config from reference smooth player
                 maxMaxBufferLength: 100,
                 maxBufferLength: 30,
                 maxBufferSize: 60 * 1024 * 1024,
@@ -89,10 +114,10 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
             hls.attachMedia(video);
 
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                setIsLoading(false);
+                initPlyr(hls.levels.map(level => level.height), hls);
+
                 if (autoPlay) {
                     video.play().catch(() => {
-                        // Autoplay blocked by browser — mute and retry
                         video.muted = true;
                         video.play().catch(() => { });
                     });
@@ -124,7 +149,7 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
             // Safari: native HLS support
             video.src = src;
             video.addEventListener('loadedmetadata', () => {
-                setIsLoading(false);
+                initPlyr();
                 if (autoPlay) video.play().catch(() => { });
                 if (onReadyRef.current) onReadyRef.current();
             }, { once: true });
@@ -140,6 +165,10 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
                 hlsRef.current.destroy();
                 hlsRef.current = null;
             }
+            if (plyrRef.current) {
+                plyrRef.current.destroy();
+                plyrRef.current = null;
+            }
             if (loadingTimerRef.current) {
                 clearTimeout(loadingTimerRef.current);
                 loadingTimerRef.current = null;
@@ -149,15 +178,20 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
 
     // Sync muted state without recreating the player
     useEffect(() => {
-        if (videoRef.current) videoRef.current.muted = muted;
+        if (plyrRef.current) {
+            plyrRef.current.muted = muted;
+        } else if (videoRef.current) {
+            videoRef.current.muted = muted;
+        }
     }, [muted]);
 
     return (
-        <div className={`relative bg-black group transition-all duration-500 rounded-xl overflow-hidden shadow-2xl ${className}`}>
+        <div className={`relative bg-black group transition-all duration-500 rounded-xl overflow-hidden shadow-2xl ${className} [&_.plyr]:h-full [&_.plyr]:w-full [&_.plyr]:static [&_.plyr__video-wrapper]:h-full [&_.plyr__video-wrapper]:w-full [&_video]:object-cover [&_.plyr--video]:bg-black`}>
             <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
                 playsInline
+                crossOrigin="anonymous"
                 muted={muted}
                 controls={false}
                 onWaiting={() => showLoadingDebounced()}
@@ -165,29 +199,9 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
                 onPause={() => cancelLoading()}
             />
 
-            {/* Premium Loading Overlay */}
-            {isLoading && !error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md z-10 pointer-events-none">
-                    <div className="relative mb-6">
-                        <Loader2 className="w-14 h-14 text-red-600 animate-spin" />
-                        <Radio className="w-6 h-6 text-white absolute inset-0 m-auto animate-pulse" />
-                    </div>
-                    <div className="flex flex-col items-center gap-2">
-                        <span className="text-white text-[10px] font-black tracking-[0.4em] uppercase opacity-80">
-                            Synchronizing Stream
-                        </span>
-                        <div className="flex gap-2">
-                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce"></span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Error Overlay */}
             {error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/95 z-20 p-8 text-center backdrop-blur-xl">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/95 z-40 p-8 text-center backdrop-blur-xl">
                     <div className="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center mb-6 border border-red-600/20 shadow-2xl shadow-red-600/10">
                         <AlertTriangle className="w-10 h-10 text-red-600" />
                     </div>
@@ -203,8 +217,8 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
                 </div>
             )}
 
-            {/* Live Indicator */}
-            <div className="absolute top-4 left-4 z-20 flex items-center gap-2.5 px-3 py-1.5 bg-red-600 rounded-lg border border-white/20 shadow-xl pointer-events-none select-none">
+            {/* Live Indicator Overlay */}
+            <div className="absolute top-4 left-4 z-30 flex items-center gap-2.5 px-3 py-1.5 bg-red-600 rounded-lg border border-white/20 shadow-xl pointer-events-none select-none">
                 <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>

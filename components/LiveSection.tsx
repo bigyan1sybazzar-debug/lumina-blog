@@ -695,10 +695,10 @@ export const LiveSection: React.FC = () => {
                         <GoogleAdSense
                             slot="7838572857"
                             format="horizontal"
-                            responsive={true}
+                            responsive={false}
                             minHeight="60px"
                             fallbackImage="/cover.png"
-                            style={{ width: '100%', height: '60px' }}
+                            style={{ width: '100%', maxWidth: '100%', height: '60px' }}
                         />
                     </div>
 
@@ -795,7 +795,8 @@ export const LiveSection: React.FC = () => {
                                                                 <GoogleAdSense
                                                                     slot="7838572857"
                                                                     format="horizontal"
-                                                                    style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
+                                                                    responsive={false}
+                                                                    style={{ width: '100%', maxWidth: '100%', minHeight: '90px' }}
                                                                 />
                                                             </div>
                                                             <p className="text-gray-400 mb-8 max-w-sm">Sign in to watch <span className="text-white font-bold">{selectedLink.heading}</span>.</p>
