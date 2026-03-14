@@ -31,7 +31,8 @@ import GoogleAdSense from './GoogleAdSense';
 import { X, Play, Radio, Vote, Trophy, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search, User, Users, Hand, Heart, Reply } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
-import HLSPlayer from './HLSPlayer';
+import dynamic from 'next/dynamic';
+const HLSPlayer = dynamic(() => import('./HLSPlayer'), { ssr: false });
 import { M3UChannel } from '../lib/m3uParser';
 
 
