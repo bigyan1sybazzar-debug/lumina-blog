@@ -70,9 +70,28 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
 }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const hlsRef = useRef<Hls | null>(null);
+    const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [retryCount, setRetryCount] = useState(0);
+
+    // Debounced helpers — only show the spinner if we've been waiting >800 ms.
+    // This prevents the spinner from flashing on every normal HLS micro-buffer.
+    const showLoadingDebounced = () => {
+        if (loadingTimerRef.current) return; // already pending
+        loadingTimerRef.current = setTimeout(() => {
+            loadingTimerRef.current = null;
+            setIsLoading(true);
+        }, 800);
+    };
+
+    const cancelLoading = () => {
+        if (loadingTimerRef.current) {
+            clearTimeout(loadingTimerRef.current);
+            loadingTimerRef.current = null;
+        }
+        setIsLoading(false);
+    };
 
     const onReadyRef = useRef(onReady);
     useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
@@ -81,6 +100,10 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
         setRetryCount(prev => prev + 1);
         setError(null);
         setIsLoading(true);
+        if (loadingTimerRef.current) {
+            clearTimeout(loadingTimerRef.current);
+            loadingTimerRef.current = null;
+        }
     };
 
     useEffect(() => {
@@ -179,6 +202,10 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
                 hlsRef.current.destroy();
                 hlsRef.current = null;
             }
+            if (loadingTimerRef.current) {
+                clearTimeout(loadingTimerRef.current);
+                loadingTimerRef.current = null;
+            }
         };
     }, [src, retryCount]); // Only restart if source or manual retry changes
 
@@ -195,9 +222,9 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
                 playsInline
                 muted={muted}
                 controls={false}
-                onWaiting={() => setIsLoading(true)}
-                onPlaying={() => { setIsLoading(false); setError(null); }}
-                onPause={() => setIsLoading(false)}
+                onWaiting={() => showLoadingDebounced()}
+                onPlaying={() => { cancelLoading(); setError(null); }}
+                onPause={() => cancelLoading()}
             />
 
             {/* Premium Loading Overlay */}
