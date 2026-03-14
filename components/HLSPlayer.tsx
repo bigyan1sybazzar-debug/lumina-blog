@@ -11,55 +11,7 @@ interface HLSPlayerProps {
     onReady?: () => void;
 }
 
-/**
- * Turn any external URL into a /api/proxy?url=...&ref=... URL.
- * This ensures EVERY request (manifest, sub-manifest, and segment)
- * goes through our server proxy, which sets the correct Origin/Referer
- * headers that CDNs require.
- */
-function toProxyUrl(url: string): string {
-    if (!url) return url;
-    url = url.trim();
-    // Already a local/proxied URL — leave it alone
-    if (url.startsWith('/') || url.includes('/api/proxy')) return url;
 
-    try {
-        let absoluteUrl = url;
-        if (url.startsWith('//')) {
-            absoluteUrl = window.location.protocol + url;
-        }
-        const parsed = new URL(absoluteUrl);
-        const proxyUrl = `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
-        // Carry the CDN origin as `ref` so the server proxy uses it as Referer
-        return `${proxyUrl}&ref=${encodeURIComponent(parsed.origin)}`;
-    } catch {
-        return url;
-    }
-}
-
-/**
- * Build a custom hls.js loader that intercepts EVERY network request
- * before it fires and rewrites the URL through our proxy.
- *
- * This is the core fix for cross-CDN streams like live.inplyr.com →
- * pull.niues.live: xgplayer was fetching absolute segment URLs directly
- * from the CDN (bypassing the proxy), causing CORS failures. hls.js
- * custom loaders intercept at the XHR/fetch level, so nothing escapes.
- */
-function buildProxyLoader(HlsLib: typeof Hls) {
-    const DefaultLoader = HlsLib.DefaultConfig.loader as any;
-
-    return class ProxyLoader extends DefaultLoader {
-        constructor(config: any) {
-            super(config);
-        }
-
-        load(context: any, config: any, callbacks: any) {
-            context.url = toProxyUrl(context.url);
-            super.load(context, config, callbacks);
-        }
-    };
-}
 
 const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
     src,
@@ -119,35 +71,21 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
         setError(null);
         setIsLoading(true);
 
-        const proxiedSrc = toProxyUrl(src);
-
         if (Hls.isSupported()) {
             const hls = new Hls({
-                // Custom loader: EVERY request (manifest + segment) goes via /api/proxy
-                loader: buildProxyLoader(Hls) as any,
-
-                // Live stream config
-                // Standard Stable HLS Config (IPTV Grade)
-                liveSyncDurationCount: 3,
-                maxBufferLength: 40,
-                maxMaxBufferLength: 120,
+                // Directly fetch from stream CDN (massive performance boost)
+                // Copied optimized config from reference smooth player
+                maxMaxBufferLength: 100,
+                maxBufferLength: 30,
                 maxBufferSize: 60 * 1024 * 1024,
-                maxBufferHole: 0.5,
+                liveSyncDuration: 3,
+                liveMaxLatencyDuration: 10,
                 enableWorker: true,
                 lowLatencyMode: true,
-                backBufferLength: 60,
-
-                // Stability & Recovery
-                highBufferWatchdogPeriod: 1,
-                fragLoadingMaxRetry: 10,
-                manifestLoadingMaxRetry: 5,
-                levelLoadingMaxRetry: 5,
-                fragLoadingRetryDelay: 500,
-                manifestLoadingRetryDelay: 500,
             });
 
             hlsRef.current = hls;
-            hls.loadSource(proxiedSrc);
+            hls.loadSource(src);
             hls.attachMedia(video);
 
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -183,8 +121,8 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
             });
 
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            // Safari: native HLS support — still proxy the src
-            video.src = proxiedSrc;
+            // Safari: native HLS support
+            video.src = src;
             video.addEventListener('loadedmetadata', () => {
                 setIsLoading(false);
                 if (autoPlay) video.play().catch(() => { });
