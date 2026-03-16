@@ -10,7 +10,7 @@ async function fetchR2<T>(filename: string, fallbackFn: () => Promise<T>): Promi
     try {
         const cacheBuster = `?t=${Date.now()}`;
         const url = isServer ? `${R2_PUBLIC_DOMAIN}/${filename}${cacheBuster}` : `/api/r2-proxy?file=${filename}&t=${Date.now()}`;
-        const res = await fetch(url, { cache: 'no-store' });
+        const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
         if (!res.ok) throw new Error(`${filename} fetch failed`);
         const data = await res.json();
         return Array.isArray(data) ? data as T : [] as unknown as T;

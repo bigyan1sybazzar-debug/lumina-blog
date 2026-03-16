@@ -387,9 +387,9 @@ export const Home: React.FC<HomeProps> = ({
         <GoogleAdSense
           slot="7838572857"
           format="horizontal"
-          responsive={false}
+          responsive={true}
           fallbackImage="/cover.png"
-          style={{ width: '100%', maxWidth: '100%', height: '60px' }}
+          style={{ width: '100%', height: '60px' }}
         />
       </div>
 
@@ -627,9 +627,9 @@ export const Home: React.FC<HomeProps> = ({
         <GoogleAdSense
           slot="7838572857"
           format="horizontal"
-          responsive={false}
+          responsive={true}
           fallbackImage="/cover.png"
-          style={{ width: '100%', maxWidth: '100%', height: '60px' }}
+          style={{ width: '100%', height: '60px' }}
         />
       </div>
 

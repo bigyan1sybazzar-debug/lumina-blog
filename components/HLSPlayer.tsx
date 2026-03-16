@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState, memo } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import Hls from 'hls.js';
+import { AlertTriangle, RefreshCw, Loader2, Radio } from 'lucide-react';
 
 interface HLSPlayerProps {
     src: string;
@@ -10,6 +11,8 @@ interface HLSPlayerProps {
     onReady?: () => void;
 }
 
+
+
 const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
     src,
     autoPlay = true,
@@ -18,10 +21,29 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
     onReady,
 }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const hlsRef = useRef<any>(null);
-    const plyrRef = useRef<any>(null);
+    const hlsRef = useRef<Hls | null>(null);
+    const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [retryCount, setRetryCount] = useState(0);
+
+    // Debounced helpers — only show the spinner if we've been waiting >800 ms.
+    // This prevents the spinner from flashing on every normal HLS micro-buffer.
+    const showLoadingDebounced = () => {
+        if (loadingTimerRef.current) return; // already pending
+        loadingTimerRef.current = setTimeout(() => {
+            loadingTimerRef.current = null;
+            setIsLoading(true);
+        }, 800);
+    };
+
+    const cancelLoading = () => {
+        if (loadingTimerRef.current) {
+            clearTimeout(loadingTimerRef.current);
+            loadingTimerRef.current = null;
+        }
+        setIsLoading(false);
+    };
 
     const onReadyRef = useRef(onReady);
     useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
@@ -29,190 +51,165 @@ const HLSPlayer: React.FC<HLSPlayerProps> = memo(({
     const handleRetry = () => {
         setRetryCount(prev => prev + 1);
         setError(null);
+        setIsLoading(true);
+        if (loadingTimerRef.current) {
+            clearTimeout(loadingTimerRef.current);
+            loadingTimerRef.current = null;
+        }
     };
 
     useEffect(() => {
-        // Guard against SSR evaluation
-        if (typeof window === 'undefined' || !videoRef.current || !src) return;
+        const video = videoRef.current;
+        if (!video || !src) return;
 
-        let hlsInstance: any = null;
-        let plyrInstance: any = null;
+        // Destroy any existing hls.js instance
+        if (hlsRef.current) {
+            hlsRef.current.destroy();
+            hlsRef.current = null;
+        }
 
-        const cleanup = () => {
-            if (hlsInstance) {
-                hlsInstance.destroy();
-                hlsInstance = null;
-            }
-            if (plyrInstance) {
-                plyrInstance.destroy();
-                plyrInstance = null;
-            }
-        };
+        setError(null);
+        setIsLoading(true);
 
-        const init = async () => {
-            try {
-                // EXTREMELY SAFE: Dynamic imports with fallback for default/namespace mismatch
-                const [HlsModule, PlyrModule] = await Promise.all([
-                    import('hls.js'),
-                    import('plyr'),
-                ]);
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                // Directly fetch from stream CDN (massive performance boost)
+                // Copied optimized config from reference smooth player
+                maxMaxBufferLength: 100,
+                maxBufferLength: 30,
+                maxBufferSize: 60 * 1024 * 1024,
+                liveSyncDuration: 3,
+                liveMaxLatencyDuration: 10,
+                enableWorker: true,
+                lowLatencyMode: true,
+            });
 
-                // Get constructors safely
-                const Hls = (HlsModule as any).default || HlsModule;
-                const Plyr = (PlyrModule as any).default || PlyrModule;
+            hlsRef.current = hls;
+            hls.loadSource(src);
+            hls.attachMedia(video);
 
-                // Inject CSS via JS to be 100% sure it's client-side only and doesn't break bundler
-                if (!document.getElementById('plyr-css')) {
-                    const link = document.createElement('link');
-                    link.id = 'plyr-css';
-                    link.rel = 'stylesheet';
-                    link.href = 'https://cdn.plyr.io/3.7.8/plyr.css';
-                    document.head.appendChild(link);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                setIsLoading(false);
+                if (autoPlay) {
+                    video.play().catch(() => {
+                        // Autoplay blocked by browser — mute and retry
+                        video.muted = true;
+                        video.play().catch(() => { });
+                    });
                 }
+                if (onReadyRef.current) onReadyRef.current();
+            });
 
-                const video = videoRef.current!;
-
-                const initPlyrInternal = (availableQualities?: number[], hls?: any) => {
-                    const plyrOptions: any = {
-                        controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
-                        settings: ['quality', 'speed'],
-                        autoplay: autoPlay,
-                        muted: muted,
-                    };
-
-                    if (availableQualities && availableQualities.length > 0 && hls) {
-                        const uniqueQualities = Array.from(new Set(availableQualities)).sort((a: number, b: number) => b - a);
-                        plyrOptions.quality = {
-                            default: uniqueQualities[0],
-                            options: uniqueQualities,
-                            forced: true,
-                            onChange: (e: number) => {
-                                hls.levels.forEach((level: any, levelIndex: number) => {
-                                    if (level.height === e) {
-                                        hls.currentLevel = levelIndex;
-                                    }
-                                });
-                            }
-                        };
+            hls.on(Hls.Events.ERROR, (_event, data) => {
+                if (data.fatal) {
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.warn('[hls.js] Network error, recovering...');
+                            hls.startLoad();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.warn('[hls.js] Media error, recovering...');
+                            hls.recoverMediaError();
+                            break;
+                        default:
+                            console.error('[hls.js] Fatal error:', data);
+                            setError('The stream is currently unreachable.');
+                            hls.destroy();
+                            break;
                     }
-
-                    // Constructor check
-                    if (typeof Plyr === 'function') {
-                        plyrInstance = new Plyr(video, plyrOptions);
-                        plyrRef.current = plyrInstance;
-                    } else if ((Plyr as any).setup) {
-                        // Fallback for some versions or bundles
-                        (Plyr as any).setup(video, plyrOptions);
-                    }
-                };
-
-                if (Hls && Hls.isSupported && Hls.isSupported()) {
-                    hlsInstance = new Hls({
-                        maxMaxBufferLength: 100,
-                        maxBufferLength: 30,
-                        maxBufferSize: 60 * 1024 * 1024,
-                        liveSyncDuration: 3,
-                        liveMaxLatencyDuration: 10,
-                        enableWorker: true,
-                        lowLatencyMode: true,
-                    });
-
-                    hlsRef.current = hlsInstance;
-                    hlsInstance.loadSource(src);
-                    hlsInstance.attachMedia(video);
-
-                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-                        const qualities = hlsInstance.levels.map((level: any) => level.height);
-                        initPlyrInternal(qualities, hlsInstance);
-                        if (autoPlay) {
-                            video.play().catch(() => {
-                                video.muted = true;
-                                video.play().catch(() => { });
-                            });
-                        }
-                        if (onReadyRef.current) onReadyRef.current();
-                    });
-
-                    hlsInstance.on(Hls.Events.ERROR, (_: any, data: any) => {
-                        if (data.fatal) {
-                            switch (data.type) {
-                                case Hls.ErrorTypes.NETWORK_ERROR:
-                                    hlsInstance?.startLoad();
-                                    break;
-                                case Hls.ErrorTypes.MEDIA_ERROR:
-                                    hlsInstance?.recoverMediaError();
-                                    break;
-                                default:
-                                    setError('The stream is currently unreachable.');
-                                    hlsInstance?.destroy();
-                                    break;
-                            }
-                        }
-                    });
-
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    video.src = src;
-                    video.addEventListener('loadedmetadata', () => {
-                        initPlyrInternal();
-                        if (autoPlay) video.play().catch(() => { });
-                        if (onReadyRef.current) onReadyRef.current();
-                    }, { once: true });
-                    video.addEventListener('error', () => {
-                        setError('The stream is currently unreachable.');
-                    }, { once: true });
-                } else {
-                    setError('Streaming is not supported in this browser.');
                 }
-            } catch (err) {
-                console.error('Player Init Error:', err);
-                setError('Failed to load video player.');
-            }
-        };
+            });
 
-        init();
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Safari: native HLS support
+            video.src = src;
+            video.addEventListener('loadedmetadata', () => {
+                setIsLoading(false);
+                if (autoPlay) video.play().catch(() => { });
+                if (onReadyRef.current) onReadyRef.current();
+            }, { once: true });
+            video.addEventListener('error', () => {
+                setError('The stream is currently unreachable.');
+            }, { once: true });
+        } else {
+            setError('HLS is not supported in this browser.');
+        }
 
         return () => {
-            cleanup();
+            if (hlsRef.current) {
+                hlsRef.current.destroy();
+                hlsRef.current = null;
+            }
+            if (loadingTimerRef.current) {
+                clearTimeout(loadingTimerRef.current);
+                loadingTimerRef.current = null;
+            }
         };
-    }, [src, retryCount]);
+    }, [src, retryCount]); // Only restart if source or manual retry changes
 
+    // Sync muted state without recreating the player
     useEffect(() => {
-        if (plyrRef.current) plyrRef.current.muted = muted;
-        else if (videoRef.current) videoRef.current.muted = muted;
+        if (videoRef.current) videoRef.current.muted = muted;
     }, [muted]);
 
     return (
-        <div className={`relative bg-black group rounded-xl overflow-hidden shadow-2xl ${className} [&_.plyr]:h-full [&_.plyr]:w-full [&_video]:object-cover min-h-[200px]`}>
+        <div className={`relative bg-black group transition-all duration-500 rounded-xl overflow-hidden shadow-2xl ${className}`}>
             <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
                 playsInline
-                crossOrigin="anonymous"
                 muted={muted}
+                controls={false}
+                onWaiting={() => showLoadingDebounced()}
+                onPlaying={() => { cancelLoading(); setError(null); }}
+                onPause={() => cancelLoading()}
             />
 
-            {error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/95 z-40 p-8 text-center backdrop-blur-xl">
-                    <div className="w-16 h-16 bg-red-600/10 rounded-full flex items-center justify-center mb-6 border border-red-600/20 shadow-2xl">
-                        <AlertTriangle className="w-8 h-8 text-red-600" />
+            {/* Premium Loading Overlay */}
+            {isLoading && !error && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md z-10 pointer-events-none">
+                    <div className="relative mb-6">
+                        <Loader2 className="w-14 h-14 text-red-600 animate-spin" />
+                        <Radio className="w-6 h-6 text-white absolute inset-0 m-auto animate-pulse" />
                     </div>
-                    <h3 className="text-xl font-black text-white mb-2 uppercase italic tracking-tight">Connection Failed</h3>
-                    <p className="text-gray-400 text-sm mb-8">{error}</p>
+                    <div className="flex flex-col items-center gap-2">
+                        <span className="text-white text-[10px] font-black tracking-[0.4em] uppercase opacity-80">
+                            Synchronizing Stream
+                        </span>
+                        <div className="flex gap-2">
+                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-bounce"></span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Error Overlay */}
+            {error && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/95 z-20 p-8 text-center backdrop-blur-xl">
+                    <div className="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center mb-6 border border-red-600/20 shadow-2xl shadow-red-600/10">
+                        <AlertTriangle className="w-10 h-10 text-red-600" />
+                    </div>
+                    <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight italic">Connection Failed</h3>
+                    <p className="text-gray-400 text-sm mb-8 max-w-xs">{error}</p>
                     <button
                         onClick={handleRetry}
-                        className="flex items-center gap-3 px-8 py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-sm font-black transition-all active:scale-95"
+                        className="group flex items-center gap-3 px-8 py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-sm font-black transition-all active:scale-95 shadow-2xl shadow-red-600/40"
                     >
-                        <RefreshCw size={18} /> RE-CONNECT PLAYER
+                        <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-700" />
+                        RE-CONNECT PLAYER
                     </button>
                 </div>
             )}
 
-            <div className="absolute top-4 left-4 z-30 flex items-center gap-2 px-3 py-1.5 bg-red-600 rounded-lg border border-white/20 select-none shadow-lg">
+            {/* Live Indicator */}
+            <div className="absolute top-4 left-4 z-20 flex items-center gap-2.5 px-3 py-1.5 bg-red-600 rounded-lg border border-white/20 shadow-xl pointer-events-none select-none">
                 <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                 </span>
-                <span className="text-[10px] font-black uppercase text-white tracking-widest">Live Now</span>
+                <span className="text-[10px] font-black uppercase text-white tracking-[0.1em]">Live Now</span>
             </div>
         </div>
     );

@@ -31,8 +31,7 @@ import GoogleAdSense from './GoogleAdSense';
 import { X, Play, Radio, Vote, Trophy, Sparkles, ShoppingBag, Send, Languages, FileText, Terminal, Calculator, RefreshCw, Tv, ChevronRight, Activity, ChevronLeft, CheckCircle, Share2, Facebook, MessageCircle, ArrowLeft, Bookmark, Link2, TrendingUp, Newspaper, Maximize, Clock, Volume2, VolumeX, Shield, Search, User, Users, Hand, Heart, Reply } from 'lucide-react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
-import dynamic from 'next/dynamic';
-const HLSPlayer = dynamic(() => import('./HLSPlayer'), { ssr: false });
+import HLSPlayer from './HLSPlayer';
 import { M3UChannel } from '../lib/m3uParser';
 
 
@@ -89,14 +88,11 @@ const getMatchMinute = (matchDate: string | number, durationMinutes = 90, now: D
 
 // Isolated Timer Components to prevent Re-renders of the whole page
 const MatchCardTimer = React.memo(({ matchDate, duration = 90 }: any) => {
-    const [now, setNow] = React.useState<Date | null>(null);
+    const [now, setNow] = React.useState(new Date());
     React.useEffect(() => {
-        setNow(new Date());
         const t = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(t);
     }, []);
-
-    if (!now) return null;
 
     const startMs = resolveMatchStart(String(matchDate));
     const elapsedMins = Math.floor((now.getTime() - startMs) / 60000);
@@ -112,13 +108,11 @@ const MatchCardTimer = React.memo(({ matchDate, duration = 90 }: any) => {
 });
 
 const MatchMinuteIndicator = React.memo(({ date }: any) => {
-    const [now, setNow] = React.useState<Date | null>(null);
+    const [now, setNow] = React.useState(new Date());
     React.useEffect(() => {
-        setNow(new Date());
         const t = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(t);
     }, []);
-    if (!now) return null;
     const minute = getMatchMinute(date, 90, now);
     return minute !== null ? (
         <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[9px] font-black rounded-full border border-amber-200 dark:border-amber-700/50">
@@ -128,13 +122,11 @@ const MatchMinuteIndicator = React.memo(({ date }: any) => {
 });
 
 const MatchTimeDisplay = React.memo(({ date }: any) => {
-    const [now, setNow] = React.useState<Date | null>(null);
+    const [now, setNow] = React.useState(new Date());
     React.useEffect(() => {
-        setNow(new Date());
         const t = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(t);
     }, []);
-    if (!now) return null;
     const timeLeft = getTimeLeft(date, 90, now);
     return timeLeft ? (
         <>
@@ -148,13 +140,11 @@ const MatchTimeDisplay = React.memo(({ date }: any) => {
 });
 
 const PlayerStatusBanner = React.memo(({ matchStartTime, duration = 90 }: any) => {
-    const [now, setNow] = React.useState<Date | null>(null);
+    const [now, setNow] = React.useState(new Date());
     React.useEffect(() => {
-        setNow(new Date());
         const t = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(t);
     }, []);
-    if (!now) return null;
     const tLeft = getTimeLeft(matchStartTime, duration, now);
     if (!tLeft) return <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Please be patient — HD channels may take a moment to load</p>;
 
@@ -167,13 +157,11 @@ const PlayerStatusBanner = React.memo(({ matchStartTime, duration = 90 }: any) =
 });
 
 const MatchCountdown = React.memo(({ matchStartTime, duration = 90 }: any) => {
-    const [now, setNow] = React.useState<Date | null>(null);
+    const [now, setNow] = React.useState(new Date());
     React.useEffect(() => {
-        setNow(new Date());
         const t = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(t);
     }, []);
-    if (!now) return null;
     const tLeft = getTimeLeft(matchStartTime, duration, now);
     const startMs = resolveMatchStart(matchStartTime);
     const isFuture = startMs > now.getTime();
@@ -190,13 +178,11 @@ const MatchCountdown = React.memo(({ matchStartTime, duration = 90 }: any) => {
 });
 
 const MainLiveClock = React.memo(() => {
-    const [now, setNow] = React.useState<Date | null>(null);
+    const [now, setNow] = React.useState(new Date());
     React.useEffect(() => {
-        setNow(new Date());
         const t = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(t);
     }, []);
-    if (!now) return null;
     return (
         <span className="text-white text-[10px] font-mono font-bold">
             {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -709,10 +695,10 @@ export const LiveSection: React.FC = () => {
                         <GoogleAdSense
                             slot="7838572857"
                             format="horizontal"
-                            responsive={false}
+                            responsive={true}
                             minHeight="60px"
                             fallbackImage="/cover.png"
-                            style={{ width: '100%', maxWidth: '100%', height: '60px' }}
+                            style={{ width: '100%', height: '60px' }}
                         />
                     </div>
 
@@ -809,8 +795,7 @@ export const LiveSection: React.FC = () => {
                                                                 <GoogleAdSense
                                                                     slot="7838572857"
                                                                     format="horizontal"
-                                                                    responsive={false}
-                                                                    style={{ width: '100%', maxWidth: '100%', minHeight: '90px' }}
+                                                                    style={{ width: '100%', maxWidth: '728px', minHeight: '90px' }}
                                                                 />
                                                             </div>
                                                             <p className="text-gray-400 mb-8 max-w-sm">Sign in to watch <span className="text-white font-bold">{selectedLink.heading}</span>.</p>
