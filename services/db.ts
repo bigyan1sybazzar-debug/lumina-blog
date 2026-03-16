@@ -117,7 +117,7 @@ export const getAllPostsAdmin = async (): Promise<BlogPost[]> => {
     // Use a timestamp to bust browser cache when fetched from client
     const cacheBuster = `?t=${Date.now()}`;
     const url = isServer ? `${R2_PUBLIC_DOMAIN}/posts.json${cacheBuster}` : `/api/r2-proxy?file=posts.json&t=${Date.now()}`;
-    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch from R2');
     const posts = await res.json();
     return Array.isArray(posts) ? posts.sort(sortByDateDesc) : [];
@@ -320,7 +320,7 @@ export const incrementViewCount = async (id: string) => {
 export const getCategories = async (): Promise<Category[]> => {
   try {
     const url = isServer ? `${R2_PUBLIC_DOMAIN}/categories.json?t=${Date.now()}` : `/api/r2-proxy?file=categories.json&t=${Date.now()}`;
-    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch categories from R2');
     const categories = await res.json();
     return Array.isArray(categories) && categories.length > 0 ? categories : CATEGORIES;
@@ -832,7 +832,7 @@ export const getPolls = async (category?: string, status: Poll['status'] = 'appr
 export const getAllPollsAdmin = async (): Promise<Poll[]> => {
   try {
     const url = isServer ? `${R2_PUBLIC_DOMAIN}/polls.json?t=${Date.now()}` : `/api/r2-proxy?file=polls.json&t=${Date.now()}`;
-    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch polls from R2');
     const polls = await res.json();
     return Array.isArray(polls) ? polls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
@@ -913,7 +913,7 @@ export const voteInPoll = async (pollId: string, optionId: string, userId: strin
 export const getLiveLinks = async (): Promise<LiveLink[]> => {
   try {
     const url = isServer ? `${R2_PUBLIC_DOMAIN}/live-data.json?t=${Date.now()}` : `/api/r2-proxy?file=live-data.json&t=${Date.now()}`;
-    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch live links from R2');
     const links = await res.json();
     return Array.isArray(links) ? links.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()) : [];
@@ -1190,7 +1190,7 @@ export const clearLiveComments = async (channelId: string) => {
 export const getKeywords = async (): Promise<{ id: string; name: string; count: number }[]> => {
   try {
     const url = isServer ? `${R2_PUBLIC_DOMAIN}/keywords.json?t=${Date.now()}` : `/api/r2-proxy?file=keywords.json&t=${Date.now()}`;
-    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch keywords from R2');
     const keywords = await res.json();
     return Array.isArray(keywords) ? keywords.sort((a, b) => a.name.localeCompare(b.name)) : [];
@@ -1553,7 +1553,7 @@ export const incrementPromptUsage = async (promptId: string): Promise<void> => {
 export const getHighlights = async (): Promise<Highlight[]> => {
   try {
     const url = isServer ? `${R2_PUBLIC_DOMAIN}/highlights.json?t=${Date.now()}` : `/api/r2-proxy?file=highlights.json&t=${Date.now()}`;
-    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch highlights from R2');
     const highlights = await res.json();
     return Array.isArray(highlights) ? highlights.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()) : [];
@@ -1725,7 +1725,7 @@ export const updateIPTVConfig = async (settings: { m3uUrl: string; guestLimitMin
 export const getIPTVChannels = async (onlyActive = true): Promise<IPTVChannel[]> => {
   try {
     const url = isServer ? `${R2_PUBLIC_DOMAIN}/iptv-data.json?t=${Date.now()}` : `/api/r2-proxy?file=iptv-data.json&t=${Date.now()}`;
-    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch IPTV channels from R2');
     const channels = await res.json();
     if (!Array.isArray(channels)) return [];
