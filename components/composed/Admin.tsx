@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getPages, getSubscribers } from '../services/db';
-import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../services/geminiService';
-import { useAuth } from '../context/AuthContext';
+import { getPosts, createPost, seedDatabase, getAllUsers, updateUserRole, getPendingPosts, updatePostStatus, getUserPosts, getCategories, createCategory, getPages, getSubscribers } from '../../services/db';
+import { generateBlogOutline, generateFullPost, generateNewsPost, generateBlogImage } from '../../services/geminiService';
+import { useAuth } from '../../context/AuthContext';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { BlogPost, User, Category, BlogPostComment, BlogPostReview } from '../types';
-import { db } from '../services/firebase';
+import { BlogPost, User, Category, BlogPostComment, BlogPostReview } from '../../types';
+import { db } from '../../services/firebase';
 
 import {
   LayoutDashboard, FileText, Settings, Sparkles, Loader2, Save, LogOut, Home, Database,
@@ -18,14 +18,14 @@ import {
   Bot, Zap, Play, Pause, AlertTriangle, Terminal, GripVertical, Send
 } from 'lucide-react';
 
-import { ANALYTICS_DATA } from '../constants';
-import { deleteCategory, updatePost, deletePost, getPostById } from '../services/db';
-import { PromptManager } from '../components/admin/PromptManager';
-import { SubscriberManager } from '../components/admin/SubscriberManager';
+import { ANALYTICS_DATA } from '../../constants';
+import { deleteCategory, updatePost, deletePost, getPostById } from '../../services/db';
+import { PromptManager } from '../admin/PromptManager';
+import { SubscriberManager } from '../admin/SubscriberManager';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { generateAndUploadSitemap } from '../services/db';
+import { generateAndUploadSitemap } from '../../services/db';
 
 // Automation Types
 interface AutoLog {
@@ -232,10 +232,10 @@ export const Admin: React.FC = () => {
     setIsTrafficLoading(true);
     try {
       console.log('Fetching traffic stats...');
-      const stats = await import('../services/db').then(m => m.getTrafficStats(trafficPeriod));
+      const stats = await import('../../services/db').then(m => m.getTrafficStats(trafficPeriod));
       console.log('Traffic Stats:', stats);
       setTrafficStats(stats);
-      const realtime = await import('../services/db').then(m => m.getRealtimeTraffic());
+      const realtime = await import('../../services/db').then(m => m.getRealtimeTraffic());
       console.log('Realtime Traffic:', realtime);
       setRealtimeTraffic(realtime);
     } catch (err) {
@@ -250,7 +250,7 @@ export const Admin: React.FC = () => {
       loadTrafficStats();
       const interval = setInterval(() => {
         console.log('Refreshing realtime traffic...');
-        import('../services/db').then(m => m.getRealtimeTraffic().then(rt => {
+        import('../../services/db').then(m => m.getRealtimeTraffic().then((rt: { activeUsers: number; activePages: any[] }) => {
           console.log('Realtime update:', rt);
           setRealtimeTraffic(rt);
         }));
