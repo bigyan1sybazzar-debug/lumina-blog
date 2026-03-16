@@ -5,30 +5,21 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import {
+  getPostBySlug,
+  getPosts,
   incrementViewCount,
   getCommentsByPostId,
   addComment,
   toggleLikePost,
 } from '../services/db';
-import { getR2PostBySlug, getR2Posts } from '../services/r2-data';
 import { BlogPost, BlogPostComment } from '../types';
-import { Calendar, Clock, Share2, MessageSquare, Heart, Loader2, UserPlus } from 'lucide-react';
+import { Calendar, Clock, Share2, MessageSquare, Heart, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import dynamic from 'next/dynamic';
-
-const ReviewSection = dynamic(() => import('../components/ReviewSection'), {
-  loading: () => <div className="h-48 flex items-center justify-center"><Loader2 className="animate-spin text-primary-500" /></div>,
-  ssr: false
-});
-
-const RelatedPosts = dynamic(() => import('../components/RelatedPosts'), {
-  ssr: false,
-  loading: () => <div className="h-96 bg-gray-50 dark:bg-gray-800 rounded-xl animate-pulse" />
-});
-
+import ReviewSection from '../components/ReviewSection';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import GoogleAdSense from '../components/GoogleAdSense';
 
 
 // ------------------------------------------------------------------
@@ -77,18 +68,18 @@ const HtmlRenderer: React.FC<HtmlRendererProps> = ({ children }) => {
 // ------------------------------------------------------------------
 // MAIN COMPONENT – Fully SEO Optimized
 // ------------------------------------------------------------------
-export const BlogPostPage: React.FC<{ initialPost?: BlogPost | null }> = ({ initialPost }) => {
+export const BlogPostPage: React.FC = () => {
   const params = useParams();
   const slug = params?.slug as string;
   const { user } = useAuth();
   const router = useRouter();
 
-  const [post, setPost] = useState<BlogPost | null>(initialPost || null);
+  const [post, setPost] = useState<BlogPost | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [comments, setComments] = useState<BlogPostComment[]>([]);
-  const [loading, setLoading] = useState(!initialPost);
+  const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(initialPost?.likes?.length || 0);
+  const [likeCount, setLikeCount] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
 
   // FIXED: Standardize to HTTPS to match search engine expectations
@@ -99,55 +90,32 @@ export const BlogPostPage: React.FC<{ initialPost?: BlogPost | null }> = ({ init
     const fetchData = async () => {
       if (!slug) return;
 
-      // If we don't have a post or the slug doesn't match, fetch it
-      if (!post || post.slug !== slug) {
-        setLoading(true);
-        const p = await getR2PostBySlug(slug);
+      const p = await getPostBySlug(slug);
 
-        if (p) {
-          if (p.slug && slug !== p.slug) {
-            router.replace(`/${p.slug}`);
-            return;
-          }
-          setPost(p);
-          setLikeCount(p.likes?.length || 0);
-          if (user && p.likes?.includes(user.id)) setIsLiked(true);
-          incrementViewCount(p.id);
-        } else {
-          setPost(null);
+      if (p) {
+        if (p.slug && slug !== p.slug) {
+          router.replace(`/${p.slug}`);
+          return;
         }
-        setLoading(false);
-      } else {
-        // We have the post, just need comments and related
-        if (user && post.likes?.includes(user.id)) setIsLiked(true);
-        incrementViewCount(post.id);
-      }
 
-      // Fetch comments and related posts regardless (they are small)
-      // Comments still from Firestore (Realtime)
-      if (post || initialPost) {
-        const currentPostId = post?.id || initialPost?.id;
-        if (currentPostId) {
-          const c = await getCommentsByPostId(currentPostId);
-          setComments(c);
+        setPost(p);
+        setLikeCount(p.likes?.length || 0);
+        if (user && p.likes?.includes(user.id)) setIsLiked(true);
 
-          // Get posts for related section from R2
-          try {
-            const all = await getR2Posts();
-            // Filter related posts (exclude current, ensure published)
-            const related = all
-              .filter((x) => x.id !== currentPostId && x.status === 'published')
-              .slice(0, 3);
-            setRelatedPosts(related);
-          } catch (e) {
-            console.error("Failed to load related posts from R2", e);
-          }
-        }
+        incrementViewCount(p.id);
+        const c = await getCommentsByPostId(p.id);
+        setComments(c);
+
+        const all = await getPosts();
+        setRelatedPosts(
+          all.filter((x) => x.id !== p.id && x.status === 'published').slice(0, 3)
+        );
       }
+      setLoading(false);
     };
 
     fetchData();
-  }, [slug, user, router, initialPost]);
+  }, [slug, user, router]);
 
   useEffect(() => {
     if (isCopied) {
@@ -193,7 +161,7 @@ export const BlogPostPage: React.FC<{ initialPost?: BlogPost | null }> = ({ init
 
         <div className="min-h-screen flex flex-col items-center justify-center dark:bg-gray-900 text-gray-500">
           <Loader2 className="animate-spin mb-4" size={32} />
-          <p>Illuminating content...</p>
+          <p>Loading content...</p>
         </div>
       </>
     );
@@ -223,7 +191,18 @@ export const BlogPostPage: React.FC<{ initialPost?: BlogPost | null }> = ({ init
 
   return (
     <>
+
+
       <div className="bg-white dark:bg-gray-900 min-h-screen pb-20">
+        {/* AdSense: Top of Article */}
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <GoogleAdSense
+            slot="7838572857"
+            format="auto"
+            responsive={true}
+          />
+        </div>
+
         <div className="h-[50vh] w-full relative">
           <Image
             src={post.coverImage}
@@ -243,17 +222,17 @@ export const BlogPostPage: React.FC<{ initialPost?: BlogPost | null }> = ({ init
                 {post.title}
               </h1>
               <div className="flex flex-wrap items-center gap-6 text-gray-200 text-sm">
-                <Link href={`/u/${post.author.id}`} className="flex items-center gap-3 hover:text-primary-400 transition-colors group">
+                <div className="flex items-center gap-3">
                   <div className="relative w-10 h-10">
                     <Image
                       src={post.author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&background=random`}
                       alt={post.author.name}
                       fill
-                      className="rounded-full border-2 border-white/30 object-cover group-hover:border-primary-500 transition-colors"
+                      className="rounded-full border-2 border-white/30 object-cover"
                     />
                   </div>
                   <span className="font-medium">{post.author.name}</span>
-                </Link>
+                </div>
                 <div className="flex items-center gap-2">
                   <Calendar size={16} />
                   {formattedDate}
@@ -318,13 +297,30 @@ export const BlogPostPage: React.FC<{ initialPost?: BlogPost | null }> = ({ init
                   </ReactMarkdown>
                 </div>
 
-                <div className="font-sans text-lg leading-relaxed text-gray-800 dark:text-gray-200 text-justify">
+                {/* AdSense: After Excerpt */}
+                <div className="my-8">
+                  <GoogleAdSense
+                    slot="7838572857"
+                    format="auto"
+                    responsive={true}
+                  />
+                </div>
+
+                <div className="font-sans text-lg leading-relaxed text-gray-800 dark:text-gray-200">
+                  {/* First part of content would go here, but since it's one block, we place ad above/below common breakpoints or just here */}
+                  <div className="my-8">
+                    <GoogleAdSense
+                      slot="7838572857"
+                      format="fluid"
+                      layout="in-article"
+                    />
+                  </div>
+
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeRaw]}
                     components={{
                       html: ({ ...props }) => <HtmlRenderer>{props.children}</HtmlRenderer>,
-                      p: ({ ...props }) => <p className="mb-6 text-justify leading-relaxed hyphens-auto" {...props} />,
                       h2: ({ ...props }) => (
                         <h2 className="text-3xl font-extrabold mt-12 mb-6 pb-3 border-b-2 border-primary-500 dark:border-primary-800 text-gray-900 dark:text-white uppercase tracking-tight" {...props} />
                       ),
@@ -361,52 +357,109 @@ export const BlogPostPage: React.FC<{ initialPost?: BlogPost | null }> = ({ init
 
                 {/* AUTHOR BOX */}
                 <div className="mt-20 p-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl flex flex-col md:flex-row items-center md:items-start gap-8">
-                  <Link href={`/u/${post.author.id}`} className="relative w-28 h-28 shrink-0 group">
+                  <div className="relative w-28 h-28 shrink-0">
                     <Image
                       src={post.author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author.name)}&background=random`}
                       alt={post.author.name}
                       fill
-                      className="rounded-2xl object-cover shadow-lg rotate-3 group-hover:rotate-0 transition-all duration-300 border-2 border-transparent group-hover:border-primary-500"
+                      className="rounded-2xl object-cover shadow-lg rotate-3 hover:rotate-0 transition-transform duration-300"
                     />
-                    <div className="absolute -bottom-2 -right-2 bg-primary-600 text-white p-1.5 rounded-lg shadow-lg z-10 scale-0 group-hover:scale-110 transition-transform">
-                      <UserPlus size={16} />
+                    <div className="absolute -bottom-2 -right-2 bg-primary-600 text-white p-1.5 rounded-lg shadow-lg z-10">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                     </div>
-                  </Link>
-                  <div className="text-center md:text-left flex-1">
-                    <Link href={`/u/${post.author.id}`} className="hover:text-primary-600 transition-colors">
-                      <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2 underline decoration-primary-500/30">
-                        {post.author.name}
-                      </h3>
-                    </Link>
+                  </div>
+                  <div className="text-center md:text-left">
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+                      {post.author.name}
+                    </h3>
                     <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-                      Tech enthusiast sharing insights on Bigyann. View full profile to connect and chat!
+                      Tech enthusiast sharing insights on modern web technologies, AI,
+                      and the future of digital experiences on <strong>Bigyann</strong>.
                     </p>
-                    <Link
-                      href={`/u/${post.author.id}`}
-                      className="inline-flex items-center text-primary-600 font-bold hover:gap-2 transition-all"
-                    >
-                      View Profile <Clock size={16} className="ml-1 rotate-90" />
-                    </Link>
                   </div>
                 </div>
+              </div>
 
-                {/* COMMENTS SECTION */}
-                <div id="comments-section" className="mt-16">
-                  <div className="flex items-center gap-4 mb-8">
-                    <h2 className="text-2xl font-bold">Comment, Discuss and post Your Reviews</h2>
-                    <div className="h-px flex-grow bg-gray-200 dark:bg-gray-700"></div>
-                  </div>
-                  {post.id && <ReviewSection postId={post.id} />}
+              {/* AdSense: After Author Box, Before Comments */}
+              <div className="my-12">
+                <GoogleAdSense
+                  slot="7838572857"
+                  format="horizontal"
+                  responsive={false}
+                  fallbackImage="/cover.png"
+                  style={{ width: '100%', maxWidth: '728px', height: '60px' }}
+                />
+              </div>
+
+              {/* COMMENTS SECTION */}
+              <div id="comments-section" className="mt-16">
+                <div className="flex items-center gap-4 mb-8">
+                  <h2 className="text-2xl font-bold">Comment, Discuss and post Your Reviews</h2>
+                  <div className="h-px flex-grow bg-gray-200 dark:bg-gray-700"></div>
                 </div>
+                {post.id && <ReviewSection postId={post.id} />}
               </div>
             </article>
 
+            {/* AdSense: Multiplex Ad (Bottom of Article / Sidebar) */}
+            <div className="lg:col-span-12 my-8">
+              <GoogleAdSense
+                slot="7539189957"
+                format="autorelaxed"
+              />
+            </div>
+
+            {/* AdSense: Before Related Posts */}
+            <div className="lg:col-span-12 my-8">
+              <GoogleAdSense
+                slot="7838572857"
+                format="auto"
+                responsive={true}
+              />
+            </div>
 
             {/* Sidebar Right: Related Posts */}
-            <RelatedPosts posts={relatedPosts} />
+            <aside className="hidden lg:block lg:col-span-3">
+              <div className="sticky top-24">
+                <h3 className="text-xl font-bold mb-6 pb-3 border-b border-gray-300 dark:border-gray-700">
+                  Related Posts
+                </h3>
+                <div className="space-y-8">
+                  {relatedPosts.map((rp) => (
+                    <Link
+                      key={rp.id}
+                      href={`/${rp.slug || rp.id}`}
+                      className="block group transition-all hover:translate-x-1"
+                    >
+                      <div className="aspect-video relative rounded-xl overflow-hidden mb-4 shadow-md">
+                        <Image
+                          src={rp.coverImage}
+                          alt={rp.title}
+                          fill
+                          className="object-cover group-hover:scale-110 transition-transform duration-500"
+                          sizes="(max-width: 768px) 100vw, 25vw"
+                        />
+                      </div>
+                      <h4 className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 line-clamp-2">
+                        {rp.title}
+                      </h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        {new Date(rp.date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       </div>
     </>
   );
 };
+
+export default BlogPostPage;

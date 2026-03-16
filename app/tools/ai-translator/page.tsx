@@ -1,4 +1,4 @@
-import AITranslator from '../../../components/composed/AITranslator';
+import AITranslator from '../../../pages/AITranslator';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 

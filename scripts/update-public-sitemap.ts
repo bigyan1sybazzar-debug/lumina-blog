@@ -7,7 +7,7 @@ import * as path from 'path';
 import { storage } from '../lib/storage';
 import { SitemapStream, streamToPromise } from 'sitemap';
 import { Readable } from 'stream';
-import { Timestamp } from 'firebase/firestore'; // Assuming you have the correct firebase import structure
+import firebase from 'firebase/compat/app';
 
 const BASE_URL = 'https://bigyann.com.np';
 
@@ -36,7 +36,7 @@ function toISODate(value: any): string | undefined {
     if (!value) return undefined;
 
     // Added check for firestore Timestamp structure
-    if (value instanceof Timestamp) return new Date(value.toMillis()).toISOString();
+    if (value instanceof firebase.firestore.Timestamp) return new Date(value.toMillis()).toISOString();
     if (typeof value.toDate === 'function') return value.toDate().toISOString();
     if (value instanceof Date) return value.toISOString();
     if (value.seconds != null) {

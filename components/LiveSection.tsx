@@ -690,15 +690,15 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Top Ad - Locked to horizontal format for perfect mobile/desktop sizing */}
-                    <div className="w-full flex justify-center items-center overflow-hidden !mt-2 !mb-4" style={{ minHeight: '60px' }}>
+                    {/* Top Ad - Smaller height for mobile as requested */}
+                    <div className="w-full flex justify-center items-center overflow-hidden !mt-2 !mb-4" style={{ minHeight: '50px' }}>
                         <GoogleAdSense
                             slot="7838572857"
                             format="horizontal"
-                            responsive={true}
-                            minHeight="60px"
+                            responsive={false}
+                            minHeight="50px"
                             fallbackImage="/cover.png"
-                            style={{ width: '100%', height: '60px' }}
+                            style={{ width: '100%', height: '50px' }}
                         />
                     </div>
 
@@ -1415,14 +1415,14 @@ export const LiveSection: React.FC = () => {
                                     </form>
                                 </div>
 
-                                {/* Bottom Ad - matching ChatAssistant style as requested */}
                                 <div className="flex justify-center mt-3">
                                     <GoogleAdSense
                                         slot="7838572857"
                                         format="horizontal"
                                         responsive={false}
+                                        minHeight="50px"
                                         fallbackImage="/cover.png"
-                                        style={{ width: '100%', maxWidth: '728px', height: '60px' }}
+                                        style={{ width: '100%', maxWidth: '728px', height: '50px' }}
                                     />
                                 </div>
                             </div>

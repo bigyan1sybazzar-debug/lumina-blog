@@ -28,18 +28,13 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
     responsive = true,
     style,
     className,
-    minHeight,
+    minHeight = '100px',
     fallbackImage,
 }) => {
     const adRef = useRef<HTMLModElement>(null);
     const [adStatus, setAdStatus] = useState<'loading' | 'loaded' | 'error' | 'blocked' | 'empty'>('loading');
     const [errorMessage, setErrorMessage] = useState<string>('');
     const pushAttempted = useRef(false);
-
-    // Unified height resolution to prevent min-height from overriding requested height
-    const resolvedMinHeight = minHeight || (style?.height ? style.height : '100px');
-    const resolvedHeight = style?.height || resolvedMinHeight;
-    const resolvedMaxHeight = style?.maxHeight || resolvedHeight;
 
     useEffect(() => {
         // We only want to push ONCE per mount of this component
@@ -88,14 +83,18 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
 
     const showFallback = (adStatus === 'error' || adStatus === 'blocked' || adStatus === 'empty') && fallbackImage;
 
+    // Strict height clamps to completely block AdSense from expanding vertically
+    // If we've specifically asked for a small banner (50px-60px), we force it.
+    const isSmallBanner = minHeight === '60px' || minHeight === '50px';
+    const strictHeight = isSmallBanner ? minHeight : style?.height;
 
     return (
         <div
             className={`adsense-wrapper relative flex justify-center items-center ${className || ''}`}
             style={{
-                minHeight: resolvedMinHeight,
-                height: resolvedHeight,
-                maxHeight: resolvedMaxHeight,
+                minHeight: minHeight,
+                height: strictHeight,
+                maxHeight: strictHeight,
                 width: '100%',
                 display: 'block',
                 overflow: 'hidden',
@@ -109,9 +108,9 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
                 style={{
                     display: showFallback ? 'none' : 'block',
                     width: '100%',
-                    minHeight: String(resolvedMinHeight).includes('important') ? resolvedMinHeight : resolvedMinHeight + ' !important',
-                    height: String(resolvedHeight).includes('important') ? resolvedHeight : resolvedHeight + ' !important',
-                    maxHeight: String(resolvedMaxHeight).includes('important') ? resolvedMaxHeight : resolvedMaxHeight + ' !important',
+                    minHeight: minHeight,
+                    height: strictHeight,
+                    maxHeight: strictHeight,
                     overflow: 'hidden',
                     ...style
                 }}
@@ -128,13 +127,13 @@ const GoogleAdSense: React.FC<GoogleAdSenseProps> = ({
             {showFallback && (
                 <div
                     className="absolute inset-0 w-full h-full flex items-center justify-center animate-fade-in bg-transparent"
-                    style={{ minHeight: resolvedMinHeight, maxHeight: resolvedMaxHeight }}
+                    style={{ minHeight: minHeight, maxHeight: strictHeight }}
                 >
                     <img
                         src={fallbackImage}
                         alt="Ad Space"
                         className="max-w-full w-full h-full object-cover sm:object-contain rounded-lg shadow-sm"
-                        style={{ maxHeight: resolvedMaxHeight }}
+                        style={{ maxHeight: strictHeight || minHeight }}
                     />
                 </div>
             )}
