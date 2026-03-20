@@ -216,6 +216,215 @@ const splideOptionsTrending = {
     },
 };
 
+// --- SUB COMPONENTS FOR GRID ---
+
+const LiveMatchCard = React.memo(({ link, selectedLink, handleLinkClick, getWatchingCount, user, updateLiveLink, setLinks, setLiveLinkDefault }: any) => {
+    return (
+        <div key={link.id} className="relative group/channel h-full">
+            <button
+                onClick={() => handleLinkClick(link)}
+                className={`w-full h-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 px-4 py-4 md:p-6 rounded-2xl md:rounded-[2.5rem] border transition-all duration-300 min-h-[90px] md:min-h-[160px] flex flex-col justify-center ${selectedLink?.id === link.id
+                    ? 'border-red-500 ring-2 ring-red-500/10 shadow-2xl shadow-red-500/20'
+                    : 'border-slate-200 dark:border-white/5 hover:border-red-500/50 hover:shadow-xl hover:shadow-black/5'
+                    }`}
+            >
+                {link.isTrending && (
+                    <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2 py-0.5 bg-amber-500 text-white rounded-full shadow-lg z-10 animate-pulse">
+                        <TrendingUp size={10} fill="currentColor" />
+                        <span className="text-[8px] font-black uppercase tracking-tighter">HOT</span>
+                    </div>
+                )}
+                {link.isDefault && (
+                    <div className="absolute top-4 left-4 flex items-center gap-1.5 px-2 py-0.5 bg-primary-600 text-white rounded-full shadow-lg z-10">
+                        <Sparkles size={10} fill="currentColor" />
+                        <span className="text-[8px] font-black uppercase tracking-tighter">STARTUP</span>
+                    </div>
+                )}
+                {selectedLink?.id === link.id && (
+                    <div className="absolute bottom-6 left-3 md:left-6 flex items-center gap-1.5 px-2.5 py-1 bg-red-600 rounded-full shadow-xl shadow-red-600/30 z-20">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                        </span>
+                        <CheckCircle size={10} className="text-white" fill="white" />
+                        <span className="text-[9px] font-black text-white uppercase tracking-tighter">Live Now</span>
+                    </div>
+                )}
+                <div className="flex flex-row md:flex-col items-center text-left md:text-center gap-4 md:gap-5">
+                    <div className={`flex-shrink-0 w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-[2rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
+                        ? 'bg-gradient-to-br from-red-600 to-orange-600 text-white ring-4 ring-red-500/20 shadow-xl'
+                        : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-red-50 dark:group-hover:bg-red-900/10 group-hover:text-red-600'
+                        }`}>
+                        {selectedLink?.id === link.id && (
+                            <div className="absolute inset-0 bg-white/10 animate-pulse" />
+                        )}
+                        <Play size={24} fill="currentColor" className="relative z-10 md:ml-1 md:w-[32px] md:h-[32px]" />
+                    </div>
+                    <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full">
+                        <h4 className={`font-black text-sm md:text-lg leading-tight transition-colors ${selectedLink?.id === link.id
+                            ? 'text-red-500'
+                            : 'text-gray-900 dark:text-white group-hover:text-red-500'
+                            }`}>
+                            {link.heading.trim().split(/\s+/).length > 5
+                                ? link.heading.trim().split(/\s+/).slice(0, 5).join(' ') + '...'
+                                : link.heading}
+                        </h4>
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-auto pt-2">
+                            {link.tags && link.tags.slice(0, 2).map((tag: any) => (
+                                <span key={tag} className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-md">
+                                    {tag}
+                                </span>
+                            ))}
+                            <span className="flex items-center gap-1.5 text-[9px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                                <Activity size={10} className="animate-pulse" /> {getWatchingCount(link.id) || 1} LIVE
+                            </span>
+                            {(link as any).matchStartTime && (
+                                <div className="w-full md:w-auto">
+                                    <MatchCardTimer matchDate={(link as any).matchStartTime} duration={(link as any).matchDurationMinutes || 90} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </button>
+            {user?.role === 'admin' && (
+                <div className="absolute top-4 right-2 md:right-4 flex flex-col gap-2 z-30 md:opacity-0 group-hover/channel:opacity-100 transition-opacity translate-x-4 md:translate-x-12 group-hover/channel:translate-x-0 duration-300">
+                    <button
+                        onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                                await updateLiveLink(link.id, { isTrending: !link.isTrending });
+                                setLinks((prev: any[]) => prev.map(l =>
+                                    l.id === link.id ? { ...l, isTrending: !link.isTrending } : l
+                                ));
+                            } catch (err) {
+                                console.error('Failed to toggle trending:', err);
+                            }
+                        }}
+                        className={`p-2.5 rounded-2xl shadow-2xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isTrending ? 'bg-amber-500 text-white border-amber-400' : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
+                    >
+                        <TrendingUp size={16} />
+                    </button>
+                    <button
+                        onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                                if (link.isDefault) {
+                                    await updateLiveLink(link.id, { isDefault: false });
+                                    setLinks((prev: any[]) => prev.map(l =>
+                                        l.id === link.id ? { ...l, isDefault: false } : l
+                                    ));
+                                } else {
+                                    await setLiveLinkDefault(link.id, true);
+                                    setLinks((prev: any[]) => prev.map(l => ({ ...l, isDefault: l.id === link.id })));
+                                }
+                            } catch (err) {
+                                console.error('Failed to toggle default:', err);
+                            }
+                        }}
+                        className={`p-2.5 rounded-2xl shadow-2xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isDefault ? 'bg-primary-600 text-white border-primary-400' : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
+                    >
+                        <Sparkles size={16} />
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+});
+
+const IPTVChannelCard = React.memo(({ channel, selectedLink, handleIptvClick, getWatchingCount, user, upsertIPTVChannel, setIptvChannels, setDefaultIPTVChannel, setLinks }: any) => {
+    return (
+        <div key={channel.id} className="relative group/channel">
+            <button
+                onClick={() => handleIptvClick(channel)}
+                className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 ${selectedLink?.id === channel.id
+                    ? 'border-primary-light ring-2 ring-primary-light/20 shadow-md'
+                    : channel.isTrending
+                        ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50/10'
+                        : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
+                    }`}
+            >
+                {channel.isTrending && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
+                        <TrendingUp size={8} fill="currentColor" />
+                        <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
+                    </div>
+                )}
+                {channel.isDefault && (
+                    <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
+                        <Sparkles size={8} fill="currentColor" />
+                        <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
+                    </div>
+                )}
+                <div className="flex flex-col items-center text-center gap-3">
+                    <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 ${channel.isTrending ? 'ring-2 ring-amber-500/20' : ''}`}>
+                        {channel.logo ? (
+                            <img
+                                src={channel.logo}
+                                alt={channel.name}
+                                className="w-full h-full object-contain p-1"
+                                onError={(e) => { (e.target as HTMLImageElement).src = 'https://i.imgur.com/guz2ajm.png'; }}
+                            />
+                        ) : (
+                            <Play size={18} className="text-primary-light" />
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0 w-full">
+                        <h4 className={`font-bold text-[11px] md:text-xs line-clamp-1 transition-colors ${selectedLink?.id === channel.id ? 'text-primary-dark' : 'text-gray-900 dark:text-white group-hover:text-primary-light'}`}>
+                            {channel.name}
+                        </h4>
+                        <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+                            {channel.group && (
+                                <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                    {channel.group}
+                                </span>
+                            )}
+                            <span className="flex items-center gap-1 text-[8px] font-bold text-green-600 dark:text-green-500 uppercase tracking-wider bg-green-500/10 px-1.5 py-0.5 rounded-md">
+                                <Activity size={8} className="animate-pulse" /> {getWatchingCount(channel.id) || 1} watching
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </button>
+            {user?.role === 'admin' && (
+                <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
+                    <button
+                        onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                                await upsertIPTVChannel(channel, { isTrending: !channel.isTrending });
+                                setIptvChannels((prev: any[]) => prev.map(c => c.id === channel.id ? { ...c, isTrending: !channel.isTrending } : c));
+                            } catch (err) { console.error('Failed to toggle trending:', err); }
+                        }}
+                        className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isTrending ? 'bg-amber-500 text-white border-amber-400' : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
+                    >
+                        <TrendingUp size={14} />
+                    </button>
+                    <button
+                        onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                                if (channel.isDefault) {
+                                    await upsertIPTVChannel(channel, { isDefault: false });
+                                    setIptvChannels((prev: any[]) => prev.map(c => c.id === channel.id ? { ...c, isDefault: false } : c));
+                                } else {
+                                    await setDefaultIPTVChannel(channel);
+                                    setIptvChannels((prev: any[]) => prev.map(c => ({ ...c, isDefault: c.id === channel.id })));
+                                    setLinks((prev: any[]) => prev.map(l => ({ ...l, isDefault: false })));
+                                }
+                            } catch (err) { console.error('Failed to toggle default:', err); }
+                        }}
+                        className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isDefault ? 'bg-primary-600 text-white border-primary-400' : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
+                    >
+                        <Sparkles size={14} />
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+});
+
+
 export const LiveSection: React.FC = () => {
     const [isMounted, setIsMounted] = useState(false);
     // Global liveTime removed to prevent massive re-renders
@@ -634,7 +843,29 @@ export const LiveSection: React.FC = () => {
 
 
 
+    // Sorting function for matches
+    const sortMatches = (matchList: any[]) => {
+        return [...matchList].sort((a, b) => {
+            const isAActive = selectedLink?.id === a.id;
+            const isBActive = selectedLink?.id === b.id;
+            if (isAActive !== isBActive) return isAActive ? -1 : 1;
+            if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1;
+            const now = Date.now();
+            const startA = resolveMatchStart((a as any).matchStartTime);
+            const startB = resolveMatchStart((b as any).matchStartTime);
+            const isALive = startA > 0 && now >= startA && now <= (startA + ((a as any).matchDurationMinutes || 90) * 60000);
+            const isBLive = startB > 0 && now >= startB && now <= (startB + ((b as any).matchDurationMinutes || 90) * 60000);
+            if (isALive !== isBLive) return isALive ? -1 : 1;
+            if (a.isTrending !== b.isTrending) return a.isTrending ? -1 : 1;
+            if (startA > 0 && startB > 0) {
+                if (startA !== startB) return startA - startB;
+            } else if (startA > 0) return -1; else if (startB > 0) return 1;
+            return 0;
+        });
+    };
+
     const allTags = React.useMemo(() => ['All', ...Array.from(new Set(links.flatMap(link => link.tags || [])))], [links]);
+
     const filteredLinks = React.useMemo(() => selectedTag === 'All' ? links : links.filter(link => link.tags?.includes(selectedTag)), [links, selectedTag]);
 
     const iptvTags = React.useMemo(() => {
@@ -1059,170 +1290,59 @@ export const LiveSection: React.FC = () => {
 
                                 {/* GRID - Live Sports */}
                                 {!isIPTVMode ? (
-                                    <div className="space-y-6">
-                                        <div className="flex items-center gap-3">
-                                            <Tv size={24} className="text-secondary-light" />
-                                            <h2 className="text-gray-900 dark:text-white">Available Channels</h2>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 transition-all duration-500">
-                                            {Array.from(new Map(filteredLinks.map(l => [l.id, l])).values())
-                                                .sort((a, b) => {
-                                                    // 1. Current Active Link at top
-                                                    const isAActive = selectedLink?.id === a.id;
-                                                    const isBActive = selectedLink?.id === b.id;
-                                                    if (isAActive !== isBActive) return isAActive ? -1 : 1;
-
-                                                    // 2. Default status (Admin set)
-                                                    if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1;
-
-                                                    const now = Date.now();
-                                                    const startA = resolveMatchStart((a as any).matchStartTime);
-                                                    const startB = resolveMatchStart((b as any).matchStartTime);
-
-                                                    const isALive = startA > 0 && now >= startA && now <= (startA + ((a as any).matchDurationMinutes || 90) * 60000);
-                                                    const isBLive = startB > 0 && now >= startB && now <= (startB + ((b as any).matchDurationMinutes || 90) * 60000);
-
-                                                    // 3. Live Matches
-                                                    if (isALive !== isBLive) return isALive ? -1 : 1;
-
-                                                    // 4. Trending status
-                                                    if (a.isTrending !== b.isTrending) return a.isTrending ? -1 : 1;
-
-                                                    // 5. Upcoming matches by time
-                                                    if (startA > 0 && startB > 0) {
-                                                        if (startA !== startB) return startA - startB;
-                                                    } else if (startA > 0) return -1;
-                                                    else if (startB > 0) return 1;
-
-                                                    return 0;
-                                                })
-                                                .map((link) => (
-                                                    <div key={link.id} className="relative group/channel h-full">
-                                                        <button
-                                                            onClick={() => handleLinkClick(link)}
-                                                            className={`w-full h-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 px-4 py-4 md:p-6 rounded-2xl md:rounded-[2.5rem] border transition-all duration-300 min-h-[90px] md:min-h-[160px] flex flex-col justify-center ${selectedLink?.id === link.id
-                                                                ? 'border-red-500 ring-2 ring-red-500/10 shadow-2xl shadow-red-500/20'
-                                                                : 'border-slate-200 dark:border-white/5 hover:border-red-500/50 hover:shadow-xl hover:shadow-black/5'
-                                                                }`}
-                                                        >
-                                                            {link.isTrending && (
-                                                                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2 py-0.5 bg-amber-500 text-white rounded-full shadow-lg z-10 animate-pulse">
-                                                                    <TrendingUp size={10} fill="currentColor" />
-                                                                    <span className="text-[8px] font-black uppercase tracking-tighter">HOT</span>
-                                                                </div>
-                                                            )}
-                                                            {link.isDefault && (
-                                                                <div className="absolute top-4 left-4 flex items-center gap-1.5 px-2 py-0.5 bg-primary-600 text-white rounded-full shadow-lg z-10">
-                                                                    <Sparkles size={10} fill="currentColor" />
-                                                                    <span className="text-[8px] font-black uppercase tracking-tighter">STARTUP</span>
-                                                                </div>
-                                                            )}
-                                                            {selectedLink?.id === link.id && (
-                                                                <div className="absolute bottom-6 left-3 md:left-6 flex items-center gap-1.5 px-2.5 py-1 bg-red-600 rounded-full shadow-xl shadow-red-600/30 z-20">
-                                                                    <span className="relative flex h-2 w-2">
-                                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                                                                    </span>
-                                                                    <CheckCircle size={10} className="text-white" fill="white" />
-                                                                    <span className="text-[9px] font-black text-white uppercase tracking-tighter">Live Now</span>
-                                                                </div>
-                                                            )}
-                                                            <div className="flex flex-row md:flex-col items-center text-left md:text-center gap-4 md:gap-5">
-                                                                <div className={`flex-shrink-0 w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-[2rem] flex items-center justify-center transition-all duration-500 relative overflow-hidden ${selectedLink?.id === link.id
-                                                                    ? 'bg-gradient-to-br from-red-600 to-orange-600 text-white ring-4 ring-red-500/20 shadow-xl'
-                                                                    : 'bg-gray-100 dark:bg-white/5 text-gray-400 group-hover:bg-red-50 dark:group-hover:bg-red-900/10 group-hover:text-red-600'
-                                                                    }`}>
-                                                                    {selectedLink?.id === link.id && (
-                                                                        <div className="absolute inset-0 bg-white/10 animate-pulse" />
-                                                                    )}
-                                                                    <Play size={24} fill="currentColor" className="relative z-10 md:ml-1 md:w-[32px] md:h-[32px]" />
-                                                                </div>
-                                                                <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full">
-                                                                    <h4 className={`font-black text-sm md:text-lg leading-tight transition-colors ${selectedLink?.id === link.id
-                                                                        ? 'text-red-500'
-                                                                        : 'text-gray-900 dark:text-white group-hover:text-red-500'
-                                                                        }`}>
-                                                                        {link.heading.trim().split(/\s+/).length > 5
-                                                                            ? link.heading.trim().split(/\s+/).slice(0, 5).join(' ') + '...'
-                                                                            : link.heading}
-                                                                    </h4>
-                                                                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-auto pt-2">
-                                                                        {link.tags && link.tags.slice(0, 2).map((tag) => (
-                                                                            <span key={tag} className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-md">
-                                                                                {tag}
-                                                                            </span>
-                                                                        ))}
-                                                                        <span className="flex items-center gap-1.5 text-[9px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                                                                            <Activity size={10} className="animate-pulse" /> {getWatchingCount(link.id) || 1} LIVE
-                                                                        </span>
-                                                                        {/* ── Time Left / Match Minute badge ── */}
-                                                                        {(link as any).matchStartTime && (
-                                                                            <div className="w-full md:w-auto">
-                                                                                <MatchCardTimer matchDate={(link as any).matchStartTime} duration={(link as any).matchDurationMinutes || 90} />
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </button>
-                                                        {user?.role === 'admin' && (
-                                                            <div className="absolute top-4 right-2 md:right-4 flex flex-col gap-2 z-30 md:opacity-0 group-hover/channel:opacity-100 transition-opacity translate-x-4 md:translate-x-12 group-hover/channel:translate-x-0 duration-300">
-                                                                <button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            await updateLiveLink(link.id, { isTrending: !link.isTrending });
-                                                                            setLinks(prev => prev.map(l =>
-                                                                                l.id === link.id ? { ...l, isTrending: !link.isTrending } : l
-                                                                            ));
-                                                                        } catch (err) {
-                                                                            console.error('Failed to toggle trending:', err);
-                                                                        }
-                                                                    }}
-                                                                    className={`p-2.5 rounded-2xl shadow-2xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isTrending
-                                                                        ? 'bg-amber-500 text-white border-amber-400'
-                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
-                                                                >
-                                                                    <TrendingUp size={16} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            if (link.isDefault) {
-                                                                                await updateLiveLink(link.id, { isDefault: false });
-                                                                                setLinks(prev => prev.map(l =>
-                                                                                    l.id === link.id ? { ...l, isDefault: false } : l
-                                                                                ));
-                                                                            } else {
-                                                                                await setLiveLinkDefault(link.id, true);
-                                                                                setLinks(prev => prev.map(l => ({
-                                                                                    ...l,
-                                                                                    isDefault: l.id === link.id
-                                                                                })));
-                                                                            }
-                                                                        } catch (err) {
-                                                                            console.error('Failed to toggle default:', err);
-                                                                        }
-                                                                    }}
-                                                                    className={`p-2.5 rounded-2xl shadow-2xl border-2 transition-all transform hover:scale-110 active:scale-95 ${link.isDefault
-                                                                        ? 'bg-primary-600 text-white border-primary-400'
-                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
-                                                                >
-                                                                    <Sparkles size={16} />
-                                                                </button>
-                                                            </div>
-                                                        )}
+                                    <div className="space-y-12">
+                                        {selectedTag === 'All' ? (
+                                            allTags.filter(tag => tag !== 'All').map(tag => {
+                                                const matchesInTag = sortMatches(links.filter(l => l.tags?.includes(tag)));
+                                                if (matchesInTag.length === 0) return null;
+                                                return (
+                                                    <div key={tag} className="space-y-6">
+                                                        <div className="flex items-center gap-3 border-b border-gray-100 dark:border-white/5 pb-4">
+                                                            <div className="w-2 h-8 bg-red-600 rounded-full" />
+                                                            <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">{tag}</h2>
+                                                            <span className="px-2 py-1 bg-gray-100 dark:bg-white/5 text-gray-500 text-[10px] font-bold rounded-lg uppercase">{matchesInTag.length} Items</span>
+                                                        </div>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 transition-all duration-500">
+                                                            {matchesInTag.map((link) => (
+                                                                <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} />
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                ))}
-                                        </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="space-y-6">
+                                                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-white/5 pb-4">
+                                                    <div className="w-2 h-8 bg-red-600 rounded-full" />
+                                                    <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">{selectedTag}</h2>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 transition-all duration-500">
+                                                    {sortMatches(filteredLinks).map((link) => (
+                                                        <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {selectedTag === 'All' && links.filter(l => !l.tags || l.tags.length === 0).length > 0 && (
+                                            <div className="space-y-6">
+                                                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-white/5 pb-4">
+                                                    <div className="w-2 h-8 bg-gray-400 rounded-full" />
+                                                    <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Other Channels</h2>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
+                                                    {sortMatches(links.filter(l => !l.tags || l.tags.length === 0)).map((link) => (
+                                                        <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
-                                    <div className="space-y-6">
+                                    <div className="space-y-12">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
                                                 <Tv size={24} className="text-secondary-light" />
-                                                <h2 className="text-gray-900 dark:text-white">IPTV Channels ({iptvChannels.filter(c => hasFullList || c.isTrending).length})</h2>
+                                                <h2 className="text-gray-900 dark:text-white font-black text-xl uppercase tracking-tighter">IPTV Reality ({iptvChannels.filter(c => hasFullList || c.isTrending).length})</h2>
                                             </div>
                                             {user?.role === 'admin' && !hasFullList && (
                                                 <button
@@ -1250,153 +1370,66 @@ export const LiveSection: React.FC = () => {
                                                 </button>
                                             )}
                                         </div>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7 gap-3 md:gap-4 transition-all duration-500">
-                                            {Array.from(new Map(iptvChannels.map(c => [c.id, c])).values())
-                                                .filter(c => {
-                                                    // Only show trending if full list filter is not active
-                                                    if (!hasFullList && !c.isTrending) return false;
 
-                                                    const matchesSearch = c.name.toLowerCase().includes(iptvSearch.toLowerCase());
-                                                    const matchesTag = iptvTag === 'All'
-                                                        || (iptvTag === 'Trending' && !!c.isTrending)
-                                                        || (iptvTag === 'Default' && !!c.isDefault)
-                                                        || c.group === iptvTag;
-                                                    return matchesSearch && matchesTag;
-                                                })
-                                                .sort((a, b) => {
-                                                    const isAActive = selectedLink?.id === a.id;
-                                                    const isBActive = selectedLink?.id === b.id;
-                                                    if (isAActive !== isBActive) return isAActive ? -1 : 1;
-                                                    if (!!b.isTrending !== !!a.isTrending) return b.isTrending ? 1 : -1;
-                                                    if (!!b.isDefault !== !!a.isDefault) return b.isDefault ? 1 : -1;
-                                                    return a.name.localeCompare(b.name);
-                                                })
-                                                .slice(0, 300)
-                                                .map((channel) => (
-                                                    <div key={channel.id} className="relative group/channel">
-                                                        <button
-                                                            onClick={() => handleIptvClick(channel)}
-                                                            className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 ${selectedLink?.id === channel.id
-                                                                ? 'border-primary-light ring-2 ring-primary-light/20 shadow-md'
-                                                                : channel.isTrending
-                                                                    ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50/10'
-                                                                    : 'border-slate-200 dark:border-slate-800 hover:border-primary-light/50'
-                                                                }`}
-                                                        >
-                                                            {channel.isTrending && (
-                                                                <div className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 bg-amber-500 text-white rounded-full shadow-sm z-10 animate-pulse">
-                                                                    <TrendingUp size={8} fill="currentColor" />
-                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">HOT</span>
-                                                                </div>
-                                                            )}
-                                                            {channel.isDefault && (
-                                                                <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-primary-600 text-white rounded-full shadow-sm z-10">
-                                                                    <Sparkles size={8} fill="currentColor" />
-                                                                    <span className="text-[7px] font-black uppercase tracking-tighter">DEFAULT</span>
-                                                                </div>
-                                                            )}
-                                                            <div className="flex flex-col items-center text-center gap-3">
-                                                                <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 ${channel.isTrending ? 'ring-2 ring-amber-500/20' : ''}`}>
-                                                                    {channel.logo ? (
-                                                                        <img
-                                                                            src={channel.logo}
-                                                                            alt={channel.name}
-                                                                            className="w-full h-full object-contain p-1"
-                                                                            onError={(e) => {
-                                                                                (e.target as HTMLImageElement).src = 'https://i.imgur.com/guz2ajm.png';
-                                                                            }}
-                                                                        />
-                                                                    ) : (
-                                                                        <Play size={18} className="text-primary-light" />
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0 w-full">
-                                                                    <h4 className={`font-bold text-[11px] md:text-xs line-clamp-1 transition-colors ${selectedLink?.id === channel.id
-                                                                        ? 'text-primary-dark'
-                                                                        : 'text-gray-900 dark:text-white group-hover:text-primary-light'
-                                                                        }`}>
-                                                                        {channel.name}
-                                                                    </h4>
-                                                                    <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
-                                                                        {channel.group && (
-                                                                            <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                                                                                {channel.group}
-                                                                            </span>
-                                                                        )}
-                                                                        <span className="flex items-center gap-1 text-[8px] font-bold text-green-600 dark:text-green-500 uppercase tracking-wider bg-green-500/10 px-1.5 py-0.5 rounded-md">
-                                                                            <Activity size={8} className="animate-pulse" /> {getWatchingCount(channel.id) || 1} watching
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </button>
-
-                                                        {user?.role === 'admin' && (
-                                                            <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
-                                                                <button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            await upsertIPTVChannel(channel, { isTrending: !channel.isTrending });
-                                                                            setIptvChannels(prev => prev.map(c =>
-                                                                                c.id === channel.id ? { ...c, isTrending: !channel.isTrending } : c
-                                                                            ));
-                                                                        } catch (err) {
-                                                                            console.error('Failed to toggle trending:', err);
-                                                                        }
-                                                                    }}
-                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isTrending
-                                                                        ? 'bg-amber-500 text-white border-amber-400'
-                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-amber-500 hover:border-amber-500'}`}
-                                                                    title={channel.isTrending ? "Remove Trending" : "Mark as Trending"}
-                                                                >
-                                                                    <TrendingUp size={14} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={async (e) => {
-                                                                        e.stopPropagation();
-                                                                        try {
-                                                                            if (channel.isDefault) {
-                                                                                await upsertIPTVChannel(channel, { isDefault: false });
-                                                                                setIptvChannels(prev => prev.map(c =>
-                                                                                    c.id === channel.id ? { ...c, isDefault: false } : c
-                                                                                ));
-                                                                            } else {
-                                                                                await setDefaultIPTVChannel(channel);
-                                                                                setIptvChannels(prev => prev.map(c => ({
-                                                                                    ...c,
-                                                                                    isDefault: c.id === channel.id
-                                                                                })));
-                                                                                setLinks(prev => prev.map(l => ({
-                                                                                    ...l,
-                                                                                    isDefault: false
-                                                                                })));
-                                                                            }
-                                                                        } catch (err) {
-                                                                            console.error('Failed to toggle default:', err);
-                                                                        }
-                                                                    }}
-                                                                    className={`p-2 rounded-full shadow-xl border-2 transition-all transform hover:scale-110 active:scale-95 ${channel.isDefault
-                                                                        ? 'bg-primary-600 text-white border-primary-400'
-                                                                        : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-200 dark:border-gray-700 hover:text-primary-600 hover:border-primary-600'}`}
-                                                                    title={channel.isDefault ? "Remove Default" : "Set as Default"}
-                                                                >
-                                                                    <Sparkles size={14} />
-                                                                </button>
-                                                            </div>
-                                                        )}
+                                        {iptvTag === 'All' && !iptvSearch ? (
+                                            iptvTags.filter(tag => tag !== 'All' && tag !== 'Trending' && tag !== 'Default').map(tag => {
+                                                const channelsInTag = iptvChannels.filter(c => c.group === tag);
+                                                if (channelsInTag.length === 0) return null;
+                                                return (
+                                                    <div key={tag} className="space-y-6">
+                                                        <div className="flex items-center gap-3 border-b border-gray-100 dark:border-white/5 pb-4">
+                                                            <div className="w-2 h-8 bg-primary-600 rounded-full" />
+                                                            <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">{tag}</h2>
+                                                            <span className="px-2 py-1 bg-gray-100 dark:bg-white/5 text-gray-500 text-[10px] font-bold rounded-lg uppercase">{channelsInTag.length} Channels</span>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7 gap-3 md:gap-4 transition-all duration-500">
+                                                            {channelsInTag.slice(0, 50).map((channel) => (
+                                                                <IPTVChannelCard key={channel.id} channel={channel} selectedLink={selectedLink} handleIptvClick={handleIptvClick} getWatchingCount={getWatchingCount} user={user} upsertIPTVChannel={upsertIPTVChannel} setIptvChannels={setIptvChannels} setDefaultIPTVChannel={setDefaultIPTVChannel} setLinks={setLinks} />
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                ))}
-                                            {iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length === 0 && (
-                                                <div className="col-span-full py-12 text-center">
-                                                    <div className="bg-gray-100 dark:bg-white/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                        <Search size={32} className="text-gray-400" />
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="space-y-6">
+                                                <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-2 h-8 bg-primary-600 rounded-full" />
+                                                        <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                                            {iptvSearch ? `Search Results: ${iptvSearch}` : iptvTag}
+                                                        </h2>
                                                     </div>
-                                                    <h3 className="text-gray-900 dark:text-white font-bold mb-1">No channels found</h3>
-                                                    <p className="text-gray-500 text-sm">Try searching for a different keyword</p>
                                                 </div>
-                                            )}
-                                        </div>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7 gap-3 md:gap-4 transition-all duration-500">
+                                                    {iptvChannels
+                                                        .filter(c => {
+                                                            if (!hasFullList && !c.isTrending && iptvTag === 'All') return false;
+                                                            const matchesSearch = c.name.toLowerCase().includes(iptvSearch.toLowerCase());
+                                                            const matchesTag = iptvTag === 'All' || (iptvTag === 'Trending' && !!c.isTrending) || (iptvTag === 'Default' && !!c.isDefault) || c.group === iptvTag;
+                                                            return matchesSearch && matchesTag;
+                                                        })
+                                                        .sort((a, b) => {
+                                                            const isAActive = selectedLink?.id === a.id;
+                                                            const isBActive = selectedLink?.id === b.id;
+                                                            if (isAActive !== isBActive) return isAActive ? -1 : 1;
+                                                            return a.name.localeCompare(b.name);
+                                                        })
+                                                        .slice(0, 300)
+                                                        .map((channel) => (
+                                                            <IPTVChannelCard key={channel.id} channel={channel} selectedLink={selectedLink} handleIptvClick={handleIptvClick} getWatchingCount={getWatchingCount} user={user} upsertIPTVChannel={upsertIPTVChannel} setIptvChannels={setIptvChannels} setDefaultIPTVChannel={setDefaultIPTVChannel} setLinks={setLinks} />
+                                                        ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {iptvChannels.filter(c => c.name.toLowerCase().includes(iptvSearch.toLowerCase())).length === 0 && (
+                                            <div className="col-span-full py-12 text-center">
+                                                <div className="bg-gray-100 dark:bg-white/5 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                    <Search size={32} className="text-gray-400" />
+                                                </div>
+                                                <h3 className="text-gray-900 dark:text-white font-bold mb-1">No channels found</h3>
+                                                <p className="text-gray-500 text-sm">Try searching for a different keyword</p>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
