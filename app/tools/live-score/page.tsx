@@ -28,7 +28,9 @@ import {
     getEventStatistics,
     getEventLineups,
     getEventDetails,
-    getCricketScores
+    getCricketScores,
+    syncToCloud,
+    getRawSportsData
 } from '../../../services/livescore-data';
 
 const LEAGUES = [
@@ -249,6 +251,23 @@ export default function LiveScorePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedMatch, setSelectedMatch] = useState<LiveMatch | null>(null);
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const handleSyncToCloud = async () => {
+        setIsSyncing(true);
+        try {
+            const football = await getRawSportsData('football');
+            const cricket = await getRawSportsData('cricket');
+            if (football || cricket) {
+                const success = await syncToCloud(football || [], cricket || []);
+                if (success) alert("🚀 ProSync: Matches pushed to Live Site!");
+            }
+        } catch (err) {
+            console.error("Sync error:", err);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     const fetchMatches = useCallback(async (sport: string = activeSport) => {
         setIsRefreshing(true);
@@ -324,6 +343,16 @@ export default function LiveScorePage() {
                         <button onClick={() => fetchMatches()} className="p-5 bg-red-600 text-white rounded-2xl shadow-xl shadow-red-600/20 active:scale-95 transition-all">
                             <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
                         </button>
+                        {process.env.NODE_ENV === 'development' && (
+                            <button
+                                onClick={handleSyncToCloud}
+                                disabled={isSyncing}
+                                className={`p-5 bg-gradient-to-r from-red-600 to-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all group ${isSyncing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title="Sync Local Matches to Live Cloud"
+                            >
+                                <Zap className={`h-5 w-5 ${isSyncing ? 'animate-pulse' : 'group-hover:scale-110 transition-transform'}`} />
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

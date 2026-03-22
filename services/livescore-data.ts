@@ -1,3 +1,6 @@
+import { db } from './firebase';
+import firebase from 'firebase/compat/app';
+
 // --- TYPES ---
 export interface LiveMatch {
     id: number;
@@ -65,7 +68,17 @@ export async function getLiveScores(): Promise<LiveMatch[]> {
         const data = await res.json();
         return processFootballMatches(data.events || []);
     } catch (e) {
-        console.warn("Live Score Service: Primary Football API Failed, trying fallback...", e);
+        console.warn("Live Score Service: Primary Football API Failed, trying Firebase fallback...", e);
+        try {
+            const doc = await db.collection('globals').doc('sports').get();
+            if (doc.exists) {
+                const cloudData = doc.data();
+                if (cloudData?.football) return processFootballMatches(cloudData.football);
+            }
+        } catch (dbErr) {
+            console.error("Firebase fetch failed", dbErr);
+        }
+
         try {
             const res = await fetch('/sports-cache.json');
             if (!res.ok) return [];
@@ -149,7 +162,15 @@ export async function getCricketScores(): Promise<LiveMatch[]> {
         const data = await res.json();
         return processCricketMatches(data.matches || []);
     } catch (e) {
-        console.warn("Live Score Service: Primary Cricket API Failed, trying fallback...", e);
+        console.warn("Live Score Service: Primary Cricket API Failed, trying Firebase fallback...", e);
+        try {
+            const doc = await db.collection('globals').doc('sports').get();
+            if (doc.exists) {
+                const cloudData = doc.data();
+                if (cloudData?.cricket) return processCricketMatches(cloudData.cricket || []);
+            }
+        } catch (dbErr) { }
+
         try {
             const res = await fetch('/sports-cache.json');
             if (!res.ok) return [];
@@ -181,4 +202,27 @@ function processCricketMatches(items: any[]): LiveMatch[] {
                 (event.eventStatus?.toLowerCase().includes('opt') || event.eventStatus?.toLowerCase().includes('need')) ? 'LIVE' : 'UPCOMING'
         } as LiveMatch;
     });
+}
+
+// Push local working data to Firebase for the live site
+export async function syncToCloud(footballEvents: any[], cricketMatches: any[]) {
+    try {
+        await db.collection('globals').doc('sports').set({
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            football: footballEvents,
+            cricket: cricketMatches
+        }, { merge: true });
+        return true;
+    } catch (err) {
+        console.error("Cloud Sync Error:", err);
+        return false;
+    }
+}
+
+// Helper for dev sync
+export async function getRawSportsData(sport: 'football' | 'cricket') {
+    const res = await fetch(`/api/sports/proxy?sport=${sport}&t=${Date.now()}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return sport === 'football' ? data.events : data.matches;
 }
