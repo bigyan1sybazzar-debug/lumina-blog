@@ -59,7 +59,7 @@ export async function GET(request: Request) {
         console.log(`[SPORTS PROXY] Auto-date for ${sport}: ${today} (Nepal adjusted)`);
     }
 
-    const url = `https://web-api.sofascore.com/api/v1/${finalEndpoint}`;
+    const url = `https://api.sofascore.com/api/v1/${finalEndpoint}`;
     console.log(`[SPORTS PROXY] Fetching SofaScore: ${url}`);
 
     try {

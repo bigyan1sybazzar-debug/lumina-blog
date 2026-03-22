@@ -56,6 +56,12 @@ export async function getLiveScores(): Promise<LiveMatch[]> {
     try {
         const res = await fetch(`/api/sports/proxy?sport=football&t=${Date.now()}`);
         if (!res.ok) throw new Error(`Primary API Error ${res.status}`);
+
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error("Provider returned non-JSON response");
+        }
+
         const data = await res.json();
         return processFootballMatches(data.events || []);
     } catch (e) {
@@ -134,6 +140,12 @@ export async function getCricketScores(): Promise<LiveMatch[]> {
     try {
         const res = await fetch(`/api/sports/proxy?sport=cricket&t=${Date.now()}`);
         if (!res.ok) throw new Error(`Primary Cricket API Error ${res.status}`);
+
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error("Provider returned non-JSON response");
+        }
+
         const data = await res.json();
         return processCricketMatches(data.matches || []);
     } catch (e) {
