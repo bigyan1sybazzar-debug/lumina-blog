@@ -6,10 +6,7 @@ import { BlogPost, Poll } from '../types';
 import dynamic from 'next/dynamic';
 import { PostCard } from '../components/PostCard';
 
-const PollCard = dynamic(() => import('../components/PollCard'), {
-  loading: () => <div className="h-48 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-xl" />,
-  ssr: false
-});
+
 
 import { ArrowRight, Loader2, Sparkles, Send, BookOpen, Vote, ShoppingBag, Clock, Calendar, Hash, TrendingUp, ChevronLeft, ChevronRight, Languages, LogIn, Edit } from 'lucide-react'; // Consolidated imports
 import Link from 'next/link';
@@ -21,23 +18,19 @@ import GoogleAdSense from '../components/GoogleAdSense';
 interface HomeProps {
   initialPosts?: BlogPost[];
   initialHeroFeatured?: BlogPost[];
-  initialPolls?: Poll[];
 }
 
 export const Home: React.FC<HomeProps> = ({
   initialPosts = [],
-  initialHeroFeatured = [],
-  initialPolls = []
+  initialHeroFeatured = []
 }) => {
   const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
   const [heroFeatured, setHeroFeatured] = useState<BlogPost[]>(initialHeroFeatured);
   const [editorPicks, setEditorPicks] = useState<BlogPost[]>(initialPosts.slice(0, 8));
-  const [polls, setPolls] = useState<Poll[]>(initialPolls);
   const [loading, setLoading] = useState(initialPosts.length === 0);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
-  const pollSliderRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const POSTS_PER_PAGE = 20;
 
@@ -73,20 +66,12 @@ export const Home: React.FC<HomeProps> = ({
         }
       }
 
-      // Load Polls if missing
-      if (polls.length === 0) {
-        try {
-          const allPolls = await getR2Polls();
-          setPolls(allPolls.slice(0, 8));
-        } catch (err) {
-          console.error("Failed to fetch R2 polls on client:", err);
-        }
-      }
+
 
       setLoading(false);
     };
     load();
-  }, [initialPosts.length, initialHeroFeatured.length, polls.length]);
+  }, [initialPosts.length, initialHeroFeatured.length]);
 
   const categories = useMemo(() => {
     const cats = new Set<string>(posts.map(p => p.category).filter(Boolean) as string[]);
@@ -555,72 +540,6 @@ export const Home: React.FC<HomeProps> = ({
 
 
 
-      {/* Community Polls Section - Repositioned below AI Tools */}
-      {polls.length > 0 && (
-        <section className="py-12 md:py-16 px-4 bg-gray-50/50 dark:bg-gray-900/30 section-lazy">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-2 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-sm font-medium">
-                  <Vote className="w-4 h-4" />
-                  Voice Your Vision
-                </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                  Featured Community Polls
-                </h2>
-              </div>
-              <Link
-                href="/voting"
-                className="hidden md:flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors"
-              >
-                View More
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-
-            <div className="relative">
-              <button
-                onClick={() => {
-                  if (pollSliderRef.current) {
-                    pollSliderRef.current.scrollLeft -= pollSliderRef.current.clientWidth * 0.8;
-                  }
-                }}
-                className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-10 w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition-all"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button
-                onClick={() => {
-                  if (pollSliderRef.current) {
-                    pollSliderRef.current.scrollLeft += pollSliderRef.current.clientWidth * 0.8;
-                  }
-                }}
-                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-10 w-12 h-12 items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 hover:bg-primary-50 dark:hover:bg-gray-700 transition-all"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-
-              <div
-                ref={pollSliderRef}
-                className="flex overflow-x-auto scrollbar-hide gap-4 sm:gap-6 pb-6 scroll-smooth"
-              >
-                {polls.map((poll) => (
-                  <div
-                    key={poll.id}
-                    className="flex-shrink-0 w-[calc(46%-0.5rem)] md:w-[calc(50%-1rem)] lg:w-[calc(25%-1.25rem)]"
-                  >
-                    <PollCard poll={poll} userId={user?.id} variant="minimal" />
-                  </div>
-                ))}
-              </div>
-
-              <div className="md:hidden text-center mt-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-widest uppercase">← Swipe to Explore →</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* AdSense: Home Page Mid - Between Polls and Latest Articles */}
       <div className="max-w-7xl mx-auto px-4 my-8">

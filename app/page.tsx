@@ -1,7 +1,7 @@
 import Home from '../pages/Home';
 import { Metadata } from 'next';
 import { db } from '../services/firebase';
-import { BlogPost, Poll } from '../types';
+import { BlogPost } from '../types';
 import { unstable_cache } from 'next/cache';
 import { getR2Posts, getR2Polls } from '../services/r2-data';
 
@@ -59,11 +59,7 @@ export default async function Page() {
         heroFeatured = [...heroFeatured, ...extra];
     }
 
-    // 3. Fetch Featured Polls (R2)
-    const allPolls = await getR2Polls();
-    const polls = allPolls
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 6);
 
-    return <Home initialPosts={posts} initialHeroFeatured={heroFeatured} initialPolls={polls} />;
+
+    return <Home initialPosts={posts} initialHeroFeatured={heroFeatured} />;
 }

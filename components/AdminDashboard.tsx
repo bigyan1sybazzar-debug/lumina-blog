@@ -145,12 +145,61 @@ export const Admin: React.FC = () => {
   const [newLiveIsTrending, setNewLiveIsTrending] = useState(false);
   const [newLiveIsLive, setNewLiveIsLive] = useState(true);
   const [newLiveMatchStart, setNewLiveMatchStart] = useState('');
-  const [newLiveDuration, setNewLiveDuration] = useState('90');
+  const [newLiveDuration, setNewLiveDuration] = useState('125');
   const [newLivePollTeamA, setNewLivePollTeamA] = useState('');
   const [newLivePollTeamB, setNewLivePollTeamB] = useState('');
   const [editingLiveLink, setEditingLiveLink] = useState<LiveLink | null>(null);
   const [newLiveQuickTime, setNewLiveQuickTime] = useState('');
+  const [selectedLiveLinks, setSelectedLiveLinks] = useState<string[]>([]);
   const [isLiveUploading, setIsLiveUploading] = useState(false);
+
+  // Helper to resolve match start time (copied from LiveSection for consistency)
+  const resolveMatchStart = (value: string | number | undefined) => {
+    if (!value) return 0;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string' && /^\d{1,2}:\d{2}(:\d{2})?$/.test(value)) {
+      const parts = value.split(':').map(Number);
+      const d = new Date();
+      d.setHours(parts[0], parts[1], parts[2] || 0, 0);
+      // If the time is more than 12 hours in the past, assume it was meant for the next day
+      if (Date.now() - d.getTime() > 12 * 60 * 60 * 1000) {
+        d.setDate(d.getDate() + 1);
+      }
+      return d.getTime();
+    }
+    const parsed = new Date(value).getTime();
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // Run cleanup once every 30 seconds
+  useEffect(() => {
+    const performCleanup = async () => {
+      if (liveLinks.length === 0) return;
+      const now = Date.now();
+      const expiredLinks = liveLinks.filter(link => {
+        if (!(link as any).matchStartTime) return false;
+        const startMs = resolveMatchStart((link as any).matchStartTime);
+        const duration = (link as any).matchDurationMinutes || 125;
+        return now > (startMs + (duration * 60000));
+      });
+
+      if (expiredLinks.length > 0) {
+        console.log(`Auto-deleting ${expiredLinks.length} expired live links`);
+        try {
+          await Promise.all(expiredLinks.map(l => deleteLiveLink(l.id)));
+          getLiveLinks().then(setLiveLinks);
+        } catch (e) {
+          console.error("Auto-cleanup failed:", e);
+        }
+      }
+    };
+
+    const intervalId = setInterval(performCleanup, 30000);
+    // Also run immediately
+    performCleanup();
+
+    return () => clearInterval(intervalId);
+  }, [liveLinks]);
 
   // Highlights State
   const [highlights, setHighlights] = useState<Highlight[]>([]);
@@ -1053,7 +1102,7 @@ export const Admin: React.FC = () => {
         isTrending: newLiveIsTrending,
         isLiveNow: newLiveIsLive,
         matchStartTime: newLiveMatchStart || undefined,
-        matchDurationMinutes: newLiveDuration ? parseInt(newLiveDuration) : 90,
+        matchDurationMinutes: newLiveDuration ? parseInt(newLiveDuration) : 125,
         poll,
         createdAt: new Date().toISOString()
       });
@@ -1069,7 +1118,7 @@ export const Admin: React.FC = () => {
       setNewLiveIsLive(true);
       setNewLiveMatchStart('');
       setNewLiveQuickTime('');
-      setNewLiveDuration('90');
+      setNewLiveDuration('125');
       setNewLivePollTeamA('');
       setNewLivePollTeamB('');
       getLiveLinks().then(setLiveLinks);
@@ -1102,7 +1151,7 @@ export const Admin: React.FC = () => {
         isTrending: newLiveIsTrending,
         isLiveNow: newLiveIsLive,
         matchStartTime: newLiveMatchStart || undefined,
-        matchDurationMinutes: newLiveDuration ? parseInt(newLiveDuration) : 90,
+        matchDurationMinutes: newLiveDuration ? parseInt(newLiveDuration) : 125,
         poll
       });
 
@@ -1118,7 +1167,7 @@ export const Admin: React.FC = () => {
       setNewLiveIsLive(true);
       setNewLiveMatchStart('');
       setNewLiveQuickTime('');
-      setNewLiveDuration('90');
+      setNewLiveDuration('125');
       setNewLivePollTeamA('');
       setNewLivePollTeamB('');
       getLiveLinks().then(setLiveLinks);
@@ -1132,11 +1181,41 @@ export const Admin: React.FC = () => {
     if (confirm('Are you sure you want to delete this link?')) {
       try {
         await deleteLiveLink(id);
+        setSelectedLiveLinks(prev => prev.filter(item => item !== id));
         getLiveLinks().then(setLiveLinks);
       } catch (error) {
         console.error(error);
         alert('Failed to delete live link');
       }
+    }
+  };
+
+  const handleBulkDeleteLiveLinks = async () => {
+    if (selectedLiveLinks.length === 0) return;
+    if (confirm(`Are you sure you want to delete ${selectedLiveLinks.length} selected links?`)) {
+      try {
+        await Promise.all(selectedLiveLinks.map(id => deleteLiveLink(id)));
+        alert('Selected links deleted successfully!');
+        setSelectedLiveLinks([]);
+        getLiveLinks().then(setLiveLinks);
+      } catch (error) {
+        console.error(error);
+        alert('Failed to delete some links');
+      }
+    }
+  };
+
+  const toggleSelectLiveLink = (id: string) => {
+    setSelectedLiveLinks(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllLiveLinks = () => {
+    if (selectedLiveLinks.length === liveLinks.length && liveLinks.length > 0) {
+      setSelectedLiveLinks([]);
+    } else {
+      setSelectedLiveLinks(liveLinks.map(l => l.id));
     }
   };
 
@@ -2165,6 +2244,15 @@ export const Admin: React.FC = () => {
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                   <Globe className="text-primary-500" />
                   Live Section Management
+                  {selectedLiveLinks.length > 0 && (
+                    <button
+                      onClick={handleBulkDeleteLiveLinks}
+                      className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-red-500/30 hover:bg-red-700 transition-all animate-in fade-in zoom-in"
+                    >
+                      <Trash2 size={16} />
+                      Delete Selected ({selectedLiveLinks.length})
+                    </button>
+                  )}
                 </h1>
 
                 {/* Add/Edit Live Link */}
@@ -2297,7 +2385,7 @@ export const Admin: React.FC = () => {
                           type="number"
                           value={newLiveDuration}
                           onChange={(e) => setNewLiveDuration(e.target.value)}
-                          placeholder="90"
+                          placeholder="125"
                           min="1"
                           max="300"
                           className="input-field text-sm"
@@ -2354,7 +2442,7 @@ export const Admin: React.FC = () => {
                               setNewLiveIsTrending(false);
                               setNewLiveIsLive(true);
                               setNewLiveMatchStart('');
-                              setNewLiveDuration('90');
+                              setNewLiveDuration('125');
                             }}
                             className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                           >
@@ -2378,6 +2466,14 @@ export const Admin: React.FC = () => {
                   <table className="w-full min-w-[900px] divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-900/50">
                       <tr>
+                        <th className="px-4 py-3 text-left">
+                          <input
+                            type="checkbox"
+                            checked={selectedLiveLinks.length === liveLinks.length && liveLinks.length > 0}
+                            onChange={toggleSelectAllLiveLinks}
+                            className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                          />
+                        </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Heading</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Iframe URL</th>
@@ -2391,11 +2487,19 @@ export const Admin: React.FC = () => {
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                       {liveLinks.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No live links found.</td>
+                          <td colSpan={9} className="px-6 py-8 text-center text-gray-500">No live links found.</td>
                         </tr>
                       ) : (
                         liveLinks.map(link => (
-                          <tr key={link.id}>
+                          <tr key={link.id} className={selectedLiveLinks.includes(link.id) ? 'bg-primary-50/30 dark:bg-primary-900/10' : ''}>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <input
+                                type="checkbox"
+                                checked={selectedLiveLinks.includes(link.id)}
+                                onChange={() => toggleSelectLiveLink(link.id)}
+                                className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                              />
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{link.heading}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               <div className="flex flex-wrap gap-1">
@@ -2443,7 +2547,7 @@ export const Admin: React.FC = () => {
                                 return (
                                   <div className="text-xs">
                                     <div className="font-bold text-gray-700 dark:text-gray-300">{displayLabel}</div>
-                                    <div className="text-gray-400">{(link as any).matchDurationMinutes || 90} min</div>
+                                    <div className="text-gray-400">{(link as any).matchDurationMinutes || 125} min</div>
                                   </div>
                                 );
                               })() : (
@@ -2485,7 +2589,7 @@ export const Admin: React.FC = () => {
                                     setNewLiveIsLive(!!(link as any).isLiveNow);
                                     setNewLiveMatchStart((link as any).matchStartTime || '');
                                     setNewLiveQuickTime('');
-                                    setNewLiveDuration(String((link as any).matchDurationMinutes || 90));
+                                    setNewLiveDuration(String((link as any).matchDurationMinutes || 125));
                                     setNewLivePollTeamA(link.poll?.teamA || '');
                                     setNewLivePollTeamB(link.poll?.teamB || '');
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
