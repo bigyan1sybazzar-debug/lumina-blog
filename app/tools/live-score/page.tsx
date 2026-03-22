@@ -73,8 +73,8 @@ function MatchDetailModal({ match, onClose, sport }: { match: LiveMatch; onClose
     }, [activeTab, match.id, sport]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-[32px] transition-all overflow-y-auto">
-            <div className="bg-[#0b0e14]/90 border border-white/10 w-full max-w-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-[64px] transition-all overflow-y-auto">
+            <div className="bg-[#0b0e14]/90 border border-red-600/20 w-full max-w-2xl rounded-[2rem] shadow-[0_0_100px_rgba(239,68,68,0.2)] overflow-hidden flex flex-col max-h-[95vh] animate-in fade-in zoom-in duration-300">
                 {/* Modal Header */}
                 <div className="bg-[#111622]/50 p-8 text-white relative border-b border-white/5">
                     <button onClick={onClose} className="absolute top-6 right-6 p-2.5 bg-white/5 hover:bg-primary-600 rounded-full transition-all text-white active:scale-90">
@@ -92,10 +92,10 @@ function MatchDetailModal({ match, onClose, sport }: { match: LiveMatch; onClose
                             </div>
 
                             <div className="flex flex-col items-center">
-                                <div className="text-5xl md:text-6xl font-black tabular-nums text-white drop-shadow-lg">
+                                <div className="text-5xl md:text-6xl font-black tabular-nums text-white drop-shadow-[0_0_20px_rgba(239,68,68,0.3)]">
                                     {match.homeScore} <span className="text-white/20">-</span> {match.awayScore}
                                 </div>
-                                <div className={`mt-4 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${match.category === 'LIVE' ? 'bg-primary-600 text-white border-primary-500 animate-pulse' : 'bg-white/5 text-slate-500 border-white/5'
+                                <div className={`mt-4 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${match.category === 'LIVE' ? 'bg-red-600 text-white border-red-500 animate-pulse' : 'bg-white/5 text-slate-500 border-white/5'
                                     }`}>
                                     {match.status}
                                 </div>
@@ -119,8 +119,8 @@ function MatchDetailModal({ match, onClose, sport }: { match: LiveMatch; onClose
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 text-[10px] font-bold uppercase tracking-widest transition-all border-b-2 ${activeTab === tab.id
-                                        ? 'border-primary-600 text-primary-500 bg-primary-600/5'
-                                        : 'border-transparent text-slate-500 hover:text-white'
+                                    ? 'border-primary-600 text-primary-500 bg-primary-600/5'
+                                    : 'border-transparent text-slate-500 hover:text-white'
                                     }`}
                             >
                                 <tab.icon className="w-4 h-4 mb-1" />
@@ -294,7 +294,7 @@ export default function LiveScorePage() {
                             <button
                                 key={s.id}
                                 onClick={() => { setActiveSport(s.id); setLoading(true); setMatches([]); }}
-                                className={`px-10 py-3.5 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all duration-300 ${activeSport === s.id ? 'bg-primary-600 text-white shadow-xl shadow-primary-600/20' : 'text-slate-500 hover:text-white'
+                                className={`px-10 py-3.5 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all duration-300 ${activeSport === s.id ? 'bg-red-600 text-white shadow-xl shadow-red-600/20' : 'text-slate-500 hover:text-white'
                                     }`}
                             >
                                 {s.label}
@@ -303,9 +303,9 @@ export default function LiveScorePage() {
                     </div>
 
                     <h1 className="text-5xl md:text-8xl font-black text-white leading-none tracking-tighter uppercase mb-6 text-center">
-                        LIVE<span className="text-primary-600">SCORE</span>
+                        LIVE<span className="text-red-600">SCORE</span>
                     </h1>
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-[0.5em] mb-16 text-center">Real-Time Global Sports Hub</p>
+                    <p className="text-xs font-bold text-red-600/40 uppercase tracking-[0.5em] mb-16 text-center">Real-Time Global Sports Hub</p>
 
                     <div className="flex flex-col sm:flex-row gap-4 w-full max-w-2xl">
                         <div className="relative flex-1">
@@ -318,7 +318,7 @@ export default function LiveScorePage() {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <button onClick={() => fetchMatches()} className="p-5 bg-primary-600 text-white rounded-2xl shadow-xl shadow-primary-600/20 active:scale-95 transition-all">
+                        <button onClick={() => fetchMatches()} className="p-5 bg-red-600 text-white rounded-2xl shadow-xl shadow-red-600/20 active:scale-95 transition-all">
                             <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
                         </button>
                     </div>
@@ -352,14 +352,14 @@ export default function LiveScorePage() {
                         </div>
                     ) : filteredMatches.length > 0 ? (
                         filteredMatches.map((match) => (
-                            <div key={match.id} className="bg-[#0b0e14] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all hover:border-primary-600/30">
+                            <div key={match.id} className={`bg-[#0b0e14] border rounded-[2.5rem] overflow-hidden shadow-2xl transition-all hover:border-red-600/30 ${match.category === 'LIVE' ? 'border-red-600/40 shadow-[0_0_50px_rgba(239,68,68,0.1)]' : 'border-white/5'}`}>
                                 {/* Match Header */}
                                 <div className="px-10 py-4 border-b border-white/5 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <Trophy className="w-3.5 h-3.5 text-yellow-500" />
                                         <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{match.league}</span>
                                     </div>
-                                    {match.category === 'LIVE' && <span className="flex items-center gap-2 text-[9px] font-bold text-primary-500 uppercase tracking-widest"><div className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-ping"></div> LIVE</span>}
+                                    {match.category === 'LIVE' && <span className="flex items-center gap-2 text-[9px] font-bold text-red-500 uppercase tracking-widest"><div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></div> LIVE NOW</span>}
                                 </div>
 
                                 {/* Match Body (Horizontal) */}
@@ -367,10 +367,10 @@ export default function LiveScorePage() {
                                     <div className="flex flex-col md:flex-row items-center justify-between gap-12">
                                         {/* Home Team */}
                                         <div className="flex-1 flex flex-col items-center">
-                                            <div className="w-24 h-24 md:w-32 md:h-32 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-center text-4xl md:text-6xl font-black text-primary-500 italic shadow-2xl mb-4 group-hover:scale-110 transition-transform">
+                                            <div className="w-24 h-24 md:w-32 md:h-32 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-center text-4xl md:text-6xl font-black text-red-500 italic shadow-2xl mb-4 group-hover:scale-110 transition-transform">
                                                 {match.homeTeam.charAt(0)}
                                             </div>
-                                            <h3 className="text-xl md:text-2xl font-bold text-white uppercase tracking-tight">{match.homeTeam}</h3>
+                                            <h3 className="text-xl md:text-2xl font-bold text-white uppercase tracking-tight text-center">{match.homeTeam}</h3>
                                             <span className="text-[9px] font-bold text-slate-700 mt-2 uppercase tracking-widest">Home</span>
                                         </div>
 
@@ -381,17 +381,17 @@ export default function LiveScorePage() {
                                                 <span className="text-2xl font-black text-slate-900">-</span>
                                                 <span className="text-6xl md:text-8xl font-black text-white tabular-nums tracking-tighter">{match.awayScore}</span>
                                             </div>
-                                            <div className={`px-6 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-widest border ${match.category === 'LIVE' ? 'bg-primary-600/10 text-primary-500 border-primary-600/20' : 'bg-white/5 text-slate-700 border-white/5'}`}>
+                                            <div className={`px-6 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-widest border ${match.category === 'LIVE' ? 'bg-red-600/10 text-red-500 border-red-600/20' : 'bg-white/5 text-slate-700 border-white/5'}`}>
                                                 {match.status} {match.category === 'LIVE' && `| ${match.time}`}
                                             </div>
                                         </div>
 
                                         {/* Away Team */}
                                         <div className="flex-1 flex flex-col items-center">
-                                            <div className="w-24 h-24 md:w-32 md:h-32 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-center text-4xl md:text-6xl font-black text-primary-500 italic shadow-2xl mb-4 group-hover:scale-110 transition-transform">
+                                            <div className="w-24 h-24 md:w-32 md:h-32 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-center text-4xl md:text-6xl font-black text-red-500 italic shadow-2xl mb-4 group-hover:scale-110 transition-transform">
                                                 {match.awayTeam.charAt(0)}
                                             </div>
-                                            <h3 className="text-xl md:text-2xl font-bold text-white uppercase tracking-tight">{match.awayTeam}</h3>
+                                            <h3 className="text-xl md:text-2xl font-bold text-white uppercase tracking-tight text-center">{match.awayTeam}</h3>
                                             <span className="text-[9px] font-bold text-slate-700 mt-2 uppercase tracking-widest">Away</span>
                                         </div>
                                     </div>
@@ -403,15 +403,25 @@ export default function LiveScorePage() {
                                         <button onClick={() => setSelectedMatch(match)} className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-bold text-slate-500 hover:text-white transition-all border border-white/5"><BarChart3 className="w-4 h-4" /> Statistics</button>
                                         <button onClick={() => setSelectedMatch(match)} className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-bold text-slate-500 hover:text-white transition-all border border-white/5"><Users className="w-4 h-4" /> Lineups</button>
                                     </div>
-                                    <button onClick={() => setSelectedMatch(match)} className="text-primary-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:translate-x-1 transition-all">Match Detail <ChevronRight className="w-4 h-4" /></button>
+                                    <button onClick={() => setSelectedMatch(match)} className="text-red-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 hover:translate-x-1 transition-all">Match Detail <ChevronRight className="w-4 h-4" /></button>
                                 </div>
                             </div>
                         ))
                     ) : (
-                        <div className="py-32 text-center bg-white/[0.01] border border-dashed border-white/5 rounded-[3rem]">
-                            <Activity className="w-20 h-20 text-slate-900 mx-auto mb-6" />
+                        <div className="py-32 text-center bg-white/[0.01] border border-dashed border-white/5 rounded-[3rem] group">
+                            <Activity className="w-20 h-20 text-slate-900 mx-auto mb-6 group-hover:text-red-600/20 transition-colors" />
                             <h3 className="text-2xl font-bold text-white uppercase">Waiting for Matches</h3>
-                            <p className="text-xs text-slate-700 uppercase tracking-widest mt-2">Check back later for real-time updates</p>
+                            <p className="text-xs text-slate-700 uppercase tracking-widest mt-2 px-6">
+                                {activeSport === 'football'
+                                    ? "Scanning SofaScore telemetrics... Check back in a moment."
+                                    : "Connecting to Cricbuzz satellites... Updates pending."}
+                            </p>
+                            <button
+                                onClick={() => fetchMatches()}
+                                className="mt-8 px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white hover:bg-red-600/20 hover:border-red-600/30 transition-all"
+                            >
+                                Force Refresh
+                            </button>
                         </div>
                     )}
                 </div>
@@ -428,26 +438,26 @@ export default function LiveScorePage() {
                             {(activeSport === 'football' ? LEAGUES.slice(1, 6) : ['T20 World Cup', 'IPL 2026', 'PSL 2026']).map((league, i) => (
                                 <div key={i} className="flex items-center justify-between p-5 bg-white/[0.02] border border-white/5 rounded-2xl group hover:border-primary-600/50 cursor-pointer transition-all">
                                     <div className="flex items-center gap-5">
-                                        <span className="w-10 h-10 rounded-xl bg-[#111622] flex items-center justify-center text-xs font-bold text-slate-600 group-hover:bg-primary-600 group-hover:text-white transition-all">{i + 1}</span>
+                                        <span className="w-10 h-10 rounded-xl bg-[#111622] flex items-center justify-center text-xs font-bold text-slate-600 group-hover:bg-red-600 group-hover:text-white transition-all">{i + 1}</span>
                                         <span className="text-xs font-bold text-slate-400 group-hover:text-white uppercase tracking-tight">{league}</span>
                                     </div>
-                                    <TrendingUp className="w-4 h-4 text-primary-600/30 group-hover:text-primary-600 transition-colors" />
+                                    <TrendingUp className="w-4 h-4 text-red-600/30 group-hover:text-red-600 transition-colors" />
                                 </div>
                             ))}
                         </div>
                     </div>
 
                     {/* Pro Data Section */}
-                    <div className="bg-gradient-to-br from-primary-600 to-indigo-900 border border-white/5 rounded-[2.5rem] p-12 relative overflow-hidden group shadow-2xl flex flex-col justify-center">
+                    <div className="bg-gradient-to-br from-red-600 to-red-950 border border-white/5 rounded-[2.5rem] p-12 relative overflow-hidden group shadow-2xl flex flex-col justify-center">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-[100px] transition-transform duration-700 group-hover:scale-150"></div>
                         <div className="relative z-10 space-y-8">
                             <div className="w-20 h-20 bg-white/10 rounded-[2rem] flex items-center justify-center backdrop-blur-md border border-white/10 shadow-2xl">
                                 <Flame className="w-10 h-10 text-white fill-white animate-pulse" />
                             </div>
                             <div>
-                                <h4 className="text-4xl font-black text-white uppercase tracking-tighter leading-none mb-4 italic">ELITE HUD</h4>
-                                <p className="text-xs font-bold text-primary-200 uppercase tracking-widest mb-10 opacity-70">Probability engine and advanced telemetry</p>
-                                <button className="w-full py-5 bg-white text-primary-600 font-bold uppercase tracking-[0.3em] rounded-2xl text-[10px] shadow-2xl hover:scale-105 active:scale-95 transition-all">Go Professional</button>
+                                <h4 className="text-4xl font-black text-white uppercase tracking-tighter leading-none mb-4 italic text-glow">ELITE HUD</h4>
+                                <p className="text-xs font-bold text-red-100 uppercase tracking-widest mb-10 opacity-70">Probability engine and advanced telemetry</p>
+                                <button className="w-full py-5 bg-white text-red-600 font-bold uppercase tracking-[0.3em] rounded-2xl text-[10px] shadow-2xl hover:scale-105 active:scale-95 transition-all">Go Professional</button>
                             </div>
                         </div>
                     </div>
@@ -457,6 +467,7 @@ export default function LiveScorePage() {
             <style jsx global>{`
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                .text-glow { text-shadow: 0 0 20px rgba(239,68,68,0.5); }
             `}</style>
         </div>
     );

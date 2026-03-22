@@ -58,11 +58,16 @@ export async function getLiveScores(): Promise<LiveMatch[]> {
         if (!res.ok) throw new Error('Failed to fetch scores');
         const data = await res.json();
 
-        if (!data.events || !Array.isArray(data.events)) {
-            return [];
-        }
+        const matches = (data.events || []).map((event: any) => {
+            try {
+                return mapSofaScoreToLiveMatch(event);
+            } catch (err) {
+                console.warn("Skipping malformed event:", event?.id);
+                return null;
+            }
+        }).filter((m: any) => m !== null);
 
-        const matches = data.events.map(mapSofaScoreToLiveMatch);
+        console.log(`Live Score Service: Mapped ${matches.length} football matches`);
 
         // Sort: Live first, then by priority league, then by status
         return (matches as LiveMatch[]).sort((a: LiveMatch, b: LiveMatch) => {
