@@ -55,7 +55,10 @@ const PRIORITY_LEAGUES = [
 export async function getLiveScores(): Promise<LiveMatch[]> {
     try {
         const res = await fetch(`/api/sports/proxy?sport=football&t=${Date.now()}`);
-        if (!res.ok) throw new Error('Failed to fetch scores');
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `Error ${res.status}`);
+        }
         const data = await res.json();
 
         const matches = (data.events || []).map((event: any) => {
@@ -95,7 +98,10 @@ export async function getLiveScores(): Promise<LiveMatch[]> {
 export async function getEventStatistics(eventId: number) {
     try {
         const res = await fetch(`/api/sports/proxy?sport=football&endpoint=event/${eventId}/statistics`);
-        if (!res.ok) throw new Error('Failed to fetch statistics');
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `Error ${res.status}`);
+        }
         const data = await res.json();
         return data;
     } catch (e) {
@@ -108,7 +114,10 @@ export async function getEventStatistics(eventId: number) {
 export async function getEventLineups(eventId: number) {
     try {
         const res = await fetch(`/api/sports/proxy?sport=football&endpoint=event/${eventId}/lineups`);
-        if (!res.ok) throw new Error('Failed to fetch lineups');
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `Error ${res.status}`);
+        }
         const data = await res.json();
         return data;
     } catch (e) {
@@ -121,7 +130,10 @@ export async function getEventLineups(eventId: number) {
 export async function getEventDetails(eventId: number) {
     try {
         const res = await fetch(`/api/sports/proxy?sport=football&endpoint=event/${eventId}`);
-        if (!res.ok) throw new Error('Failed to fetch event details');
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `Error ${res.status}`);
+        }
         const data = await res.json();
         return data;
     } catch (e) {

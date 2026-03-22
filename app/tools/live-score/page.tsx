@@ -247,15 +247,18 @@ export default function LiveScorePage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [matches, setMatches] = useState<LiveMatch[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [selectedMatch, setSelectedMatch] = useState<LiveMatch | null>(null);
 
     const fetchMatches = useCallback(async (sport: string = activeSport) => {
         setIsRefreshing(true);
+        setError(null);
         try {
             const data = sport === 'football' ? await getLiveScores() : await getCricketScores();
             if (data) setMatches(data);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error fetching sports data:", error);
+            setError(error.message || "Failed to sync scores");
         } finally {
             setIsRefreshing(false);
             setLoading(false);
@@ -409,18 +412,22 @@ export default function LiveScorePage() {
                         ))
                     ) : (
                         <div className="py-32 text-center bg-white/[0.01] border border-dashed border-white/5 rounded-[3rem] group">
-                            <Activity className="w-20 h-20 text-slate-900 mx-auto mb-6 group-hover:text-red-600/20 transition-colors" />
-                            <h3 className="text-2xl font-bold text-white uppercase">Waiting for Matches</h3>
+                            <Activity className={`w-20 h-20 mx-auto mb-6 transition-all ${error ? 'text-red-500/50' : 'text-slate-900 group-hover:text-red-600/20'}`} />
+                            <h3 className="text-2xl font-bold text-white uppercase">
+                                {error ? "Telemetrics Fault" : "Waiting for Matches"}
+                            </h3>
                             <p className="text-xs text-slate-700 uppercase tracking-widest mt-2 px-6">
-                                {activeSport === 'football'
-                                    ? "Scanning SofaScore telemetrics... Check back in a moment."
-                                    : "Connecting to Cricbuzz satellites... Updates pending."}
+                                {error
+                                    ? `Alert: ${error} - The provider is rejecting our feed request.`
+                                    : (activeSport === 'football'
+                                        ? "Scanning SofaScore telemetrics... Check back in a moment."
+                                        : "Connecting to Cricbuzz satellites... Updates pending.")}
                             </p>
                             <button
                                 onClick={() => fetchMatches()}
                                 className="mt-8 px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-white hover:bg-red-600/20 hover:border-red-600/30 transition-all"
                             >
-                                Force Refresh
+                                {error ? "Re-establish Uplink" : "Force Refresh"}
                             </button>
                         </div>
                     )}

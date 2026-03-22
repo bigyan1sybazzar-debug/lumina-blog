@@ -66,17 +66,31 @@ export async function GET(request: Request) {
     try {
         const res = await fetch(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+                'Accept': '*/*',
+                'Accept-Language': 'en-US,en;q=0.9',
                 'Origin': 'https://www.sofascore.com',
                 'Referer': 'https://www.sofascore.com/',
-                'Cache-Control': 'no-cache'
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'sec-ch-ua': '"Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"Windows"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-site',
             },
             next: { revalidate: 30 }
         });
 
         if (!res.ok) {
             console.error(`[SPORTS PROXY] SofaScore Error: ${res.status} for ${url}`);
-            return NextResponse.json({ error: `Provider returned ${res.status}` }, { status: res.status });
+            // Forward the error status but provide a clearer message
+            return NextResponse.json({
+                error: `Provider Block: ${res.status}`,
+                status: res.status,
+                url: url
+            }, { status: res.status });
         }
 
         const data = await res.json();
@@ -84,6 +98,6 @@ export async function GET(request: Request) {
         return NextResponse.json(data);
     } catch (error: any) {
         console.error("[SPORTS PROXY] SofaScore Fetch Failure:", error.message);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Network Timeout or Connectivity Issue" }, { status: 504 });
     }
 }
