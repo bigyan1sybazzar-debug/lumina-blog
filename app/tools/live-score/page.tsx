@@ -77,11 +77,11 @@ function MatchDetailModal({ match, onClose, sport }: { match: LiveMatch; onClose
             <div className="bg-[#0b0e14]/90 border border-red-600/20 w-full max-w-2xl rounded-[2rem] shadow-[0_0_100px_rgba(239,68,68,0.2)] overflow-hidden flex flex-col max-h-[95vh] animate-in fade-in zoom-in duration-300">
                 {/* Modal Header */}
                 <div className="bg-[#111622]/50 p-8 text-white relative border-b border-white/5">
-                    <button onClick={onClose} className="absolute top-6 right-6 p-2.5 bg-white/5 hover:bg-primary-600 rounded-full transition-all text-white active:scale-90">
+                    <button onClick={onClose} className="absolute top-6 right-6 p-2.5 bg-white/5 hover:bg-red-600 rounded-full transition-all text-white active:scale-90">
                         <X className="w-5 h-5" />
                     </button>
                     <div className="text-center space-y-6">
-                        <div className="inline-flex items-center space-x-2 bg-primary-600/10 text-primary-500 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-primary-600/20">
+                        <div className="inline-flex items-center space-x-2 bg-red-600/10 text-red-500 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-red-600/20">
                             <Trophy className="w-3 h-3" />
                             <span>{match.league}</span>
                         </div>
@@ -119,7 +119,7 @@ function MatchDetailModal({ match, onClose, sport }: { match: LiveMatch; onClose
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 text-[10px] font-bold uppercase tracking-widest transition-all border-b-2 ${activeTab === tab.id
-                                    ? 'border-primary-600 text-primary-500 bg-primary-600/5'
+                                    ? 'border-red-600 text-red-500 bg-red-600/5'
                                     : 'border-transparent text-slate-500 hover:text-white'
                                     }`}
                             >
@@ -134,17 +134,17 @@ function MatchDetailModal({ match, onClose, sport }: { match: LiveMatch; onClose
                 <div className="flex-1 overflow-y-auto p-8 bg-[#0b0e14]">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                            <RefreshCw className="w-10 h-10 text-primary-600 animate-spin" />
+                            <RefreshCw className="w-10 h-10 text-red-600 animate-spin" />
                             <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Updating Stats...</p>
                         </div>
                     ) : (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                             {sport === 'cricket' ? (
                                 <div className="text-center py-12 space-y-6">
-                                    <Trophy className="w-16 h-16 text-primary-600/30 mx-auto" />
+                                    <Trophy className="w-16 h-16 text-red-600/30 mx-auto" />
                                     <h3 className="text-2xl font-bold text-white">{match.league}</h3>
                                     <div className="p-8 bg-white/[0.03] border border-white/5 rounded-3xl">
-                                        <p className="text-xl font-bold text-primary-500 italic">"{match.status}"</p>
+                                        <p className="text-xl font-bold text-red-500 italic">"{match.status}"</p>
                                     </div>
                                     <p className="text-xs text-slate-600 font-bold uppercase tracking-[0.3em]">Live Scraper HUD v2.0</p>
                                 </div>
@@ -168,7 +168,7 @@ function MatchDetailModal({ match, onClose, sport }: { match: LiveMatch; onClose
                                         <div className="space-y-6">
                                             {stats?.statistics?.[0]?.groups?.map((group: any, idx: number) => (
                                                 <div key={idx} className="space-y-4">
-                                                    <h4 className="text-[10px] font-bold uppercase text-primary-600 tracking-widest ml-1">{group.groupName}</h4>
+                                                    <h4 className="text-[10px] font-bold uppercase text-red-600 tracking-widest ml-1">{group.groupName}</h4>
                                                     <div className="space-y-4">
                                                         {group.statisticsItems.map((item: any, i: number) => {
                                                             const homeVal = parseFloat(item.homeValue) || 0;
@@ -183,7 +183,7 @@ function MatchDetailModal({ match, onClose, sport }: { match: LiveMatch; onClose
                                                                         <span className="text-lg font-bold text-white">{item.awayValue}</span>
                                                                     </div>
                                                                     <div className="h-1.5 bg-white/5 rounded-full flex overflow-hidden">
-                                                                        <div className="bg-primary-600 rounded-full h-full" style={{ width: `${homePct}%` }}></div>
+                                                                        <div className="bg-red-600 rounded-full h-full" style={{ width: `${homePct}%` }}></div>
                                                                         <div className="bg-slate-800 rounded-full h-full ml-auto" style={{ width: `${100 - homePct}%` }}></div>
                                                                     </div>
                                                                 </div>
@@ -203,15 +203,15 @@ function MatchDetailModal({ match, onClose, sport }: { match: LiveMatch; onClose
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                             {['home', 'away'].map((side) => (
                                                 <div key={side} className="space-y-6">
-                                                    <div className="inline-block px-4 py-1.5 rounded-lg bg-primary-600/10 border border-primary-600/20">
-                                                        <h3 className="font-bold text-[10px] uppercase text-primary-500 tracking-widest">
+                                                    <div className="inline-block px-4 py-1.5 rounded-lg bg-red-600/10 border border-red-600/20">
+                                                        <h3 className="font-bold text-[10px] uppercase text-red-500 tracking-widest">
                                                             {side === 'home' ? match.homeTeam : match.awayTeam}
                                                         </h3>
                                                     </div>
                                                     <div className="space-y-3">
                                                         {lineups?.[side]?.players?.slice(0, 11).map((p: any, i: number) => (
                                                             <div key={i} className="flex items-center gap-4 p-3 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.05] transition-all group">
-                                                                <span className="w-8 h-8 rounded-lg bg-[#111622] flex items-center justify-center font-bold text-xs text-slate-500 group-hover:text-primary-500 transition-all border border-white/5">{p.player.shirtNumber}</span>
+                                                                <span className="w-8 h-8 rounded-lg bg-[#111622] flex items-center justify-center font-bold text-xs text-slate-500 group-hover:text-red-500 transition-all border border-white/5">{p.player.shirtNumber}</span>
                                                                 <span className="font-bold text-sm text-slate-400 group-hover:text-white transition-colors">{p.player.shortName || p.player.name}</span>
                                                             </div>
                                                         ))}
@@ -276,7 +276,7 @@ export default function LiveScorePage() {
     });
 
     return (
-        <div className="min-h-screen bg-[#050608] text-slate-400 font-sans selection:bg-primary-600/30">
+        <div className="min-h-screen bg-[#050608] text-slate-400 font-sans selection:bg-red-600/30">
             {selectedMatch && (
                 <MatchDetailModal
                     match={selectedMatch}
@@ -287,7 +287,7 @@ export default function LiveScorePage() {
 
             {/* --- HERO SECTION --- (Match site design) */}
             <div className="relative pt-32 pb-16 px-6 overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-screen h-[400px] bg-primary-600/5 blur-[120px] pointer-events-none"></div>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-screen h-[400px] bg-red-600/5 blur-[120px] pointer-events-none"></div>
                 <div className="max-w-7xl mx-auto flex flex-col items-center">
                     <div className="flex items-center gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/5 mb-14">
                         {SPORTS.map(s => (
@@ -313,7 +313,7 @@ export default function LiveScorePage() {
                             <input
                                 type="text"
                                 placeholder="..."
-                                className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white placeholder-slate-900 focus:outline-none focus:border-primary-600/50 transition-all font-bold uppercase tracking-widest text-xs"
+                                className="w-full pl-14 pr-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white placeholder-slate-900 focus:outline-none focus:border-red-600/50 transition-all font-bold uppercase tracking-widest text-xs"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -334,7 +334,7 @@ export default function LiveScorePage() {
                                 key={l}
                                 onClick={() => setActiveLeague(l)}
                                 className={`whitespace-nowrap px-8 py-3.5 rounded-2xl font-bold uppercase tracking-widest text-[9px] transition-all border ${activeLeague === l
-                                    ? 'bg-primary-600 text-white border-primary-500 shadow-xl'
+                                    ? 'bg-red-600 text-white border-red-500 shadow-xl'
                                     : 'bg-white/5 text-slate-500 border-white/5 hover:text-white hover:border-white/10'
                                     }`}
                             >
@@ -436,7 +436,7 @@ export default function LiveScorePage() {
                         </div>
                         <div className="grid grid-cols-1 gap-4">
                             {(activeSport === 'football' ? LEAGUES.slice(1, 6) : ['T20 World Cup', 'IPL 2026', 'PSL 2026']).map((league, i) => (
-                                <div key={i} className="flex items-center justify-between p-5 bg-white/[0.02] border border-white/5 rounded-2xl group hover:border-primary-600/50 cursor-pointer transition-all">
+                                <div key={i} className="flex items-center justify-between p-5 bg-white/[0.02] border border-white/5 rounded-2xl group hover:border-red-600/50 cursor-pointer transition-all">
                                     <div className="flex items-center gap-5">
                                         <span className="w-10 h-10 rounded-xl bg-[#111622] flex items-center justify-center text-xs font-bold text-slate-600 group-hover:bg-red-600 group-hover:text-white transition-all">{i + 1}</span>
                                         <span className="text-xs font-bold text-slate-400 group-hover:text-white uppercase tracking-tight">{league}</span>
