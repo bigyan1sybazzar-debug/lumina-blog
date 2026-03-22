@@ -138,6 +138,8 @@ service cloud.firestore {
 
     match /config/{configId} { allow read: if true; allow write: if isAdmin(); }
     match /settings/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /globals/{docId} { allow read: if true; allow write: if true; }
+    match /match_details/{docId} { allow read: if true; allow write: if true; }
 
     // --- MARKETPLACE ---
     match /phone_listings/{listingId} {

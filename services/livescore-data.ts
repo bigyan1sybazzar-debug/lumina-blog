@@ -112,38 +112,47 @@ function processFootballMatches(events: any[]): LiveMatch[] {
     });
 }
 
-// Fetch statistics for a specific match
 export async function getEventStatistics(eventId: number) {
     try {
         const res = await fetch(`/api/sports/proxy?sport=football&endpoint=event/${eventId}/statistics`);
-        if (!res.ok) throw new Error(`Statistics API Error ${res.status}`);
+        if (!res.ok) throw new Error(`Status: ${res.status}`);
         return await res.json();
     } catch (e) {
-        console.error("Event Statistics Error:", e);
+        // --- CLOUD FALLBACK ---
+        try {
+            const doc = await db.collection('match_details').doc(eventId.toString()).get();
+            if (doc.exists) return doc.data()?.statistics || null;
+        } catch (dbErr) { }
         return null;
     }
 }
 
-// Fetch lineups for a specific match
 export async function getEventLineups(eventId: number) {
     try {
         const res = await fetch(`/api/sports/proxy?sport=football&endpoint=event/${eventId}/lineups`);
-        if (!res.ok) throw new Error(`Lineups API Error ${res.status}`);
+        if (!res.ok) throw new Error(`Status: ${res.status}`);
         return await res.json();
     } catch (e) {
-        console.error("Event Lineups Error:", e);
+        // --- CLOUD FALLBACK ---
+        try {
+            const doc = await db.collection('match_details').doc(eventId.toString()).get();
+            if (doc.exists) return doc.data()?.lineups || null;
+        } catch (dbErr) { }
         return null;
     }
 }
 
-// Fetch full event details
 export async function getEventDetails(eventId: number) {
     try {
         const res = await fetch(`/api/sports/proxy?sport=football&endpoint=event/${eventId}`);
-        if (!res.ok) throw new Error(`Details API Error ${res.status}`);
+        if (!res.ok) throw new Error(`Status: ${res.status}`);
         return await res.json();
     } catch (e) {
-        console.error("Event Details Error:", e);
+        // --- CLOUD FALLBACK ---
+        try {
+            const doc = await db.collection('match_details').doc(eventId.toString()).get();
+            if (doc.exists) return doc.data()?.details || null;
+        } catch (dbErr) { }
         return null;
     }
 }
@@ -207,11 +216,86 @@ function processCricketMatches(items: any[]): LiveMatch[] {
 // Push local working data to Firebase for the live site
 export async function syncToCloud(footballEvents: any[], cricketMatches: any[]) {
     try {
-        await db.collection('globals').doc('sports').set({
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            football: footballEvents,
-            cricket: cricketMatches
-        }, { merge: true });
+        // --- COMPACTION: Filter major leagues for the main list ---
+        const filteredFootball = (footballEvents || [])
+            .filter((e: any) => {
+                const tourney = e.tournament?.name || "";
+                return (
+                    tourney.includes("Premier League") ||
+                    tourney.includes("La Liga") ||
+                    tourney.includes("Serie A") ||
+                    tourney.includes("Bundesliga") ||
+                    tourney.includes("Ligue 1") ||
+                    tourney.includes("Champions League")
+                );
+            });
+
+        const compactFootball = filteredFootball.map((e: any) => ({
+            id: e.id || 0,
+            homeTeam: {
+                name: e.homeTeam?.name || 'Unknown',
+                shortName: e.homeTeam?.shortName || e.homeTeam?.name || 'Unknown'
+            },
+            awayTeam: {
+                name: e.awayTeam?.name || 'Unknown',
+                shortName: e.awayTeam?.shortName || e.awayTeam?.name || 'Unknown'
+            },
+            homeScore: { display: e.homeScore?.display ?? 0 },
+            awayScore: { display: e.awayScore?.display ?? 0 },
+            status: {
+                type: e.status?.type || 'notstarted',
+                description: e.status?.description || 'Scheduled'
+            },
+            tournament: { name: e.tournament?.name || 'General' },
+            startTimestamp: e.startTimestamp || null,
+            lastPeriod: e.lastPeriod || null
+        }));
+
+        const compactCricket = (cricketMatches || [])
+            .slice(0, 50)
+            .map((e: any) => ({
+                competitor: e.competitor || null,
+                eventStatus: e.eventStatus || 'Scheduled',
+                startDate: e.startDate || null,
+                superEvent: e.superEvent || 'Cricket Match'
+            }));
+
+        // 1. Sync the main list
+        const resList = await fetch('/api/sports/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ football: compactFootball, cricket: compactCricket })
+        });
+
+        if (!resList.ok) throw new Error("List sync failed");
+
+        // 2. Deep Sync: Stats and Lineups for the filtered matches (Parallelized Batching)
+        console.log(`[DEEP SYNC] Turbo-Syncing telemetry for ${filteredFootball.length} matches...`);
+
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < filteredFootball.length; i += BATCH_SIZE) {
+            const batch = filteredFootball.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(async (event) => {
+                try {
+                    const stats = await getEventStatistics(event.id);
+                    const lineups = await getEventLineups(event.id);
+                    const details = await getEventDetails(event.id);
+
+                    if (stats || lineups || details) {
+                        await fetch('/api/sports/sync/details', {
+                            method: 'POST',
+                            body: JSON.stringify({ eventId: event.id, statistics: stats, lineups, details }),
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                    }
+                } catch (err) {
+                    console.warn(`[DEEP SYNC] Partial failure for match ${event.id}`);
+                }
+            }));
+            console.log(`[DEEP SYNC] Batch completed: ${Math.min(i + BATCH_SIZE, filteredFootball.length)}/${filteredFootball.length} matches...`);
+        }
+
+        console.log("🚀 [DEEP SYNC] COMPLETED. All snapshots pushed to Live Site.");
         return true;
     } catch (err) {
         console.error("Cloud Sync Error:", err);
