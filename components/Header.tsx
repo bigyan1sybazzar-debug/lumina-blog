@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 // Define standard navigation links
 const STANDARD_LINKS = [
   { name: 'Home', path: '/' },
-  { name: 'Live Score', path: '/tools/live-score' },
+  { name: 'Live Score', path: '/live-football' },
   { name: 'Articles', path: '/categories' },
   { name: 'AI Chat', path: '/chat' },
   { name: 'About', path: '/about' },
@@ -22,7 +22,6 @@ const STANDARD_LINKS = [
 
 // Define dropdown links (Tools)
 const TOOL_LINKS = [
-  { name: 'Live Score', path: '/tools/live-score' },
   { name: 'My Phone Price', path: '/price/my-phone-price' },
   { name: 'EMI Calculator', path: '/tools/emi-calculator' },
   { name: 'Exchange Offer', path: '/tools/exchange-offer' },
