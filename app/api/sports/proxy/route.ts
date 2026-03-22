@@ -51,16 +51,15 @@ export async function GET(request: Request) {
     // FOOTBALL (SofaScore)
     let finalEndpoint = endpoint;
     if (!finalEndpoint) {
-        // Offset to UTC+5:45 (Nepal) if needed, but for now we use local server time date or specific user date
+        // Offset to UTC+5:45 (Nepal) if needed
         const now = new Date();
-        // Add 5 hours and 45 mins to get current Nepal date if server is UTC
         const nepalTime = new Date(now.getTime() + (5.75 * 60 * 60 * 1000));
         const today = nepalTime.toISOString().split('T')[0];
         finalEndpoint = `sport/${sport}/scheduled-events/${today}`;
         console.log(`[SPORTS PROXY] Auto-date for ${sport}: ${today} (Nepal adjusted)`);
     }
 
-    const url = `https://api.sofascore.com/api/v1/${finalEndpoint}`;
+    const url = `https://web-api.sofascore.com/api/v1/${finalEndpoint}`;
     console.log(`[SPORTS PROXY] Fetching SofaScore: ${url}`);
 
     try {
