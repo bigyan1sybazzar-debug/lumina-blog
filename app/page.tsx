@@ -1,4 +1,4 @@
-import Home from '../pages/Home';
+import { HomeContent } from '../components/HomeContent';
 import { Metadata } from 'next';
 import { db } from '../services/firebase';
 import { BlogPost } from '../types';
@@ -61,5 +61,5 @@ export default async function Page() {
 
 
 
-    return <Home initialPosts={posts} initialHeroFeatured={heroFeatured} />;
+    return <HomeContent initialPosts={posts} initialHeroFeatured={heroFeatured} />;
 }

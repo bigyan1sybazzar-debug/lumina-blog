@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 // Define standard navigation links
 const STANDARD_LINKS = [
   { name: 'Home', path: '/' },
+  { name: 'Live Score', path: '/tools/live-score' },
   { name: 'Articles', path: '/categories' },
   { name: 'AI Chat', path: '/chat' },
   { name: 'About', path: '/about' },
@@ -21,6 +22,7 @@ const STANDARD_LINKS = [
 
 // Define dropdown links (Tools)
 const TOOL_LINKS = [
+  { name: 'Live Score', path: '/tools/live-score' },
   { name: 'My Phone Price', path: '/price/my-phone-price' },
   { name: 'EMI Calculator', path: '/tools/emi-calculator' },
   { name: 'Exchange Offer', path: '/tools/exchange-offer' },
@@ -32,6 +34,7 @@ const TOOL_LINKS = [
 ];
 
 export const Header: React.FC = () => {
+  const [isMounted, setIsMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isToolsDropdownOpen, setIsToolsDropdownOpen] = useState(false); // State for the new Tools dropdown
@@ -40,6 +43,11 @@ export const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+
+  // Set mounted state
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Close menu and dropdowns on route change
   useEffect(() => {
@@ -95,7 +103,7 @@ export const Header: React.FC = () => {
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center space-x-8">
-            {STANDARD_LINKS.map((link) => (
+            {isMounted && STANDARD_LINKS.map((link) => (
               <Link
                 key={link.path}
                 href={link.path}
@@ -123,7 +131,7 @@ export const Header: React.FC = () => {
 
               {isToolsDropdownOpen && (
                 <div className="absolute left-1/2 transform -translate-x-1/2 mt-3 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
-                  {TOOL_LINKS.map((link) => (
+                  {isMounted && TOOL_LINKS.map((link) => (
                     <Link
                       key={link.path}
                       href={link.path}
@@ -273,7 +281,7 @@ export const Header: React.FC = () => {
             </div>
 
             {/* Use the combined mobileLinks for the mobile menu */}
-            {mobileLinks.map((link) => (
+            {isMounted && mobileLinks.map((link) => (
               <Link
                 key={link.path}
                 href={link.path}
