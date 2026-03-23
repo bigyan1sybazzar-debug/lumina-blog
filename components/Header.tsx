@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 // Define standard navigation links
 const STANDARD_LINKS = [
   { name: 'Home', path: '/' },
-  { name: 'Live Score', path: '/live-football' },
+  { name: 'Live Score', path: '/tools/live-score' },
   { name: 'Articles', path: '/categories' },
   { name: 'AI Chat', path: '/chat' },
   { name: 'About', path: '/about' },
