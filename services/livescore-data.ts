@@ -303,10 +303,55 @@ export async function syncToCloud(footballEvents: any[], cricketMatches: any[]) 
     }
 }
 
-// Helper for dev sync
+// ─── PL STANDINGS SERVICE (Automated via Proxy) ──────────────────────────────
+
+/**
+ * Retrives League table from SofaScore via Proxy
+ */
+export async function getLeagueTable(leagueName: string) {
+    try {
+        // Map common league names to SofaScore Unique Tournament and Season IDs for 24/25
+        const leagueMap: Record<string, { id: number, season: number }> = {
+            'Premier League': { id: 17, season: 61627 },
+            'La Liga': { id: 8, season: 61643 },
+            'Serie A': { id: 23, season: 61624 },
+            'Bundesliga': { id: 35, season: 61659 },
+            'Ligue 1': { id: 34, season: 61554 },
+            'Champions League': { id: 7, season: 62121 } // 24/25 Swiss stage
+        };
+
+        const target = leagueMap[leagueName];
+        if (!target) return null;
+
+        const res = await fetch(`/api/sports/proxy?sport=football&endpoint=${encodeURIComponent(`unique-tournament/${target.id}/season/${target.season}/standings/total`)}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+
+        // Map SofaScore standings
+        const standings = data.standings?.[0]?.rows || [];
+        return standings.map((row: any) => {
+            const team = row.team.shortName || row.team.name;
+            const pos = row.position;
+            const p = row.matches;
+            const w = row.wins;
+            const d = row.draws;
+            const l = row.losses;
+            const gd = row.goalsFor - row.goalsAgainst;
+            const pts = row.points;
+            return `${pos} | ${team} | P:${p} W:${w} D:${d} L:${l} GD:${gd >= 0 ? '+' : ''}${gd} PTS:${pts}`;
+        });
+    } catch (err) {
+        console.error(`Automated Table Error for ${leagueName}:`, err);
+        return null;
+    }
+}
+
+// ─── HELPERS FOR DEV SYNC ─────────────────────────────────────────────────────
 export async function getRawSportsData(sport: 'football' | 'cricket') {
     const res = await fetch(`/api/sports/proxy?sport=${sport}&t=${Date.now()}`);
     if (!res.ok) return null;
     const data = await res.json();
     return sport === 'football' ? data.events : data.matches;
 }
+
+

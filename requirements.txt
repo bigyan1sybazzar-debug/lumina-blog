@@ -2,3 +2,6 @@ flask
 google-generativeai
 python-dotenv
 flask-cors
+beautifulsoup4
+requests
+espn_api

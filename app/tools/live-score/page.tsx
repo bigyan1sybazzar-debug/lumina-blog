@@ -5,7 +5,7 @@ import {
     Trophy, Calendar, Clock, Search, RefreshCw,
     Activity, X, Info, BarChart3, Users, Zap,
     TrendingUp, ArrowLeft, CircleDot, History,
-    ChevronRight, Filter
+    ChevronRight, Filter, Table as TableIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import GoogleAdSense from '../../../components/GoogleAdSense';
@@ -18,7 +18,8 @@ import {
     getEventDetails,
     getCricketScores,
     syncToCloud,
-    getRawSportsData
+    getRawSportsData,
+    getLeagueTable
 } from '../../../services/livescore-data';
 
 // ─── Live Clock (hydration safe) ──────────────────────────────────────────────
@@ -240,87 +241,156 @@ function MatchDetailModal({ match, onClose, sport }: { match: LiveMatch; onClose
     );
 }
 
-// ─── Sub-Component: Match Card (Premium Grid Style) ─────────────────────────
+// ─── Sub-Component: Match Card (Compact Version) ─────────────────────────
 const MatchCard = React.memo(({ match, onSelect, sport }: { match: LiveMatch; onSelect: (m: LiveMatch) => void; sport: string }) => {
     const isLive = match.category === 'LIVE';
     const isFinished = match.category === 'FINISHED';
     const leagueAccent = getLeagueAccent(match.league);
 
     return (
-        <div className={`group relative bg-white dark:bg-surface-dark-900 rounded-2xl md:rounded-[2.5rem] border transition-all duration-300 overflow-hidden ${isLive ? 'border-primary-500/50 ring-1 ring-primary-500/10 shadow-xl' : 'border-slate-200 dark:border-white/5 hover:border-primary-500/30 hover:shadow-xl'}`}>
+        <div className={`group relative bg-white dark:bg-surface-dark-900 rounded-[1.5rem] border transition-all duration-300 overflow-hidden ${isLive ? 'border-primary-500/50 ring-1 ring-primary-500/10 shadow-lg' : 'border-slate-200 dark:border-white/5 hover:border-primary-500/30 hover:shadow-lg'}`}>
             {isLive && <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-transparent pointer-events-none" />}
 
             {/* Upper Badge Line */}
-            <div className="px-5 md:px-8 pt-5 md:pt-6 flex justify-between items-center">
-                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${leagueAccent}`}>
-                    <Trophy size={9} /> {match.league.length > 24 ? match.league.slice(0, 24) + '…' : match.league}
+            <div className="px-4 md:px-5 pt-4 md:pt-5 flex justify-between items-center">
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${leagueAccent}`}>
+                    <Trophy size={8} /> {match.league.length > 24 ? match.league.slice(0, 24) + '…' : match.league}
                 </span>
                 {isLive && (
-                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-[9px] font-black uppercase animate-pulse border border-red-200 dark:border-red-800/20">
-                        <span className="relative flex h-1.5 w-1.5">
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-[8px] font-black uppercase animate-pulse border border-red-200 dark:border-red-800/20">
+                        <span className="relative flex h-1.5 w-1.5 mr-1">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
                             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
                         </span>
-                        LIVE {match.status && `· ${match.status}`}
+                        {match.status}
                     </span>
                 )}
-                {isFinished && <span className="px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 text-[9px] font-black uppercase border border-gray-200 dark:border-white/10">FT</span>}
+                {isFinished && <span className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-white/5 text-gray-400 text-[8px] font-black uppercase border border-gray-200 dark:border-white/10">FT</span>}
                 {!isLive && !isFinished && (
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[9px] font-black uppercase border border-blue-200 dark:border-blue-800/30">
-                        <Clock size={9} /> {match.status}
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[8px] font-black uppercase border border-blue-200 dark:border-blue-800/30">
+                        <Clock size={8} /> {match.status}
                     </span>
                 )}
             </div>
 
             {/* Score Content Area */}
-            <div className="p-5 md:p-8">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12">
-                    <div className="flex-1 flex flex-col items-center gap-3">
-                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] flex items-center justify-center text-2xl md:text-3xl font-black italic shadow-lg ${isLive ? 'bg-gradient-to-br from-primary-600 to-orange-500 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400'}`}>
+            <div className="px-4 md:px-5 py-4">
+                <div className="flex flex-row items-center justify-between gap-4">
+                    <div className="flex-1 flex flex-col items-center gap-2">
+                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center text-xl font-black italic shadow-sm ${isLive ? 'bg-gradient-to-br from-primary-600 to-orange-500 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-500'}`}>
                             {match.homeTeam[0]}
                         </div>
-                        <h3 className="text-sm md:text-base font-black text-gray-900 dark:text-white uppercase tracking-tight text-center truncate w-full">{match.homeTeam}</h3>
+                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight text-center truncate w-full">{match.homeTeam}</h3>
                     </div>
-                    <div className="flex-none flex flex-col items-center gap-3">
-                        <div className="flex items-center gap-4 md:gap-8">
-                            <span className={`text-4xl md:text-6xl font-black tabular-nums tracking-tighter ${isLive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-900 dark:text-white'}`}>
+                    <div className="flex-none flex flex-col items-center gap-2">
+                        <div className="flex items-center gap-3">
+                            <span className={`text-2xl md:text-3xl font-black tabular-nums tracking-tighter ${isLive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-900 dark:text-white'}`}>
                                 {match.homeScore}
                             </span>
-                            <span className="text-xl md:text-2xl font-black text-gray-200 dark:text-gray-800">—</span>
-                            <span className={`text-4xl md:text-6xl font-black tabular-nums tracking-tighter ${isLive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-900 dark:text-white'}`}>
+                            <span className="text-sm font-black text-gray-300 dark:text-gray-700">—</span>
+                            <span className={`text-2xl md:text-3xl font-black tabular-nums tracking-tighter ${isLive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-900 dark:text-white'}`}>
                                 {match.awayScore}
                             </span>
                         </div>
                         {isLive && match.time && (
-                            <span className="flex items-center gap-1.5 text-[9px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                                <Activity size={9} className="animate-pulse" /> {match.time}
+                            <span className="flex items-center gap-1 text-[8px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-1.5 py-0.5 rounded-sm">
+                                <Activity size={8} className="animate-pulse" /> {match.time}
                             </span>
                         )}
                     </div>
-                    <div className="flex-1 flex flex-col items-center gap-3">
-                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] flex items-center justify-center text-2xl md:text-3xl font-black italic bg-gray-100 dark:bg-white/5 text-gray-400 shadow-lg">
+                    <div className="flex-1 flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center text-xl font-black italic bg-gray-100 dark:bg-white/5 text-gray-500 shadow-sm">
                             {match.awayTeam[0]}
                         </div>
-                        <h3 className="text-sm md:text-base font-black text-gray-900 dark:text-white uppercase tracking-tight text-center truncate w-full">{match.awayTeam}</h3>
+                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight text-center truncate w-full">{match.awayTeam}</h3>
                     </div>
                 </div>
             </div>
 
             {/* Bottom Panel Actions */}
-            <div className="px-5 md:px-8 pb-5 md:pb-6 pt-3 border-t border-gray-50 dark:border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <button onClick={() => onSelect(match)} className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl text-[9px] font-black text-gray-400 transition-all border border-gray-100 dark:border-white/5">
-                        <BarChart3 size={12} /> Analytics
-                    </button>
-                </div>
-                <button onClick={() => onSelect(match)} className="text-primary-600 dark:text-primary-400 font-black text-[9px] uppercase tracking-widest flex items-center gap-1.5 hover:translate-x-1 transition-all">
-                    Details <ChevronRight size={14} />
+            <div className="px-4 md:px-5 pb-4 pt-3 border-t border-gray-50 dark:border-white/5 flex items-center justify-between">
+                <button onClick={() => onSelect(match)} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg text-[8px] font-black text-gray-500 transition-all border border-gray-100 dark:border-white/5">
+                    <BarChart3 size={10} /> Analytics
+                </button>
+                <button onClick={() => onSelect(match)} className="text-primary-600 dark:text-primary-400 font-black text-[8px] uppercase tracking-widest flex items-center gap-1 hover:translate-x-1 transition-all">
+                    Details <ChevronRight size={10} />
                 </button>
             </div>
         </div>
     );
 });
 MatchCard.displayName = 'MatchCard';
+
+// ─── Sub-Component: Standings Table ──────────────────────────────────────────
+const StandingsTable = ({ data, loading, title }: { data: string[], loading: boolean, title: string }) => {
+    return (
+        <div className="bg-white dark:bg-surface-dark-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="p-6 md:p-8 border-b border-gray-50 dark:border-white/5 bg-gray-50 dark:bg-gray-950/50">
+                <h3 className="text-lg md:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                    <TableIcon className="text-primary-600" /> {title} Standings
+                </h3>
+            </div>
+            <div className="p-4 md:p-8 overflow-x-auto">
+                <table className="w-full text-xs md:text-sm font-medium">
+                    <thead className="bg-gray-50 dark:bg-white/5 text-[9px] md:text-[10px] uppercase font-black tracking-widest text-gray-400">
+                        <tr>
+                            <th className="px-3 md:px-4 py-3 text-left w-8 md:w-12 text-gray-900 dark:text-white font-bold">POS</th>
+                            <th className="px-3 md:px-4 py-3 text-left">TEAM</th>
+                            <th className="px-2 md:px-4 py-3 text-center">P</th>
+                            <th className="px-2 md:px-4 py-3 text-center">W</th>
+                            <th className="px-2 md:px-4 py-3 text-center hidden sm:table-cell">D</th>
+                            <th className="px-2 md:px-4 py-3 text-center hidden sm:table-cell">L</th>
+                            <th className="px-2 md:px-4 py-3 text-center">GD</th>
+                            <th className="px-3 md:px-4 py-3 text-center text-primary-600 dark:text-primary-400">PTS</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 dark:divide-white/5">
+                        {loading ? (
+                            [...Array(10)].map((_, i) => (
+                                <tr key={i} className="animate-pulse">
+                                    <td colSpan={8} className="px-4 py-3 md:py-4 h-10 md:h-12 bg-gray-50/50 dark:bg-white/5 rounded-lg mb-2" />
+                                </tr>
+                            ))
+                        ) : data.length === 0 ? (
+                            <tr>
+                                <td colSpan={8} className="px-4 py-10 md:py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">
+                                    Data temporarily unavailable or League not supported
+                                </td>
+                            </tr>
+                        ) : (
+                            data.map((row, idx) => {
+                                const parts = row.split('|').map(s => s.trim());
+                                if (parts.length < 2) return null;
+                                const pos = parts[0];
+                                const team = parts[1];
+                                const rest = parts[2];
+                                const pMatch = rest.match(/P:(\d+)/)?.[1] || '-';
+                                const wMatch = rest.match(/W:(\d+)/)?.[1] || '-';
+                                const dMatch = rest.match(/D:(\d+)/)?.[1] || '-';
+                                const lMatch = rest.match(/L:(\d+)/)?.[1] || '-';
+                                const gdMatch = rest.match(/GD:([+-]?\d+)/)?.[1] || '-';
+                                const ptsMatch = rest.match(/PTS:(\d+)/)?.[1] || '-';
+
+                                return (
+                                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
+                                        <td className="px-3 md:px-4 py-3 md:py-4 font-black text-gray-400 group-hover:text-primary-600 transition-colors">{pos}</td>
+                                        <td className="px-3 md:px-4 py-3 md:py-4 font-black text-gray-900 dark:text-white truncate max-w-[120px] md:max-w-none">{team}</td>
+                                        <td className="px-2 md:px-4 py-3 md:py-4 text-center text-gray-500">{pMatch}</td>
+                                        <td className="px-2 md:px-4 py-3 md:py-4 text-center text-gray-500">{wMatch}</td>
+                                        <td className="px-2 md:px-4 py-3 md:py-4 text-center text-gray-500 hidden sm:table-cell">{dMatch}</td>
+                                        <td className="px-2 md:px-4 py-3 md:py-4 text-center text-gray-500 hidden sm:table-cell">{lMatch}</td>
+                                        <td className="px-2 md:px-4 py-3 md:py-4 text-center text-gray-500 font-bold">{gdMatch}</td>
+                                        <td className="px-3 md:px-4 py-3 md:py-4 text-center font-black text-primary-600 dark:text-primary-400">{ptsMatch}</td>
+                                    </tr>
+                                );
+                            })
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
 
 // ─── Main Page Export ────────────────────────────────────────────────────────
 const SPORTS = [
@@ -329,19 +399,26 @@ const SPORTS = [
 ];
 
 const LEAGUES = [
-    'All Leagues', 'Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Champions League'
+    'Premier League', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1', 'Champions League'
 ];
 
 export default function LiveScorePage() {
     const [activeSport, setActiveSport] = useState('football');
-    const [activeLeague, setActiveLeague] = useState('All Leagues');
+    const [activeLeague, setActiveLeague] = useState('Premier League');
     const [searchQuery, setSearchQuery] = useState('');
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [matches, setMatches] = useState<LiveMatch[]>([]);
+    const [standings, setStandings] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
+    const [standingsLoading, setStandingsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedMatch, setSelectedMatch] = useState<LiveMatch | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
+
+    // Limits visible matches to prevent clutter
+    const [visibleLimit, setVisibleLimit] = useState(8);
+
+    const [activeStandingsLeague, setActiveStandingsLeague] = useState<string | null>('Premier League');
 
     const handleSyncToCloud = async () => {
         setIsSyncing(true);
@@ -373,11 +450,41 @@ export default function LiveScorePage() {
         }
     }, [activeSport]);
 
+    // Fetch standings whenever activeStandingsLeague changes
+    const fetchStandings = useCallback(async (league: string | null) => {
+        if (!league || activeSport !== 'football') {
+            setStandings([]);
+            return;
+        }
+        setStandingsLoading(true);
+        try {
+            const data = await getLeagueTable(league);
+            if (data) setStandings(data);
+            else setStandings([]);
+        } catch (err) {
+            console.error("Standings fetch error:", err);
+            setStandings([]);
+        } finally {
+            setStandingsLoading(false);
+        }
+    }, [activeSport]);
+
     useEffect(() => {
         fetchMatches();
-        const interval = setInterval(() => fetchMatches(), 30000);
+        const interval = setInterval(() => {
+            fetchMatches();
+        }, 30000);
         return () => clearInterval(interval);
     }, [fetchMatches]);
+
+    useEffect(() => {
+        fetchStandings(activeStandingsLeague);
+    }, [activeStandingsLeague, fetchStandings]);
+
+    // Reset pagination when league or sport changes
+    useEffect(() => {
+        setVisibleLimit(8);
+    }, [activeLeague, activeSport]);
 
     const filteredMatches = useMemo(() => matches.filter(m => {
         const matchesLeague = activeLeague === 'All Leagues' || m.league === activeLeague;
@@ -466,13 +573,14 @@ export default function LiveScorePage() {
                                     {SPORTS.map(s => (
                                         <button
                                             key={s.id}
-                                            onClick={() => { setActiveSport(s.id); setLoading(true); setMatches([]); setActiveLeague('All Leagues'); }}
+                                            onClick={() => { setActiveSport(s.id); setLoading(true); setMatches([]); setActiveLeague('Premier League'); }}
                                             className={`flex items-center gap-2.5 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 shadow-sm ${activeSport === s.id ? 'bg-red-600 text-white border-red-600' : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-100 dark:border-white/5 hover:border-primary-500/50'}`}
                                         >
                                             <s.icon size={13} /> {s.label}
                                         </button>
                                     ))}
                                 </div>
+
                                 <div className="relative flex-1 group">
                                     <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-500 transition-colors" size={18} />
                                     <input
@@ -485,7 +593,7 @@ export default function LiveScorePage() {
                                 </div>
                             </div>
 
-                            {/* Toolbar Bottom: League Filters (Football only) */}
+                            {/* Toolbar Bottom: League Filters (Matches only) */}
                             {activeSport === 'football' && (
                                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                                     {LEAGUES.map(l => (
@@ -494,7 +602,7 @@ export default function LiveScorePage() {
                                             onClick={() => setActiveLeague(l)}
                                             className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 ${activeLeague === l ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-100 dark:border-white/5 shadow-sm'}`}
                                         >
-                                            {l === 'All Leagues' ? '🌍 Global' : l}
+                                            {l}
                                         </button>
                                     ))}
                                 </div>
@@ -502,76 +610,106 @@ export default function LiveScorePage() {
                         </div>
                     </div>
 
-                    {/* ──── Data Grid State: Loading ──── */}
-                    {loading && (
-                        <div className="space-y-8 animate-pulse">
-                            <div className="w-full h-40 bg-gray-100 dark:bg-white/5 rounded-[2.5rem]" />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {[1, 2, 3].map(i => <div key={i} className="h-64 bg-gray-50 dark:bg-white/5 rounded-[2rem]" />)}
+                    {/* ──── VIEW: MATCHES ──── */}
+                    <>
+                        {/* Loading state */}
+                        {loading && (
+                            <div className="space-y-8 animate-pulse">
+                                <div className="w-full h-40 bg-gray-100 dark:bg-white/5 rounded-[2.5rem]" />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {[1, 2, 3].map(i => <div key={i} className="h-48 bg-gray-50 dark:bg-white/5 rounded-[1.5rem]" />)}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* ──── Data Grid State: Results ──── */}
-                    {!loading && filteredMatches.length > 0 && (
-                        <div className="space-y-10">
-                            {/* Grid Section Header */}
-                            <div className="flex items-center gap-3 border-b border-gray-100 dark:border-white/5 pb-5">
-                                <div className="w-2 h-8 bg-red-600 rounded-full" />
-                                <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
-                                    {activeSport === 'football' ? 'Football Uplink' : 'Cricket Telemetry'}
-                                </h2>
-                                <span className="ml-auto px-3 py-1 bg-gray-100 dark:bg-white/5 text-gray-500 text-[10px] font-black rounded-lg uppercase tracking-widest">
-                                    {filteredMatches.length} NODES
-                                </span>
+                        {/* Results */}
+                        {!loading && filteredMatches.length > 0 && (
+                            <div className="space-y-10">
+                                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-white/5 pb-5">
+                                    <div className="w-2 h-8 bg-red-600 rounded-full" />
+                                    <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                        {activeSport === 'football' ? 'Football Uplink' : 'Cricket Telemetry'}
+                                    </h2>
+                                    <span className="ml-auto px-3 py-1 bg-gray-100 dark:bg-white/5 text-gray-500 text-[10px] font-black rounded-lg uppercase tracking-widest">
+                                        {filteredMatches.length} NODES
+                                    </span>
+                                </div>
+
+                                <div className="space-y-8 animate-in fade-in duration-500">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
+                                        {filteredMatches.slice(0, visibleLimit).map(m => (
+                                            <MatchCard
+                                                key={m.id}
+                                                match={m}
+                                                onSelect={setSelectedMatch}
+                                                sport={activeSport}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {visibleLimit < filteredMatches.length && (
+                                        <div className="flex justify-center pt-4 pb-8">
+                                            <button
+                                                onClick={() => setVisibleLimit(prev => prev + 12)}
+                                                className="px-8 py-3.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-primary-500/50 hover:bg-white dark:hover:bg-white/10 text-gray-900 dark:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest shadow-sm hover:shadow-xl transition-all"
+                                            >
+                                                View More Matches ({filteredMatches.length - visibleLimit} Left)
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
+                        )}
 
-                            <div className="space-y-8">
-                                {Array.from({ length: Math.ceil(filteredMatches.length / 8) }, (_, i) => {
-                                    const chunk = filteredMatches.slice(i * 8, i * 8 + 8);
-                                    return (
-                                        <React.Fragment key={i}>
-                                            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 md:gap-8">
-                                                {chunk.map(m => (
-                                                    <MatchCard
-                                                        key={m.id}
-                                                        match={m}
-                                                        onSelect={setSelectedMatch}
-                                                        sport={activeSport}
-                                                    />
-                                                ))}
-                                            </div>
-                                            {/* intermediate ad injection */}
-                                            {i < Math.ceil(filteredMatches.length / 8) - 1 && (
-                                                <div className="w-full flex justify-center py-4 min-h-[50px]">
-                                                    <GoogleAdSense slot="7838572857" format="horizontal" minHeight="50px" style={{ width: '100%', height: '50px' }} />
-                                                </div>
-                                            )}
-                                        </React.Fragment>
-                                    );
-                                })}
+                        {/* Empty state */}
+                        {!loading && filteredMatches.length === 0 && (
+                            <div className="py-24 text-center bg-white dark:bg-white/5 rounded-[3rem] border border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center">
+                                <Activity size={80} className="text-gray-100 dark:text-gray-800 mb-6" />
+                                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-widest underline decoration-primary-600/30 underline-offset-8">No Uplink Established</h3>
+                                <p className="text-gray-400 font-bold text-sm mt-4 uppercase tracking-[0.2em] max-w-sm mx-auto leading-relaxed">
+                                    {error || 'Scanning satellites for live events. Telemetry update pending.'}
+                                </p>
+                                <button onClick={() => fetchMatches()} className="mt-8 px-8 py-3.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                                    Force Re-establish
+                                </button>
                             </div>
-                        </div>
-                    )}
-
-                    {/* ──── Data Grid State: Empty/Error ──── */}
-                    {!loading && filteredMatches.length === 0 && (
-                        <div className="py-24 text-center bg-white dark:bg-white/5 rounded-[3rem] border border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center">
-                            <Activity size={80} className="text-gray-100 dark:text-gray-800 mb-6" />
-                            <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-widest underline decoration-primary-600/30 underline-offset-8">No Uplink Established</h3>
-                            <p className="text-gray-400 font-bold text-sm mt-4 uppercase tracking-[0.2em] max-w-sm mx-auto leading-relaxed">
-                                {error || 'Scanning satellites for live events. Telemetry update pending.'}
-                            </p>
-                            <button onClick={() => fetchMatches()} className="mt-8 px-8 py-3.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all">
-                                Force Re-establish
-                            </button>
-                        </div>
-                    )}
+                        )}
+                    </>
 
                     {/* Bottom Bottom Ad Cell */}
                     {!loading && filteredMatches.length > 0 && (
                         <div className="w-full flex justify-center py-4 min-h-[50px]">
                             <GoogleAdSense slot="7838572857" format="horizontal" minHeight="50px" style={{ width: '100%', height: '50px' }} />
+                        </div>
+                    )}
+
+                    {/* ──── VIEW: STANDINGS HUB (Independent of Match Filter) ──── */}
+                    {activeSport === 'football' && (
+                        <div className="pt-16 pb-12 border-t border-gray-100 dark:border-white/5 mt-10">
+                            <div className="text-center mb-10">
+                                <h2 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">
+                                    League <span className="text-primary-600 underline decoration-red-600/20 underline-offset-8 decoration-4">Standings</span>
+                                </h2>
+                                <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mt-4">Select a league below to view automated rankings</p>
+                            </div>
+
+                            <div className="flex flex-wrap justify-center gap-3 mb-8">
+                                {LEAGUES.map(l => (
+                                    <button
+                                        key={l}
+                                        onClick={() => setActiveStandingsLeague(activeStandingsLeague === l ? null : l)}
+                                        className={`px-6 py-3 rounded-[1.5rem] text-[10px] md:text-xs font-black uppercase tracking-widest transition-all shadow-md active:scale-95 ${activeStandingsLeague === l ? 'bg-primary-600 text-white' : 'bg-white dark:bg-surface-dark-900 text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-white/5 hover:border-primary-500/50'}`}
+                                    >
+                                        {l}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {activeStandingsLeague && (
+                                <div className="w-full">
+                                    <StandingsTable data={standings} loading={standingsLoading} title={activeStandingsLeague} />
+                                </div>
+                            )}
                         </div>
                     )}
 
