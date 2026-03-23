@@ -425,9 +425,19 @@ export default function LiveScorePage() {
         try {
             const football = await getRawSportsData('football');
             const cricket = await getRawSportsData('cricket');
-            if (football || cricket) {
-                const success = await syncToCloud(football || [], cricket || []);
-                if (success) alert('🚀 ProSync: Cloud telemetry updated!');
+
+            // Fetch all standings tables
+            const standingsMap: Record<string, string[]> = {};
+            for (const league of LEAGUES) {
+                const table = await getLeagueTable(league);
+                if (table && table.length > 0) {
+                    standingsMap[league] = table;
+                }
+            }
+
+            if (football || cricket || Object.keys(standingsMap).length > 0) {
+                const success = await syncToCloud(football || [], cricket || [], standingsMap);
+                if (success) alert('🚀 ProSync: Cloud telemetry updated! (Included Standings)');
             }
         } catch (err) {
             console.error('ProSync error:', err);

@@ -214,7 +214,7 @@ function processCricketMatches(items: any[]): LiveMatch[] {
 }
 
 // Push local working data to Firebase for the live site
-export async function syncToCloud(footballEvents: any[], cricketMatches: any[]) {
+export async function syncToCloud(footballEvents: any[], cricketMatches: any[], standingsData: any = null) {
     try {
         // --- COMPACTION: Filter major leagues for the main list ---
         const filteredFootball = (footballEvents || [])
@@ -260,11 +260,15 @@ export async function syncToCloud(footballEvents: any[], cricketMatches: any[]) 
                 superEvent: e.superEvent || 'Cricket Match'
             }));
 
-        // 1. Sync the main list
+        // 1. Sync the main list + standings
         const resList = await fetch('/api/sports/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ football: compactFootball, cricket: compactCricket })
+            body: JSON.stringify({
+                football: compactFootball,
+                cricket: compactCricket,
+                standings: standingsData // <--- STANDINGS INCLUDED
+            })
         });
 
         if (!resList.ok) throw new Error("List sync failed");
@@ -284,12 +288,17 @@ export async function syncToCloud(footballEvents: any[], cricketMatches: any[]) 
                     if (stats || lineups || details) {
                         await fetch('/api/sports/sync/details', {
                             method: 'POST',
-                            body: JSON.stringify({ eventId: event.id, statistics: stats, lineups, details }),
-                            headers: { 'Content-Type': 'application/json' }
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                eventId: event.id,
+                                details: details || null,
+                                statistics: stats || null,
+                                lineups: lineups || null
+                            })
                         });
                     }
-                } catch (err) {
-                    console.warn(`[DEEP SYNC] Partial failure for match ${event.id}`);
+                } catch (e) {
+                    console.warn(`Deep sync failed for event ${event.id}`, e);
                 }
             }));
             console.log(`[DEEP SYNC] Batch completed: ${Math.min(i + BATCH_SIZE, filteredFootball.length)}/${filteredFootball.length} matches...`);
@@ -306,7 +315,7 @@ export async function syncToCloud(footballEvents: any[], cricketMatches: any[]) 
 // ─── PL STANDINGS SERVICE (Automated via Proxy) ──────────────────────────────
 
 /**
- * Retrives League table from SofaScore via Proxy
+ * Retrives League table from SofaScore via Proxy or Cloud Fallback
  */
 export async function getLeagueTable(leagueName: string) {
     try {
@@ -324,7 +333,11 @@ export async function getLeagueTable(leagueName: string) {
         if (!target) return null;
 
         const res = await fetch(`/api/sports/proxy?sport=football&endpoint=${encodeURIComponent(`unique-tournament/${target.id}/season/${target.season}/standings/total`)}`);
-        if (!res.ok) return null;
+
+        if (!res.ok) {
+            throw new Error(`SofaScore proxy failed with status: ${res.status}`);
+        }
+
         const data = await res.json();
 
         // Map SofaScore standings
@@ -341,7 +354,21 @@ export async function getLeagueTable(leagueName: string) {
             return `${pos} | ${team} | P:${p} W:${w} D:${d} L:${l} GD:${gd >= 0 ? '+' : ''}${gd} PTS:${pts}`;
         });
     } catch (err) {
-        console.error(`Automated Table Error for ${leagueName}:`, err);
+        console.warn(`Automated Table Error for ${leagueName}, switching to Cloud Fallback:`, err);
+
+        // --- CLOUD FALLBACK ---
+        try {
+            const doc = await db.collection('globals').doc('sports').get();
+            if (doc.exists) {
+                const cloudData = doc.data();
+                if (cloudData?.standings?.[leagueName]) {
+                    return cloudData.standings[leagueName];
+                }
+            }
+        } catch (dbErr) {
+            console.error("Firebase standings fallback failed", dbErr);
+        }
+
         return null;
     }
 }

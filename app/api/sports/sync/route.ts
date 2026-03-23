@@ -7,17 +7,18 @@ export async function POST(req: Request) {
     // In production, you should add a secret token check here
 
     try {
-        const { football, cricket } = await req.json();
-        console.log(`[SPORTS SYNC] Football: ${football?.length || 0}, Cricket: ${cricket?.length || 0}`);
+        const { football, cricket, standings } = await req.json();
+        console.log(`[SPORTS SYNC] Football: ${football?.length || 0}, Cricket: ${cricket?.length || 0}, Standings: ${standings ? Object.keys(standings).length : 0} leagues`);
 
-        if (!football && !cricket) {
+        if (!football && !cricket && !standings) {
             return NextResponse.json({ error: "No data provided" }, { status: 400 });
         }
 
         const payload = {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            football: football || [],
-            cricket: cricket || []
+            ...(football && { football }),
+            ...(cricket && { cricket }),
+            ...(standings && { standings })
         };
 
         await db.collection('globals').doc('sports').set(payload, { merge: true });
