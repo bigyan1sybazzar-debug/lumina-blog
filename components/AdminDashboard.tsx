@@ -152,6 +152,12 @@ export const Admin: React.FC = () => {
   const [newLiveQuickTime, setNewLiveQuickTime] = useState('');
   const [selectedLiveLinks, setSelectedLiveLinks] = useState<string[]>([]);
   const [isLiveUploading, setIsLiveUploading] = useState(false);
+  const [newLiveThumbnail, setNewLiveThumbnail] = useState('');
+  const [isThumbnailUploading, setIsThumbnailUploading] = useState(false);
+  const [newLiveTeamALogo, setNewLiveTeamALogo] = useState('');
+  const [isTeamAUploading, setIsTeamAUploading] = useState(false);
+  const [newLiveTeamBLogo, setNewLiveTeamBLogo] = useState('');
+  const [isTeamBUploading, setIsTeamBUploading] = useState(false);
 
   // Helper to resolve match start time (copied from LiveSection for consistency)
   const resolveMatchStart = (value: string | number | undefined) => {
@@ -1104,6 +1110,9 @@ export const Admin: React.FC = () => {
         matchStartTime: newLiveMatchStart || undefined,
         matchDurationMinutes: newLiveDuration ? parseInt(newLiveDuration) : 125,
         poll,
+        thumbnailUrl: newLiveThumbnail || undefined,
+        teamALogo: newLiveTeamALogo || undefined,
+        teamBLogo: newLiveTeamBLogo || undefined,
         createdAt: new Date().toISOString()
       });
 
@@ -1121,6 +1130,7 @@ export const Admin: React.FC = () => {
       setNewLiveDuration('125');
       setNewLivePollTeamA('');
       setNewLivePollTeamB('');
+      setNewLiveThumbnail('');
       getLiveLinks().then(setLiveLinks);
     } catch (error) {
       console.error(error);
@@ -1152,7 +1162,10 @@ export const Admin: React.FC = () => {
         isLiveNow: newLiveIsLive,
         matchStartTime: newLiveMatchStart || undefined,
         matchDurationMinutes: newLiveDuration ? parseInt(newLiveDuration) : 125,
-        poll
+        poll,
+        thumbnailUrl: newLiveThumbnail || undefined,
+        teamALogo: newLiveTeamALogo || undefined,
+        teamBLogo: newLiveTeamBLogo || undefined
       });
 
       // Synchronize to IPTV section if it's an HLS link
@@ -1170,6 +1183,7 @@ export const Admin: React.FC = () => {
       setNewLiveDuration('125');
       setNewLivePollTeamA('');
       setNewLivePollTeamB('');
+      setNewLiveThumbnail('');
       getLiveLinks().then(setLiveLinks);
     } catch (error) {
       console.error(error);
@@ -2326,6 +2340,61 @@ export const Admin: React.FC = () => {
                         </label>
                       </div>
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Card Image (Optional)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newLiveThumbnail}
+                          onChange={(e) => setNewLiveThumbnail(e.target.value)}
+                          placeholder="https://.../image.jpg"
+                          className="input-field font-mono text-sm flex-1"
+                        />
+                        <label className="flex items-center justify-center px-4 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" title="Upload Image">
+                          {isThumbnailUploading ? <Loader2 className="animate-spin" size={20} /> : <ImageIcon size={20} className="text-gray-500 dark:text-gray-400" />}
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            disabled={isThumbnailUploading}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+
+                              try {
+                                setIsThumbnailUploading(true);
+                                const filename = encodeURIComponent(file.name);
+                                const res = await fetch(`/api/upload?filename=${filename}`, {
+                                  method: 'POST',
+                                  body: file,
+                                });
+
+                                if (!res.ok) throw new Error('Upload failed');
+
+                                const data = await res.json();
+                                setNewLiveThumbnail(data.url);
+                              } catch (error) {
+                                console.error('Upload error:', error);
+                                alert('Failed to upload image.');
+                              } finally {
+                                setIsThumbnailUploading(false);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
+                      {newLiveThumbnail && (
+                        <div className="mt-2 relative w-24 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                          <img src={newLiveThumbnail} alt="Preview" className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => setNewLiveThumbnail('')}
+                            className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-bl-lg hover:bg-red-600 transition-colors"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex flex-wrap items-center gap-3">
                       {/* Is Live toggle */}
                       <button
@@ -2592,6 +2661,7 @@ export const Admin: React.FC = () => {
                                     setNewLiveDuration(String((link as any).matchDurationMinutes || 125));
                                     setNewLivePollTeamA(link.poll?.teamA || '');
                                     setNewLivePollTeamB(link.poll?.teamB || '');
+                                    setNewLiveThumbnail(link.thumbnailUrl || '');
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                   }}
                                   className="text-primary-600 hover:text-primary-800 transition-colors"

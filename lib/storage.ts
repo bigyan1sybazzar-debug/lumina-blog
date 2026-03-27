@@ -54,22 +54,59 @@ export const storage = {
                     }
                 }
 
-                // Handle ReadableStream if needed (Browser vs Node)
+                // Convert ReadableStream to Buffer for Reliable S3/R2 Uploads
                 let uploadBody = body;
-                if (body instanceof ReadableStream && typeof Buffer !== 'undefined') {
-                    // In Node.js environment, we might need to convert it or use chunks
-                    // But AWS SDK v3 should handle it if nodejs_compat is on
+                if (body instanceof ReadableStream) {
+                    const reader = body.getReader();
+                    const chunks = [];
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        chunks.push(value);
+                    }
+                    uploadBody = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
+                } else if (typeof body === 'object' && body !== null && 'getReader' in body) {
+                    // Alternative check for stream-like objects
+                    const reader = (body as any).getReader();
+                    const chunks = [];
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        chunks.push(value);
+                    }
+                    uploadBody = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
+                }
+
+                // Detect Content-Type from extension if missing
+                let contentType = options.contentType;
+                if (!contentType || contentType === 'application/octet-stream') {
+                    const ext = key.split('.').pop()?.toLowerCase();
+                    const mimeTypes: Record<string, string> = {
+                        'png': 'image/png',
+                        'jpg': 'image/jpeg',
+                        'jpeg': 'image/jpeg',
+                        'gif': 'image/gif',
+                        'webp': 'image/webp',
+                        'svg': 'image/svg+xml',
+                        'mp4': 'video/mp4',
+                        'webm': 'video/webm',
+                    };
+                    if (ext && mimeTypes[ext]) {
+                        contentType = mimeTypes[ext];
+                    }
                 }
 
                 await r2.send(new PutObjectCommand({
                     Bucket: R2_BUCKET,
                     Key: key,
                     Body: uploadBody,
-                    ContentType: options.contentType || 'application/octet-stream',
+                    ContentType: contentType || 'application/octet-stream',
                 }));
 
                 const baseUrl = R2_PUBLIC_DOMAIN.endsWith('/') ? R2_PUBLIC_DOMAIN.slice(0, -1) : R2_PUBLIC_DOMAIN;
-                return { url: `${baseUrl}/${key}` };
+                const publicUrl = `${baseUrl}/${key}`;
+                console.log(`[Storage] Uploaded to R2: ${publicUrl} (${contentType})`);
+                return { url: publicUrl };
             } catch (error) {
                 console.error('R2 Put Error:', error);
                 throw error;

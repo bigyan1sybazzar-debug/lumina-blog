@@ -238,6 +238,9 @@ export interface LiveLink {
   isLiveNow?: boolean;
   matchStartTime?: string;
   matchDurationMinutes?: number;
+  thumbnailUrl?: string;
+  teamALogo?: string;
+  teamBLogo?: string;
 }
 
 export interface Keyword {

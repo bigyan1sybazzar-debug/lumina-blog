@@ -223,7 +223,7 @@ const splideOptionsTrending = {
 
 // --- SUB COMPONENTS FOR GRID ---
 
-const LiveMatchCard = React.memo(({ link, selectedLink, handleLinkClick, getWatchingCount, user, updateLiveLink, setLinks, setLiveLinkDefault }: any) => {
+const LiveMatchCard = React.memo(({ link, selectedLink, handleLinkClick, getWatchingCount, user, updateLiveLink, setLinks, setLiveLinkDefault, showToast }: any) => {
     return (
         <div key={link.id} className="relative group/channel h-full">
             <button
@@ -234,9 +234,9 @@ const LiveMatchCard = React.memo(({ link, selectedLink, handleLinkClick, getWatc
                     }`}
             >
                 {link.isTrending && (
-                    <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2 py-0.5 bg-amber-500 text-white rounded-full shadow-lg z-10 animate-pulse">
-                        <TrendingUp size={10} fill="currentColor" />
-                        <span className="text-[8px] font-black uppercase tracking-tighter">HOT</span>
+                    <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full shadow-lg z-10 animate-bounce hover:scale-110 transition-transform">
+                        <Activity size={10} className="animate-pulse" />
+                        <span className="text-[9px] font-black uppercase tracking-tighter">HOT NOW</span>
                     </div>
                 )}
                 {link.isDefault && (
@@ -263,17 +263,47 @@ const LiveMatchCard = React.memo(({ link, selectedLink, handleLinkClick, getWatc
                         {selectedLink?.id === link.id && (
                             <div className="absolute inset-0 bg-white/10 animate-pulse" />
                         )}
-                        <Play size={24} fill="currentColor" className="relative z-10 md:ml-1 md:w-[32px] md:h-[32px]" />
+                        {(link.teamALogo && link.teamBLogo) ? (
+                            <div className="flex items-center justify-center w-full h-full gap-2 px-1 bg-white/5 backdrop-blur-sm">
+                                <img src={link.teamALogo} alt="" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" />
+                                <span className="text-[10px] font-black text-red-600 italic">VS</span>
+                                <img src={link.teamBLogo} alt="" className="w-8 h-8 md:w-10 md:h-10 object-contain drop-shadow-md" />
+                            </div>
+                        ) : link.thumbnailUrl ? (
+                            <img
+                                src={link.thumbnailUrl}
+                                alt={link.heading}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'https://i.imgur.com/guz2ajm.png'; // Fallback
+                                }}
+                            />
+                        ) : (
+                            <Play size={24} fill="currentColor" className="relative z-10 md:ml-1 md:w-[32px] md:h-[32px]" />
+                        )}
                     </div>
                     <div className="flex-1 min-w-0 w-full flex flex-col justify-between h-full">
-                        <h4 className={`font-black text-sm md:text-lg leading-tight transition-colors ${selectedLink?.id === link.id
-                            ? 'text-red-500'
-                            : 'text-gray-900 dark:text-white group-hover:text-red-500'
-                            }`}>
-                            {link.heading.trim().split(/\s+/).length > 5
-                                ? link.heading.trim().split(/\s+/).slice(0, 5).join(' ') + '...'
-                                : link.heading}
-                        </h4>
+                        <div className="flex justify-between items-start gap-2">
+                            <h4 className={`font-black text-sm md:text-lg leading-tight transition-colors text-left ${selectedLink?.id === link.id
+                                ? 'text-red-500'
+                                : 'text-gray-900 dark:text-white group-hover:text-red-500'
+                                }`}>
+                                {link.heading.trim().split(/\s+/).length > 5
+                                    ? link.heading.trim().split(/\s+/).slice(0, 5).join(' ') + '...'
+                                    : link.heading}
+                            </h4>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard.writeText(`${window.location.origin}/tools/live-tv-hd?v=${link.id}`);
+                                    showToast('🔗 Share link copied!');
+                                }}
+                                className="p-2 -mr-2 text-gray-400 hover:text-red-500 transition-colors"
+                                title="Share"
+                            >
+                                <Share2 size={14} />
+                            </button>
+                        </div>
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-auto pt-2">
                             {link.tags && link.tags.slice(0, 2).map((tag: any) => (
                                 <span key={tag} className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-md">
@@ -281,7 +311,7 @@ const LiveMatchCard = React.memo(({ link, selectedLink, handleLinkClick, getWatc
                                 </span>
                             ))}
                             <span className="flex items-center gap-1.5 text-[9px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                                <Activity size={10} className="animate-pulse" /> {getWatchingCount(link.id) || 1} LIVE
+                                <Users size={10} className="animate-pulse" /> {Math.max(1, getWatchingCount(link.id) || 1)} LIVE
                             </span>
                             {(link as any).matchStartTime && (
                                 <div className="w-full md:w-auto">
@@ -337,7 +367,7 @@ const LiveMatchCard = React.memo(({ link, selectedLink, handleLinkClick, getWatc
     );
 });
 
-const IPTVChannelCard = React.memo(({ channel, selectedLink, handleIptvClick, getWatchingCount, user, upsertIPTVChannel, setIptvChannels, setDefaultIPTVChannel, setLinks }: any) => {
+const IPTVChannelCard = React.memo(({ channel, selectedLink, handleIptvClick, getWatchingCount, user, upsertIPTVChannel, setIptvChannels, setDefaultIPTVChannel, setLinks, showToast }: any) => {
     return (
         <div key={channel.id} className="relative group/channel">
             <button
@@ -433,6 +463,11 @@ const IPTVChannelCard = React.memo(({ channel, selectedLink, handleIptvClick, ge
 export const LiveSection: React.FC = () => {
     const [isMounted, setIsMounted] = useState(false);
     // Global liveTime removed to prevent massive re-renders
+    const [toastMsg, setToastMsg] = useState<string | null>(null);
+    const [reactions, setReactions] = useState<Record<string, number>>({ '🔥': 0, '❤️': 0, '👏': 0, '😮': 0 });
+    const [userReacted, setUserReacted] = useState<string | null>(null);
+
+
 
 
     const [links, setLinks] = useState<LiveLink[]>([]);
@@ -479,6 +514,18 @@ export const LiveSection: React.FC = () => {
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [isVoting, setIsVoting] = useState(false);
     const [realtimeStats, setRealtimeStats] = useState<{ activeUsers: number; activePages: any[] }>({ activeUsers: 0, activePages: [] });
+
+    const showToast = React.useCallback((msg: string) => {
+        setToastMsg(msg);
+        setTimeout(() => setToastMsg(null), 2500);
+    }, []);
+
+    const handleReaction = React.useCallback((emoji: string) => {
+        if (userReacted === emoji) return;
+        setReactions(prev => ({ ...prev, [emoji]: (prev[emoji] || 0) + 1 }));
+        setUserReacted(emoji);
+        showToast(`You reacted ${emoji}`);
+    }, [userReacted, showToast]);
     const { user } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -1111,6 +1158,11 @@ export const LiveSection: React.FC = () => {
                                                                 {selectedLink.matchStartTime && (
                                                                     <MatchTimeDisplay date={selectedLink.matchStartTime} />
                                                                 )}
+                                                                {/* Public live viewer count */}
+                                                                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[9px] font-black uppercase rounded-md border border-red-200 dark:border-red-800/50">
+                                                                    <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-600" /></span>
+                                                                    {Math.max(1, getWatchingCount(selectedLink.id, true))} watching live
+                                                                </span>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-2">
@@ -1122,7 +1174,33 @@ export const LiveSection: React.FC = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* STANDALONE LIVE POLL CARD */}
+                                                {/* ENGAGEMENT BAR — Emoji Reactions + Share */}
+                                                <div className="flex flex-wrap items-center gap-2 p-4 bg-white dark:bg-surface-dark-900 rounded-[24px] border border-gray-100 dark:border-white/5 shadow-md">
+                                                    <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mr-1">React:</span>
+                                                    {(['🔥', '❤️', '👏', '😮'] as const).map(emoji => (
+                                                        <button
+                                                            key={emoji}
+                                                            onClick={() => handleReaction(emoji)}
+                                                            title={`React with ${emoji}`}
+                                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-bold transition-all duration-200 active:scale-90 select-none ${userReacted === emoji
+                                                                ? 'bg-red-600 border-red-600 text-white shadow-lg shadow-red-600/20 scale-110'
+                                                                : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-red-400 hover:scale-105 dark:text-white'
+                                                                }`}
+                                                        >
+                                                            {emoji}
+                                                            {(reactions[emoji] || 0) > 0 && (
+                                                                <span className="text-[10px] font-black tabular-nums">{reactions[emoji]}</span>
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                    <button
+                                                        onClick={() => { navigator.clipboard.writeText(window.location.href); showToast('🔗 Link copied! Share with friends'); }}
+                                                        className="ml-auto flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white text-[10px] font-black uppercase rounded-full shadow-lg shadow-red-600/20 hover:shadow-red-600/40 hover:scale-105 transition-all active:scale-95"
+                                                    >
+                                                        <Share2 size={12} /> Share Stream
+                                                    </button>
+                                                </div>
+
                                                 {selectedLink.poll && (
                                                     <div className="w-full bg-white dark:bg-surface-dark-900 rounded-[32px] p-5 md:p-6 border border-gray-200 dark:border-white/10 shadow-xl transition-all">
                                                         <div className="flex flex-col md:flex-row items-center gap-6">
@@ -1323,7 +1401,7 @@ export const LiveSection: React.FC = () => {
                                                     </div>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 transition-all duration-500">
                                                         {matchesInTag.map((link) => (
-                                                            <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} />
+                                                            <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} showToast={showToast} />
                                                         ))}
                                                     </div>
                                                 </div>
@@ -1337,7 +1415,7 @@ export const LiveSection: React.FC = () => {
                                             </div>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 transition-all duration-500">
                                                 {sortMatches(filteredLinks).map((link) => (
-                                                    <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} />
+                                                    <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} showToast={showToast} />
                                                 ))}
                                             </div>
                                         </div>
@@ -1350,7 +1428,7 @@ export const LiveSection: React.FC = () => {
                                             </div>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
                                                 {sortMatches(links.filter(l => !l.tags || l.tags.length === 0)).map((link) => (
-                                                    <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} />
+                                                    <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} showToast={showToast} />
                                                 ))}
                                             </div>
                                         </div>
@@ -1386,7 +1464,17 @@ export const LiveSection: React.FC = () => {
                         </>
                     )}
                 </div>
-            </div >
-        </section >
+            </div>
+
+            {/* TOAST NOTIFICATION */}
+            {toastMsg && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-5 duration-300">
+                    <div className="bg-gray-900/90 dark:bg-white/90 backdrop-blur-md text-white dark:text-gray-900 px-6 py-3 rounded-2xl shadow-2xl border border-white/10 dark:border-black/5 flex items-center gap-3">
+                        <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-white"><CheckCircle size={14} /></div>
+                        <span className="text-sm font-black uppercase tracking-tight">{toastMsg}</span>
+                    </div>
+                </div>
+            )}
+        </section>
     );
 };
