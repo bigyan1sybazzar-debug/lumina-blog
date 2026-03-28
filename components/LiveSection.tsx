@@ -992,16 +992,28 @@ export const LiveSection: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Top Ad - Smaller height for mobile as requested */}
-                    <div className="w-full flex justify-center items-center overflow-hidden !mt-2 !mb-4" style={{ minHeight: '50px' }}>
-                        <GoogleAdSense
-                            slot="7838572857"
-                            format="horizontal"
-                            responsive={false}
-                            minHeight="50px"
-                            fallbackImage="/cover.png"
-                            style={{ width: '100%', height: '50px' }}
-                        />
+                    {/* Top Ads - Desktop (728x120) & Mobile (320x100) */}
+                    <div className="w-full !mt-2 !mb-4">
+                        {/* DESKTOP & TABS */}
+                        <div className="hidden md:flex justify-center items-center overflow-hidden" style={{ minHeight: '120px' }}>
+                            <GoogleAdSense
+                                slot="1229236704"
+                                format="horizontal"
+                                responsive={false}
+                                minHeight="120px"
+                                style={{ width: '728px', height: '120px' }}
+                            />
+                        </div>
+                        {/* MOBILE */}
+                        <div className="flex md:hidden justify-center items-center overflow-hidden" style={{ minHeight: '100px' }}>
+                            <GoogleAdSense
+                                slot="1557976551"
+                                format="horizontal"
+                                responsive={false}
+                                minHeight="100px"
+                                style={{ width: '320px', height: '100px' }}
+                            />
+                        </div>
                     </div>
 
                     {isDataLoading ? (
