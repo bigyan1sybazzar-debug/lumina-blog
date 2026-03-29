@@ -1416,6 +1416,30 @@ export const LiveSection: React.FC = () => {
                                                             <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} showToast={showToast} />
                                                         ))}
                                                     </div>
+
+                                                    {/* AD AFTER CATEGORY */}
+                                                    <div className="w-full !my-8">
+                                                        {/* DESKTOP & TABS */}
+                                                        <div className="hidden md:flex justify-center items-center overflow-hidden" style={{ minHeight: '120px' }}>
+                                                            <GoogleAdSense
+                                                                slot="1229236704"
+                                                                format="horizontal"
+                                                                responsive={false}
+                                                                minHeight="120px"
+                                                                style={{ width: '728px', height: '120px' }}
+                                                            />
+                                                        </div>
+                                                        {/* MOBILE */}
+                                                        <div className="flex md:hidden justify-center items-center overflow-hidden" style={{ minHeight: '100px' }}>
+                                                            <GoogleAdSense
+                                                                slot="1557976551"
+                                                                format="horizontal"
+                                                                responsive={false}
+                                                                minHeight="100px"
+                                                                style={{ width: '320px', height: '100px' }}
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             );
                                         })
@@ -1430,6 +1454,30 @@ export const LiveSection: React.FC = () => {
                                                     <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} showToast={showToast} />
                                                 ))}
                                             </div>
+
+                                            {/* AD AFTER CATEGORY */}
+                                            <div className="w-full !my-8">
+                                                {/* DESKTOP & TABS */}
+                                                <div className="hidden md:flex justify-center items-center overflow-hidden" style={{ minHeight: '120px' }}>
+                                                    <GoogleAdSense
+                                                        slot="1229236704"
+                                                        format="horizontal"
+                                                        responsive={false}
+                                                        minHeight="120px"
+                                                        style={{ width: '728px', height: '120px' }}
+                                                    />
+                                                </div>
+                                                {/* MOBILE */}
+                                                <div className="flex md:hidden justify-center items-center overflow-hidden" style={{ minHeight: '100px' }}>
+                                                    <GoogleAdSense
+                                                        slot="1557976551"
+                                                        format="horizontal"
+                                                        responsive={false}
+                                                        minHeight="100px"
+                                                        style={{ width: '320px', height: '100px' }}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                     {selectedTag === 'All' && links.filter(l => !l.tags || l.tags.length === 0).length > 0 && (
@@ -1442,6 +1490,30 @@ export const LiveSection: React.FC = () => {
                                                 {sortMatches(links.filter(l => !l.tags || l.tags.length === 0)).map((link) => (
                                                     <LiveMatchCard key={link.id} link={link} selectedLink={selectedLink} handleLinkClick={handleLinkClick} getWatchingCount={getWatchingCount} user={user} updateLiveLink={updateLiveLink} setLinks={setLinks} setLiveLinkDefault={setLiveLinkDefault} showToast={showToast} />
                                                 ))}
+                                            </div>
+
+                                            {/* AD AFTER CATEGORY */}
+                                            <div className="w-full !my-8">
+                                                {/* DESKTOP & TABS */}
+                                                <div className="hidden md:flex justify-center items-center overflow-hidden" style={{ minHeight: '120px' }}>
+                                                    <GoogleAdSense
+                                                        slot="1229236704"
+                                                        format="horizontal"
+                                                        responsive={false}
+                                                        minHeight="120px"
+                                                        style={{ width: '728px', height: '120px' }}
+                                                    />
+                                                </div>
+                                                {/* MOBILE */}
+                                                <div className="flex md:hidden justify-center items-center overflow-hidden" style={{ minHeight: '100px' }}>
+                                                    <GoogleAdSense
+                                                        slot="1557976551"
+                                                        format="horizontal"
+                                                        responsive={false}
+                                                        minHeight="100px"
+                                                        style={{ width: '320px', height: '100px' }}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     )}

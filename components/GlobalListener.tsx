@@ -54,10 +54,47 @@ export const GlobalListener: React.FC = () => {
             });
 
         // Lift initial load gate after 2s
-        setTimeout(() => { isInitialLoad.current = false; }, 2000);
+        const gateTimer = setTimeout(() => { isInitialLoad.current = false; }, 2000);
 
-        return () => unsubMessages();
+        return () => {
+            unsubMessages();
+            clearTimeout(gateTimer);
+        };
     }, [user]);
+
+    // Handle "Failed to load chunk" errors automatically
+    useEffect(() => {
+        const handleChunkError = (e: ErrorEvent | PromiseRejectionEvent) => {
+            const error = (e instanceof ErrorEvent) ? e.error : e.reason;
+            // Next.js specific ChunkLoadError or generic "Failed to load chunk"
+            if (
+                error?.name === 'ChunkLoadError' ||
+                (error?.message && (
+                    error.message.includes('Failed to load chunk') ||
+                    error.message.includes('Loading chunk') ||
+                    error.message.includes('Script error.') // Sometimes chunks fail with generic script error
+                ))
+            ) {
+                console.warn('Chunk loading failed, automatically recovering by reloading...', error);
+
+                // Avoid infinite reload loops by checking session storage
+                const lastReload = sessionStorage.getItem('last_chunk_reload');
+                const now = Date.now();
+                if (!lastReload || now - parseInt(lastReload) > 10000) { // Only reload if last reload was > 10s ago
+                    sessionStorage.setItem('last_chunk_reload', now.toString());
+                    window.location.reload();
+                }
+            }
+        };
+
+        window.addEventListener('error', handleChunkError);
+        window.addEventListener('unhandledrejection', handleChunkError);
+
+        return () => {
+            window.removeEventListener('error', handleChunkError);
+            window.removeEventListener('unhandledrejection', handleChunkError);
+        };
+    }, []);
 
     if (!latestNotification) return null;
 
