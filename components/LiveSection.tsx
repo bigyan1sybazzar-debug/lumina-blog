@@ -226,9 +226,17 @@ const splideOptionsTrending = {
 const LiveMatchCard = React.memo(({ link, selectedLink, handleLinkClick, getWatchingCount, user, updateLiveLink, setLinks, setLiveLinkDefault, showToast }: any) => {
     return (
         <div key={link.id} className="relative group/channel h-full">
-            <button
+            <div
                 onClick={() => handleLinkClick(link)}
-                className={`w-full h-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 px-4 py-4 md:p-6 rounded-2xl md:rounded-[2.5rem] border transition-all duration-300 min-h-[90px] md:min-h-[160px] flex flex-col justify-center ${selectedLink?.id === link.id
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleLinkClick(link);
+                    }
+                }}
+                role="button"
+                tabIndex={0}
+                className={`w-full h-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 px-4 py-4 md:p-6 rounded-2xl md:rounded-[2.5rem] border transition-all duration-300 min-h-[90px] md:min-h-[160px] flex flex-col justify-center cursor-pointer ${selectedLink?.id === link.id
                     ? 'border-red-500 ring-2 ring-red-500/10 shadow-2xl shadow-red-500/20'
                     : 'border-slate-200 dark:border-white/5 hover:border-red-500/50 hover:shadow-xl hover:shadow-black/5'
                     }`}
@@ -321,7 +329,7 @@ const LiveMatchCard = React.memo(({ link, selectedLink, handleLinkClick, getWatc
                         </div>
                     </div>
                 </div>
-            </button>
+            </div>
             {user?.role === 'admin' && (
                 <div className="absolute top-4 right-2 md:right-4 flex flex-col gap-2 z-30 md:opacity-0 group-hover/channel:opacity-100 transition-opacity translate-x-4 md:translate-x-12 group-hover/channel:translate-x-0 duration-300">
                     <button
@@ -370,9 +378,17 @@ const LiveMatchCard = React.memo(({ link, selectedLink, handleLinkClick, getWatc
 const IPTVChannelCard = React.memo(({ channel, selectedLink, handleIptvClick, getWatchingCount, user, upsertIPTVChannel, setIptvChannels, setDefaultIPTVChannel, setLinks, showToast }: any) => {
     return (
         <div key={channel.id} className="relative group/channel">
-            <button
+            <div
                 onClick={() => handleIptvClick(channel)}
-                className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 ${selectedLink?.id === channel.id
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleIptvClick(channel);
+                    }
+                }}
+                role="button"
+                tabIndex={0}
+                className={`w-full group text-left relative overflow-hidden bg-white dark:bg-surface-dark-900 p-4 rounded-xl border transition-all duration-300 cursor-pointer ${selectedLink?.id === channel.id
                     ? 'border-primary-light ring-2 ring-primary-light/20 shadow-md'
                     : channel.isTrending
                         ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50/10'
@@ -420,7 +436,7 @@ const IPTVChannelCard = React.memo(({ channel, selectedLink, handleIptvClick, ge
                         </div>
                     </div>
                 </div>
-            </button>
+            </div>
             {user?.role === 'admin' && (
                 <div className="absolute -top-3 -right-2 flex flex-col gap-2 z-30">
                     <button
@@ -1070,7 +1086,18 @@ export const LiveSection: React.FC = () => {
                                                 return 0;
                                             }).map((link) => (
                                                 <SplideSlide key={`${link.itemType}-${link.id}`}>
-                                                    <button onClick={() => handleLinkClick(link)} className="w-full block group text-left">
+                                                    <div
+                                                        onClick={() => handleLinkClick(link)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                e.preventDefault();
+                                                                handleLinkClick(link);
+                                                            }
+                                                        }}
+                                                        role="button"
+                                                        tabIndex={0}
+                                                        className="w-full block group text-left cursor-pointer"
+                                                    >
                                                         <div className={`relative flex items-center gap-2 md:gap-3 p-2 md:p-2.5 bg-white dark:bg-surface-dark-900 rounded-xl md:rounded-2xl border transition-all ${selectedLink?.id === link.id ? 'border-primary-light ring-2 ring-primary-light/20 bg-primary-50/10 shadow-md' : 'border-slate-200 dark:border-slate-800'}`}>
                                                             <div className={`w-8 h-8 rounded-lg flex flex-col items-center justify-center transition-all ${selectedLink?.id === link.id ? 'bg-gradient-to-br from-primary-600 to-orange-500 text-white shadow-lg' : 'bg-gray-100 dark:bg-white/5 text-primary-light'}`}>
                                                                 <span className="text-[5px] font-black tracking-widest mb-0.5">LIVE</span>
@@ -1086,7 +1113,7 @@ export const LiveSection: React.FC = () => {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </button>
+                                                    </div>
                                                 </SplideSlide>
                                             ))}
                                         </Splide>

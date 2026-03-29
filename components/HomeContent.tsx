@@ -5,17 +5,87 @@ import { getR2Posts, getR2Polls } from '../services/r2-data'; // Use R2 data
 import { BlogPost, Poll } from '../types';
 import { PostCard } from './PostCard';
 
-import { ArrowRight, Loader2, Sparkles, Send, BookOpen, Vote, ShoppingBag, Clock, Calendar, Hash, TrendingUp, ChevronLeft, ChevronRight, Languages, LogIn, Edit } from 'lucide-react'; // Consolidated imports
+import { ArrowRight, Loader2, Sparkles, Send, BookOpen, Vote, ShoppingBag, Clock, Calendar, Hash, TrendingUp, ChevronLeft, ChevronRight, Languages, LogIn, Edit, Play } from 'lucide-react'; // Consolidated imports
 import Link from 'next/link';
 import Image from 'next/image';
 import { Calculator, RefreshCw, Tv, Terminal, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import GoogleAdSense from './GoogleAdSense';
+import { getR2LiveLinks, getR2IPTVChannels } from '../services/r2-data';
+import { LiveLink, IPTVChannel } from '../types';
+import { Splide, SplideSlide } from '@splidejs/react-splide';
+import '@splidejs/react-splide/css';
 
 interface HomeProps {
     initialPosts?: BlogPost[];
     initialHeroFeatured?: BlogPost[];
 }
+
+// --- STATIC HELPERS ---
+const resolveMatchStart = (value: string): number => {
+    if (!value) return 0;
+    if (typeof value === 'string' && /^\d{1,2}:\d{2}(:\d{2})?$/.test(value)) {
+        const parts = value.split(':').map(Number);
+        const d = new Date();
+        d.setHours(parts[0], parts[1], parts[2] || 0, 0);
+        if (Date.now() - d.getTime() > 12 * 60 * 60 * 1000) {
+            d.setDate(d.getDate() + 1);
+        }
+        return d.getTime();
+    }
+    const parsed = new Date(value).getTime();
+    return isNaN(parsed) ? 0 : parsed;
+};
+
+const getTimeLeft = (matchDate: string | number, durationMinutes = 125, now: Date = new Date()) => {
+    const start = typeof matchDate === 'number' ? matchDate : resolveMatchStart(String(matchDate));
+    const endMs = start + durationMinutes * 60 * 1000;
+    const remainingMs = endMs - now.getTime();
+    if (remainingMs <= 0) return null;
+    const totalSeconds = Math.floor(remainingMs / 1000);
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    if (hrs > 0) return `${hrs}h ${mins}m left`;
+    if (mins > 0) return `${mins}m ${secs}s left`;
+    return `${secs}s left`;
+};
+
+const MatchCardTimer = React.memo(({ matchDate, duration = 125 }: any) => {
+    const [now, setNow] = React.useState(new Date());
+    React.useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(t);
+    }, []);
+
+    const startMs = resolveMatchStart(String(matchDate));
+    const elapsedMins = Math.floor((now.getTime() - startMs) / 60000);
+
+    if (elapsedMins < 0) {
+        const tLeft = getTimeLeft(matchDate, 0, now)?.replace(' left', '');
+        return <span className="text-[8px] text-blue-500 font-bold">{tLeft} to go</span>;
+    } else if (elapsedMins <= duration) {
+        const tLeft = getTimeLeft(matchDate, duration, now);
+        return <span className="text-[8px] text-emerald-500 font-bold animate-pulse">{tLeft}</span>;
+    }
+    return null;
+});
+
+const splideOptionsTrending = {
+    type: 'slide',
+    rewind: true,
+    gap: '1rem',
+    pagination: false,
+    arrows: false,
+    autoWidth: true,
+    drag: 'free',
+    snap: true,
+    breakpoints: {
+        640: {
+            gap: '0.75rem',
+        }
+    }
+};
 
 export const HomeContent: React.FC<HomeProps> = ({
     initialPosts = [],
@@ -29,6 +99,7 @@ export const HomeContent: React.FC<HomeProps> = ({
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const sliderRef = useRef<HTMLDivElement>(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [trendingItems, setTrendingItems] = useState<(LiveLink | IPTVChannel)[]>([]);
     const POSTS_PER_PAGE = 20;
 
     // Reset pagination when category changes
@@ -37,6 +108,34 @@ export const HomeContent: React.FC<HomeProps> = ({
     }, [selectedCategory]);
 
     const { user, isLoading: authLoading } = useAuth();
+
+    useEffect(() => {
+        const loadTrending = async () => {
+            try {
+                const [live, iptv] = await Promise.all([
+                    getR2LiveLinks(),
+                    getR2IPTVChannels()
+                ]);
+
+                // Combined items
+                const combined = [
+                    ...live.map(l => ({ ...l, itemType: 'live' })),
+                    ...iptv.map(i => ({ ...i, itemType: 'iptv' }))
+                ] as (LiveLink | IPTVChannel)[];
+
+                // Filter for trending or default status
+                const filtered = combined.filter(item =>
+                    item.status === 'active' &&
+                    ((item.isTrending) || (item.isDefault))
+                );
+
+                setTrendingItems(filtered);
+            } catch (err) {
+                console.error("Failed to fetch trending items:", err);
+            }
+        };
+        loadTrending();
+    }, []);
 
     useEffect(() => {
         const load = async () => {
@@ -295,24 +394,74 @@ export const HomeContent: React.FC<HomeProps> = ({
                     </div>
                 </div>
 
-                {/* Custom Animations */}
-                <style jsx>{`
-          @keyframes gradient {
-            0%, 100% {
-              background-position: 0% 50%;
-            }
-            50% {
-              background-position: 100% 50%;
-            }
-          }
-          
-          .animate-gradient {
-            background-size: 200% auto;
-            animation: gradient 3s ease infinite;
-          }
-        `}</style>
             </section>
 
+
+            {/* Trending Now Slider - FROM LiveSection logic */}
+            {trendingItems.length > 0 && (
+                <div className="max-w-7xl mx-auto px-4 pt-12">
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                        <div className="shrink-0">
+                            <Link href="/tools/live-tv-hd" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-bold uppercase hover:bg-primary-200 transition-colors">
+                                <TrendingUp size={16} className="animate-pulse" /> Trending Now
+                            </Link>
+                        </div>
+                        <div className="w-full md:flex-1 min-w-0">
+                            <Splide id="trending-slider" options={splideOptionsTrending}>
+                                {trendingItems.sort((a, b) => {
+                                    // 1. Default status
+                                    if ((a as any).isDefault !== (b as any).isDefault) return (a as any).isDefault ? -1 : 1;
+
+                                    const now = Date.now();
+                                    const startA = resolveMatchStart((a as any).matchStartTime);
+                                    const startB = resolveMatchStart((b as any).matchStartTime);
+
+                                    const isALive = startA > 0 && now >= startA && now <= (startA + ((a as any).matchDurationMinutes || 125) * 60000);
+                                    const isBLive = startB > 0 && now >= startB && now <= (startB + ((b as any).matchDurationMinutes || 125) * 60000);
+
+                                    // 2. Live Matches
+                                    if (isALive !== isBLive) return isALive ? -1 : 1;
+
+                                    // 3. Manual Trending Order (Tie breaker)
+                                    const orderA = a.trendingOrder ?? 999;
+                                    const orderB = b.trendingOrder ?? 999;
+                                    if (orderA !== orderB) return orderA - orderB;
+
+                                    // 4. Upcoming matches by time
+                                    if (startA > 0 && startB > 0) {
+                                        if (startA !== startB) return startA - startB;
+                                    } else if (startA > 0) return -1;
+                                    else if (startB > 0) return 1;
+
+                                    return 0;
+                                }).map((item) => (
+                                    <SplideSlide key={`${(item as any).itemType}-${item.id}`}>
+                                        <Link
+                                            href={(item as any).itemType === 'live' ? `/tools/live-tv-hd?channel=${item.id}` : `/tools/live-tv-hd?iptv=${item.id}`}
+                                            className="w-full block group text-left cursor-pointer"
+                                        >
+                                            <div className="relative flex items-center gap-2 md:gap-3 p-2 md:p-2.5 bg-white dark:bg-surface-dark-900 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-800 transition-all hover:border-primary-light hover:ring-2 hover:ring-primary-light/20 shadow-sm hover:shadow-md">
+                                                <div className="w-8 h-8 rounded-lg flex flex-col items-center justify-center bg-gray-100 dark:bg-white/5 text-primary-light">
+                                                    <span className="text-[5px] font-black tracking-widest mb-0.5">LIVE</span>
+                                                    <div className="h-1.5 w-1.5 rounded-full bg-primary-600" />
+                                                </div>
+                                                <div className="flex flex-col min-w-0">
+                                                    <h3 className="text-[10px] font-bold line-clamp-2 dark:text-white">{(item as any).heading || (item as any).name}</h3>
+                                                    <div className="flex items-center gap-2">
+                                                        {(item as any).matchStartTime && (
+                                                            <MatchCardTimer matchDate={(item as any).matchStartTime} duration={(item as any).matchDurationMinutes || 125} />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    </SplideSlide>
+                                ))}
+                            </Splide>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Hot & Fresh Slider - Latest 8 Posts (Reduced py- from py-16 to py-12) */}
             {editorPicks.length > 0 && (
@@ -778,6 +927,30 @@ export const HomeContent: React.FC<HomeProps> = ({
             </section>
 
 
+
+            {/* Consolidated Styles */}
+            <style jsx>{`
+                #trending-slider .splide__track {
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
+                }
+                #trending-slider .splide__list {
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
+                }
+                @keyframes gradient-hero {
+                    0%, 100% {
+                        background-position: 0% 50%;
+                    }
+                    50% {
+                        background-position: 100% 50%;
+                    }
+                }
+                .animate-gradient {
+                    background-size: 200% auto;
+                    animation: gradient-hero 3s ease infinite;
+                }
+            `}</style>
         </div>
     );
 };
