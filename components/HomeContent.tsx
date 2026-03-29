@@ -129,7 +129,44 @@ export const HomeContent: React.FC<HomeProps> = ({
                     ((item.isTrending) || (item.isDefault))
                 );
 
-                setTrendingItems(filtered);
+                // SORT once and for all
+                const sorted = filtered.sort((a, b) => {
+                    // 1. Default status
+                    if ((a as any).isDefault !== (b as any).isDefault) return (a as any).isDefault ? -1 : 1;
+
+                    const now = Date.now();
+                    const startA = resolveMatchStart((a as any).matchStartTime);
+                    const startB = resolveMatchStart((b as any).matchStartTime);
+
+                    const isALive = startA > 0 && now >= startA && now <= (startA + ((a as any).matchDurationMinutes || 125) * 60000);
+                    const isBLive = startB > 0 && now >= startB && now <= (startB + ((b as any).matchDurationMinutes || 125) * 60000);
+
+                    // 2. Live Matches
+                    if (isALive !== isBLive) return isALive ? -1 : 1;
+
+                    // 3. Manual Trending Order (Tie breaker)
+                    const orderA = a.trendingOrder ?? 999;
+                    const orderB = b.trendingOrder ?? 999;
+                    if (orderA !== orderB) return orderA - orderB;
+
+                    // 4. Upcoming matches by time
+                    if (startA > 0 && startB > 0) {
+                        if (startA !== startB) return startA - startB;
+                    } else if (startA > 0) return -1;
+                    else if (startB > 0) return 1;
+
+                    return 0;
+                });
+
+                // Deduplicate by itemType+id to prevent React key warnings
+                const seen = new Set<string>();
+                const deduped = sorted.filter(item => {
+                    const key = `${(item as any).itemType}-${item.id}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+                setTrendingItems(deduped);
             } catch (err) {
                 console.error("Failed to fetch trending items:", err);
             }
@@ -209,6 +246,29 @@ export const HomeContent: React.FC<HomeProps> = ({
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+            {/* Consolidated Styles */}
+            <style jsx>{`
+                #trending-slider .splide__track {
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
+                }
+                #trending-slider .splide__list {
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
+                }
+                @keyframes gradient-hero {
+                    0%, 100% {
+                        background-position: 0% 50%;
+                    }
+                    50% {
+                        background-position: 100% 50%;
+                    }
+                }
+                .animate-gradient {
+                    background-size: 200% auto;
+                    animation: gradient-hero 3s ease infinite;
+                }
+            `}</style>
 
 
             {/* Hero Section - Modern Premium Design */}
@@ -320,12 +380,14 @@ export const HomeContent: React.FC<HomeProps> = ({
                                     <Link href="/tools/live-tv-hd" className="group flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl bg-gradient-to-r from-red-500/10 to-orange-500/10 hover:from-red-500/20 hover:to-orange-500/20 border border-red-200/50 dark:border-red-800/50 transition-all hover:scale-105 shrink-0">
                                         <div className="relative">
                                             <div className="absolute -top-1 -right-1 w-1.5 md:w-2 h-1.5 md:h-2 bg-red-500 rounded-full animate-ping"></div>
-                                            <div className="w-3 h-3 md:w-4 md:h-4 flex items-center justify-center">🔴</div>
+                                            <div className="w-3 h-3 md:w-4 md:h-4 flex items-center justify-center">
+                                                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                            </div>
                                         </div>
                                         <span className="text-[9px] md:text-xs font-bold text-gray-700 dark:text-gray-300">Live Sports</span>
                                     </Link>
                                     <Link href="/chat" className="group flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl bg-gradient-to-r from-green-500/10 to-teal-500/10 hover:from-green-500/20 hover:to-teal-500/20 border border-green-200/50 dark:border-green-800/50 transition-all hover:scale-105 shrink-0">
-                                        <span className="text-xs md:text-base">🤖</span>
+                                        <span className="text-xs md:text-base"></span>
                                         <span className="text-[9px] md:text-xs font-bold text-gray-700 dark:text-gray-300">AI Chat</span>
                                     </Link>
                                 </div>
@@ -408,46 +470,31 @@ export const HomeContent: React.FC<HomeProps> = ({
                         </div>
                         <div className="w-full md:flex-1 min-w-0">
                             <Splide id="trending-slider" options={splideOptionsTrending}>
-                                {trendingItems.sort((a, b) => {
-                                    // 1. Default status
-                                    if ((a as any).isDefault !== (b as any).isDefault) return (a as any).isDefault ? -1 : 1;
-
-                                    const now = Date.now();
-                                    const startA = resolveMatchStart((a as any).matchStartTime);
-                                    const startB = resolveMatchStart((b as any).matchStartTime);
-
-                                    const isALive = startA > 0 && now >= startA && now <= (startA + ((a as any).matchDurationMinutes || 125) * 60000);
-                                    const isBLive = startB > 0 && now >= startB && now <= (startB + ((b as any).matchDurationMinutes || 125) * 60000);
-
-                                    // 2. Live Matches
-                                    if (isALive !== isBLive) return isALive ? -1 : 1;
-
-                                    // 3. Manual Trending Order (Tie breaker)
-                                    const orderA = a.trendingOrder ?? 999;
-                                    const orderB = b.trendingOrder ?? 999;
-                                    if (orderA !== orderB) return orderA - orderB;
-
-                                    // 4. Upcoming matches by time
-                                    if (startA > 0 && startB > 0) {
-                                        if (startA !== startB) return startA - startB;
-                                    } else if (startA > 0) return -1;
-                                    else if (startB > 0) return 1;
-
-                                    return 0;
-                                }).map((item) => (
-                                    <SplideSlide key={`${(item as any).itemType}-${item.id}`}>
+                                {trendingItems.map((item, idx) => (
+                                    <SplideSlide key={`${(item as any).itemType}-${item.id}-${idx}`}>
                                         <Link
                                             href={(item as any).itemType === 'live' ? `/tools/live-tv-hd?channel=${item.id}` : `/tools/live-tv-hd?iptv=${item.id}`}
-                                            className="w-full block group text-left cursor-pointer"
+                                            className="w-full h-full block group text-left cursor-pointer"
                                         >
-                                            <div className="relative flex items-center gap-2 md:gap-3 p-2 md:p-2.5 bg-white dark:bg-surface-dark-900 rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-800 transition-all hover:border-primary-light hover:ring-2 hover:ring-primary-light/20 shadow-sm hover:shadow-md">
-                                                <div className="w-8 h-8 rounded-lg flex flex-col items-center justify-center bg-gray-100 dark:bg-white/5 text-primary-light">
-                                                    <span className="text-[5px] font-black tracking-widest mb-0.5">LIVE</span>
-                                                    <div className="h-1.5 w-1.5 rounded-full bg-primary-600" />
+                                            <div className="w-36 md:w-52 h-full flex flex-col items-center gap-2 p-2 bg-white dark:bg-surface-dark-900 rounded-3xl border border-slate-200 dark:border-slate-800 transition-all hover:border-primary-500 hover:ring-2 hover:ring-primary-500/10 shadow-sm hover:shadow-lg">
+                                                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100 dark:bg-white/5">
+                                                    <Image
+                                                        src={(item as any).thumbnailUrl || (item as any).logo || '/cover.png'}
+                                                        alt={(item as any).heading || (item as any).name}
+                                                        fill
+                                                        className="object-cover group-hover:scale-110 transition-transform duration-700"
+                                                        sizes="(max-width: 768px) 144px, 208px"
+                                                    />
+                                                    <div className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                                        <span className="text-[7px] font-black text-white uppercase tracking-wider">Now Live</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex flex-col min-w-0">
-                                                    <h3 className="text-[10px] font-bold line-clamp-2 dark:text-white">{(item as any).heading || (item as any).name}</h3>
-                                                    <div className="flex items-center gap-2">
+                                                <div className="flex flex-col items-center text-center w-full px-1 mb-1">
+                                                    <h3 className="text-[10px] md:text-sm font-black line-clamp-1 dark:text-white mb-0.5 group-hover:text-primary-600 transition-colors">
+                                                        {(item as any).heading || (item as any).name}
+                                                    </h3>
+                                                    <div className="h-4">
                                                         {(item as any).matchStartTime && (
                                                             <MatchCardTimer matchDate={(item as any).matchStartTime} duration={(item as any).matchDurationMinutes || 125} />
                                                         )}
@@ -496,7 +543,7 @@ export const HomeContent: React.FC<HomeProps> = ({
                             </div>
 
                             <div className="md:hidden text-center mt-4">
-                                <p className="text-sm text-gray-500 dark:text-gray-400">← Swipe to see more →</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Swipe to see more</p>
                             </div>
                         </div>
 
@@ -529,7 +576,7 @@ export const HomeContent: React.FC<HomeProps> = ({
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="flex items-center justify-between mb-5">
                         <h2 className="text-2xl md:text-3xl font-bold text-left text-gray-900 dark:text-white">
-                            Explore Our AI Tools 💡
+                            Explore Our AI Tools
                         </h2>
                     </div>
 
@@ -539,13 +586,10 @@ export const HomeContent: React.FC<HomeProps> = ({
                         {/* Tab 0: AI Humanizer */}
                         <Link
                             href="/ai-humanizer"
-                            className="relative text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                            className="relative text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
                             <span className="absolute top-2 right-2 bg-purple-600 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full uppercase">Hot</span>
-                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-purple-500 to-blue-600 
-                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-purple-500 to-blue-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <Sparkles className="w-5 h-5 text-white" />
                             </div>
                             <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">AI Humanizer</h3>
@@ -555,12 +599,9 @@ export const HomeContent: React.FC<HomeProps> = ({
                         {/* New: Second Hand Phones */}
                         <Link
                             href="/tools/phone-marketplace"
-                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
-                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-green-500 to-teal-600 
-                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-green-500 to-teal-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <ShoppingBag className="w-5 h-5 text-white" />
                             </div>
                             <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Buy/Sell Phones</h3>
@@ -570,12 +611,9 @@ export const HomeContent: React.FC<HomeProps> = ({
                         {/* Tab 1: Old Phone Price */}
                         <Link
                             href="/price/my-phone-price"
-                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
-                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-primary-400 to-purple-500 
-                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-primary-400 to-purple-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <Send className="w-5 h-5 text-white" />
                             </div>
                             <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Old Phone Price</h3>
@@ -585,12 +623,9 @@ export const HomeContent: React.FC<HomeProps> = ({
                         {/* Tab 2: AI Translator */}
                         <Link
                             href="/tools/ai-translator"
-                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
-                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-600 
-                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <Languages className="w-5 h-5 text-white" />
                             </div>
                             <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">AI Translator</h3>
@@ -600,13 +635,10 @@ export const HomeContent: React.FC<HomeProps> = ({
                         {/* Tab 3: Resume Checker */}
                         <Link
                             href="/tools/resume-checker"
-                            className="relative text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                            className="relative text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
                             <span className="absolute top-2 right-2 bg-pink-500 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full uppercase">New</span>
-                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600 
-                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <FileText className="w-5 h-5 text-white" />
                             </div>
                             <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Resume Checker</h3>
@@ -616,13 +648,10 @@ export const HomeContent: React.FC<HomeProps> = ({
                         {/* Tab 4: Prompts Library (Replaced Temp Mail) */}
                         <Link
                             href="/prompts"
-                            className="relative text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                            className="relative text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
                             <span className="absolute top-2 right-2 bg-pink-500 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full uppercase">New</span>
-                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-pink-500 to-orange-400 
-                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-pink-500 to-orange-400 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <Terminal className="w-5 h-5 text-white" />
                             </div>
                             <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Prompts Library</h3>
@@ -634,12 +663,9 @@ export const HomeContent: React.FC<HomeProps> = ({
                             href="https://bigyann.com.np/tools/emi-calculator"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="col-span-2 lg:col-span-1 text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                            className="col-span-2 lg:col-span-1 text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
-                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-blue-400 to-cyan-500 
-                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-blue-400 to-cyan-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <Calculator className="w-5 h-5 text-white" />
                             </div>
                             <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">EMI Calculator</h3>
@@ -649,12 +675,9 @@ export const HomeContent: React.FC<HomeProps> = ({
                         {/* Tab 6: Exchange Offer (Standard Width) */}
                         <Link
                             href="/tools/exchange-offer"
-                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
-                   transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
-                   group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
-                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-green-400 to-teal-500 
-                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-green-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <RefreshCw className="w-5 h-5 text-white" />
                             </div>
                             <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Exchange Offer</h3>
@@ -664,12 +687,9 @@ export const HomeContent: React.FC<HomeProps> = ({
                         {/* Tab 7: Live TV Shortcut */}
                         <Link
                             href="/tools/live-tv-hd"
-                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center 
-                    transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 
-                    group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
-                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-red-500 to-orange-600 
-                        flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-red-500 to-orange-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <Tv className="w-5 h-5 text-white" />
                                 <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-3 w-3">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -926,31 +946,6 @@ export const HomeContent: React.FC<HomeProps> = ({
                 </div>
             </section>
 
-
-
-            {/* Consolidated Styles */}
-            <style jsx>{`
-                #trending-slider .splide__track {
-                    padding-left: 0 !important;
-                    padding-right: 0 !important;
-                }
-                #trending-slider .splide__list {
-                    padding-left: 0 !important;
-                    padding-right: 0 !important;
-                }
-                @keyframes gradient-hero {
-                    0%, 100% {
-                        background-position: 0% 50%;
-                    }
-                    50% {
-                        background-position: 100% 50%;
-                    }
-                }
-                .animate-gradient {
-                    background-size: 200% auto;
-                    animation: gradient-hero 3s ease infinite;
-                }
-            `}</style>
         </div>
     );
 };
