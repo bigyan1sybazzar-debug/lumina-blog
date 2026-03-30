@@ -22,9 +22,10 @@ const STANDARD_LINKS = [
 
 // Define dropdown links (Tools)
 const TOOL_LINKS = [
+  { name: 'AI Citation Stats', path: '/tools/ai-citation-stats' },
+  { name: 'AI Visibility Checker', path: '/tools/ai-visibility-checker' },
   { name: 'My Phone Price', path: '/price/my-phone-price' },
   { name: 'EMI Calculator', path: '/tools/emi-calculator' },
-  { name: 'Exchange Offer', path: '/tools/exchange-offer' },
   { name: 'AI Humanizer', path: '/ai-humanizer' },
   { name: 'Second Hand Phones', path: '/tools/phone-marketplace' },
   { name: 'Live Sports', path: '/tools/live-tv-hd' },

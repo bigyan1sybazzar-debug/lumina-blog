@@ -8,7 +8,7 @@ import { PostCard } from './PostCard';
 import { ArrowRight, Loader2, Sparkles, Send, BookOpen, Vote, ShoppingBag, Clock, Calendar, Hash, TrendingUp, ChevronLeft, ChevronRight, Languages, LogIn, Edit, Play } from 'lucide-react'; // Consolidated imports
 import Link from 'next/link';
 import Image from 'next/image';
-import { Calculator, RefreshCw, Tv, Terminal, FileText } from 'lucide-react';
+import { Calculator, RefreshCw, Tv, Terminal, FileText, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import GoogleAdSense from './GoogleAdSense';
 import { getR2LiveLinks, getR2IPTVChannels } from '../services/r2-data';
@@ -608,17 +608,7 @@ export const HomeContent: React.FC<HomeProps> = ({
                             <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Marketplace</p>
                         </Link>
 
-                        {/* Tab 1: Old Phone Price */}
-                        <Link
-                            href="/price/my-phone-price"
-                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
-                        >
-                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-primary-400 to-purple-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                                <Send className="w-5 h-5 text-white" />
-                            </div>
-                            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Old Phone Price</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Get best price</p>
-                        </Link>
+
 
                         {/* Tab 2: AI Translator */}
                         <Link
@@ -672,16 +662,28 @@ export const HomeContent: React.FC<HomeProps> = ({
                             <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Loan Estimates</p>
                         </a>
 
-                        {/* Tab 6: Exchange Offer (Standard Width) */}
+                        {/* AI Citation Stats */}
                         <Link
-                            href="/tools/exchange-offer"
+                            href="/tools/ai-citation-stats"
                             className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
-                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-green-400 to-teal-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                                <RefreshCw className="w-5 h-5 text-white" />
+                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                                <TrendingUp className="w-5 h-5 text-white" />
                             </div>
-                            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Exchange Offer</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Check Value</p>
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">AI Citation Stats</h3>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">AI Benchmarking</p>
+                        </Link>
+
+                        {/* AI Visibility Checker */}
+                        <Link
+                            href="/tools/ai-visibility-checker"
+                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                        >
+                            <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                                <Globe className="w-5 h-5 text-white" />
+                            </div>
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">AI Visibility</h3>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">Audit presence</p>
                         </Link>
 
                         {/* Tab 7: Live TV Shortcut */}
