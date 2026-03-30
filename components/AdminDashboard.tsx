@@ -336,7 +336,7 @@ export const Admin: React.FC = () => {
     if (allPosts.length > 0 && activeTab === 'featured') {
       loadFeaturedPosts();
     }
-    if (activeTab === 'live-section') {
+    if (activeTab === 'live-section' || activeTab === 'trending-manager') {
       getLiveLinks().then(setLiveLinks);
     }
     if (activeTab === 'highlights') {
@@ -389,27 +389,7 @@ export const Admin: React.FC = () => {
       // Removed global IPTV fetch to save quota
 
       // --- CALCULATE REAL ANALYTICS ---
-      if (isAdmin) { // Ensure using the refreshed allPostsData
-        // We need to use valid posts data. If we just fetched it above, we should use that.
-        // The implementation above sets allPostsState, but due to closure we might not have it yet if using state.
-        // Best to use the fetched variable 'allPostsData' if available, otherwise fallback.
-
-        // Assuming this is inside refreshData where 'allPostsData' was defined for admin
-        const sourcePosts = await getPosts(); // Re-fetching or using local var would be better, but getPosts is cheap-ish. 
-        // Actually, looking at previous code, 'allPostsData' was available in the isAdmin block.
-        // Let's optimize: We can't easily access 'allPostsData' here if it was in a generic block scope above.
-        // BUT, notice refreshData structure:
-        // if (isAdmin) { const allPostsData = ... }
-        // We need to move this logic INTO the isAdmin block or recalculate.
-        // Let's recalculate simply here to be safe and clean, or move logic.
-        // Better yet, let's just do it in the isAdmin block in next Edit if possible? 
-        // No, I can't jump blocks easily. I will rely on the fact that I can fetch or use existing state.
-        // Actually, state 'allPosts' might be stale in this very render cycle.
-        // Let's put this logic INSIDE the existing isAdmin block in a separate replace call? 
-        // No, I'll just implement a dedicated effect or append to refreshData.
-
-        // Wait, I am editing the end of refreshData.
-        // Let's restructure:
+      if (isAdmin) {
         const postsForStats = await getPosts();
         const categoryStats = postsForStats.reduce((acc: any, post) => {
           const cat = post.category || 'Uncategorized';
@@ -449,9 +429,10 @@ export const Admin: React.FC = () => {
 
   useEffect(() => {
     if ((activeTab === 'iptv-manager' || activeTab === 'trending-manager') && isAdmin) {
-      Promise.all([getIPTVChannels(false), getIPTVCategories()]).then(([channels, cats]) => {
+      Promise.all([getIPTVChannels(false), getIPTVCategories(), getLiveLinks()]).then(([channels, cats, links]) => {
         setIptvChannels(channels);
         setIptvCategories(cats);
+        setLiveLinks(links);
       });
     }
   }, [activeTab, isAdmin]);
@@ -1138,7 +1119,21 @@ export const Admin: React.FC = () => {
     }
   };
 
-  const handleUpdateLiveLink = async () => {
+  const handleUpdateLiveLink = async (id?: string, updates?: Partial<LiveLink>) => {
+    // If id and updates are provided directly (e.g., from TrendingManager)
+    if (id && updates) {
+      try {
+        await updateLiveLink(id, updates);
+        getLiveLinks().then(setLiveLinks);
+        return;
+      } catch (error) {
+        console.error("Failed to update live link:", error);
+        alert('Failed to update live link');
+        throw error;
+      }
+    }
+
+    // Default behavior for UI form
     if (!editingLiveLink || !newLiveHeading || !newLiveIframe) {
       alert('Please fill in both Heading and Iframe URL');
       return;
@@ -2495,7 +2490,7 @@ export const Admin: React.FC = () => {
                       {editingLiveLink ? (
                         <>
                           <button
-                            onClick={handleUpdateLiveLink}
+                            onClick={() => handleUpdateLiveLink()}
                             className="btn-primary"
                           >
                             Update Live Link
@@ -2875,6 +2870,8 @@ export const Admin: React.FC = () => {
                   iptvChannels={iptvChannels}
                   onUpdateLiveLink={handleUpdateLiveLink}
                   onUpdateIPTVChannel={handleUpdateIPTVChannel}
+                  onDeleteLiveLink={handleDeleteLiveLink}
+                  onDeleteIPTVChannel={handleDeleteIPTVChannel}
                   onRefresh={refreshData}
                 />
               </div>

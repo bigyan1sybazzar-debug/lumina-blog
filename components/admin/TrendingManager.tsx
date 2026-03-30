@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Save, Edit3, Trash2, Loader2, GripVertical, CheckCircle, AlertCircle, Tv, Play } from 'lucide-react';
+import { TrendingUp, Save, Edit3, Trash2, Loader2, GripVertical, CheckCircle, AlertCircle, Tv, Play, X } from 'lucide-react';
 import { LiveLink, IPTVChannel } from '../../types';
 
 interface TrendingManagerProps {
@@ -8,6 +8,8 @@ interface TrendingManagerProps {
     onUpdateLiveLink: (id: string, updates: Partial<LiveLink>) => Promise<void>;
     onUpdateIPTVChannel: (id: string, updates: Partial<IPTVChannel>) => Promise<void>;
     onRefresh: () => Promise<void>;
+    onDeleteLiveLink?: (id: string) => Promise<void>;
+    onDeleteIPTVChannel?: (id: string) => Promise<void>;
 }
 
 export const TrendingManager: React.FC<TrendingManagerProps> = ({
@@ -15,10 +17,13 @@ export const TrendingManager: React.FC<TrendingManagerProps> = ({
     iptvChannels,
     onUpdateLiveLink,
     onUpdateIPTVChannel,
-    onRefresh
+    onRefresh,
+    onDeleteLiveLink,
+    onDeleteIPTVChannel
 }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
     // Filter only trending items
     const trendingItems = [
@@ -32,6 +37,70 @@ export const TrendingManager: React.FC<TrendingManagerProps> = ({
             itemType: 'iptv'
         }))
     ].sort((a, b) => (a.trendingOrder || 0) - (b.trendingOrder || 0));
+
+    const toggleSelect = (id: string) => {
+        setSelectedItems(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedItems.length === trendingItems.length && trendingItems.length > 0) {
+            setSelectedItems([]);
+        } else {
+            setSelectedItems(trendingItems.map(i => i.id));
+        }
+    };
+
+    const handleBulkRemove = async () => {
+        if (!confirm(`Remove ${selectedItems.length} items from Trending?`)) return;
+        setIsSaving(true);
+        try {
+            await Promise.all(selectedItems.map(async (id) => {
+                const item = trendingItems.find(i => i.id === id);
+                if (!item) return;
+                if (item.itemType === 'sports') {
+                    return onUpdateLiveLink(id, { isTrending: false });
+                } else {
+                    return onUpdateIPTVChannel(id, { isTrending: false });
+                }
+            }));
+            setMessage({ type: 'success', text: `Removed ${selectedItems.length} items from trending.` });
+            setSelectedItems([]);
+            await onRefresh();
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed some bulk removals.' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (!onDeleteLiveLink || !onDeleteIPTVChannel) {
+            alert("Delete actions are not fully configured in this view.");
+            return;
+        }
+        if (!confirm(`PERMANENTLY DELETE ${selectedItems.length} items from both trending and database?`)) return;
+        setIsSaving(true);
+        try {
+            await Promise.all(selectedItems.map(async (id) => {
+                const item = trendingItems.find(i => i.id === id);
+                if (!item) return;
+                if (item.itemType === 'sports') {
+                    return onDeleteLiveLink(id);
+                } else {
+                    return onDeleteIPTVChannel(id);
+                }
+            }));
+            setMessage({ type: 'success', text: `Permanently deleted ${selectedItems.length} items.` });
+            setSelectedItems([]);
+            await onRefresh();
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed some bulk deletions.' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleUpdateOrder = async (id: string, itemType: 'sports' | 'iptv', newOrder: number) => {
         setIsSaving(true);
@@ -88,7 +157,7 @@ export const TrendingManager: React.FC<TrendingManagerProps> = ({
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="bg-white dark:bg-gray-800 rounded-[32px] border border-gray-200 dark:border-gray-700 p-8 shadow-sm">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-red-500/10 rounded-2xl">
                             <TrendingUp className="text-red-500" size={24} />
@@ -98,6 +167,25 @@ export const TrendingManager: React.FC<TrendingManagerProps> = ({
                             <p className="text-gray-500 text-sm">Organize and rename items in the trending slider.</p>
                         </div>
                     </div>
+
+                    {selectedItems.length > 0 && (
+                        <div className="flex items-center gap-2 animate-in slide-in-from-right-4">
+                            <button
+                                onClick={handleBulkRemove}
+                                disabled={isSaving}
+                                className="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-xl text-sm font-bold hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-all flex items-center gap-2"
+                            >
+                                <X size={16} /> Hide {selectedItems.length}
+                            </button>
+                            <button
+                                onClick={handleBulkDelete}
+                                disabled={isSaving}
+                                className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-100 dark:hover:bg-red-900/30 transition-all flex items-center gap-2"
+                            >
+                                <Trash2 size={16} /> Delete {selectedItems.length}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {message && (
@@ -114,6 +202,14 @@ export const TrendingManager: React.FC<TrendingManagerProps> = ({
                     <table className="w-full text-left">
                         <thead className="bg-gray-100/50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                             <tr>
+                                <th className="px-6 py-4 w-10">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedItems.length === trendingItems.length && trendingItems.length > 0}
+                                        onChange={toggleSelectAll}
+                                        className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                    />
+                                </th>
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Order</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Display Name</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</th>
@@ -123,7 +219,7 @@ export const TrendingManager: React.FC<TrendingManagerProps> = ({
                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                             {trendingItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center">
+                                    <td colSpan={5} className="px-6 py-12 text-center">
                                         <div className="flex flex-col items-center gap-3">
                                             <TrendingUp size={32} className="text-gray-300" />
                                             <p className="text-gray-500 font-medium">No trending items selected.</p>
@@ -132,7 +228,15 @@ export const TrendingManager: React.FC<TrendingManagerProps> = ({
                                 </tr>
                             ) : (
                                 trendingItems.map((item) => (
-                                    <tr key={item.id} className="group hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                                    <tr key={item.id} className={`group hover:bg-white dark:hover:bg-gray-800 transition-colors ${selectedItems.includes(item.id) ? 'bg-primary-50/50 dark:bg-primary-900/10' : ''}`}>
+                                        <td className="px-6 py-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedItems.includes(item.id)}
+                                                onChange={() => toggleSelect(item.id)}
+                                                className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                            />
+                                        </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <input
@@ -144,7 +248,7 @@ export const TrendingManager: React.FC<TrendingManagerProps> = ({
                                                             handleUpdateOrder(item.id, item.itemType as any, val);
                                                         }
                                                     }}
-                                                    className="w-16 px-3 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                                    className="w-20 px-3 py-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                                 />
                                             </div>
                                         </td>
@@ -180,8 +284,23 @@ export const TrendingManager: React.FC<TrendingManagerProps> = ({
                                             <div className="flex justify-end gap-2">
                                                 <button
                                                     onClick={() => handleRemoveTrending(item.id, item.itemType as any)}
+                                                    className="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl transition-all"
+                                                    title="Hide from Trending"
+                                                >
+                                                    <X size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!confirm('PERMANENTLY DELETE from database?')) return;
+                                                        if (item.itemType === 'sports') {
+                                                            await onDeleteLiveLink?.(item.id);
+                                                        } else {
+                                                            await onDeleteIPTVChannel?.(item.id);
+                                                        }
+                                                        await onRefresh();
+                                                    }}
                                                     className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
-                                                    title="Remove from Trending"
+                                                    title="Delete Permanently"
                                                 >
                                                     <Trash2 size={18} />
                                                 </button>

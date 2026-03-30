@@ -462,13 +462,13 @@ export const HomeContent: React.FC<HomeProps> = ({
             {/* Trending Now Slider - FROM LiveSection logic */}
             {trendingItems.length > 0 && (
                 <div className="max-w-7xl mx-auto px-4 pt-12">
-                    <div className="flex flex-col md:flex-row md:items-center gap-4">
-                        <div className="shrink-0">
+                    <div className="flex flex-col gap-3">
+                        <div>
                             <Link href="/tools/live-tv-hd" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-sm font-bold uppercase hover:bg-primary-200 transition-colors">
                                 <TrendingUp size={16} className="animate-pulse" /> Trending Now
                             </Link>
                         </div>
-                        <div className="w-full md:flex-1 min-w-0">
+                        <div className="w-full min-w-0">
                             <Splide id="trending-slider" options={splideOptionsTrending}>
                                 {trendingItems.map((item, idx) => (
                                     <SplideSlide key={`${(item as any).itemType}-${item.id}-${idx}`}>
