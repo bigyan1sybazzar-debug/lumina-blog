@@ -937,13 +937,20 @@ export const LiveSection: React.FC = () => {
     const filteredLinks = React.useMemo(() => {
         const now = Date.now();
         const availableLinks = links.filter(link => {
-            if (!(link as any).matchStartTime) return true; // Keep links with no time set (Live TV)
+            if (!(link as any).matchStartTime) return true;
+            // Admin sees all active links regardless of time
+            if (user?.role === 'admin') return true;
+
             const startMs = resolveMatchStart(String((link as any).matchStartTime));
             const duration = (link as any).matchDurationMinutes || 125;
-            return now <= startMs + (duration * 60000); // Only show if match hasn't ended
+            const endMs = startMs + (duration * 60000);
+
+            // Lenient filter: keep link visible for 24 hours after it supposedly ended
+            // This prevents issues with incorrect device clocks (user setting date forward)
+            return now <= endMs + (24 * 60 * 60000);
         });
         return selectedTag === 'All' ? availableLinks : availableLinks.filter(link => link.tags?.includes(selectedTag));
-    }, [links, selectedTag]);
+    }, [links, selectedTag, user?.role]);
 
     const iptvTags = React.useMemo(() => {
         const groups = Array.from(new Set(iptvChannels.map(c => c.group).filter(Boolean)));
@@ -954,9 +961,11 @@ export const LiveSection: React.FC = () => {
         const now = Date.now();
         const availableLinks = links.filter(link => {
             if (!(link as any).matchStartTime) return true;
+            if (user?.role === 'admin') return true;
+
             const startMs = resolveMatchStart(String((link as any).matchStartTime));
             const duration = (link as any).matchDurationMinutes || 125;
-            return now <= startMs + (duration * 60000);
+            return now <= startMs + ((duration + 1440) * 60000); // 24 extra hours
         });
 
         return Array.from(new Map([
