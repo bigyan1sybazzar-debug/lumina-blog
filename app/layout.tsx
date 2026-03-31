@@ -125,6 +125,22 @@ export default function RootLayout({
                         type="application/ld+json"
                         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
                     />
+                    <Script id="chunk-error-handler" strategy="beforeInteractive">
+                        {`
+                        window.addEventListener('error', function(e) {
+                            if (e.message && (e.message.includes('chunk') || e.message.includes('loading'))) {
+                                console.log('Chunk error detected! Auto-reloading to sync version...');
+                                const lastReload = sessionStorage.getItem('last_chunk_reload');
+                                const now = Date.now();
+                                // Only reload if we haven't reloaded in the last 10 seconds to avoid loops
+                                if (!lastReload || now - parseInt(lastReload) > 10000) {
+                                    sessionStorage.setItem('last_chunk_reload', now.toString());
+                                    window.location.reload(true);
+                                }
+                            }
+                        }, true);
+                        `}
+                    </Script>
                     <Script
                         src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8714969386201280`}
                         strategy="afterInteractive"
