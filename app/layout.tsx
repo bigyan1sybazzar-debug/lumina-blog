@@ -178,7 +178,7 @@ export default function RootLayout({
                     ` }} />
                     <Script
                         src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8714969386201280`}
-                        strategy="afterInteractive"
+                        strategy="lazyOnload"
                         crossOrigin="anonymous"
                     />
                     <main className="flex-grow">

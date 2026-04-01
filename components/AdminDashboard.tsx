@@ -2420,8 +2420,8 @@ export const Admin: React.FC = () => {
                     </div>
 
                     {/* Match Time & Duration */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30">
-                      <div className="md:col-span-2">
+                    <div className="grid grid-cols-1 gap-4 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30">
+                      <div>
                         <label className="block text-xs font-bold text-red-600 dark:text-red-400 mb-1 uppercase tracking-wide flex items-center gap-2">
                           <Wand2 size={12} /> Quick Entry: Time Left (e.g. 3h 30m)
                         </label>
@@ -2432,17 +2432,7 @@ export const Admin: React.FC = () => {
                           placeholder="e.g. 3h 15m left"
                           className="input-field text-sm border-red-200 focus:border-red-500 bg-red-50/10 placeholder:text-gray-400"
                         />
-                        <p className="text-[10px] text-gray-500 mt-1 italic">Type how many hours/minutes are left and the clock below will set itself!</p>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 mb-1 uppercase tracking-wide">Match Start Time (HH:MM — 24hr)</label>
-                        <input
-                          type="time"
-                          value={newLiveMatchStart}
-                          onChange={(e) => setNewLiveMatchStart(e.target.value)}
-                          className="input-field text-sm"
-                        />
-                        <p className="text-[10px] text-gray-400 mt-1">e.g. 18:30. Valid for 24 hrs.</p>
+                        <p className="text-[10px] text-gray-500 mt-1 italic">Type how many hours/minutes are left — start time is set automatically!</p>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-blue-700 dark:text-blue-400 mb-1 uppercase tracking-wide">Match Duration (minutes)</label>
@@ -2452,7 +2442,7 @@ export const Admin: React.FC = () => {
                           onChange={(e) => setNewLiveDuration(e.target.value)}
                           placeholder="125"
                           min="1"
-                          max="300"
+                          max="600"
                           className="input-field text-sm"
                         />
                         <p className="text-[10px] text-gray-400 mt-1">Default 90 min (football). Cricket: 450+ etc.</p>
