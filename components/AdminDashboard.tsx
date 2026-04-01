@@ -1258,11 +1258,12 @@ export const Admin: React.FC = () => {
     }
 
     if (totalMinutes > 0) {
-      const targetDate = new Date();
-      targetDate.setMinutes(targetDate.getMinutes() + totalMinutes);
-      const hh = String(targetDate.getHours()).padStart(2, '0');
-      const mm = String(targetDate.getMinutes()).padStart(2, '0');
-      setNewLiveMatchStart(`${hh}:${mm}`);
+      // Store as a FULL UTC ISO timestamp — immune to device timezone/clock changes
+      const startNow = new Date();
+      setNewLiveMatchStart(startNow.toISOString());
+
+      // Also auto-set duration to the entered minutes
+      setNewLiveDuration(String(totalMinutes));
     }
   };
 

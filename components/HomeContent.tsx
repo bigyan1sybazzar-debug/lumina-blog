@@ -653,7 +653,7 @@ export const HomeContent: React.FC<HomeProps> = ({
                             href="https://bigyann.com.np/tools/emi-calculator"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="col-span-2 lg:col-span-1 text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
                             <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-blue-400 to-cyan-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <Calculator className="w-5 h-5 text-white" />
@@ -689,7 +689,7 @@ export const HomeContent: React.FC<HomeProps> = ({
                         {/* Tab 7: Live TV Shortcut */}
                         <Link
                             href="/tools/live-tv-hd"
-                            className="text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
+                            className="col-span-2 lg:col-span-1 text-sm flex flex-col items-center justify-center p-4 md:p-6 bg-white dark:bg-gray-800 text-center transition-all duration-200 hover:shadow-lg hover:bg-white/95 dark:hover:bg-gray-700/80 group rounded-2xl border border-gray-100 dark:border-gray-700/50"
                         >
                             <div className="w-10 h-10 md:w-12 md:h-12 mb-3 rounded-full bg-gradient-to-tr from-red-500 to-orange-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
                                 <Tv className="w-5 h-5 text-white" />

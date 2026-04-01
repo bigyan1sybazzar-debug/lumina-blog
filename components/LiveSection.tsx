@@ -53,18 +53,22 @@ const splideCustomStyles = `
 const resolveMatchStart = (value: string): number => {
     if (!value) return 0;
 
-    // Handle HH:MM or HH:MM:SS format
+    // --- LEGACY FORMAT: HH:MM or HH:MM:SS (stored from old admin with local time) ---
+    // We cannot know what day this was set, so we use a generous 36-hour search window
+    // to be resistant to device clock changes. We try today first, then tomorrow.
     if (typeof value === 'string' && /^\d{1,2}:\d{2}(:\d{2})?$/.test(value)) {
         const parts = value.split(':').map(Number);
         const d = new Date();
         d.setHours(parts[0], parts[1], parts[2] || 0, 0);
-        // Adjust date if the time is more than 12 hours in the past, assuming it's for today or tomorrow
-        if (Date.now() - d.getTime() > 12 * 60 * 60 * 1000) {
+        // If more than 36 hours in the past, push to tomorrow (handles clock drift)
+        if (Date.now() - d.getTime() > 36 * 60 * 60 * 1000) {
             d.setDate(d.getDate() + 1);
         }
         return d.getTime();
     }
 
+    // --- NEW FORMAT: ISO 8601 UTC timestamp (e.g. 2026-04-01T07:30:00.000Z) ---
+    // This is 100% clock-independent as it's an absolute UTC moment
     const parsed = new Date(value).getTime();
     return isNaN(parsed) ? 0 : parsed;
 };

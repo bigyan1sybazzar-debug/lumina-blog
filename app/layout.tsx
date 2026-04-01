@@ -125,22 +125,47 @@ export default function RootLayout({
                         type="application/ld+json"
                         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
                     />
-                    <Script id="chunk-error-handler" strategy="beforeInteractive">
-                        {`
-                        window.addEventListener('error', function(e) {
-                            if (e.message && (e.message.includes('chunk') || e.message.includes('loading'))) {
-                                console.log('Chunk error detected! Auto-reloading to sync version...');
-                                const lastReload = sessionStorage.getItem('last_chunk_reload');
-                                const now = Date.now();
-                                // Only reload if we haven't reloaded in the last 10 seconds to avoid loops
-                                if (!lastReload || now - parseInt(lastReload) > 10000) {
-                                    sessionStorage.setItem('last_chunk_reload', now.toString());
-                                    window.location.reload(true);
+                    <Script id="chunk-error-handler" strategy="beforeInteractive" dangerouslySetInnerHTML={{
+                        __html: `
+                        (function() {
+                            function cacheBustReload() {
+                                var key = 'last_chunk_reload';
+                                var now = Date.now();
+                                var last = parseInt(sessionStorage.getItem(key) || '0');
+                                // Only reload once every 15 seconds to prevent loops
+                                if (now - last > 15000) {
+                                    sessionStorage.setItem(key, now.toString());
+                                    // Cache-busting: append timestamp to force fresh asset fetch
+                                    var url = window.location.href.split('?')[0].split('#')[0];
+                                    window.location.replace(url + '?v=' + now);
                                 }
                             }
-                        }, true);
-                        `}
-                    </Script>
+                            // Catch synchronous script errors (e.g. failed chunk parse)
+                            window.addEventListener('error', function(e) {
+                                if (e && e.message && (
+                                    e.message.toLowerCase().includes('chunk') ||
+                                    e.message.toLowerCase().includes('failed to load') ||
+                                    e.message.toLowerCase().includes('loading css chunk')
+                                )) {
+                                    cacheBustReload();
+                                }
+                            }, true);
+                            // Catch dynamic import() failures (most common cause)
+                            window.addEventListener('unhandledrejection', function(e) {
+                                var reason = e && e.reason;
+                                if (reason && reason.name === 'ChunkLoadError') {
+                                    cacheBustReload();
+                                }
+                                // Also catch generic loading errors from dynamic imports
+                                if (reason && reason.message && (
+                                    reason.message.toLowerCase().includes('chunk') ||
+                                    reason.message.toLowerCase().includes('failed to load')
+                                )) {
+                                    cacheBustReload();
+                                }
+                            });
+                        })();
+                    ` }} />
                     <Script
                         src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8714969386201280`}
                         strategy="afterInteractive"
