@@ -66,6 +66,12 @@ export const GlobalListener: React.FC = () => {
     useEffect(() => {
         const handleChunkError = (e: ErrorEvent | PromiseRejectionEvent) => {
             const error = (e instanceof ErrorEvent) ? e.error : e.reason;
+
+            // Skip benign "Connection closed" noise from real-time libs (Puter, Firestore)
+            if (error?.message && error.message.toLowerCase().includes('connection closed')) {
+                return;
+            }
+
             // Next.js specific ChunkLoadError or generic "Failed to load chunk"
             if (
                 error?.name === 'ChunkLoadError' ||

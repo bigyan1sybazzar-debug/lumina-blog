@@ -142,6 +142,11 @@ export default function RootLayout({
                             }
                             // Catch synchronous script errors (e.g. failed chunk parse)
                             window.addEventListener('error', function(e) {
+                                // Skip noise errors
+                                if (e && e.message && e.message.toLowerCase().includes('connection closed')) {
+                                    return;
+                                }
+
                                 if (e && e.message && (
                                     e.message.toLowerCase().includes('chunk') ||
                                     e.message.toLowerCase().includes('failed to load') ||
@@ -153,6 +158,11 @@ export default function RootLayout({
                             // Catch dynamic import() failures (most common cause)
                             window.addEventListener('unhandledrejection', function(e) {
                                 var reason = e && e.reason;
+                                // Skip noise errors
+                                if (reason && reason.message && reason.message.toLowerCase().includes('connection closed')) {
+                                    return;
+                                }
+
                                 if (reason && reason.name === 'ChunkLoadError') {
                                     cacheBustReload();
                                 }
