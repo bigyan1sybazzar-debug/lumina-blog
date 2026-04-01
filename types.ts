@@ -236,7 +236,8 @@ export interface LiveLink {
     votedUserIds?: string[];
   };
   isLiveNow?: boolean;
-  matchStartTime?: string;
+  matchStartTime?: string;      // Legacy: kept for old entries
+  matchExpiresAt?: number;      // NEW: UTC ms timestamp when match ends (Date.now() + timeLeft)
   matchDurationMinutes?: number;
   thumbnailUrl?: string;
   teamALogo?: string;

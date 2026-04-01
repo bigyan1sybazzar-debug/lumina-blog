@@ -87,6 +87,20 @@ const getTimeLeft = (matchDate: string | number, durationMinutes = 125, now: Dat
     return `${secs}s left`;
 };
 
+// --- NEW: Clean expiry-based time left. Works for every device on Earth. ---
+// expiresAt is a UTC ms timestamp. Time left = expiresAt - Date.now(). No timezone needed.
+const getTimeLeftFromExpiry = (expiresAt: number): string | null => {
+    const remainingMs = expiresAt - Date.now();
+    if (remainingMs <= 0) return null;
+    const totalSeconds = Math.floor(remainingMs / 1000);
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    if (hrs > 0) return `${hrs}h ${mins}m left`;
+    if (mins > 0) return `${mins}m ${secs}s left`;
+    return `${secs}s left`;
+};
+
 const getMatchMinute = (matchDate: string | number, durationMinutes = 125, now: Date = new Date()) => {
     const start = typeof matchDate === 'number' ? matchDate : resolveMatchStart(String(matchDate));
     const elapsed = Math.floor((now.getTime() - start) / 60000);
@@ -96,13 +110,22 @@ const getMatchMinute = (matchDate: string | number, durationMinutes = 125, now: 
 };
 
 // Isolated Timer Components to prevent Re-renders of the whole page
-const MatchCardTimer = React.memo(({ matchDate, duration = 125 }: any) => {
-    const [now, setNow] = React.useState(new Date());
+const MatchCardTimer = React.memo(({ matchDate, duration = 125, expiresAt }: any) => {
+    const [tick, setTick] = React.useState(0);
     React.useEffect(() => {
-        const t = setInterval(() => setNow(new Date()), 1000);
+        const t = setInterval(() => setTick(n => n + 1), 1000);
         return () => clearInterval(t);
     }, []);
 
+    // --- NEW: use expiresAt if available (timezone-free) ---
+    if (expiresAt) {
+        const tLeft = getTimeLeftFromExpiry(expiresAt);
+        if (!tLeft) return null;
+        return <span className="text-[8px] text-emerald-500 font-bold animate-pulse">{tLeft}</span>;
+    }
+
+    // --- LEGACY fallback ---
+    const now = new Date();
     const startMs = resolveMatchStart(String(matchDate));
     const elapsedMins = Math.floor((now.getTime() - startMs) / 60000);
 
@@ -148,15 +171,29 @@ const MatchTimeDisplay = React.memo(({ date }: any) => {
     ) : null;
 });
 
-const PlayerStatusBanner = React.memo(({ matchStartTime, duration = 125 }: any) => {
-    const [now, setNow] = React.useState(new Date());
+const PlayerStatusBanner = React.memo(({ matchStartTime, duration = 125, expiresAt }: any) => {
+    const [tick, setTick] = React.useState(0);
     React.useEffect(() => {
-        const t = setInterval(() => setNow(new Date()), 1000);
+        const t = setInterval(() => setTick(n => n + 1), 1000);
         return () => clearInterval(t);
     }, []);
+
+    // --- NEW: expiresAt path (clock-independent) ---
+    if (expiresAt) {
+        const tLeft = getTimeLeftFromExpiry(expiresAt);
+        if (!tLeft) return <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Please be patient — HD channels may take a moment to load</p>;
+        return (
+            <div className="flex flex-col">
+                <span className="text-[10px] font-black text-red-500 uppercase tracking-tighter animate-pulse">Live Match Active</span>
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{tLeft} remaining in match</span>
+            </div>
+        );
+    }
+
+    // --- LEGACY fallback ---
+    const now = new Date();
     const tLeft = getTimeLeft(matchStartTime, duration, now);
     if (!tLeft) return <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Please be patient — HD channels may take a moment to load</p>;
-
     return (
         <div className="flex flex-col">
             <span className="text-[10px] font-black text-red-500 uppercase tracking-tighter animate-pulse">Live Match Active</span>
@@ -941,17 +978,19 @@ export const LiveSection: React.FC = () => {
     const filteredLinks = React.useMemo(() => {
         const now = Date.now();
         const availableLinks = links.filter(link => {
-            if (!(link as any).matchStartTime) return true;
-            // Admin sees all active links regardless of time
+            // Admin always sees everything
             if (user?.role === 'admin') return true;
 
+            // --- NEW: matchExpiresAt (UTC ms). Simple, clock-immune, works on every device ---
+            if ((link as any).matchExpiresAt) {
+                return now <= (link as any).matchExpiresAt;
+            }
+
+            // --- LEGACY: matchStartTime + duration (old entries) ---
+            if (!(link as any).matchStartTime) return true;
             const startMs = resolveMatchStart(String((link as any).matchStartTime));
             const duration = (link as any).matchDurationMinutes || 125;
-            const endMs = startMs + (duration * 60000);
-
-            // Lenient filter: keep link visible for 24 hours after it supposedly ended
-            // This prevents issues with incorrect device clocks (user setting date forward)
-            return now <= endMs + (24 * 60 * 60000);
+            return now <= startMs + ((duration + 1440) * 60000); // 24h buffer for clock drift
         });
         return selectedTag === 'All' ? availableLinks : availableLinks.filter(link => link.tags?.includes(selectedTag));
     }, [links, selectedTag, user?.role]);
@@ -964,12 +1003,19 @@ export const LiveSection: React.FC = () => {
     const trendingItems = React.useMemo(() => {
         const now = Date.now();
         const availableLinks = links.filter(link => {
-            if (!(link as any).matchStartTime) return true;
+            // Admin always sees everything
             if (user?.role === 'admin') return true;
 
+            // --- NEW: matchExpiresAt (UTC ms) ---
+            if ((link as any).matchExpiresAt) {
+                return now <= (link as any).matchExpiresAt;
+            }
+
+            // --- LEGACY: matchStartTime ---
+            if (!(link as any).matchStartTime) return true;
             const startMs = resolveMatchStart(String((link as any).matchStartTime));
             const duration = (link as any).matchDurationMinutes || 125;
-            return now <= startMs + ((duration + 1440) * 60000); // 24 extra hours
+            return now <= startMs + ((duration + 1440) * 60000);
         });
 
         return Array.from(new Map([

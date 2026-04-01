@@ -145,6 +145,7 @@ export const Admin: React.FC = () => {
   const [newLiveIsTrending, setNewLiveIsTrending] = useState(false);
   const [newLiveIsLive, setNewLiveIsLive] = useState(true);
   const [newLiveMatchStart, setNewLiveMatchStart] = useState('');
+  const [newLiveExpiresAt, setNewLiveExpiresAt] = useState<number | undefined>(undefined);
   const [newLiveDuration, setNewLiveDuration] = useState('125');
   const [newLivePollTeamA, setNewLivePollTeamA] = useState('');
   const [newLivePollTeamB, setNewLivePollTeamB] = useState('');
@@ -1088,7 +1089,7 @@ export const Admin: React.FC = () => {
         tags,
         isTrending: newLiveIsTrending,
         isLiveNow: newLiveIsLive,
-        matchStartTime: newLiveMatchStart || undefined,
+        matchExpiresAt: newLiveExpiresAt || undefined,
         matchDurationMinutes: newLiveDuration ? parseInt(newLiveDuration) : 125,
         poll,
         thumbnailUrl: newLiveThumbnail || undefined,
@@ -1107,6 +1108,7 @@ export const Admin: React.FC = () => {
       setNewLiveIsTrending(false);
       setNewLiveIsLive(true);
       setNewLiveMatchStart('');
+      setNewLiveExpiresAt(undefined);
       setNewLiveQuickTime('');
       setNewLiveDuration('125');
       setNewLivePollTeamA('');
@@ -1155,7 +1157,7 @@ export const Admin: React.FC = () => {
         tags,
         isTrending: newLiveIsTrending,
         isLiveNow: newLiveIsLive,
-        matchStartTime: newLiveMatchStart || undefined,
+        matchExpiresAt: newLiveExpiresAt || undefined,
         matchDurationMinutes: newLiveDuration ? parseInt(newLiveDuration) : 125,
         poll,
         thumbnailUrl: newLiveThumbnail || undefined,
@@ -1258,9 +1260,10 @@ export const Admin: React.FC = () => {
     }
 
     if (totalMinutes > 0) {
-      // Store as a FULL UTC ISO timestamp — immune to device timezone/clock changes
-      const startNow = new Date();
-      setNewLiveMatchStart(startNow.toISOString());
+      // Store expiry as UTC ms timestamp: now + timeLeft
+      // This is the same for every user on every device worldwide
+      const expiresAt = Date.now() + totalMinutes * 60000;
+      setNewLiveExpiresAt(expiresAt);
 
       // Also auto-set duration to the entered minutes
       setNewLiveDuration(String(totalMinutes));
