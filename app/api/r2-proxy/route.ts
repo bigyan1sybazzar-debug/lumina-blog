@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic'; // Prevents Next.js from caching this route
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const file = searchParams.get('file');
@@ -12,13 +14,22 @@ export async function GET(request: Request) {
     const url = `${R2_DOMAIN}/${file}`;
 
     try {
-        const res = await fetch(url, { cache: 'no-store' });
+        const res = await fetch(url, { cache: 'no-store' }); // Get fresh data from R2 without caching on Next.js server side
         if (!res.ok) {
             return NextResponse.json({ error: `Failed to fetch ${file} from R2` }, { status: res.status });
         }
 
         const data = await res.json();
-        return NextResponse.json(data);
+
+        // Explicitly tell browsers (including Brave) to NEVER cache this response
+        return NextResponse.json(data, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+                'Surrogate-Control': 'no-store',
+            },
+        });
     } catch (error: any) {
         console.error(`Proxy error for ${file}:`, error);
         return NextResponse.json({ error: error.message }, { status: 500 });

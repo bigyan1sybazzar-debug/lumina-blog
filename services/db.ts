@@ -114,10 +114,9 @@ export const getAllPostsFromFirestore = async (): Promise<BlogPost[]> => {
 
 export const getAllPostsAdmin = async (): Promise<BlogPost[]> => {
   try {
-    // Use a timestamp to bust browser cache when fetched from client
-    const cacheBuster = `?t=${Date.now()}`;
-    const url = isServer ? `${R2_PUBLIC_DOMAIN}/posts.json${cacheBuster}` : `/api/r2-proxy?file=posts.json&t=${Date.now()}`;
-    const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+    // Use timestamp ONLY on client-side proxy call to bust browser cache
+    const url = isServer ? `${R2_PUBLIC_DOMAIN}/posts.json` : `/api/r2-proxy?file=posts.json&t=${Date.now()}`;
+    const res = await fetch(url, isServer ? { cache: 'no-store' } : { cache: 'no-store' });
     if (!res.ok) throw new Error('Failed to fetch from R2');
     const posts = await res.json();
     return Array.isArray(posts) ? posts.sort(sortByDateDesc) : [];

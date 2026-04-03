@@ -8,9 +8,16 @@ const R2_PUBLIC_DOMAIN = "https://pub-b2a714905946497d980c717ac1abfd8f.r2.dev";
 async function fetchR2<T>(filename: string, fallbackFn: () => Promise<T>): Promise<T> {
     const isServer = typeof window === 'undefined';
     try {
-        const cacheBuster = `?t=${Date.now()}`;
-        const url = isServer ? `${R2_PUBLIC_DOMAIN}/${filename}${cacheBuster}` : `/api/r2-proxy?file=${filename}&t=${Date.now()}`;
-        const res = await fetch(url, isServer ? { next: { revalidate: 60 } } : {});
+        // Use fixed URL on server to allow Next.js to handle caching properly (or not)
+        // Use timestamp ONLY on client-side proxy call to bust browser cache
+        const url = isServer
+            ? `${R2_PUBLIC_DOMAIN}/${filename}`
+            : `/api/r2-proxy?file=${filename}&t=${Date.now()}`;
+
+        const res = await fetch(url, isServer
+            ? { cache: 'no-store' } // On server, just get fresh data without caching 3.8MB+ objects
+            : { cache: 'no-store' } // Also don't cache on client browser
+        );
         if (!res.ok) throw new Error(`${filename} fetch failed`);
         const data = await res.json();
         return Array.isArray(data) ? data as T : [] as unknown as T;

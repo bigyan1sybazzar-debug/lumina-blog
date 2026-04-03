@@ -668,16 +668,22 @@ export const LiveSection: React.FC = () => {
     useEffect(() => {
         setIsMounted(true);
         const loadInitialData = async () => {
+            // Safety timeout: if fetching takes too long, stop the spinner and use what we have (or show empty state)
+            const timeoutId = setTimeout(() => setIsDataLoading(false), 8000);
+
             try {
-                const [fetchedLinks, config, r2Channels] = await Promise.all([
+                // Fetch independently to prevent one fail from blocking all
+                const [fetchedLinksResult, iptvConfigResult, r2ChannelsResult] = await Promise.allSettled([
                     getR2LiveLinks(),
                     getIPTVConfig(),
                     getR2IPTVChannels()
                 ]);
 
-                console.log('DEBUG: Fetched live links from R2:', fetchedLinks);
-                setLinks(fetchedLinks);
+                const fetchedLinks = fetchedLinksResult.status === 'fulfilled' ? fetchedLinksResult.value : [];
+                const config = iptvConfigResult.status === 'fulfilled' ? iptvConfigResult.value : null;
+                const r2Channels = r2ChannelsResult.status === 'fulfilled' ? r2ChannelsResult.value : [];
 
+                setLinks(fetchedLinks);
                 setIptvConfig(config);
 
                 const mappedChannels: M3UChannel[] = r2Channels.map((c: any) => ({
@@ -697,8 +703,10 @@ export const LiveSection: React.FC = () => {
                     try {
                         const proxyUrl = `/api/proxy?url=${encodeURIComponent(config.m3uUrl)}`;
                         const res = await fetch(proxyUrl);
-                        const content = await res.text();
-                        finalIptv = parseM3U(content);
+                        if (res.ok) {
+                            const content = await res.text();
+                            finalIptv = parseM3U(content);
+                        }
                     } catch (err) {
                         console.error('Failed to load remote IPTV M3U:', err);
                     }
@@ -714,10 +722,8 @@ export const LiveSection: React.FC = () => {
                 let initialLink = null;
 
                 if (urlV) {
-                    // Try to find in sports links
                     initialLink = fetchedLinks.find(l => l.id === urlV);
                     if (!initialLink) {
-                        // Try to find in IPTV channels
                         const channel = finalIptv.find(c => c.id === urlV);
                         if (channel) {
                             initialLink = channel;
@@ -746,25 +752,20 @@ export const LiveSection: React.FC = () => {
                     setPendingLink(null);
                     setSelectedLink(formattedLink);
 
-                    // If no V param is in URL, add it automatically to fix the user's reported ad loading issue
                     if (!urlV && typeof window !== 'undefined') {
                         const currentParams = new URLSearchParams(window.location.search);
-                        // Use usePathname() hook for reliable path construction, 
-                        // fallback to hardcoded path if for some reason pathname is home
                         const safePath = (pathname && pathname !== '/') ? pathname : '/tools/live-tv-hd';
                         const newUrl = `${safePath}?${currentParams.toString()}`;
-
-                        setTimeout(() => {
-                            router.replace(newUrl, { scroll: false });
-                        }, 100);
+                        setTimeout(() => router.replace(newUrl, { scroll: false }), 100);
                     }
-
-                    setShowAd(false);
                 }
+
+                setShowAd(false);
 
             } catch (error) {
                 console.error('Error in initial load:', error);
             } finally {
+                clearTimeout(timeoutId);
                 setIsDataLoading(false);
             }
         };
