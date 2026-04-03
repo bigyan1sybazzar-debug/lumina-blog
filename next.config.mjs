@@ -73,7 +73,11 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: 'public, max-age=31536000', // Removed immutable for proxy compatibility
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin', // Allow being loaded in proxy frames
           },
         ],
       },
@@ -82,7 +86,11 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: 'public, max-age=31536000', // Removed immutable
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'cross-origin',
           },
         ],
       },
